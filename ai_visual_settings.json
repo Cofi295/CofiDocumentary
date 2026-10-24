@@ -1,0 +1,60 @@
+{
+  "image_model": "nano_banana_2",
+  "video_model": "veo_31_fast",
+  "aspect_ratio": "16:9",
+  "veo_enabled": false,
+  "style_mode": "preset",
+  "style_preset": "Hiện thực điện ảnh (Cinematic Realism)",
+  "custom_style": "Photorealistic warm cinematic Korean life & sacred golden light, shot on 35mm lens, shallow depth of field, natural human expressions, warm comforting atmosphere, 8K.",
+  "style_prompt": "Hyper-realistic, cinematic lighting, shot on 35mm lens, depth of field, photorealistic, 8k, highly detailed, warm natural light, realistic human faces and textures, zero cartoon or stickman.",
+  "ai_media_mode": "image",
+  "coverage_mode": "selective_ai",
+  "style_reference_image": "",
+  "style_presets": [
+    {
+      "name": "Hiện thực điện ảnh (Cinematic Realism)"
+    },
+    {
+      "name": "Sơn dầu (Oil painting)"
+    },
+    {
+      "name": "Người que (Stickman)"
+    },
+    {
+      "name": "Video 2D (US Animation)"
+    },
+    {
+      "name": "3D Hoạt hình (Pixar/Disney)"
+    },
+    {
+      "name": "Anime Nhật Bản"
+    },
+    {
+      "name": "Dark Fantasy (Ma mị/Kinh dị)"
+    },
+    {
+      "name": "Màu nước (Watercolor)"
+    },
+    {
+      "name": "Cyberpunk (Viễn tưởng)"
+    },
+    {
+      "name": "Thủy mặc (Cổ trang/Kiếm hiệp)"
+    },
+    {
+      "name": "Chibi Cute (Dễ thương)"
+    },
+    {
+      "name": "cinematic 2D editorial cartoon / American comic explainer illustration"
+    },
+    {
+      "name": "Người que mỹ"
+    },
+    {
+      "name": "Người Que Mỹ 2"
+    },
+    {
+      "name": "Người Que US"
+    }
+  ]
+}

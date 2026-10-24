@@ -1,0 +1,17 @@
+{
+  "name": "Nepal Flood 5min Multi-Footage Motion Reference",
+  "duration_seconds": 304.618667,
+  "resolution": {
+    "width": 1920,
+    "height": 1080
+  },
+  "fps": 30,
+  "sha256": "316ADBC9340C8B6ABCF831CE3E8B86B7CB91FBE31D71075C2DA0307DD4FAFDC1",
+  "density": {
+    "scene_count": 10,
+    "approved_video_clip_uses": 17,
+    "unique_video_source_files": 7,
+    "still_uses": 14,
+    "native_graphic_treatments": 8
+  }
+}

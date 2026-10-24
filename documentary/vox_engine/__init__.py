@@ -1,0 +1,104 @@
+"""True Crime Vox & Real Satellite Multi-Archetype Engine.
+
+Provides voice-driven semantic archetype routing, multi-tier CJK/Vietnamese typography,
+watermark-free Esri World Imagery satellite GIS caching, and 1080p pure-Python compositing
+for all 24 True Crime investigative archetypes.
+"""
+
+from .typography import (
+    CJKFallbackFont,
+    draw_text_safe,
+    get_cascade_font,
+    get_font,
+    load_font,
+    split_balanced_korean,
+    verify_text_glyphs,
+    wrap_text_multiline,
+)
+from .gis_cache import (
+    W,
+    H,
+    apply_infrared_thermal_shader,
+    crop_map_camera,
+    deg2num,
+    draw_geojson_feature_on_plate,
+    draw_satellite_hud_grid,
+    get_real_satellite_campus_z16,
+    get_vox_styled_baiyin_lanzhou_base,
+    get_vox_styled_baiyin_urban_base,
+    get_vox_styled_gansu_base,
+    load_gis_json,
+    load_gis_plate,
+    lonlat_to_plate_px,
+    map_lonlat_to_screen,
+)
+from .archetypes import (
+    ARCHETYPE_RENDERERS,
+    draw_cinema_subtitle,
+    draw_vox_footage_lower_third,
+    fit_crop,
+    get_cork_pinboard_shell,
+    get_dark_investigation_desk,
+    get_fallback_image,
+    get_torn_paper_sheet,
+    paste_photo_polaroid,
+    render_cinema_full,
+)
+from .renderer import (
+    VoxSceneRenderer,
+)
+from .semantic_router import (
+    VOX_ARCHETYPE_RULES,
+    VoxSemanticRouter,
+    is_vox_satellite_enabled,
+)
+from .blender_bridge import (
+    ARCHETYPE_PREVIEW_URLS,
+    BLENDER_3D_SCENE_SPECS,
+    VoxBlenderBridge,
+    map_archetype_to_blender_3d_scene,
+)
+
+__all__ = [
+    "W",
+    "H",
+    "CJKFallbackFont",
+    "draw_text_safe",
+    "get_cascade_font",
+    "get_font",
+    "load_font",
+    "split_balanced_korean",
+    "verify_text_glyphs",
+    "wrap_text_multiline",
+    "deg2num",
+    "lonlat_to_plate_px",
+    "crop_map_camera",
+    "map_lonlat_to_screen",
+    "apply_infrared_thermal_shader",
+    "load_gis_plate",
+    "load_gis_json",
+    "draw_geojson_feature_on_plate",
+    "draw_satellite_hud_grid",
+    "get_vox_styled_gansu_base",
+    "get_vox_styled_baiyin_lanzhou_base",
+    "get_vox_styled_baiyin_urban_base",
+    "get_real_satellite_campus_z16",
+    "ARCHETYPE_RENDERERS",
+    "draw_cinema_subtitle",
+    "draw_vox_footage_lower_third",
+    "fit_crop",
+    "get_cork_pinboard_shell",
+    "get_dark_investigation_desk",
+    "get_fallback_image",
+    "get_torn_paper_sheet",
+    "paste_photo_polaroid",
+    "render_cinema_full",
+    "VoxSceneRenderer",
+    "VoxSemanticRouter",
+    "is_vox_satellite_enabled",
+    "VOX_ARCHETYPE_RULES",
+    "ARCHETYPE_PREVIEW_URLS",
+    "BLENDER_3D_SCENE_SPECS",
+    "VoxBlenderBridge",
+    "map_archetype_to_blender_3d_scene",
+]

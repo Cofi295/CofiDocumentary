@@ -1,0 +1,23 @@
+{
+  "session_bridge": "cofi_codex_gateway",
+  "filesystem": {
+    "read": true,
+    "write": true
+  },
+  "code_edit": true,
+  "run_commands": true,
+  "run_tests": true,
+  "database_access": true,
+  "log_access": true,
+  "restart_service": true,
+  "self_upgrade": true,
+  "radar_read": true,
+  "channel_profile_read": true,
+  "competitor_reference_research": true,
+  "web_research": true,
+  "seo_packaging": true,
+  "thumbnail_reference_inspection": true,
+  "thumbnail_prompt_generation": true,
+  "production_phase_control": true,
+  "enabled": true
+}

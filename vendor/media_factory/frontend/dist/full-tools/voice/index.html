@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cofi Voice</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" href="./logo/cofivoice_64.png">
+    <link rel="stylesheet" href="./css/styles.css">
+    <link rel="stylesheet" href="./cofi-theme.css?v=1">
+</head>
+<body>
+    <!-- SVG icon sprite (offline, no CDN) -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+        <symbol id="ic-logo" viewBox="0 0 24 24">
+            <path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>
+        </symbol>
+        <symbol id="ic-tts" viewBox="0 0 24 24">
+            <path d="M4 6h16M4 12h10M4 18h7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <path d="M17.5 15v4.2M15.4 16.2v1.8M19.6 16.2v1.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+        </symbol>
+        <symbol id="ic-clone" viewBox="0 0 24 24">
+            <rect x="9" y="3" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M5 11a7 7 0 0 0 14 0M12 18v3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </symbol>
+        <symbol id="ic-design" viewBox="0 0 24 24">
+            <path d="M4 8h10M18 8h2M4 16h2M10 16h10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            <circle cx="16" cy="8" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="8" cy="16" r="2.2" fill="none" stroke="currentColor" stroke-width="2"/>
+        </symbol>
+        <symbol id="ic-play" viewBox="0 0 24 24">
+            <path d="M8 5.5v13l11-6.5z" fill="currentColor"/>
+        </symbol>
+        <symbol id="ic-pause" viewBox="0 0 24 24">
+            <rect x="6.5" y="5" width="3.6" height="14" rx="1.2" fill="currentColor"/>
+            <rect x="13.9" y="5" width="3.6" height="14" rx="1.2" fill="currentColor"/>
+        </symbol>
+        <symbol id="ic-download" viewBox="0 0 24 24">
+            <path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </symbol>
+        <symbol id="ic-trash" viewBox="0 0 24 24">
+            <path d="M5 7h14M10 7V5h4v2M8 7l1 13h6l1-13M10.5 11v5M13.5 11v5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </symbol>
+        <symbol id="ic-upload" viewBox="0 0 24 24">
+            <path d="M12 16V6m0 0l-4.5 4.5M12 6l4.5 4.5M5 20h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </symbol>
+        <symbol id="ic-audio-file" viewBox="0 0 24 24">
+            <path d="M9 18V6l9-2v12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="6.5" cy="18" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/>
+            <circle cx="15.5" cy="16" r="2.5" fill="none" stroke="currentColor" stroke-width="2"/>
+        </symbol>
+        <symbol id="ic-spark" viewBox="0 0 24 24">
+            <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="currentColor"/>
+            <path d="M18.5 15.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" fill="currentColor"/>
+        </symbol>
+        <symbol id="ic-check" viewBox="0 0 24 24">
+            <path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </symbol>
+        <symbol id="ic-close" viewBox="0 0 24 24">
+            <path d="M6 6l12 12M18 6L6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </symbol>
+        <symbol id="ic-user" viewBox="0 0 24 24">
+            <circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M5 20a7 7 0 0 1 14 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </symbol>
+        <symbol id="ic-chevron" viewBox="0 0 24 24">
+            <path d="M7 10l5 5 5-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </symbol>
+        <symbol id="ic-globe" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="8.5" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M3.5 12h17M12 3.5c2.6 2.3 3.9 5.2 3.9 8.5s-1.3 6.2-3.9 8.5c-2.6-2.3-3.9-5.2-3.9-8.5s1.3-6.2 3.9-8.5z" fill="none" stroke="currentColor" stroke-width="1.6"/>
+        </symbol>
+        <symbol id="ic-history" viewBox="0 0 24 24">
+            <path d="M4.5 12a7.5 7.5 0 1 1 2.2 5.3M4.5 12H2m2.5 0l1.8-2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M12 8v4.5l3 1.8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </symbol>
+        <symbol id="ic-moon" viewBox="0 0 24 24">
+            <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </symbol>
+        <symbol id="ic-sun" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="2"/>
+            <path d="M12 2.5v2.4M12 19.1v2.4M2.5 12h2.4M19.1 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M18.7 5.3L17 7M7 17l-1.7 1.7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </symbol>
+    </svg>
+
+    <!-- Custom title bar: the native one is off (frameless window).
+             .pywebview-drag-region is what pywebview grabs for dragging. -->
+    <div class="titlebar">
+        <div class="titlebar-drag pywebview-drag-region">
+            <span class="titlebar-title">Cofi Voice</span>
+        </div>
+        <div class="titlebar-buttons">
+            <button class="tb-btn" id="tb-min" title="Thu nhỏ" aria-label="Thu nhỏ">
+                <svg viewBox="0 0 12 12"><path d="M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </button>
+            <button class="tb-btn" id="tb-max" title="Phóng to" aria-label="Phóng to">
+                <svg viewBox="0 0 12 12"><rect x="2.5" y="2.5" width="7" height="7" rx="1" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+            </button>
+            <button class="tb-btn tb-close" id="tb-close" title="Đóng" aria-label="Đóng">
+                <svg viewBox="0 0 12 12"><path d="M3 3l6 6M9 3l-6 6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- ============ SIDEBAR ============ -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-mark">
+                    <svg class="icon"><use href="#ic-logo"/></svg>
+                </div>
+                <div class="logo-text">
+                    <h1 class="wordmark">Cofi<span>Voice</span></h1>
+                    <span data-i18n="tagline">Studio giọng nói AI</span>
+                </div>
+            </div>
+
+            <nav class="nav-tabs">
+                <div class="nav-section-label" data-i18n="nav_section_create">TẠO ÂM THANH</div>
+                <a class="nav-item active" data-tab="tab-tts" id="nav-tts">
+                    <svg class="icon"><use href="#ic-tts"/></svg>
+                    <span data-i18n="nav_tts">Đọc văn bản</span>
+                </a>
+                <div class="nav-section-label" data-i18n="nav_section_voices">GIỌNG NÓI</div>
+                <a class="nav-item" data-tab="tab-clone" id="nav-clone">
+                    <svg class="icon"><use href="#ic-clone"/></svg>
+                    <span data-i18n="nav_clone">Sao chép giọng</span>
+                </a>
+                <a class="nav-item" data-tab="tab-design" id="nav-design">
+                    <svg class="icon"><use href="#ic-design"/></svg>
+                    <span data-i18n="nav_design">Thiết kế giọng</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="engine-status" id="engine-status">
+                    <span class="status-dot"></span>
+                    <span data-i18n="engine_ready">Engine offline · Sẵn sàng</span>
+                </div>
+                <div class="footer-row">
+                    <button class="icon-btn theme-btn" id="btn-theme" title="Dark / Light">
+                        <svg class="icon" id="theme-icon"><use href="#ic-moon"/></svg>
+                    </button>
+                    <div class="lang-toggle">
+                        <button class="lang-btn" data-lang="en">EN</button>
+                        <button class="lang-btn active" data-lang="vi">VI</button>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ============ MAIN ============ -->
+        <main class="main-content">
+
+            <!-- ===== Tab 1: TTS (ElevenLabs-style split) ===== -->
+            <section id="tab-tts" class="tab-pane active">
+                <div class="tts-workspace">
+                    <!-- Editor column -->
+                    <div class="editor-col">
+                        <div class="editor-orbs" aria-hidden="true">
+                            <div class="orb orb-1"></div>
+                            <div class="orb orb-2"></div>
+                            <div class="orb orb-3"></div>
+                        </div>
+                        <div class="editor-head anim-up">
+                            <h2 data-i18n="tts_title">Đọc văn bản</h2>
+                        </div>
+                        <div class="tag-bar anim-up d-1" id="tag-bar">
+                            <span class="tag-group-label">Nghỉ</span>
+                            <button class="tag-chip" data-tag='<break time="0.3s"/>'>0.3s</button>
+                            <button class="tag-chip" data-tag='<break time="0.5s"/>'>0.5s</button>
+                            <button class="tag-chip" data-tag='<break time="1s"/>'>1s</button>
+                            <button class="tag-chip" data-tag='<break time="2s"/>'>2s</button>
+                            <span class="tag-sep"></span>
+                            <span class="tag-group-label">Biểu cảm</span>
+                            <button class="tag-chip" data-tag="[laughter]">cười</button>
+                            <button class="tag-chip" data-tag="[sigh]">thở dài</button>
+                            <button class="tag-chip" data-tag="[surprise-ah]">ngạc nhiên</button>
+                            <button class="tag-chip" data-tag="[question-en]">hỏi</button>
+                            <button class="tag-chip tag-more" id="tag-more">thêm…</button>
+                            <button class="tag-chip tag-auto" id="btn-autotag" title="Để AI đọc kịch bản và tự đặt thẻ">
+                                <svg class="icon"><use href="#ic-spark"/></svg> Auto
+                            </button>
+                            <div class="tag-extra" id="tag-extra">
+                                <button class="tag-chip" data-tag="[confirmation-en]">xác nhận</button>
+                                <button class="tag-chip" data-tag="[dissatisfaction-hnn]">không hài lòng</button>
+                                <button class="tag-chip" data-tag="[surprise-oh]">ồ</button>
+                                <button class="tag-chip" data-tag="[surprise-wa]">wa</button>
+                                <button class="tag-chip" data-tag="[surprise-yo]">yo</button>
+                                <button class="tag-chip" data-tag="[question-ah]">hỏi · ah</button>
+                                <button class="tag-chip" data-tag="[question-oh]">hỏi · oh</button>
+                                <button class="tag-chip" data-tag="[question-ei]">hỏi · ei</button>
+                                <button class="tag-chip" data-tag="[question-yi]">hỏi · yi</button>
+                            </div>
+                        </div>
+                        <textarea id="tts-text" class="editor-text anim-up d-1" data-i18n-ph="tts_placeholder" placeholder="Bắt đầu gõ, hoặc dán bất kỳ văn bản nào bạn muốn chuyển thành giọng nói sống động..."></textarea>
+
+                        <!-- Player dock -->
+                        <div id="job-progress" class="job-progress" style="display:none;">
+                            <div class="job-progress-head">
+                                <span id="job-progress-label">0/0 đoạn</span>
+                            </div>
+                            <div class="job-progress-track"><div class="job-progress-fill" id="job-progress-fill"></div></div>
+                        </div>
+
+                        <div id="job-resume" class="job-resume" style="display:none;">
+                            <span id="job-resume-label"></span>
+                            <button class="btn-ghost small" id="btn-job-resume">Tiếp tục</button>
+                            <button class="btn-ghost small" id="btn-job-restart">Tạo lại từ đầu</button>
+                        </div>
+
+                        <div id="segment-box" class="segment-box" style="display:none;">
+                            <button class="segment-toggle" id="segment-toggle">
+                                <svg class="icon chev"><use href="#ic-chevron"/></svg>
+                                <span id="segment-count">0 đoạn</span>
+                                <span class="segment-hint">nghe & sinh lại từng đoạn</span>
+                            </button>
+                            <div id="segment-list" class="segment-list"></div>
+                        </div>
+
+                        <div id="tts-result" class="player-card">
+                            <button class="play-btn" id="player-play">
+                                <svg class="icon" id="player-play-icon"><use href="#ic-play"/></svg>
+                            </button>
+                            <div class="player-body">
+                                <div class="player-meta">
+                                    <span class="player-title" id="player-title" data-i18n="result">Kết quả mới nhất</span>
+                                    <span class="player-time"><span id="player-current">0:00</span> / <span id="player-duration">0:00</span></span>
+                                </div>
+                                <div class="waveform" id="waveform"></div>
+                            </div>
+                            <div class="dropdown dl-dropdown" id="dd-download">
+                                <button class="icon-btn" id="player-download" title="Tải xuống" data-i18n-title="download">
+                                    <svg class="icon"><use href="#ic-download"/></svg>
+                                </button>
+                                <div class="dd-menu dd-menu-right" id="download-menu"></div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom bar -->
+                        <div class="editor-bottombar anim-up d-2">
+                            <span class="char-count"><span id="char-count">0</span> <span data-i18n="chars">ký tự</span></span>
+                            <span class="gen-estimate" id="gen-estimate"></span>
+                            <button id="btn-cancel-tts" class="btn-ghost btn-cancel" style="display:none;">
+                                <svg class="icon"><use href="#ic-close"/></svg>
+                                <span>Huỷ</span>
+                            </button>
+                            <button id="btn-generate-tts" class="btn-primary btn-generate">
+                                <svg class="icon"><use href="#ic-spark"/></svg>
+                                <span class="btn-text" data-i18n="generate">Tạo giọng nói</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right settings panel -->
+                    <aside class="rightbar">
+                        <div class="rightbar-tabs">
+                            <button class="rightbar-tab active" data-rtab="rtab-settings" data-i18n="settings">Cài đặt</button>
+                            <button class="rightbar-tab" data-rtab="rtab-history" data-i18n="history">Lịch sử</button>
+                        </div>
+
+                        <!-- Settings pane -->
+                        <div id="rtab-settings" class="rightbar-pane active">
+                            <div class="field anim-right">
+                                <label class="field-label" data-i18n="country">Quốc gia / Ngôn ngữ</label>
+                                <div class="dropdown" id="dd-tts-lang">
+                                    <button class="dd-trigger" type="button">
+                                        <span class="cc-badge" id="tts-lang-flag">VN</span>
+                                        <span class="dd-label" id="tts-lang-label">Tiếng Việt</span>
+                                        <svg class="icon dd-chevron"><use href="#ic-chevron"/></svg>
+                                    </button>
+                                    <div class="dd-menu" id="tts-lang-menu"></div>
+                                </div>
+                            </div>
+
+                            <div class="field anim-right d-1">
+                                <label class="field-label" data-i18n="voice_select">Giọng nói</label>
+                                <div class="dropdown" id="dd-tts-voice">
+                                    <button class="dd-trigger" type="button">
+                                        <span class="dd-avatar" id="tts-voice-avatar"><svg class="icon"><use href="#ic-user"/></svg></span>
+                                        <span class="dd-label" id="tts-voice-label" data-i18n-dyn="default_voice">Giọng mặc định</span>
+                                        <svg class="icon dd-chevron"><use href="#ic-chevron"/></svg>
+                                    </button>
+                                    <div class="dd-menu" id="tts-voice-menu"></div>
+                                </div>
+                                <p class="field-hint" id="voice-lang-hint"></p>
+                            </div>
+
+                            <div class="field anim-right d-2">
+                                <div class="setting-head">
+                                    <label data-i18n="speed">Tốc độ</label>
+                                    <span id="speed-val" class="slider-val editable" title="Nháy đúp để nhập số">1.00×</span>
+                                </div>
+                                <input type="range" id="speed-slider" min="0.5" max="2.0" step="0.01" value="1.00">
+                                <div class="slider-scale"><span data-i18n="slower">Chậm</span><span data-i18n="faster">Nhanh</span></div>
+                            </div>
+
+                            <div class="field anim-right d-3">
+                                <div class="setting-head">
+                                    <label data-i18n="diffusion_steps">Chất lượng</label>
+                                    <span id="steps-val" class="slider-val">24</span>
+                                </div>
+                                <!-- index into STEP_STOPS in main.js, not the raw value -->
+                                <input type="range" id="steps-slider" min="0" max="4" step="1" value="3">
+                                <div class="slider-scale"><span data-i18n="fast_gen">Tạo nhanh</span><span data-i18n="high_quality">Chất lượng cao</span></div>
+                            </div>
+
+                            <div class="field anim-right d-4">
+                                <label class="field-label" for="quality-mode">Lọc lỗi tự động</label>
+                                <select id="quality-mode" class="form-control">
+                                    <option value="balanced" selected>Cân bằng · khuyên dùng</option>
+                                    <option value="deep">Kiểm tra kỹ · chậm hơn</option>
+                                    <option value="off">Tắt · nhanh nhất</option>
+                                </select>
+                                <p class="field-hint">Đoạn sạch giữ nguyên. Chỉ đoạn đáng ngờ mới tự tạo lại.</p>
+                            </div>
+
+                            <div class="field anim-right d-4">
+                                <div class="setting-head">
+                                    <label>Seed</label>
+                                    <button class="icon-btn small" id="btn-seed-dice" title="Seed ngẫu nhiên">🎲</button>
+                                </div>
+                                <input type="text" id="seed-input" class="form-control" inputmode="numeric" placeholder="để trống = ngẫu nhiên">
+                                <p class="field-hint">Cùng seed + cùng chữ = ra đúng bản cũ. Để trống thì mỗi lần một khác.</p>
+                            </div>
+
+                            <button class="reset-btn anim-right d-4" id="btn-reset" data-i18n="reset_values">↺ Khôi phục mặc định</button>
+                        </div>
+
+                        <!-- History pane -->
+                        <div id="rtab-history" class="rightbar-pane">
+                            <div id="history-list"></div>
+                            <div class="history-empty" id="history-empty" data-i18n="history_empty">Chưa có bản âm thanh nào trong phiên này.</div>
+                            <button class="reset-btn" id="btn-clear-history" style="display:none;" data-i18n="clear_history">Xoá lịch sử</button>
+                        </div>
+                    </aside>
+                </div>
+            </section>
+
+            <!-- ===== Tab 2: Clone Voice ===== -->
+            <section id="tab-clone" class="tab-pane">
+                <div class="form-page">
+                    <div class="header-area anim-up">
+                        <h2 data-i18n="clone_title">Sao chép giọng</h2>
+                        <p data-i18n="clone_desc">Tạo giọng mới từ 3–10 giây âm thanh mẫu. Giọng càng rõ, ít tạp âm — kết quả càng giống.</p>
+                    </div>
+
+                    <div class="card anim-up d-1">
+                        <div class="field">
+                            <label class="field-label" for="clone-name" data-i18n="voice_name">Tên giọng</label>
+                            <input type="text" id="clone-name" class="form-control" data-i18n-ph="clone_name_ph" placeholder="VD: Giọng của tôi">
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label" data-i18n="clone_country">Quốc gia của giọng (nhóm giọng)</label>
+                            <div class="dropdown" id="dd-clone-lang">
+                                <button class="dd-trigger" type="button">
+                                    <span class="cc-badge" id="clone-lang-flag">VN</span>
+                                    <span class="dd-label" id="clone-lang-label">Tiếng Việt</span>
+                                    <svg class="icon dd-chevron"><use href="#ic-chevron"/></svg>
+                                </button>
+                                <div class="dd-menu" id="clone-lang-menu"></div>
+                            </div>
+                            <p class="field-hint" data-i18n="clone_country_hint">Giọng sẽ được xếp vào nhóm nước này — ở tab Đọc văn bản, chọn nước là thấy giọng.</p>
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label" data-i18n="ref_audio">Âm thanh mẫu</label>
+                            <div class="clone-source-tabs" role="tablist" aria-label="Nguồn âm thanh">
+                                <button id="clone-source-upload" class="clone-source-tab active" type="button" role="tab" aria-selected="true" data-i18n="upload_tab">Tải file</button>
+                                <button id="clone-source-record" class="clone-source-tab" type="button" role="tab" aria-selected="false" data-i18n="record_tab">Thu trực tiếp</button>
+                            </div>
+                            <div id="record-panel" class="record-panel" hidden>
+                                <div class="record-prompt-card">
+                                    <p id="record-prompt"></p>
+                                    <button id="record-random" class="record-action" type="button" data-i18n="record_change">Đổi văn bản</button>
+                                </div>
+                                <div class="record-controls">
+                                    <span id="record-timer" aria-live="polite">00:00 / 00:10</span>
+                                    <button id="record-start" class="record-action primary" type="button" data-i18n="record_start">Bắt đầu thu</button>
+                                    <button id="record-stop" class="record-action danger" type="button" disabled data-i18n="record_stop">Dừng</button>
+                                    <button id="record-reset" class="record-action" type="button" hidden data-i18n="record_again">Thu lại</button>
+                                </div>
+                                <audio id="record-preview" controls hidden></audio>
+                                <p class="field-hint" data-i18n="record_hint">Đọc tự nhiên ở nơi yên tĩnh. Có thể dừng từ giây thứ 3; tự dừng ở giây thứ 10.</p>
+                            </div>
+                            <div class="upload-area" id="upload-area">
+                                <div class="upload-icon">
+                                    <svg class="icon"><use href="#ic-upload"/></svg>
+                                </div>
+                                <p class="upload-main" data-i18n="upload_hint">Kéo thả file âm thanh vào đây, hoặc bấm để chọn</p>
+                                <p class="upload-sub" data-i18n="upload_formats">WAV, MP3, M4A, FLAC · tốt nhất 3–10 giây</p>
+                                <input type="file" id="clone-audio" accept="audio/*" style="display:none;">
+                            </div>
+                            <div class="file-chip" id="file-chip" style="display:none;">
+                                <svg class="icon"><use href="#ic-audio-file"/></svg>
+                                <span class="file-chip-name" id="file-chip-name"></span>
+                                <span class="file-chip-size" id="file-chip-size"></span>
+                                <button class="icon-btn small" id="file-chip-remove" title="Bỏ file">
+                                    <svg class="icon"><use href="#ic-close"/></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label" for="clone-text" data-i18n="ref_text">Nội dung âm thanh mẫu (không bắt buộc)</label>
+                            <textarea id="clone-text" class="form-control" style="min-height:80px;" data-i18n-ph="ref_text_ph" placeholder="Gõ đúng câu nói trong file mẫu. Bỏ trống để Whisper tự nhận diện."></textarea>
+                        </div>
+
+                        <button id="btn-clone" class="btn-primary btn-generate">
+                            <svg class="icon"><use href="#ic-clone"/></svg>
+                            <span class="btn-text" data-i18n="clone_btn">Tạo bản sao giọng</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===== Tab 3: Design Voice ===== -->
+            <section id="tab-design" class="tab-pane">
+                <div class="form-page">
+                    <div class="header-area anim-up">
+                        <h2 data-i18n="design_title">Thiết kế giọng</h2>
+                        <p data-i18n="design_desc">Tạo giọng theo mô tả: giới tính, độ tuổi, tông giọng, chất giọng, cảm xúc...</p>
+                    </div>
+
+                    <div class="card anim-up d-1">
+                        <div class="field">
+                            <label class="field-label" for="design-name" data-i18n="voice_name">Tên giọng</label>
+                            <input type="text" id="design-name" class="form-control" data-i18n-ph="design_name_ph" placeholder="VD: MC nam trầm ấm">
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label" data-i18n="clone_country">Quốc gia của giọng (nhóm giọng)</label>
+                            <div class="dropdown" id="dd-design-lang">
+                                <button class="dd-trigger" type="button">
+                                    <span class="cc-badge" id="design-lang-flag">VN</span>
+                                    <span class="dd-label" id="design-lang-label">Tiếng Việt</span>
+                                    <svg class="icon dd-chevron"><use href="#ic-chevron"/></svg>
+                                </button>
+                                <div class="dd-menu" id="design-lang-menu"></div>
+                            </div>
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label" for="design-instruct" data-i18n="design_instruct">Mô tả giọng</label>
+                            <textarea id="design-instruct" class="form-control" data-i18n-ph="design_instruct_ph" placeholder="VD: male, low pitch, warm, calm narrator"></textarea>
+                        </div>
+
+                        <div class="field">
+                            <label class="field-label" data-i18n="presets">Mẫu nhanh</label>
+                            <div class="preset-row" id="preset-row">
+                                <button class="chip preset-btn" data-preset="male, low pitch, warm, calm narrator" data-i18n="preset_1">Nam trầm ấm</button>
+                                <button class="chip preset-btn" data-preset="female, soft, gentle, storytelling tone" data-i18n="preset_2">Nữ dịu dàng</button>
+                                <button class="chip preset-btn" data-preset="male, energetic, bright, advertisement voice" data-i18n="preset_3">Nam quảng cáo</button>
+                                <button class="chip preset-btn" data-preset="female, high pitch, whisper" data-i18n="preset_4">Nữ thì thầm</button>
+                                <button class="chip preset-btn" data-preset="elderly male, hoarse, slow, wise tone" data-i18n="preset_5">Ông lão hiền từ</button>
+                                <button class="chip preset-btn" data-preset="young female, cheerful, fast, lively" data-i18n="preset_6">Nữ trẻ sôi nổi</button>
+                            </div>
+                        </div>
+
+                        <button id="btn-design" class="btn-primary btn-generate">
+                            <svg class="icon"><use href="#ic-design"/></svg>
+                            <span class="btn-text" data-i18n="design_btn">Lưu giọng thiết kế</span>
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Hidden players -->
+    <audio id="tts-audio-player" style="display:none;"></audio>
+    <audio id="global-preview-player" style="display:none;"></audio>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="./bridge.js?v=1"></script>
+    <script src="./js/clone-recorder.js"></script>
+    <script src="./js/main.js"></script>
+</body>
+</html>

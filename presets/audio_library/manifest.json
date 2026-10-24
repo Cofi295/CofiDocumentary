@@ -1,0 +1,103 @@
+{
+  "library_version": "2.1.0",
+  "description": "COFI Documentary Real Studio BGM & Foley SFX Library (100% Real Recorded Audio)",
+  "bgm": [
+    {
+      "file": "bgm_dark_ambient_drone.mp3",
+      "size_kb": 16501,
+      "duration_sec": 600.03
+    },
+    {
+      "file": "bgm_emerging_mysteries.mp3",
+      "size_kb": 2174,
+      "duration_sec": 84.87
+    },
+    {
+      "file": "bgm_forensic_pulse.mp3",
+      "size_kb": 10461,
+      "duration_sec": 267.76
+    },
+    {
+      "file": "bgm_gathering_darkness.mp3",
+      "size_kb": 10352,
+      "duration_sec": 264.96
+    },
+    {
+      "file": "bgm_investigative_bed.mp3",
+      "size_kb": 11140,
+      "duration_sec": 285.15
+    }
+  ],
+  "sfx": [
+    {
+      "file": "sfx_camera_shutter.mp3",
+      "size_kb": 36,
+      "duration_sec": 1.54
+    },
+    {
+      "file": "sfx_cell_door.mp3",
+      "size_kb": 67,
+      "duration_sec": 2.85
+    },
+    {
+      "file": "sfx_chapter_hit.mp3",
+      "size_kb": 66,
+      "duration_sec": 2.12
+    },
+    {
+      "file": "sfx_data_ping.mp3",
+      "size_kb": 25,
+      "duration_sec": 1.32
+    },
+    {
+      "file": "sfx_deep_impact.mp3",
+      "size_kb": 81,
+      "duration_sec": 2.59
+    },
+    {
+      "file": "sfx_dossier_stamp.mp3",
+      "size_kb": 53,
+      "duration_sec": 2.25
+    },
+    {
+      "file": "sfx_paper_turn.mp3",
+      "size_kb": 43,
+      "duration_sec": 1.83
+    },
+    {
+      "file": "sfx_soft_impact.mp3",
+      "size_kb": 81,
+      "duration_sec": 2.59
+    },
+    {
+      "file": "sfx_soft_whoosh.mp3",
+      "size_kb": 17,
+      "duration_sec": 0.57
+    },
+    {
+      "file": "sfx_somber_chime.mp3",
+      "size_kb": 26,
+      "duration_sec": 2.54
+    },
+    {
+      "file": "sfx_telemetry_tick.mp3",
+      "size_kb": 11,
+      "duration_sec": 0.37
+    },
+    {
+      "file": "sfx_tension_riser.mp3",
+      "size_kb": 313,
+      "duration_sec": 10.03
+    },
+    {
+      "file": "sfx_transition_whoosh.mp3",
+      "size_kb": 173,
+      "duration_sec": 5.54
+    },
+    {
+      "file": "sfx_typing_log.mp3",
+      "size_kb": 26,
+      "duration_sec": 1.54
+    }
+  ]
+}

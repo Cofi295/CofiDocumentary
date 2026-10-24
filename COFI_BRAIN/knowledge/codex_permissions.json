@@ -1,0 +1,18 @@
+{
+  "enabled": true,
+  "project_root": "B:\\ALL_TOOLS\\CofiDocumentary",
+  "providers": [
+    "codex",
+    "gemini",
+    "auto"
+  ],
+  "read_source": true,
+  "write_source": true,
+  "run_commands": true,
+  "run_tests": true,
+  "read_logs": true,
+  "restart_application": true,
+  "background_jobs": true,
+  "independent_verification": true,
+  "destructive_changes": false
+}

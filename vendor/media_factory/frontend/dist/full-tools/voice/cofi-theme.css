@@ -1,0 +1,56 @@
+:root[data-theme="dark"] {
+  --bg: #07101c;
+  --surface: #0c1624;
+  --surface-2: #111b2a;
+  --surface-3: #152235;
+  --border: #203149;
+  --border-strong: #2b3d57;
+  --ink: #f4f7fb;
+  --ink-2: #b7c2d1;
+  --ink-3: #8491a3;
+  --accent: #7c4dff;
+  --accent-2: #5ca9ff;
+  --accent-hover: #8e6aff;
+  --accent-soft: rgba(124,77,255,.16);
+  --accent-softer: rgba(124,77,255,.08);
+  --accent-border: rgba(124,77,255,.42);
+  --gradient-accent: linear-gradient(145deg, #7c4dff 0%, #5ca9ff 100%);
+  --gradient-text: linear-gradient(145deg, #a991ff 0%, #75b8ff 100%);
+  --success: #38d39f;
+  --error: #ff647c;
+  --r-sm: 7px;
+  --r-md: 8px;
+  --r-lg: 10px;
+  --r-xl: 12px;
+}
+
+body { font-size: 12px; background: radial-gradient(circle at 68% 0%, rgba(124,77,255,.07), transparent 34%), var(--bg); }
+.titlebar { display: none !important; }
+.app-container { height: 100vh; }
+.sidebar { width: 196px; padding: 12px 9px; border-color: var(--border); background: #091320; }
+.sidebar-header { gap: 9px; padding: 0 7px; margin-bottom: 18px; }
+.logo-mark { width: 30px; height: 30px; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); }
+.logo-mark .icon { width: 17px; height: 17px; }
+.logo-text h1 { font-size: .92rem; }
+.logo-text span { font-size: .62rem; }
+.nav-section-label { padding: 10px 8px 4px; font-size: .58rem; letter-spacing: .11em; }
+.nav-item { gap: 8px; padding: 8px 9px; border: 1px solid transparent; border-radius: 7px; font-size: 10px; font-weight: 600; }
+.nav-item.active { border-color: rgba(124,77,255,.22); background: rgba(124,77,255,.16); box-shadow: inset 2px 0 0 #7c4dff; }
+.nav-item.active::before { display: none; }
+.sidebar-footer { gap: 8px; padding-top: 10px; }
+.engine-status { padding: 0 8px; font-size: .62rem; }
+.lang-btn { border-radius: 6px; font-size: .62rem; }
+.theme-btn { border-radius: 6px; }
+.editor-col { padding: 20px 28px 16px; }
+.editor-head { margin-bottom: 10px; }
+.editor-head h2 { font-size: 1.1rem; }
+.editor-text { font-size: 1rem; line-height: 1.65; }
+.rightbar { border-color: var(--border); background: var(--surface); }
+.card, .player-card, .upload-area, .form-control, .dd-trigger, .dd-menu { border-radius: 8px !important; }
+.primary-btn, .btn-primary, button.primary { border-radius: 7px !important; background: #7c4dff !important; box-shadow: none !important; }
+.orb { opacity: .2; }
+
+@media (max-width: 1000px) {
+  .sidebar { width: 170px; }
+  .editor-col { padding-inline: 20px; }
+}

@@ -1,0 +1,29 @@
+{
+  "playbooks": [
+    {
+      "id": "kr_cn_true_crime_full_ai_30m",
+      "name": "🇰🇷 True Crime Hình Sự Trung Quốc (KR · 30 Phút · 100% Full AI)",
+      "description": "Trọng án hình sự có thật tại Trung Quốc (tội phạm nguy hiểm, hiện trường bí ẩn, truy bắt pháp y) — 30 phút 5 hồi, 100% Full AI đồng bộ ảnh tham chiếu, 100% Xanh tiền YouTube.",
+      "builtin": false,
+      "built_in": false,
+      "market": "KR",
+      "language": "ko",
+      "visual_strategy": "full_ai",
+      "ai_media_mode": "image",
+      "creative_brief": {
+        "narrative_angle": "Điều tra Hồ sơ Hình sự & Giải mã Tâm lý Tội phạm Nguy hiểm (형사 수사 기록 & 프로파일링 — Ngôi thứ 3)",
+        "writing_style": "Phóng sự Điều tra Hình sự Hàn Quốc Sắc Lạnh (그것이 알고싶다 / 꼬꼬무 스타일 — 5 Hồi 30 Phút)",
+        "hook_archetype": "Mỏ neo Nghịch lý Vỏ bọc Hai Mặt & Hiện trường Khóa kín (00:00–03:30)",
+        "editing_archetypes": [
+          "Hồ sơ điều tra & Sơ đồ mạng lưới",
+          "Phóng to chi tiết & Quét tài liệu",
+          "Chia đôi màn hình đối chiếu",
+          "Bản đồ 2.5D & Camera vệ tinh"
+        ],
+        "opening_hook": "",
+        "custom_rules": "CHUẨN DNA KÊNH ĐỘC QUYỀN (KR - 30 PHÚT - 100% FULL AI): (1) CHỈ LÀM Trọng án hình sự có thật tại Trung Quốc (중국 강력범죄 실화 / 일급 수배범 / 미제사건): Tội phạm cực kỳ nguy hiểm có IQ cao xóa dấu vết, vỏ bọc hai mặt lẩn trốn 10-30 năm, hiện trường bí ẩn và cuộc truy bắt/đấu trí pháp y của cảnh sát hình sự; (2) TUYỆT ĐỐI CẤM: Án tham nhũng quan chức, kinh tế, hối lộ, chính trị, hạ tầng; (3) AN TOÀN KIẾM TIỀN 100% XANH TIỀN (GREEN MONETIZATION): Ngôi kể thứ 3 theo góc nhìn Điều tra viên Hình sự, cắt bỏ 100% miêu tả hành vi đâm chém/tra tấn/thi thể máu me (dùng kỹ thuật Cắt cảnh Sau Cơn Bão chuyển thẳng sang khám nghiệm pháp y), cấm từ khóa cờ đỏ trong 60s đầu; (4) CẤU TRÚC 5 HỒI 30 PHÚT (~280-320 beats): Hồi 1 (00:00-03:30) Mỏ neo Nghịch lý & Hiện trường khóa kín -> Hồi 2 (03:30-10:00) Giải mã Pháp y & Ngõ cụt -> Hồi 3 (10:00-18:00) Vỏ bọc Hai Mặt của Kẻ Thủ Ác -> Hồi 4 (18:00-25:00) Manh mối Chí mạng & Vây bắt -> Hồi 5 (25:00-30:00) Đấu trí Phòng Thẩm vấn & Phán quyết; (5) HÌNH ẢNH: 100% Full AI đồng bộ theo Ảnh tham chiếu (Reference Image) nạp ở mỗi tập. [QUY TẮC SEO & THUMBNAIL ĐỘC QUYỀN @판세의이면]: (1) Tiêu đề dưới 80 ký tự (chuẩn 50-65 ký tự), luôn có cấu trúc [중국 실화 사건] ở đầu hoặc sau dấu | ; tuyệt đối cấm từ nhạy cảm 연쇄살인사건 (đổi thành 최악의 미제사건 hoặc 11명을 해친 진범) và cấm cụm [중국에서 있었던 실제 사례] ở 25 ký tự đầu; (2) Thumbnail chuẩn 100% DNA @판세의이면: 1 Tag chữ xanh lá góc trái trên + 2 dòng chữ cực to dưới đáy (Dòng 1 Vàng to: Chi tiết/lời khai gây sốc nhất — Dòng 2 Đỏ cực to: Thân phận rợn người) + 1 Mũi tên đỏ chỉ điểm trực quan; tuyệt đối cấm đặt tên riêng hung thủ xa lạ (như 가오청융) ở trung tâm và cấm dòng chữ nhỏ thứ 3 làm lộ kết quả (Spoiler); (3) Thumbnail và Tiêu đề phải bổ sung mảnh ghép tò mò cho nhau, tuyệt đối không chép lại nhau."
+      },
+      "updated_at": "2026-10-17T09:09:50.718690+00:00"
+    }
+  ]
+}

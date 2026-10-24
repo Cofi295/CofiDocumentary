@@ -1,0 +1,14 @@
+# COFI DOCUMENTARY — Quy tắc sản xuất
+
+COFI DOCUMENTARY là hệ điều hành sản xuất video tài liệu dùng tư liệu thật, dành cho video 2–30 phút.
+
+1. Luồng chuẩn có phase chung `plan -> voice -> visuals`, sau đó rẽ nhánh theo `visual_strategy`: Full AI = `ai_visual -> edit -> seo -> qc`; Full Footage = `footage -> edit -> seo -> qc`; Hybrid = `footage -> ai_visual -> edit -> seo -> qc`; Bằng chứng + AI (`evidence_footage`) = `footage -> ai_visual -> edit -> seo -> qc`. Không dùng tỷ lệ AI/Footage cố định cho Hybrid.
+2. `visual_manifest.json` và `beat_id` là trục đồng bộ. Sau Voice, `visuals`/STP phải chia 100% lời thoại thành các visual ngắn đủ nghĩa, một dòng một prompt, không được bỏ text; mỗi visual giữ liên kết về beat gốc.
+3. COFI RADAR là đầu vào tìm chủ đề cho kênh mới hoặc video tiếp theo; không sao chép engine Radar vào repo này.
+4. Codex CLI hoặc Gemini CLI đảm nhiệm nghiên cứu + kịch bản + chia cảnh. Tìm tư liệu mặc định dùng cả Codex và Gemini để tăng độ phủ và đối chiếu.
+5. Kết quả tìm kiếm chỉ là ứng viên. Trước khi chấp nhận phải kiểm tra video thật hoặc các khung hình đại diện và ghi đoạn thời gian dùng được, nguồn, mức khớp hình, chất lượng, watermark/logo và rủi ro quyền sử dụng.
+6. Không kéo dài video bằng tư liệu không liên quan. Full AI bỏ qua Footage và tạo media cho toàn bộ visual; Full Footage bỏ qua AI Visual; Hybrid route từng visual theo cốt truyện; Bằng chứng + AI (`evidence_footage`) chỉ dùng Footage cho bằng chứng/nhân vật 100% xác thực (ảnh thẻ/chân dung thật, tài liệu lưu trữ gốc, bản án, văn bản chính thức có dấu mộc), toàn bộ cảnh bối cảnh/tái hiện/không gian dùng AI Visual (ảnh/video). Media AI phải được ghi nhãn là minh hoạ tái dựng và không được giả làm tư liệu thật.
+7. Dùng CofiVoice để tạo giọng đọc + SRT theo đoạn. Dùng CofiRemotion để dựng, xem trước và kết xuất. Đọc `B:\ALL_TOOLS\CofiRemotion\AGENTS.md` trước khi sửa mã dựng hoặc kiểm tra video cuối.
+8. Mã dựng và điểm lưu phải nằm trong workspace của dự án để khi mất kết nối có thể mở lại và tiếp tục từ trạng thái đã lưu.
+9. Bản kết xuất chỉ được chấp nhận sau khi kiểm tra MP4 cuối và hợp đồng chất lượng đạt yêu cầu.
+10. Các trường liên quan bản quyền/nội dung tái sử dụng chỉ là tín hiệu rủi ro; không được tuyên bố chắc chắn về fair use hay khả năng kiếm tiền.

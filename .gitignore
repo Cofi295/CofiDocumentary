@@ -1,0 +1,42 @@
+﻿# Python & Environments
+__pycache__/
+*.py[cod]
+*.class
+.venv/
+venv/
+env/
+python_embeded/
+.pytest_cache/
+.pytest_tmp*/
+data/pytest_tmp/
+data/tmp_pytest*/
+
+# Node / Remotion caches
+node_modules/
+.cache/
+.remotion/
+
+# Runtime logs, temp workspaces & heavy outputs
+.producer/
+workspaces/
+jobs/
+backups/
+logs/
+*.log
+data/backups/
+data/chat_uploads/
+data/footage_library/
+data/jobs/
+data/jobs.json/
+data/logs/
+data/media_factory/
+data/outputs/
+data/secrets/
+vendor/media_factory/data/
+vendor/media_factory/secrets/
+
+# Heavy binary tools & >100MB sample videos
+tools/*.exe
+tools/*.dll
+benchmarks/*.mp4
+static/vox_studio/vox_5min_studio_master.mp4

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#061019">
+  <title>COFI RADAR — Hệ điều hành xu hướng YouTube</title>
+  <link rel="stylesheet" href="./styles.css?v=20260906-profile-dialog-2">
+  <link rel="stylesheet" href="./cofi-theme.css?v=1">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Bỏ qua điều hướng</a>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Điều hướng chính">
+      <a class="brand" href="#/dashboard" aria-label="COFI RADAR — Tổng quan">
+        <span class="brand-mark" aria-hidden="true">◉</span>
+        <span class="brand-copy">
+          <strong>COFI RADAR</strong>
+          <small>HỆ ĐIỀU HÀNH XU HƯỚNG</small>
+        </span>
+      </a>
+
+      <nav class="nav-groups">
+        <div class="nav-group">
+          <p class="nav-label">Vận hành</p>
+          <a class="nav-item" data-route="dashboard" href="#/dashboard"><span aria-hidden="true">⌂</span><span>Tổng quan</span></a>
+          <a class="nav-item" data-route="trend" href="#/trend"><span aria-hidden="true">◎</span><span>Radar xu hướng</span></a>
+          <a class="nav-item" data-route="niches" href="#/niches"><span aria-hidden="true">△</span><span>Phòng thí nghiệm ngách</span></a>
+          <a class="nav-item" data-route="channels" href="#/channels"><span aria-hidden="true">▣</span><span>Kênh của tôi</span></a>
+          <a class="nav-item" data-route="plan" href="#/plan"><span class="nav-number" aria-hidden="true">30</span><span>30 video</span></a>
+          <a class="nav-item" data-route="today" href="#/today"><span aria-hidden="true">☷</span><span>Hôm nay</span></a>
+        </div>
+
+        <div class="nav-group">
+          <p class="nav-label">Dữ liệu</p>
+          <a class="nav-item" data-route="evidence" href="#/evidence"><span aria-hidden="true">▤</span><span>Thư viện bằng chứng</span></a>
+          <a class="nav-item" data-route="sources" href="#/sources"><span aria-hidden="true">↗</span><span>Nguồn dữ liệu</span></a>
+          <a class="nav-item" data-route="settings" href="#/settings"><span aria-hidden="true">⚙</span><span>Cài đặt</span></a>
+        </div>
+      </nav>
+
+      <section class="scanner-status" aria-label="Trạng thái máy quét">
+        <div class="scanner-status__top">
+          <span><i class="status-dot" id="scannerDot" aria-hidden="true"></i><span id="scannerState">Chưa xác định</span></span>
+          <span id="scannerMarket">—</span>
+        </div>
+        <p id="scannerMeta">Đang chờ dữ liệu từ máy chủ.</p>
+      </section>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <div class="topbar-copy">
+          <span class="eyebrow">Không gian làm việc</span>
+          <h1 id="viewTitle">Tổng quan</h1>
+        </div>
+        <div class="topbar-actions">
+          <span class="api-state" id="apiState"><i aria-hidden="true"></i><span>Đang kiểm tra API</span></span>
+          <button class="button button--ghost" id="refreshButton" type="button">Làm mới</button>
+          <a class="button button--primary" id="scanShortcut" href="#/trend">Quét thị trường</a>
+        </div>
+      </header>
+
+      <main id="main-content" class="content" tabindex="-1">
+        <div id="appView" class="view" aria-live="polite" aria-busy="true"></div>
+      </main>
+    </div>
+  </div>
+
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="detail-drawer" id="detailDrawer" aria-label="Chi tiết" aria-hidden="true">
+    <div id="drawerContent"></div>
+  </aside>
+
+  <dialog class="channel-profile-dialog" id="channelProfileDialog" aria-labelledby="channelProfileDialogTitle">
+    <div class="channel-profile-dialog__shell">
+      <header class="channel-profile-dialog__head">
+        <div>
+          <span class="eyebrow">HỒ SƠ KÊNH</span>
+          <h2 id="channelProfileDialogTitle">Chi tiết hồ sơ</h2>
+        </div>
+        <button class="channel-profile-dialog__close" id="closeChannelProfileDialog" type="button" aria-label="Đóng">×</button>
+      </header>
+      <div id="channelProfileDialogBody"></div>
+    </div>
+  </dialog>
+
+  <div class="toast-region" id="toastRegion" aria-live="polite" aria-atomic="true"></div>
+
+  <script src="./bridge.js?v=1"></script>
+  <script src="./app.js?v=20260906-profile-dialog-2" defer></script>
+</body>
+</html>

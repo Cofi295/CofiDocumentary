@@ -1,0 +1,8 @@
+{
+   "appDescription": {
+      "message": "Official companion extension for G-Labs Studio. Requires desktop app version 6.0.9 or later."
+   },
+   "appName": {
+      "message": "G-Labs Studio - Auth Helper"
+   }
+}
