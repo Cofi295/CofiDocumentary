@@ -745,6 +745,24 @@ class BackgroundRenderCache:
                 set((current.get("dirty_beat_ids") or []) + auto_dirty_beats)
             )
             planned["dirty_beat_ids"] = combined_dirty
+            if isinstance(current.get("last_delta_window_sec"), dict):
+                planned["last_delta_window_sec"] = dict(current["last_delta_window_sec"])
+            elif combined_dirty:
+                timings = self._timings(workspace, beats)
+                matched = [
+                    t
+                    for t in timings
+                    if any(
+                        self._chunk_matches_beat({"beat_ids": [t.get("beat_id")]}, b)
+                        for b in combined_dirty
+                    )
+                ]
+                if matched:
+                    planned["last_delta_window_sec"] = {
+                        "start_sec": round(min(float(t["start_sec"]) for t in matched), 3),
+                        "end_sec": round(max(float(t["end_sec"]) for t in matched), 3),
+                        "beat_ids": combined_dirty,
+                    }
             for chunk, old in zip(planned["chunks"], old_chunks):
                 chunk_dirty = sorted(
                     set(
@@ -1294,12 +1312,37 @@ class BackgroundRenderCache:
             manifest["beat_signatures"] = current_sigs
         if is_selective:
             manifest["selective_invalidation"] = True
-            manifest["dirty_beat_ids"] = sorted(
+            merged_dirty = sorted(
                 set((manifest.get("dirty_beat_ids") or []) + explicit_beats)
             )
+            manifest["dirty_beat_ids"] = merged_dirty
+            vis = self._read_json(workspace / "visual_manifest.json")
+            vis_beats = [b for b in (vis.get("beats") or []) if isinstance(b, dict)]
+            timings = self._timings(workspace, vis_beats) if vis_beats else []
+            matched_timings = [
+                t
+                for t in timings
+                if any(
+                    self._chunk_matches_beat({"beat_ids": [t.get("beat_id")]}, b)
+                    for b in merged_dirty
+                )
+            ]
+            if matched_timings:
+                manifest["last_delta_window_sec"] = {
+                    "start_sec": round(min(float(t["start_sec"]) for t in matched_timings), 3),
+                    "end_sec": round(max(float(t["end_sec"]) for t in matched_timings), 3),
+                    "beat_ids": merged_dirty,
+                }
+            elif targets:
+                manifest["last_delta_window_sec"] = {
+                    "start_sec": round(min(float(c.get("start_sec") or 0.0) for c in targets), 3),
+                    "end_sec": round(max(float(c.get("end_sec") or 0.0) for c in targets), 3),
+                    "beat_ids": merged_dirty,
+                }
         else:
             manifest["selective_invalidation"] = False
             manifest["dirty_beat_ids"] = []
+            manifest["last_delta_window_sec"] = None
         manifest["finalized_signature"] = None
         manifest["finalized_validation_version"] = None
         self._refresh_summary(manifest)

@@ -2198,7 +2198,9 @@ class DocumentaryService:
         """Detect long black frames / silences in the rendered MP4 with ffmpeg.
 
         Thresholds target real defects (a beat without media, a hole in the
-        narration) rather than short stylistic fades.
+        narration) rather than short stylistic fades. When re-exporting after a
+        delta beat edit, scans only the modified time window (±3s margin) if a
+        prior full scan already passed.
         """
         bundled = self.root / "tools" / "ffmpeg.exe"
         ffmpeg = os.getenv("COFI_FFMPEG_BIN") or (str(bundled) if bundled.exists() else None) or shutil.which("ffmpeg")
@@ -2213,11 +2215,35 @@ class DocumentaryService:
                 getattr(subprocess, "CREATE_NO_WINDOW", 0)
                 | getattr(subprocess, "BELOW_NORMAL_PRIORITY_CLASS", 0x00004000)
             )
+        workspace = video.parent.parent
+        scan_offset = 0.0
+        seek_args: list[str] = []
+        try:
+            cache_manifest = self._read_json_dict(workspace / "render_cache_manifest.json")
+            prior_pass = self._read_json_dict(workspace / "qc_scan_passed.json")
+            delta_win = cache_manifest.get("last_delta_window_sec")
+            if (
+                prior_pass.get("passed") is True
+                and abs(float(prior_pass.get("duration_seconds") or 0.0) - duration) < 1.5
+                and isinstance(delta_win, dict)
+            ):
+                w_start = float(delta_win.get("start_sec") or 0.0)
+                w_end = float(delta_win.get("end_sec") or 0.0)
+                if 0.0 <= w_start < w_end and (w_end - w_start) < duration * 0.65:
+                    scan_offset = max(0.0, w_start - 3.0)
+                    scan_dur = min(duration - scan_offset, (w_end - w_start) + 6.0)
+                    seek_args = ["-ss", f"{scan_offset:.3f}", "-t", f"{scan_dur:.3f}"]
+        except Exception:
+            seek_args = []
+            scan_offset = 0.0
+
         result = subprocess.run(
             [
                 ffmpeg, "-hide_banner", "-nostats",
                 "-threads", "2", "-filter_threads", "2",
-                "-hwaccel", "auto", "-i", str(video),
+                "-hwaccel", "auto",
+                *seek_args,
+                "-i", str(video),
                 "-vf", f"scale=160:90:flags=fast_bilinear,blackdetect=d={black_min}:pix_th=0.10",
                 "-af", f"silencedetect=noise=-48dB:d={silence_min}",
                 "-f", "null", "-",
@@ -2230,15 +2256,18 @@ class DocumentaryService:
         log = result.stderr or ""
         black: list[dict[str, float]] = []
         for match in re.finditer(r"black_start:([\d.]+)\s+black_end:([\d.]+)\s+black_duration:([\d.]+)", log):
-            start, end, length = (float(value) for value in match.groups())
+            raw_start, raw_end, length = (float(value) for value in match.groups())
+            start = raw_start + scan_offset
+            end = raw_end + scan_offset
             if (start <= edge or end >= duration - edge) and length <= edge * 2:
                 continue  # short intro/outro fade
             black.append({"start": round(start, 3), "end": round(end, 3), "duration": round(length, 3)})
         silence: list[dict[str, float]] = []
         starts = [float(value) for value in re.findall(r"silence_start:\s*([\d.]+)", log)]
         ends = re.findall(r"silence_end:\s*([\d.]+)\s*\|\s*silence_duration:\s*([\d.]+)", log)
-        for start, (end, length) in zip(starts, ends):
-            end_f = float(end)
+        for raw_start, (raw_end, length) in zip(starts, ends):
+            start = raw_start + scan_offset
+            end_f = float(raw_end) + scan_offset
             if (start <= edge or end_f >= duration - edge) and float(length) <= edge * 2:
                 continue
             silence.append({"start": round(start, 3), "end": round(end_f, 3), "duration": round(float(length), 3)})
@@ -2296,6 +2325,21 @@ class DocumentaryService:
         if problems:
             _write_json_atomic(workspace / "qc_content_report.json", {**content, "created_at": _now()})
             raise RuntimeError("File xuất có lỗi nội dung: " + "; ".join(problems))
+
+        try:
+            _write_json_atomic(
+                workspace / "qc_scan_passed.json",
+                {
+                    "passed": True,
+                    "duration_seconds": float(metrics["duration_seconds"]),
+                    "updated_at": _now(),
+                },
+            )
+            if cache and cache.get("last_delta_window_sec"):
+                cache["last_delta_window_sec"] = None
+                _write_json_atomic(workspace / "render_cache_manifest.json", cache)
+        except Exception:
+            pass
 
         digest = hashlib.sha256()
         with video.open("rb") as handle:
