@@ -1763,7 +1763,9 @@ class DocumentaryService:
             except Exception:
                 pass
             try:
-                self.render_cache.invalidate(workspace)
+                cache_manifest = self._read_json_dict(workspace / "render_cache_manifest.json")
+                if not cache_manifest.get("selective_invalidation"):
+                    self.render_cache.invalidate(workspace)
             except Exception:
                 pass
             self._invalidate_export_artifacts(workspace)
@@ -3258,6 +3260,8 @@ class DocumentaryService:
         append_history("user", message, attachments)
         source_signer = getattr(self.render_cache, "_source_signature", None)
         source_before = source_signer() if callable(source_signer) else None
+        beat_signer = getattr(self.render_cache, "snapshot_beat_signatures", None)
+        beats_before = beat_signer(workspace) if callable(beat_signer) else {}
         chat_provider = str(self._ai_account_settings.get("chat_provider") or "auto").strip().lower()
         result = self._run_chat_prompt(
             prompt,
@@ -3274,7 +3278,16 @@ class DocumentaryService:
             ),
         )
         source_after = source_signer() if callable(source_signer) else None
-        source_changed = bool(source_before and source_after and source_before != source_after)
+        beats_after = beat_signer(workspace) if callable(beat_signer) else {}
+        changed_beat_ids = (
+            [bid for bid, sig in beats_after.items() if beats_before.get(bid) != sig]
+            if (beats_before and beats_after)
+            else []
+        )
+        source_changed = bool(
+            (source_before and source_after and source_before != source_after)
+            or changed_beat_ids
+        )
         if source_changed:
             self._mark_qc_stale_after_edit(job_id, workspace)
         if result.returncode != 0:
@@ -3287,7 +3300,32 @@ class DocumentaryService:
             try:
                 visual = json.loads((workspace / "visual_manifest.json").read_text(encoding="utf-8"))
                 beats = [item for item in (visual.get("beats") or []) if isinstance(item, dict) and item.get("beat_id")]
-                self.render_cache.invalidate(workspace, beat_id=beat_id, timestamp_sec=timestamp_sec)
+                mentioned_beats = [
+                    m.upper()
+                    for m in re.findall(r"\bB\d{3}(?:-V\d{2})?\b", f"{message}\n{reply}", flags=re.IGNORECASE)
+                ]
+                target_beats = list(dict.fromkeys(([beat_id] if beat_id else []) + changed_beat_ids + mentioned_beats))
+                effective_beat_id = beat_id or (target_beats[0] if len(target_beats) == 1 else None)
+                if len(target_beats) > 1:
+                    try:
+                        self.render_cache.invalidate(
+                            workspace,
+                            beat_id=effective_beat_id,
+                            beat_ids=target_beats,
+                            timestamp_sec=timestamp_sec,
+                        )
+                    except TypeError:
+                        self.render_cache.invalidate(
+                            workspace,
+                            beat_id=effective_beat_id,
+                            timestamp_sec=timestamp_sec,
+                        )
+                else:
+                    self.render_cache.invalidate(
+                        workspace,
+                        beat_id=effective_beat_id,
+                        timestamp_sec=timestamp_sec,
+                    )
                 if getattr(self.render_cache, "render_during_edit", False):
                     self.render_cache.rebuild_async(job, workspace, beats)
             except (OSError, json.JSONDecodeError):

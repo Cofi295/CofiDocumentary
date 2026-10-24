@@ -2185,3 +2185,59 @@ def test_producer_chat_context_reports_ai_visual_pause_and_error_details(tmp_pat
     assert live["error_count"] == 1
     assert live["last_error"] == "HTTP 429 Too Many Requests"
     assert live["current_beat_id"] == "B002"
+
+
+def test_edit_chat_single_beat_and_qc_rerun_preserves_selective_cache_invalidation(tmp_path: Path, monkeypatch):
+    from documentary.render_cache import BackgroundRenderCache
+    from tests.test_render_cache import FakeRenderRunner, write_progress, write_project_files
+
+    remotion_dir = tmp_path / "CofiRemotion"
+    (remotion_dir / "scripts").mkdir(parents=True, exist_ok=True)
+    (remotion_dir / "src").mkdir(parents=True, exist_ok=True)
+    (remotion_dir / "src" / "index.ts").write_text("export {};", encoding="utf-8")
+    (remotion_dir / "scripts" / "combine-cofi-cache.mjs").write_text("// fake", encoding="utf-8")
+
+    runner = FakeRenderRunner()
+    real_cache = BackgroundRenderCache(remotion_dir, chunk_seconds=30, concurrency=1, poll_interval=0.02, runner=runner)
+    real_cache._npx = lambda: "npx"  # type: ignore[method-assign]
+
+    class EditingBeatGateway(FakeGateway):
+        def run_prompt_reusable(self, prompt, workspace, label, **kwargs):
+            (remotion_dir / "src" / "index.ts").write_text("export const beatFix = 'B004';", encoding="utf-8")
+            return StageResult(0, "Đã sửa cảnh B004.", Path(workspace) / label)
+
+    service = DocumentaryService(
+        root=tmp_path / "documentary",
+        store=JobStore(tmp_path / "jobs"),
+        gateway=EditingBeatGateway(),
+        voice_engine=FakeVoice(),
+        footage_coordinator=FakeFootage(),
+        render_cache=real_cache,
+        remotion_dir=remotion_dir,
+    )
+    job = service.create_job({"title": "Delta Re-render Test"})
+    workspace = Path(job["workspace"])
+    beats = write_project_files(workspace, beat_count=7, beat_seconds=10)
+    write_progress(workspace, [f"B{index:03d}" for index in range(1, 8)], total=7, status="completed")
+
+    # 1. Initial full render: renders all 3 chunks
+    initial = real_cache.render_ready(job, workspace, beats, render_all=True)
+    assert initial["ready_chunks"] == 3
+    assert len([c for c in runner.calls if "remotion" in c]) == 3
+
+    # 2. User edits B004 via edit_chat (even without selecting beat_id in UI, mentioned in prompt/reply)
+    service.edit_chat(job["id"], "Sửa hiệu ứng chữ ở B004")
+    manifest_after_edit = json.loads((workspace / "render_cache_manifest.json").read_text(encoding="utf-8"))
+    assert manifest_after_edit["selective_invalidation"] is True
+    assert manifest_after_edit["dirty_beat_ids"] == ["B004"]
+    assert [c["status"] for c in manifest_after_edit["chunks"]] == ["ready", "pending", "ready"]
+
+    # 3. User triggers rerun("qc") to export again -> must NOT wipe chunks 1 & 3
+    monkeypatch.setattr(service, "start", lambda job_id, phase: service.get_job(job_id))
+    service.rerun(job["id"], "qc")
+
+    re_exported = real_cache.render_ready(job, workspace, beats, render_all=True)
+    assert re_exported["ready_chunks"] == 3
+    remotion_calls = [c for c in runner.calls if "remotion" in c]
+    assert len(remotion_calls) == 4
+    assert "--frames=900-1799" in remotion_calls[-1]

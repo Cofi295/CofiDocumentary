@@ -325,3 +325,57 @@ def test_live_hardware_governor_reserves_cpu_ram_and_vram_headroom():
     assert "RAM trống" in hw["summary"]
 
 
+def test_selective_beat_edit_preserves_unedited_chunks_even_when_remotion_source_changes(tmp_path: Path):
+    beats = write_project_files(tmp_path, beat_count=7, beat_seconds=10)
+    runner = FakeRenderRunner()
+    cache = make_cache(tmp_path, runner)
+    write_progress(tmp_path, [f"B{index:03d}" for index in range(1, 8)], total=7, status="completed")
+    ready = cache.render_ready(job(), tmp_path, beats, render_all=True)
+    assert ready["ready_chunks"] == 3
+    assert len([call for call in runner.calls if "remotion" in call]) == 3
+
+    # Simulate edit_chat modifying Remotion source for beat B004 and calling selective invalidate
+    source = cache.remotion_dir / "src" / "index.ts"
+    source.write_text("export const editedBeat = 'B004';", encoding="utf-8")
+    invalidated = cache.invalidate(tmp_path, beat_id="B004")
+    assert invalidated == [2]
+
+    manifest_after_inv = json.loads((tmp_path / "render_cache_manifest.json").read_text(encoding="utf-8"))
+    assert manifest_after_inv["selective_invalidation"] is True
+    assert manifest_after_inv["dirty_beat_ids"] == ["B004"]
+    assert [c["status"] for c in manifest_after_inv["chunks"]] == ["ready", "pending", "ready"]
+
+    # Re-exporting must ONLY re-render chunk 2 (frames 900-1799), not chunks 1 or 3
+    re_rendered = cache.render_ready(job(), tmp_path, beats, render_all=True)
+    assert re_rendered["ready_chunks"] == 3
+    render_calls = [call for call in runner.calls if "remotion" in call]
+    assert len(render_calls) == 4
+    assert "--frames=900-1799" in render_calls[-1]
+
+
+def test_auto_beat_diff_invalidates_only_modified_beat_chunk(tmp_path: Path):
+    beats = write_project_files(tmp_path, beat_count=7, beat_seconds=10)
+    runner = FakeRenderRunner()
+    cache = make_cache(tmp_path, runner)
+    write_progress(tmp_path, [f"B{index:03d}" for index in range(1, 8)], total=7, status="completed")
+    ready = cache.render_ready(job(), tmp_path, beats, render_all=True)
+    assert ready["ready_chunks"] == 3
+
+    # Modify only beat B007 in visual_manifest.json and call invalidate() without arguments
+    beats[-1]["visual_note"] = "Updated graphic overlay for B007"
+    (tmp_path / "visual_manifest.json").write_text(json.dumps({"beats": beats}), encoding="utf-8")
+
+    invalidated = cache.invalidate(tmp_path)
+    assert invalidated == [3]
+    manifest = json.loads((tmp_path / "render_cache_manifest.json").read_text(encoding="utf-8"))
+    assert manifest["dirty_beat_ids"] == ["B007"]
+    assert [c["status"] for c in manifest["chunks"]] == ["ready", "ready", "pending"]
+
+    re_rendered = cache.render_ready(job(), tmp_path, beats, render_all=True)
+    assert re_rendered["ready_chunks"] == 3
+    render_calls = [call for call in runner.calls if "remotion" in call]
+    assert len(render_calls) == 4
+    assert "--frames=1800-2099" in render_calls[-1]
+
+
+

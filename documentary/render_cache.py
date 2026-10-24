@@ -455,6 +455,87 @@ class BackgroundRenderCache:
         return str(beat.get("beat_id") or "").strip()
 
     @staticmethod
+    def _chunk_matches_beat(chunk: dict[str, Any], target_beat_id: str) -> bool:
+        target = str(target_beat_id or "").strip()
+        if not target:
+            return False
+        target_root = target.split("-")[0]
+        for bid in chunk.get("beat_ids") or []:
+            b_str = str(bid or "").strip()
+            if not b_str:
+                continue
+            b_root = b_str.split("-")[0]
+            if b_str == target or b_root == target or b_str == target_root:
+                return True
+        return False
+
+    def snapshot_beat_signatures(
+        self,
+        workspace: str | Path,
+        beats: list[dict[str, Any]] | None = None,
+    ) -> dict[str, str]:
+        """Compute deterministic per-beat content signatures across manifests and Remotion source."""
+        ws = Path(workspace).resolve()
+        if beats is None:
+            vis = self._read_json(ws / "visual_manifest.json")
+            beats_list = [b for b in (vis.get("beats") or []) if isinstance(b, dict)]
+        else:
+            beats_list = [b for b in beats if isinstance(b, dict)]
+        if not beats_list:
+            return {}
+
+        vox = self._read_json(ws / "vox_scene_manifest.json")
+        vox_by_beat: dict[str, list[dict[str, Any]]] = {}
+        for scene in vox.get("scenes") or []:
+            if isinstance(scene, dict) and scene.get("beat_id"):
+                bid = str(scene.get("beat_id")).strip()
+                vox_by_beat.setdefault(bid, []).append(scene)
+
+        media = self._read_json(ws / "remotion_media_manifest.json")
+        media_by_beat: dict[str, list[dict[str, Any]]] = {}
+        for item in media.get("media_items") or []:
+            if isinstance(item, dict) and item.get("beat_id"):
+                bid = str(item.get("beat_id")).strip()
+                media_by_beat.setdefault(bid, []).append(item)
+
+        src_dir = self.remotion_dir / "src"
+        src_texts: list[tuple[str, str]] = []
+        extensions = {".ts", ".tsx", ".js", ".jsx", ".css", ".json"}
+        if src_dir.exists():
+            for path in sorted(p for p in src_dir.rglob("*") if p.is_file() and p.suffix.lower() in extensions):
+                try:
+                    rel = str(path.relative_to(self.remotion_dir))
+                    text = path.read_text(encoding="utf-8", errors="replace")
+                    src_texts.append((rel, text))
+                except OSError:
+                    continue
+
+        signatures: dict[str, str] = {}
+        for beat in beats_list:
+            bid = self._beat_id(beat)
+            if not bid:
+                continue
+            root_id = bid.split("-")[0]
+            snippets: list[str] = []
+            for rel, text in src_texts:
+                for token in ({bid, root_id} if root_id != bid else {bid}):
+                    idx = text.find(token)
+                    while idx != -1:
+                        lo = max(0, idx - 240)
+                        hi = min(len(text), idx + 640)
+                        snippets.append(f"{rel}:{text[lo:hi]}")
+                        idx = text.find(token, idx + len(token))
+            payload = {
+                "beat": beat,
+                "vox": vox_by_beat.get(bid) or vox_by_beat.get(root_id) or [],
+                "media": media_by_beat.get(bid) or media_by_beat.get(root_id) or [],
+                "src_snippets": snippets,
+            }
+            raw = json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8", errors="replace")
+            signatures[bid] = hashlib.sha256(raw).hexdigest()
+        return signatures
+
+    @staticmethod
     def _fps(job: dict[str, Any]) -> int:
         for value in (
             job.get("fps"),
@@ -561,6 +642,7 @@ class BackgroundRenderCache:
                 "attempts": 0,
                 "rendered_at": None,
                 "error": None,
+                "dirty_beat_ids": [],
             })
 
         composition_id = str(job.get("composition_id") or f"Documentary-{job.get('id')}")
@@ -570,6 +652,9 @@ class BackgroundRenderCache:
             "job_id": job.get("id"),
             "composition_id": composition_id,
             "source_signature": self._source_signature(),
+            "beat_signatures": self.snapshot_beat_signatures(workspace, beats),
+            "dirty_beat_ids": [],
+            "selective_invalidation": False,
             "fps": fps,
             "resolution": self._resolution(job),
             "chunk_seconds": self.chunk_seconds,
@@ -628,11 +713,21 @@ class BackgroundRenderCache:
         self.hardware_profile = detect_hardware_profile()
         planned = self._build_manifest(job, workspace, beats)
         planned["hardware_profile"] = self.hardware_profile
+
+        old_beat_sigs = current.get("beat_signatures") if isinstance(current.get("beat_signatures"), dict) else {}
+        new_beat_sigs = planned.get("beat_signatures") if isinstance(planned.get("beat_signatures"), dict) else {}
+        auto_dirty_beats: list[str] = []
+        if old_beat_sigs and new_beat_sigs and set(old_beat_sigs.keys()) == set(new_beat_sigs.keys()):
+            diff = [bid for bid, sig in new_beat_sigs.items() if old_beat_sigs.get(bid) != sig]
+            if 0 < len(diff) < len(new_beat_sigs):
+                auto_dirty_beats = diff
+
+        selective_mode = bool(current.get("selective_invalidation") or auto_dirty_beats)
         same_source = bool(
             current.get("version") == self.VERSION
             and current.get("job_id") == planned.get("job_id")
             and current.get("composition_id") == planned.get("composition_id")
-            and current.get("source_signature") == planned.get("source_signature")
+            and (current.get("source_signature") == planned.get("source_signature") or selective_mode)
             and current.get("fps") == planned.get("fps")
             and current.get("frames_per_chunk") == planned.get("frames_per_chunk")
             and len(current.get("chunks") or []) == len(planned.get("chunks") or [])
@@ -646,15 +741,46 @@ class BackgroundRenderCache:
         )
         if compatible:
             old_chunks = current.get("chunks") or []
+            combined_dirty = sorted(
+                set((current.get("dirty_beat_ids") or []) + auto_dirty_beats)
+            )
+            planned["dirty_beat_ids"] = combined_dirty
             for chunk, old in zip(planned["chunks"], old_chunks):
+                chunk_dirty = sorted(
+                    set(
+                        (old.get("dirty_beat_ids") or [])
+                        + [
+                            b
+                            for b in auto_dirty_beats
+                            if self._chunk_matches_beat(chunk, b) or len(planned["chunks"]) == 1
+                        ]
+                    )
+                )
+                chunk["dirty_beat_ids"] = chunk_dirty
+                if auto_dirty_beats and any(self._chunk_matches_beat(chunk, b) for b in auto_dirty_beats):
+                    for field in ("video_path", "audio_path", "log_path"):
+                        try:
+                            Path(str(chunk.get(field) or "")).unlink(missing_ok=True)
+                        except OSError:
+                            pass
+                    chunk["status"] = "pending"
+                    continue
                 if self._is_chunk_output_complete(old):
                     chunk.update({
                         "status": "ready",
                         "attempts": max(1, int(old.get("attempts") or 1)),
                         "rendered_at": old.get("rendered_at") or _now(),
                         "error": None,
+                        "dirty_beat_ids": [],
                     })
-            if current.get("duration_in_frames") == planned.get("duration_in_frames"):
+            planned["selective_invalidation"] = bool(
+                selective_mode and any(c.get("status") != "ready" for c in planned["chunks"])
+            )
+            if (
+                current.get("duration_in_frames") == planned.get("duration_in_frames")
+                and not auto_dirty_beats
+                and all(c.get("status") == "ready" for c in planned["chunks"])
+            ):
                 planned["finalized_signature"] = current.get("finalized_signature")
                 planned["finalized_validation_version"] = current.get("finalized_validation_version")
                 planned["finalized_at"] = current.get("finalized_at")
@@ -891,6 +1017,13 @@ class BackgroundRenderCache:
                 "COFI_FFMPEG_THREADS": str(ffmpeg_threads),
             }
             if turbo_enabled and turbo_script.exists() and node_bin:
+                dirty_beats = sorted(
+                    {
+                        str(b).strip()
+                        for b in ((chunk.get("dirty_beat_ids") or []) + (manifest.get("dirty_beat_ids") or []))
+                        if str(b).strip()
+                    }
+                )
                 turbo_cmd = [
                     str(node_bin),
                     str(turbo_script),
@@ -905,6 +1038,8 @@ class BackgroundRenderCache:
                     f"--separate-audio-to={audio}",
                     f"--job-id={manifest.get('job_id') or ''}",
                 ]
+                if dirty_beats:
+                    turbo_cmd.append(f"--dirty-beats={','.join(dirty_beats)}")
                 if isolated_pub is not None:
                     turbo_cmd.append(f"--public-dir={isolated_pub}")
                 returncode = self._run_process(
@@ -938,6 +1073,7 @@ class BackgroundRenderCache:
         chunk["status"] = "ready"
         chunk["rendered_at"] = _now()
         chunk["error"] = None
+        chunk["dirty_beat_ids"] = []
 
     def render_ready(
         self,
@@ -970,6 +1106,7 @@ class BackgroundRenderCache:
                         chunk["status"] = "ready"
                         chunk["rendered_at"] = chunk.get("rendered_at") or _now()
                         chunk["error"] = None
+                        chunk["dirty_beat_ids"] = []
                         changed = True
                     continue
                 chunk["status"] = "pending"
@@ -994,6 +1131,9 @@ class BackgroundRenderCache:
                 _atomic_json(self._manifest_path(workspace), manifest)
                 if chunk.get("status") != "ready":
                     break
+            if all(c.get("status") == "ready" for c in (manifest.get("chunks") or [])):
+                manifest["dirty_beat_ids"] = []
+                manifest["selective_invalidation"] = False
             if changed or progress_status in {"completed", "failed"}:
                 self._refresh_summary(manifest)
                 _atomic_json(self._manifest_path(workspace), manifest)
@@ -1064,27 +1204,65 @@ class BackgroundRenderCache:
                 except Exception:
                     pass
 
-    def invalidate(self, workspace: str | Path, *, beat_id: str | None = None, timestamp_sec: float | None = None) -> list[int]:
+    def invalidate(
+        self,
+        workspace: str | Path,
+        *,
+        beat_id: str | None = None,
+        beat_ids: list[str] | tuple[str, ...] | set[str] | None = None,
+        timestamp_sec: float | None = None,
+    ) -> list[int]:
         workspace = Path(workspace).resolve()
         path = self._manifest_path(workspace)
         manifest = self._read_json(path)
         if not manifest:
             return []
+        chunks = list(manifest.get("chunks") or [])
+        explicit_beats: list[str] = []
+        if beat_id and str(beat_id).strip():
+            explicit_beats.append(str(beat_id).strip())
+        if beat_ids:
+            for item in beat_ids:
+                s = str(item or "").strip()
+                if s and s not in explicit_beats:
+                    explicit_beats.append(s)
+
+        current_sigs = self.snapshot_beat_signatures(workspace)
+        old_sigs = manifest.get("beat_signatures") if isinstance(manifest.get("beat_signatures"), dict) else {}
+        if not explicit_beats and timestamp_sec is None and old_sigs and current_sigs:
+            diff_beats = [bid for bid, sig in current_sigs.items() if old_sigs.get(bid) != sig]
+            if 0 < len(diff_beats) < len(current_sigs):
+                explicit_beats = diff_beats
+
         targets: list[dict[str, Any]] = []
-        normalized_beat = str(beat_id or "").strip()
-        if normalized_beat:
-            targets = [chunk for chunk in (manifest.get("chunks") or []) if normalized_beat in (chunk.get("beat_ids") or [])]
+        if explicit_beats:
+            targets = [
+                chunk
+                for chunk in chunks
+                if any(self._chunk_matches_beat(chunk, b) for b in explicit_beats)
+            ]
         elif timestamp_sec is not None:
             try:
                 second = float(timestamp_sec)
             except (TypeError, ValueError):
                 second = -1.0
             targets = [
-                chunk for chunk in (manifest.get("chunks") or [])
+                chunk
+                for chunk in chunks
                 if float(chunk.get("start_sec") or 0) <= second < float(chunk.get("end_sec") or 0)
             ]
+            vis = self._read_json(workspace / "visual_manifest.json")
+            vis_beats = [b for b in (vis.get("beats") or []) if isinstance(b, dict)]
+            for timing in self._timings(workspace, vis_beats):
+                if float(timing.get("start_sec") or 0) <= second < float(timing.get("end_sec") or 0):
+                    bid = str(timing.get("beat_id") or "").strip()
+                    if bid and bid not in explicit_beats:
+                        explicit_beats.append(bid)
+
+        is_selective = bool(targets and (explicit_beats or timestamp_sec is not None))
         if not targets:
-            targets = list(manifest.get("chunks") or [])
+            targets = list(chunks)
+
         invalidated: list[int] = []
         for chunk in targets:
             for field in ("video_path", "audio_path", "log_path"):
@@ -1095,7 +1273,33 @@ class BackgroundRenderCache:
             chunk["status"] = "pending"
             chunk["rendered_at"] = None
             chunk["error"] = None
+            if is_selective:
+                chunk_dirty = sorted(
+                    set(
+                        (chunk.get("dirty_beat_ids") or [])
+                        + [
+                            b
+                            for b in explicit_beats
+                            if self._chunk_matches_beat(chunk, b) or len(chunks) == 1
+                        ]
+                    )
+                )
+                chunk["dirty_beat_ids"] = chunk_dirty
+            else:
+                chunk["dirty_beat_ids"] = []
             invalidated.append(int(chunk.get("index") or 0))
+
+        manifest["source_signature"] = self._source_signature()
+        if current_sigs:
+            manifest["beat_signatures"] = current_sigs
+        if is_selective:
+            manifest["selective_invalidation"] = True
+            manifest["dirty_beat_ids"] = sorted(
+                set((manifest.get("dirty_beat_ids") or []) + explicit_beats)
+            )
+        else:
+            manifest["selective_invalidation"] = False
+            manifest["dirty_beat_ids"] = []
         manifest["finalized_signature"] = None
         manifest["finalized_validation_version"] = None
         self._refresh_summary(manifest)
