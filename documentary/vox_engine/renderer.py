@@ -1,7 +1,10 @@
 """True Crime Vox & Real Satellite Standalone Scene Renderer.
 
-Renders 1080p frames and frame sequences for all 24 True Crime archetypes to file or memory.
-Runs in pure Python (PIL + NumPy) with tens-of-milliseconds per frame throughput.
+Renders 1080p frames and frame sequences for all 24 True Crime baseline archetypes
+plus the 4 unlocked bespoke voice-clause modes (#V_POPOUT_HIGHLIGHT, #V_CLAUSE_TIMELINE,
+#V_FORENSIC_CROSS_SECTION, #V_BLENDER_3D_STAGE) to file or memory.
+Supports full voice-duration (`duration_sec = end_sec - start_sec`) and progressive
+clause synchronization (`voice_spec`).
 """
 
 from __future__ import annotations
@@ -15,6 +18,7 @@ from .archetypes import (
     ARCHETYPE_RENDERERS,
     W,
     H,
+    apply_voice_spec_clause_sync_overlay,
     fit_crop,
     get_fallback_image,
 )
@@ -55,19 +59,24 @@ class VoxSceneRenderer:
         media_inputs: dict[str, Any] | None = None,
         subtitle_text: str = "",
         out_path: str | Path | None = None,
+        voice_spec: dict[str, Any] | None = None,
         **kwargs: Any,
     ) -> Image.Image:
-        """Renders one 1920x1080 frame for the specified archetype."""
+        """Renders one 1920x1080 frame for the specified archetype and voice_spec."""
         arch = str(archetype_id or "").strip()
         renderer_fn = ARCHETYPE_RENDERERS.get(arch)
         if not renderer_fn:
-            # Fallback to cinema_full if archetype ID is unrecognized
             renderer_fn = ARCHETYPE_RENDERERS["cinema_full"]
 
         inputs = dict(media_inputs or {})
+        effective_voice_spec = voice_spec or inputs.get("voice_spec")
 
-        # Archetype-specific dispatch
-        if arch == "#M1":
+        if arch in {"#V_POPOUT_HIGHLIGHT", "#V_CLAUSE_TIMELINE", "#V_FORENSIC_CROSS_SECTION", "#V_SAT_ZONE_DRAW", "#V_BLENDER_3D_STAGE", "#V_SAT_LOUPE_ZOOM", "#V_DOSSIER_BOARD", "#V_VERDICT_PROCLAMATION"}:
+            fa = self._resolve_image(inputs.get("frame_a") or inputs.get("frame_main") or inputs.get("frame_left"), "EVIDENCE A")
+            fb = self._resolve_image(inputs.get("frame_b") or inputs.get("frame_right") or inputs.get("frame_a"), "EVIDENCE B")
+            canvas = renderer_fn(progress, fa, fb, subtitle_text=subtitle_text, voice_spec=effective_voice_spec)
+
+        elif arch == "#M1":
             frame_store = self._resolve_image(inputs.get("frame_store") or inputs.get("frame_a"), "SCHOOL STORE")
             frame_gao = self._resolve_image(inputs.get("frame_gao") or inputs.get("frame_b"), "SUSPECT GAO")
             canvas = renderer_fn(progress, frame_store, frame_gao, subtitle_text=subtitle_text)
@@ -103,6 +112,9 @@ class VoxSceneRenderer:
             sub_lt = kwargs.get("lower_third_sub") or inputs.get("lower_third_sub", "")
             canvas = renderer_fn(progress, f_cinema, subtitle_text=subtitle_text, lower_third_title=title_lt, lower_third_sub=sub_lt)
 
+        if effective_voice_spec and arch not in {"cinema_full", "#V_POPOUT_HIGHLIGHT", "#V_CLAUSE_TIMELINE", "#V_FORENSIC_CROSS_SECTION", "#V_SAT_ZONE_DRAW", "#V_BLENDER_3D_STAGE", "#V_SAT_LOUPE_ZOOM", "#V_DOSSIER_BOARD", "#V_VERDICT_PROCLAMATION"}:
+            canvas = apply_voice_spec_clause_sync_overlay(canvas, progress, voice_spec=effective_voice_spec, arch_id=arch)
+
         if out_path:
             p = Path(out_path)
             p.parent.mkdir(parents=True, exist_ok=True)
@@ -117,6 +129,7 @@ class VoxSceneRenderer:
         media_inputs: dict[str, Any] | None = None,
         subtitle_text: str = "",
         out_dir: str | Path | None = None,
+        voice_spec: dict[str, Any] | None = None,
     ) -> list[Image.Image]:
         """Renders an animated sequence of frames with ease curve progression."""
         frames: list[Image.Image] = []
@@ -134,6 +147,7 @@ class VoxSceneRenderer:
                 media_inputs=media_inputs,
                 subtitle_text=subtitle_text,
                 out_path=frame_path,
+                voice_spec=voice_spec,
             )
             frames.append(frame)
 
@@ -143,18 +157,23 @@ class VoxSceneRenderer:
         self,
         archetype_id: str,
         out_mp4: str | Path,
-        duration_sec: float = 6.0,
+        duration_sec: float | None = None,
         fps: int = 30,
         media_inputs: dict[str, Any] | None = None,
         subtitle_text: str = "",
         preview_jpg: str | Path | None = None,
+        voice_spec: dict[str, Any] | None = None,
     ) -> Path:
-        """Renders a true 30fps animated .mp4 video (zero frame-stepping, repeats=1) for any Vox archetype."""
+        """Renders a true 30fps animated .mp4 video matching the full voice beat duration."""
         import subprocess
 
         out_path = Path(out_mp4)
         out_path.parent.mkdir(parents=True, exist_ok=True)
-        steps = max(30, int(round(duration_sec * fps)))
+        effective_voice_spec = voice_spec or (media_inputs or {}).get("voice_spec")
+        resolved_dur = float(duration_sec or (effective_voice_spec or {}).get("duration_sec") or 6.0)
+        resolved_dur = max(3.0, min(18.0, resolved_dur))
+        steps = max(30, int(round(resolved_dur * fps)))
+
         cmd = [
             "ffmpeg", "-y", "-f", "rawvideo", "-vcodec", "rawvideo",
             "-s", f"{W}x{H}", "-pix_fmt", "rgb24", "-r", str(fps),
@@ -176,6 +195,7 @@ class VoxSceneRenderer:
                 progress=seq_p,
                 media_inputs=media_inputs,
                 subtitle_text=subtitle_text,
+                voice_spec=effective_voice_spec,
             ).convert("RGB")
             if preview_jpg and s == preview_step:
                 Path(preview_jpg).parent.mkdir(parents=True, exist_ok=True)

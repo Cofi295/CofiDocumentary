@@ -156,7 +156,7 @@ CREATIVE_STUDIO_CATALOG: dict[str, dict[str, dict[str, str]]] = {
         },
         "vox_satellite_maps": {
             "id": "vox_satellite_maps",
-            "label": "Bản đồ Vệ tinh Đa tỷ lệ (#M1..#M8)",
+            "label": "Bản đồ Vệ tinh Đa tỷ lệ & Lộ trình Động",
             "directive": (
                 "Sử dụng ảnh vệ tinh thật độ phân giải cao từ Z6 (quy mô vùng) đến Z16 (sát mái nhà/hiện trường) "
                 "kết hợp quét vector GeoJSON, lát cắt 2.5D, luồng nhiệt hồng ngoại và radar định vị."
@@ -164,7 +164,7 @@ CREATIVE_STUDIO_CATALOG: dict[str, dict[str, dict[str, str]]] = {
         },
         "vox_forensic_dossiers": {
             "id": "vox_forensic_dossiers",
-            "label": "Hồ sơ Pháp y & Dấu vân tay (#D1..#D10)",
+            "label": "Hồ sơ Pháp y & Bảng Điều tra Động",
             "directive": (
                 "Bố cục hồ sơ bìa manila, thẻ căn cước kép đối chiếu hai mặt cuộc sống, dải phim 35mm, "
                 "bảng đèn huỳnh quang phân tích gen Y-STR, kính hiển vi so khớp 14 điểm đặc trưng vân tay và lệnh truy nã đỏ A급."
@@ -172,7 +172,7 @@ CREATIVE_STUDIO_CATALOG: dict[str, dict[str, dict[str, str]]] = {
         },
         "vox_press_broadcast": {
             "id": "vox_press_broadcast",
-            "label": "Báo chí Cũ & Truyền hình CRT 1990s (#P1..#P6)",
+            "label": "Báo chí Lưu trữ & Bản tin Truyền hình",
             "directive": (
                 "Tái hiện báo giấy những năm 1990 quét bút dạ quang vàng, công cáo giới nghiêm đỏ, "
                 "màn hình TV CRT quét tia scanline bản tin thời sự khẩn cấp và điện báo khẩn của công an."
@@ -297,6 +297,16 @@ def _creative_brief_direction(job: dict[str, Any], workspace: str | Path | None 
     if custom_rules:
         lines.append(f"- CUSTOM EPISODE RULES & CONSTRAINTS: {custom_rules}")
 
+    cta_strategy = str(brief.get("cta_strategy") or "").strip()
+    if cta_strategy:
+        lines.append(f"- AUDIENCE RETENTION & DYNAMIC 2-TOUCHPOINT CTA STRATEGY: {cta_strategy}")
+
+    injected_rules = brief.get("self_learning_injected_rules")
+    if isinstance(injected_rules, list) and injected_rules:
+        cleaned_rules = [str(r).strip() for r in injected_rules if str(r).strip()]
+        if cleaned_rules:
+            lines.append("- SELF-LEARNING INJECTED UPGRADE RULES:\n" + "\n".join(f"  * {r}" for r in cleaned_rules))
+
     if outline:
         lines.append(
             "- APPROVED CHAPTER OUTLINE BLUEPRINT (Follow this structural progression, arguments, and visual intent across script.md, visual_manifest.json, and edit):\n"
@@ -350,11 +360,11 @@ def _premium_editing_direction() -> str:
 - Judge the cut at three scales: frame-level polish, beat-level clarity/impact, and sequence-level rhythm. A beautiful isolated shot still fails if the surrounding 20-30 seconds feel repetitive, flat, or predictable.
 - Treat every finished scene as authored motion-design work, not a template assembled from default cards, circles, lines, generic callouts, stock zooms, or plain captions.
 - Establish a project-specific visual system: recurring typography hierarchy, graphic motifs, framing logic, transition language, color treatment, and sound vocabulary. Reuse the system with variation instead of repeating one canned treatment.
-- Build depth when the story benefits from it: foreground/midground/background separation, masks, light wrap, shadows, atmospheric perspective, selective blur, 2.5D parallax/depth-map treatment, and true 3D only for spatial or hero moments that earn it.
-- Use motivated virtual cinematography rather than generic zooming: push/pull, dolly, truck, crane, orbit, reveal, focus-shift-like cues, and directional movement should follow subject, geography, tension, or narration emphasis.
+- Build depth when the story benefits from it: foreground/midground/background separation, masks, light wrap, shadows, atmospheric perspective, and selective blur.
+- Use motivated virtual cinematography rather than generic zooming: push/pull, dolly, truck, pan, reveal, focus-shift-like cues, and directional movement should follow subject, geography, tension, or narration emphasis.
 - Treat typography and subtitles as editorial design. Break text into semantic phrases, emphasize key words/numbers, create clear hierarchy, animate with narration cadence, and place text around picture content. Plain static default captions must not be the only treatment across the piece.
 - Design transitions scene by scene from motion direction, shape, light, object continuity, typography, geography, camera, or sound. Avoid one repeated transition preset across the timeline.
-- For maps, diagrams, timelines, comparisons, data, and explanatory beats, create dimensional visual hierarchy and purposeful transformation. Do not let repeated strokes, circles, arrows, or outline boxes become the primary visual language.
+- For maps, diagrams, timelines, comparisons, data, and explanatory beats, create 2D editorial visual hierarchy and purposeful transformation. Do not let repeated strokes, circles, arrows, or outline boxes become the primary visual language.
 - Finish the image cinematically where appropriate: shot matching, controlled contrast/color hierarchy, texture, grain/halation/glow, atmosphere, light effects, and clean compositing. Effects must support the focal point rather than make the frame noisy.
 - Design sound with picture: ambience, impacts, swells, tails, risers, J/L cuts, pre-laps, selective beat sync, ducking, and silence. Avoid repetitive whooshes or a sound effect on every animation.
 - Vary production intensity by story function. Hero/reveal scenes may be ambitious and layered; evidence/readability scenes may be cleaner. Keep one clear focal hierarchy and enough stillness for important information to land.
@@ -362,48 +372,53 @@ def _premium_editing_direction() -> str:
 
 
 def _asset_variety_direction() -> str:
-    return """UNIVERSAL 4-TIER SEMANTIC VISUAL PRIORITY & ZERO-FORMULA LAW (APPLIES TO ALL CONTENT & NICHES)
-- ZERO MECHANICAL FORMULAS OR CYCLING: Never use modulo formulas (`if i % 3 == 0`), fixed percentage quotas, or round-robin cycling (`1 -> 2 -> 3 -> 4 -> 5 -> 6`) to assign visuals, maps, or Vox clips.
-- 100% VOICE-TO-VISUAL SEMANTIC ALIGNMENT: Every single visual appearing on screen MUST clearly illustrate and match the exact meaning of the spoken voiceover (`narration_text`) at that moment across all content types.
-- STRICT 4-TIER VISUAL PRIORITY ORDER FOR EVERY SPOKEN BEAT:
-  1. PRIORITY #1 — REAL VIDEO FOOTAGE (`sourced_video`): Always prioritize authentic documentary/archival/B-roll video footage that directly illustrates the person, place, action, or event in the spoken voice line.
-  2. PRIORITY #2 — REAL PHOTO / STILL FOOTAGE (`sourced_still`): When no video footage directly illustrates that spoken line, use an authentic archival photograph or documentary still that matches the spoken content.
-  3. PRIORITY #3 — SEMANTIC VOX GRAPHIC & SATELLITE MAP (`vox_dossier` / `#M1..#M8`, `#D1..#D10`, `#P1..#P6`):
-     - BROAD INVESTIGATIVE SCOPE (NOT RIGIDLY LIMITED TO ONLY 3 BUCKETS): Use Vox whenever the spoken voice line can be effectively illustrated and clarified by a Vox graphic — explicitly including **Hồ sơ vụ án (Case Files / Investigation Dossiers / Suspect & Victim Profiles / Property & Financial Records / Missing-Person & Police Reports / Search & Inspection Logs / Interrogation Records / Court & Indictment Dossiers)** alongside **Bản đồ vệ tinh (`#M1..#M8`)**, **Hồ sơ pháp y & Giám định (`#D1..#D10`)**, **Báo chí / Truyền hình lưu trữ (`#P1..#P6`)**, timelines, telemetry/utility logs, and analytical diagrams. Prioritize these core investigative groups and avoid overusing Vox on unrelated dramatic/action scenes where real footage is stronger.
-     - PURPOSEFUL RECURRENCE & CUSTOM VOICE-MATCHED MOTION ON SHARED MAPS/DOSSIERS (NO RIGID `count = 1` CAP): Do NOT enforce a rigid rule that each Vox scene or map can only appear once (`count = 1` is NOT required). A Vox scene or map may recur when editorially purposeful (`lặp lại có chủ đích`, e.g., returning to the investigation board or apartment complex map at a new stage of the case). **Even better (`tốt hơn hết`)**: when returning to the **same base satellite map image or same case dossier** across different voice lines, **design a distinct 30 fps motion tailored to each specific voice line** (custom camera pan/zoom path, custom trajectory/perimeter highlight, custom pins/callouts/table entries matching that exact spoken sentence) rather than replaying the identical clip.
-  4. PRIORITY #4 — AI RECONSTRUCTED IMAGE (`ai_reconstruction` / `_ai_keyframe.jpg`): LAST RESORT — used ONLY when Real Video Footage (#1), Real Photo Footage (#2), and Semantic Vox (#3) cannot clearly illustrate the spoken voice line.
-- ALWAYS BUTTER-SMOOTH 30 FPS SUB-PIXEL MOTION & ZERO STATIC `.PNG` VOX/MAPS: Never generate or use static `.png` images (`MAP01..08.png`) for Vox graphics or satellite maps! Every single Vox graphic and satellite map must be rendered as a true 30 fps `.mp4` video (`repeats = 1`, zero frame-stepping) with sub-pixel floating-point camera sampling (`Image.Transform.EXTENT` with `BICUBIC`), progressive perimeter/trajectory tracing, expanding sonar radar rings, progressive callout leader lines, and staggered entrance physics for all Polaroids, newspaper clippings, highlighter sweeps, and stamps.
-- Treat the approved media pool as an editorial palette, not a single-file lookup table. Before choosing a shot, inspect the approved alternatives for the current beat and nearby beats and prefer the strongest semantically correct option that improves visual variety.
-- Do not force every downloaded/approved asset into the cut. Use an asset only when it improves evidence, pacing, emotion, geography, chronology, scale, or visual continuity.
-- When a beat has multiple genuinely useful approved assets and the narration/timing supports it, cut between complementary angles/details rather than holding one source for the whole beat. A short beat may still need only one strong shot.
-- Avoid reusing the exact same file, crop, or source time range across unrelated beats when another approved, accurate alternative can communicate the same point. Prefer unused or less-used valid assets before repeating a familiar shot.
-- Reuse is allowed when editorially motivated: deliberate callback, before/after comparison, recurring motif, geographic anchor, identity reminder, or continuity bridge. When repeating, change the editorial purpose or treatment instead of replaying the same shot as filler.
-- Review nearby timeline context so adjacent or closely spaced beats do not accidentally repeat the same subject/framing. Vary wide/medium/detail, archival/modern, people/place/object, and motion direction when the available approved assets support that variation.
-- Do not substitute a weaker or less accurate asset merely to increase variety. Factual/source match remains the first constraint; variety is optimized inside the set of accurate approved choices.
+    return """FLEXIBLE LORE/DNA PRINCIPLE & SCRIPT-DRIVEN VISUAL MIX (~50% REAL FOOTAGE + ~30% ADAPTIVE VOX & SATELLITE MAPS + ~20% SCENE-LOCKED AI KEYFRAMES)
+- ANTI-LAZINESS & FLEXIBLE LORE LAW (MANDATORY):
+  * Channel Lore & Editing DNA is a **foundational quality reference**, NEVER a rigid 1–2 layout clone across every beat or every video. The AI must NEVER lazily repeat the same 1–2 Vox templates or the same 1–2 SFX across a 30-minute documentary.
+  * Every Vox layout, map presentation, SFX cue, and BGM mood must adapt dynamically to the concrete narrative content, geography, scale, and emotional atmosphere of that exact spoken beat (`narration_text`).
+  * **Senior-Friendly (45–70yo) Readability**: Use 1 calm, dignified episode intro only (zero strobe/flashing, no repeated mechanical chapter intros), warm cream archival paper (`#EDE5D2`), clean rectangular photo frames (never tear across faces/bodies), and large high-contrast Korean Hangul (`40–66px`).
+- VOICE-DRIVEN SEMANTIC ROUTING:
+  1. ~50% REAL FOOTAGE (`footage/S_F*.mp4` + AUTHENTIC ARCHIVAL STILLS `archival/S_A*.jpg`):
+     - Slice authentic documentary/CCTV/news footage into brisk **3–6 second cuts**, crop 12%–16% off edges, mute source audio (`-an`), and apply unified color grading + smooth optical camera motion (`1.005 -> 1.065`).
+     - Enforce `max_uses = 1` across the entire timeline (`0` repeats in standard view; purposeful callbacks must use `Split-Screen Comparison A/B`, `Forensic PiP Evidence Window`, or `160% Macro Loupe Zoom`).
+  2. ~30% ADAPTIVE MULTI-ARCHETYPE VOX & FULL-SCREEN / SPLIT SATELLITE MAP MOTION (`vox/VOX_*.mp4`):
+     - Dynamically select from **10+ distinct Vox & Map archetypes** (`N1..N6` Editorial Newspaper/Court/Prison/Patent/Timeline + `S1..S4` Satellite & Regional GIS Maps) matching the exact spoken beat duration (`duration_sec = end_sec - start_sec`):
+       * **Full-Screen `1920x1080` Map Flight & Recon (`S3_FULLSCREEN_GIS_FLIGHT` / `#V_FULLSCREEN_GIS_FLIGHT` & `S4_FULLSCREEN_SATELLITE_RECON` / `#V_FULLSCREEN_SATELLITE_RECON`)**: When the narration describes cross-province dispatch (e.g., Beijing -> Yunnan), prison transfers (Prison #1 -> Prison #2), or sweeping urban territory expansion, break out of the split newspaper frame and fill the entire `1920x1080` canvas with the animated A->B camera flight, progressive route drawing (`0% -> 100%`), radar ripple pulse, sequential pin pop-ins (`① -> ② -> ③`), top-right PiP live video cutout, and bottom floating voice-synced Korean highlighter bar.
+       * **Split Editorial Map Cards (`S1_KUNMING_SATELLITE_MAP` / `S2_DUAL_SATELLITE_ROUTE`)**: Use when comparing a geographic checkpoint directly alongside a press clipping or forensic dossier card.
+  3. ~20% SCENE-LOCKED AI KEYFRAME ILLUSTRATIONS (`<beat_id>_ai_keyframe.jpg`):
+     - **1-to-1 Scene Lock**: Each `<beat_id>_ai_keyframe.jpg` belongs exclusively to its own `<beat_id>` (`max_uses = 1`).
 """
 
 
 def _native_motion_semantic_direction() -> str:
-    return """NATIVE MOTION SEMANTIC COVERAGE — MEDIA-ANCHORED ANNOTATION ONLY
-- Do not create a standalone native-motion scene. Every motion treatment must sit directly on an approved real or AI image/video that remains the visual base.
-- Use motion only when it clarifies the spoken meaning: short text, arrows, circles, highlights, underlines, labels or simple tracked callouts interacting with the subject already visible in the base media.
-- Follow the meaningful clauses of the narration in spoken order. Reveal each annotation when its phrase is spoken and remove/fade it before it becomes clutter.
-- Keep annotation mobile-readable: short labels, strong contrast, generous safe margins, large type (normally at least ~48 px at 1080p), thick arrows/lines and one clear focal action at a time. Never use tiny infographic copy.
-- If geography/timeline/causality needs a complex graphic, first create or choose a suitable base image/video and annotate that visual; do not cut to a blank full-screen diagram/card as the primary scene.
-- If approved footage exists in `remotion_media_manifest.json`, keep it as the base. Never replace missing media mapping with a generic graphic; fix the mapping/data path.
-- Never replace an approved or required base visual with a generic native graphic. Legacy native-motion intent must be translated into annotations anchored to the base media.
-- Self-check each native beat before completion: confirm the base asset exists and every annotation is directly anchored to that media, semantically useful, timed to the voice and readable on mobile.
+    return """REMOTION TIMELINE COMPOSITING, 5-MOOD CHAPTER BGM & 28-TRACK CONTEXT-MATCHED FOLEY SFX
+- ARCHITECTURAL DIVISION:
+  * **High-End Vox Engine (`documentary/vox_engine` & `CofiBlenderStudio`)** creates 30fps `.mp4` Vox & Full-Screen/Split Satellite Map animations (`vox/VOX_*.mp4`).
+  * **Remotion (`CofiRemotion`)** edits the full documentary timeline using `@remotion/media` (`<Video>` and `<Audio>`) with active-frame sequence windowing, applies optical camera & framing treatments to footage/stills, mixes multi-track audio with automated ducking + context-matched Foley SFX, and renders broadcast subtitles (`<SubtitleOverlay>`).
+- FOOTAGE TREATMENT IN REMOTION:
+  * Apply smooth optical camera movement (`1.005 -> 1.065` slow push, pull, pan, or drift) to real video footage and stills, and keep `transform: 'none'` on pre-animated 30fps Vox `.mp4` clips.
+  * Apply context-appropriate framing overlays (`cctv_hud` on surveillance footage, `forensic_frame` on crime-scene/evidence footage, and `split_comparison` / `forensic_pip` / `macro_loupe_160` on purposeful callbacks).
+- DYNAMIC CONTEXT-MATCHED 28-SFX & 5-MOOD BGM ENGINE (`documentary/audio_library_manager.py` & `public/audio_library/`):
+  * **Multi-Mood Chapter BGM Schedule (`select_chapter_bgm_schedule`)**: Rotate across 5 distinct emotional BGM tracks (`bgm_noir_investigation.mp3`, `bgm_dark_conspiracy.mp3`, `bgm_tense_pursuit.mp3`, `bgm_cold_interrogation.mp3`, `bgm_solemn_verdict.mp3`) matching each chapter's dramatic arc, with smooth automated ducking (`~0.08–0.10` under speech, `~0.16–0.22` on chapter transitions).
+  * **28+ Context-Matched Real Foley SFX (`select_contextual_sfx_for_beat`)**: Never repeat 1–2 generic SFX across the video. Route every beat's 2-event audio cues (`+0.08s` primary + `+0.58s` secondary) to the exact scene semantics across 28 real Foley tracks:
+    - Court verdict / execution / gavel -> `sfx_wooden_gavel.mp3`, `sfx_court_gavel_double.mp3`, `sfx_solemn_bell.mp3`, `sfx_verdict_slam.mp3`
+    - Prison transfer / iron cell / handcuffs -> `sfx_iron_lock_latch.mp3`, `sfx_prison_corridor_steps.mp3`, `sfx_cell_door.mp3`, `sfx_handcuff_ratchet.mp3`
+    - Regional GIS flight / satellite radar -> `sfx_map_flight_sweep.mp3`, `sfx_radar_sonar_ping.mp3`, `sfx_gps_beacon_lock.mp3`
+    - Police dispatch / radio / siren -> `sfx_police_scanner_radio.mp3`, `sfx_distant_siren.mp3`
+    - Press expose / felt-pen highlighter -> `sfx_newspaper_unfold.mp3`, `sfx_feltpen_highlight.mp3`, `sfx_highlighter_swipe.mp3`
+    - Dossier / patent / rubber stamp -> `sfx_dossier_open.mp3`, `sfx_dossier_stamp.mp3`, `sfx_blueprint_unroll.mp3`
+    - Timeline / clock / CCTV / camera -> `sfx_clock_tick_tense.mp3`, `sfx_cctv_tape_whir.mp3`, `sfx_camera_shutter.mp3`
+  * **Autonomous Online CC0 Audio Fetcher (`fetch_missing_audio_asset`)**: Whenever a future episode introduces a novel environment or action not yet in the library, call `fetch_missing_audio_asset(query, target_filename, category)` in `documentary/audio_library_manager.py` to download, normalize (`loudnorm=I=-16`), and register new CC0 audio from Wikimedia Commons on the fly.
 """
 
 
 def _official_remotion_agent_skills_direction() -> str:
     return """
-OFFICIAL REMOTION AGENT SKILLS — REQUIRED
+OFFICIAL REMOTION AGENT SKILLS & HIGH-END VOX DIVISION — REQUIRED
 - The Remotion authority for this project is the official Remotion Agent Skills distribution from `remotion-dev/skills`.
-- Load `remotion-best-practices` first. For React/Remotion implementation, load `remotion-markup`. Use `remotion-docs` to look up current APIs instead of relying on memory. Use `remotion-studio` for Studio-specific work and `remotion-render` only when the active phase actually renders or exports.
-- Follow the router in `remotion-best-practices` and load only the official sub-skills relevant to the active task, for example captions, multimedia, maps or interactivity.
-- Do not invent Remotion APIs, props, packages, or a replacement Remotion skill. Do not treat project-specific COFI helper skills as Remotion documentation or as a substitute for `remotion-dev/skills`.
-- For True Crime, Satellite GIS (`#M1..#M8`), Tactile Forensic Dossiers (`#D1..#D10`), and Archival Press (`#P1..#P6`), inspect `vox_scene_manifest.json` in the workspace and follow the `cofi-vox-blender-director` skill (`skills/cofi-vox-blender-director/SKILL.md`). NEVER use the deprecated raw 3D prototypes (`#B1..#B4` / `scene_01..04_final.mp4`).
+- Load `remotion-best-practices` first. For React/Remotion implementation, load `remotion-markup`. Use `remotion-docs` to look up current APIs. Use `remotion-studio` for Studio-specific work and `remotion-render` when rendering or exporting.
+- Follow the router in `remotion-best-practices` and load the official sub-skills relevant to the active task, such as captions, multimedia, maps, or interactivity.
+- For True Crime, Real Esri Satellite GIS, Tactile Paper-Craft Forensic Dossiers, Archival Press, and Voice-Synced Animated Vox (`vox/VOX_*.mp4`), follow `skills/cofi-vox-blender-director/SKILL.md`.
 """
 
 
@@ -456,6 +471,66 @@ def _seo_keyword_dna_direction(job: dict[str, Any]) -> str:
 """
 
 
+def _dynamic_cta_retention_direction(job: dict[str, Any]) -> str:
+    snapshot = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    dna = snapshot.get("editorial_dna") if isinstance(snapshot.get("editorial_dna"), dict) else {}
+    narrative_dna = dna.get("narrative") if isinstance(dna.get("narrative"), dict) else {}
+    brief = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
+    profile_id = str(job.get("channel_profile_id") or snapshot.get("id") or "").strip()
+    raw_cta = (
+        brief.get("cta_strategy")
+        or snapshot.get("cta_strategy")
+        or dna.get("cta_strategy")
+        or narrative_dna.get("cta_strategy")
+        or ""
+    )
+    if isinstance(raw_cta, dict):
+        cta_strategy = str(raw_cta.get("rules_summary") or json.dumps(raw_cta, ensure_ascii=False)).strip()
+    else:
+        cta_strategy = str(raw_cta or "").strip()
+    custom_rules = str(brief.get("custom_rules") or "").lower()
+    is_true_crime_kr = (
+        profile_id == "channel-e544a64b7c"
+        or "특급수배록" in custom_rules
+        or "중국 실화 사건" in custom_rules
+        or "중국의 실제" in custom_rules
+    )
+    if not cta_strategy and not is_true_crime_kr:
+        return ""
+    custom_note = f"\n- Profile CTA Rulebook: {cta_strategy}" if cta_strategy else ""
+    return f"""AUDIENCE-RETENTION-DRIVEN 2-TOUCHPOINT DYNAMIC CTA ARCHITECTURE (MANDATORY & CONTEXT-ADAPTIVE PER EPISODE):{custom_note}
+- Grounded in real YouTube Analytics retention curves from this channel (`fYFBS9FYy8Y`, `d3Zo6ln6Jgg`):
+  * 00:00–01:00 (Audience Filter Phase): Natural drop from 100% to ~50%–57%.
+  * 02:00–Penultimate Minute (Core Investigation Body): Exceptionally flat, rock-solid 40%–50% retention curve across 20+ minutes.
+  * Final 1–2 Minutes (Resolution Phase): Viewers begin dropping off as soon as the verdict lands or they hear a farewell sign-off.
+- STRICT 3-PART CTA EXECUTION LAW (100% DYNAMIC & CASE-SPECIFIC — NEVER USE IDENTICAL STOCK WORDING ACROSS VIDEOS):
+  1. ZERO EARLY CTA (00:00–02:00):
+     - Strictly FORBID any Subscribe/Like/Channel announcement in the first 1–2 minutes. Dive 100% into the Cold Open paradox and locked-room/forensic mystery so impatient viewers are never pushed away.
+  2. TOUCHPOINT 1 — MID-ROLL STORY-WEAVED SOFT CTA (~30% OF DURATION / MINUTE 6–8, AT ACT 2 -> ACT 3 OR MAJOR CLUE TRANSITION, LASTING 5–7 SECONDS):
+     - Timing: Place right after revealing a baffling forensic contradiction or dead-end, just before pivoting to the next investigative breakthrough (when 45%–50% of core viewers are maximally hooked).
+     - Dynamic Context-Adaptive Wording (MUST VARY BY CASE — NO COPY-PASTE TEMPLATE):
+       * Weave a smooth 5–7 second voiceover bridge directly out of THIS episode's specific clue, location, or suspect paradox before opening the next scene. Every video must sound newly written for that exact case:
+         - For a Closed-Room / Blind-Spot Disappearance case: Anchor on the investigation hitting an impossible wall (e.g. thousands of cameras or zero footprints), smoothly invite viewers who value relentless real-world forensic tracking to subscribe ("구독과 좋아요") to accompany the investigation team, then immediately pivot to the hidden clue detectives noticed next.
+         - For a Long-Term Disguise / Identity-Laundering Fugitive case: Anchor on the chilling double life of the suspect hiding in plain sight for 10–20 years, invite viewers to subscribe to follow these real investigative dossiers, then immediately reveal the first crack in the suspect's alibi.
+         - For a Microscopic Forensic Breakthrough case: Anchor on the tiny physical trace (e.g. 20g tissue, a single fiber, latent print, Y-STR DNA), invite viewers to subscribe to witness how forensic science dismantles the "perfect crime", then immediately cut into the lab result.
+     - Visual & Audio Rule (`visual_manifest.json` & Remotion Edit):
+       * NEVER interrupt the narrative visual or cut the background music (BGM).
+       * On the Mid-roll Soft CTA beat in `visual_manifest.json`, set `purpose: "mid_roll_soft_cta"` and `on_screen_text: "구독 · 좋아요 | 사건 추적 계속"` (triggering only a compact, non-intrusive lower-corner animated Subscribe badge while the investigative visual continues seamlessly).
+  3. TOUCHPOINT 2 — PRE-SIGNOFF VALUE-DRIVEN HARD CTA + CASE-SPECIFIC END-SCREEN BRIDGE (30–45 SECONDS BEFORE VIDEO END, IMMEDIATELY AFTER VERDICT & STRICTLY BEFORE ANY FAREWELL):
+     - CRITICAL ORDERING LAW: Place this IMMEDIATELY after the court verdict / final sentence is delivered in Act 5, and STRICTLY BEFORE any closing thank-you or sign-off ("시청해 주셔서 감사합니다" / "오늘 준비한 이야기는 여기까지입니다"). If you say thank-you first, viewers exit immediately before hearing the CTA.
+     - 3-Step Dynamic Sequence (~25–35 seconds total, tailored 100% to the current episode's theme):
+       (a) Case Echo / Haunting Lesson (~8–10s): Distill the specific psychological lesson, human tragedy, or forensic irony unique to THIS case.
+       (b) Value-Driven Subscribe & Notification Bell Call (~8–10s): Connect subscribing and turning on the notification bell ("구독과 알림 설정") to receiving the next real criminal investigation dossier next week, varying the phrasing to match today's investigative tone.
+       (c) Thematic Bridge to Next Video on End Screen (~8–10s — MANDATORY): Pitch the next case appearing on the YouTube End Screen right now by linking it directly to the motif of today's case!
+           - E.g. If today's case was a residential disappearance, bridge to another baffling vanished-in-plain-sight mystery on screen ("오늘 사건처럼 평범한 일상 속에서 흔적도 없이 사라진 또 다른 미스터리가 궁금하시다면, 지금 화면에 나타나는 사건 파일을 바로 확인해 보시기 바랍니다").
+           - If today's case was a long-term fugitive in disguise, bridge to another shocking identity-laundering manhunt appearing on the End Screen right now.
+           - If today's case was a cold case solved by forensics, bridge to another microscopic forensic twist on the End Screen.
+       (d) Final Brief Sign-Off (Last 3–5s only): Only AFTER the End Screen bridge is delivered, close with a brief, solemn farewell.
+     - Visual & Audio Rule (`visual_manifest.json` & Remotion Edit):
+       * Tag the End-roll CTA & Bridge beat(s) in `visual_manifest.json` with `purpose: "end_screen_cta_bridge"` and `on_screen_text: "구독 · 알림 설정 | 다음 사건 파일 확인"` so the final 20–30 seconds frame the YouTube End Screen recommendation cleanly.
+"""
+
+
 def build_phase_prompt(job: dict[str, Any], phase: str, workspace: str | Path, remotion_dir: str | Path) -> str:
     workspace = Path(workspace).resolve()
     remotion_dir = Path(remotion_dir).resolve()
@@ -463,6 +538,7 @@ def build_phase_prompt(job: dict[str, Any], phase: str, workspace: str | Path, r
     profile_editorial_direction = _profile_editorial_dna_direction(job)
     creative_brief_direction = _creative_brief_direction(job, workspace)
     seo_keyword_dna_direction = _seo_keyword_dna_direction(job)
+    dynamic_cta_direction = _dynamic_cta_retention_direction(job)
     header = f"""You are the production agent for COFI DOCUMENTARY.
 
 Job workspace: {workspace}
@@ -482,6 +558,7 @@ JOB DATA
 {profile_editorial_direction}
 {creative_brief_direction}
 {seo_keyword_dna_direction}
+{dynamic_cta_direction}
 """
 
     if phase == "plan":
@@ -566,7 +643,7 @@ CRITICAL ANTI-TIMEOUT & EXECUTION RULES FOR PLAN:
 STRICT DURATION & CHARACTER BUDGET LOCK:
 - Respect the exact `target_duration_minutes` / `target_duration_sec` in `production_recipe`. Never default to 30 minutes (1800s) when the user requested a different duration (e.g. 15, 20, 22, or 25 minutes), even if a channel profile label or older template mentions 30 minutes.
 - Aim strictly for {narration_length} so the finished TTS voice lands within ±8% of the requested duration at CofiVoice's real reading pace (~305 non-space Hangul syllables/minute or ~400 total characters/minute including inter-beat pauses). Before finishing `script.md` and `visual_manifest.json`, verify with Python (`len(re.sub(r"\\s+", "", script_text))`) that the total narration length does NOT exceed the upper character ceiling above; if it is too long, tighten and condense repetitive exposition so the finished video will not overshoot the requested duration by 10+ minutes.
-- Do not create `visual_manifest.json` from a placeholder or summary. It must contain enough beats for the full narration. Keep routine visual beats short and dense: aim around 5-8 seconds per visual beat (~35-52 non-space Hangul characters per beat), with one clear visual idea/action per beat. Group adjacent beats that belong to the same person/event/relationship idea under the same stable `story_group`; a story_group normally spans roughly 10-30 seconds and gives Footage permission to reuse one authentic asset contextually when it remains correct. When one narration passage would otherwise create a long SRT/visual hold, split it into multiple shorter semantic beats so the edit can use more varied footage. Keep narration phrasing natural and do not split in the middle of a meaningful phrase merely to hit a quota. Footage matching is story-beat based, not sentence-literal: the visual may show the correct person, event, place, document, or period context even when it does not literally depict every noun or verb in the spoken line. Follow the active quality contract if it requires an even denser cadence. Do not create a second incompatible scene timeline. The stable beat_id contract is mandatory.
+- Do not create `visual_manifest.json` from a placeholder or summary. It must contain enough beats for the full narration. Keep routine visual beats short and dense: aim around 5-8 seconds per visual beat (~35-52 non-space Hangul characters per beat), with one clear visual idea/action per beat. Group adjacent beats that belong to the same person/event/relationship idea under the same stable `story_group`; a story_group groups related narrative beats (10-30s), but every sliced real footage clip (3-6s) may appear at most ONCE in standard full-screen view (never repeat footage as filler; purposeful callbacks must use transformative Split-Screen/PiP/Macro-Loupe framing). When one narration passage would otherwise create a long SRT/visual hold, split it into multiple shorter semantic beats so the edit can use more varied footage. Keep narration phrasing natural and do not split in the middle of a meaningful phrase merely to hit a quota. Footage matching is story-beat based, not sentence-literal: the visual may show the correct person, event, place, document, or period context even when it does not literally depict every noun or verb in the spoken line. Follow the active quality contract if it requires an even denser cadence. Do not create a second incompatible scene timeline. The stable beat_id contract is mandatory.
 
 VISUAL TYPE POLICY — VIDEO FIRST:
 - For normal real-world sourced media, plan `visual_type=sourced_video`. Do not plan `sourced_still` as the primary/default visual for a beat.
@@ -576,7 +653,8 @@ VISUAL TYPE POLICY — VIDEO FIRST:
 - Không dùng native_motion làm visual độc lập. Motion chỉ được dùng như annotation bám trên ảnh/video base.
 - Do not use `native_motion` as an independent primary visual. Motion is annotation over a base real/AI image/video only: short mobile-readable text, arrows, circles, highlights or callouts that directly clarify the voice.
 - For `prefer_real` and `ai_ok`, keep factual wording honest so an AI reconstruction can illustrate period/context without being presented as authentic archival evidence.
-- For True Crime & Forensic Noir investigations (channel-e544a64b7c / forensic_noir), structure visual beats to semantically support the 24 True Crime archetypes: multi-scale satellite maps (#M1..#M8 from Z6 orbital sweeps to Z16 rooftop loupes), forensic dossiers (#D1..#D10 including latent prints, Y-STR familial DNA, interrogation confessions, and wanted warrants), 1990s broadcast & press (#P1..#P6 including curfew notices and CRT monitors), and full cinema framing (cinema_full) for raw emotional grief.
+- For True Crime & Forensic Noir investigations (channel-e544a64b7c / forensic_noir), structure visual beats around the Script-Driven Visual Mix (~50% Real Footage + ~30% High-End Animated Vox & Satellite Map Motion + ~20% Scene-Locked AI Reconstructions, with ~10% flexible adaptation).
+- SCENE-FOCUSED `visual_description` RULE: In `visual_manifest.json`, `visual_description` for every beat describes the physical scene, characters, action, props, and environment specific to that beat's spoken narration.
 """
 
     if phase == "footage":
@@ -637,10 +715,19 @@ Build or continue the composition in CofiRemotion using the approved beat timeli
 
 {_premium_editing_direction()}
 
-VOX 24-ARCHETYPE EDITORIAL & SATELLITE ENGINE (CRITICAL — NO RAW HTML/CSS `<div>` HUDS OR DARK BOX CARDS):
-- Before this Edit phase ran, the backend automatically executed `VoxBlenderBridge` and published the **24 Tactile Vox Documentary Archetype Plates & 30fps Motions** (`public/jobs/<job_id>/vox_renders/vox_<beat_id>_<ARCHETYPE>.mp4` / `footage/motion_*.mp4`).
-- Follow the Universal 4-Tier Semantic Visual Priority (1. Real Video Footage -> 2. Real Photo Footage -> 3. Semantic Vox -> 4. AI Image): use tactile Vox 30fps motions (`<OffthreadVideo>`) whenever the spoken voice line discusses **Hồ sơ vụ án (Case Files / Investigation Dossiers / Profiles / Property & Financial Records / Search & Utility Logs / Interrogation / Court Records)**, **Bản đồ vệ tinh (`#M1..#M8`)**, **Hồ sơ pháp y (`#D1..#D10`)**, **Báo chí/Truyền hình (`#P1..#P6`)**, or any analytical content clarified by Vox (prioritizing those core groups and limiting unrelated scenes). Vox scenes/maps are NOT restricted to `count = 1`; they may recur purposefully (`có chủ đích`), and **best practice** when returning to the same satellite map or case dossier across different voice lines is to **design a custom 30fps motion tailored to each specific voice line** rather than replaying an identical clip.
-- **STRICTLY FORBIDDEN**: Do NOT build pure HTML/CSS `<div>` chapter banners (`<ChapterHeroBanner>`), `<SceneTransitionStamp>`, dark `rounded_rectangle` HUD cards, or fake CSS tables/charts in Remotion. Remotion is ONLY the timeline compositor for tactile Vox 24-Archetype plates/videos, AI/real camera footage, and the bottom broadcast Korean subtitle!
+HIGH-END ANIMATED VOX ENGINE + REMOTION TIMELINE EDITOR ARCHITECTURE:
+- **DIVISION OF LABOR**:
+  1. **Vox Engine (`documentary/vox_engine` & `CofiBlenderStudio`) = High-End Multi-Layer Animated Vox & Satellite Motion Creator**:
+     - Creates voice-synced 30fps `.mp4` Vox motion clips (`vox/VOX_*.mp4`) with live moving video cutouts (`S_F*.mp4`), tactile paper-craft stop-motion choreography, clause-synced highlighter sweeps, progressive timelines, and real Esri Satellite GIS motion maps matching the spoken beat duration (`duration_sec = end_sec - start_sec`).
+  2. **Remotion (`CofiRemotion`) = Master Full-Video Timeline Editor & Compositor**:
+     - Sequences the full documentary timeline using `@remotion/media` (`<Video>` and `<Audio>`) with active-frame sequence windowing and the **Script-Driven Visual Mix (`~50% Real Footage + ~30% High-End Animated Vox & Satellite Maps + ~20% Scene-Locked AI Keyframes`, with `~10%` flexible adaptation)** aligned to the meaning of each spoken voice beat.
+     - Enforces `max_uses = 1` per real footage clip in standard view and **1-to-1 Scene-Locked AI Keyframes** (each `<beat_id>_ai_keyframe.jpg` belongs exclusively to its own `<beat_id>`).
+     - Applies **Optical Camera Motion (`1.005 -> 1.065`)** on real footage/stills, mixes voiceover + **Automated Audio Ducking BGM** + **Multi-Event Downloaded Foley SFX** (`public/audio_library/sfx/`), and renders `<SubtitleOverlay>`.
+
+UNIVERSAL MASTER EXPORT SYNC CONTRACT (MANDATORY FOR 100% PREVIEW-TO-EXPORT PARITY):
+- Always separate timeline data into a dedicated `<CompName>Data.ts` file alongside `<CompName>.tsx` and register `<Composition id="Documentary-{job.get('id')}" component={{<CompName>}} durationInFrames={{...}} fps={{30}} width={{1920}} height={{1080}} />` in `src/Composition.tsx`.
+- In `<CompName>Data.ts`, export `<PREFIX>_JOB_ID = "{job.get('id')}"`, `<PREFIX>_DURATION_FRAMES = <total_frames>`, and `<PREFIX>_BEATS` where every beat includes `beatId`, `startFrame`, `endFrame`, `durationInFrames`, `partAFrames`, `partBFrames`, `cameraMode`, `secondaryCameraMode`, `imageFile`, `secondaryImageFile`, `clausesA`, and `clausesB`.
+- In `<CompName>.tsx`, export `HIGHLIGHT_KEYWORDS: string[]` and merge consecutive sub-shots sharing the same `filePath` into `MERGED_VISUAL_SHOTS` so `turbo-nvenc-export.mjs` + `universal_master_render.py` can render the exact same camera curves, CSS filters, vignette, and subtitle plates with >32 dB PSNR parity.
 
 {_asset_variety_direction()}
 
@@ -717,10 +804,19 @@ Then read `{remotion_dir / 'AGENTS.md'}` and perform the final AI review using t
 
 {_premium_editing_direction()}
 
-VOX 24-ARCHETYPE EDITORIAL & SATELLITE ENGINE (CRITICAL — NO RAW HTML/CSS `<div>` HUDS OR DARK BOX CARDS):
-- Before this Edit phase ran, the backend automatically executed `VoxBlenderBridge` and published the **24 Tactile Vox Documentary Archetype Plates & 30fps Motions** (`public/jobs/<job_id>/vox_renders/vox_<beat_id>_<ARCHETYPE>.mp4` / `footage/motion_*.mp4`).
-- Follow the Universal 4-Tier Semantic Visual Priority (1. Real Video Footage -> 2. Real Photo Footage -> 3. Semantic Vox -> 4. AI Image): use tactile Vox 30fps motions (`<OffthreadVideo>`) whenever the spoken voice line discusses **Hồ sơ vụ án (Case Files / Investigation Dossiers / Profiles / Property & Financial Records / Search & Utility Logs / Interrogation / Court Records)**, **Bản đồ vệ tinh (`#M1..#M8`)**, **Hồ sơ pháp y (`#D1..#D10`)**, **Báo chí/Truyền hình (`#P1..#P6`)**, or any analytical content clarified by Vox (prioritizing those core groups and limiting unrelated scenes). Vox scenes/maps are NOT restricted to `count = 1`; they may recur purposefully (`có chủ đích`), and **best practice** when returning to the same satellite map or case dossier across different voice lines is to **design a custom 30fps motion tailored to each specific voice line** rather than replaying an identical clip.
-- **STRICTLY FORBIDDEN**: Do NOT build pure HTML/CSS `<div>` chapter banners (`<ChapterHeroBanner>`), `<SceneTransitionStamp>`, dark `rounded_rectangle` HUD cards, or fake CSS tables/charts in Remotion. Remotion is ONLY the timeline compositor for tactile Vox 24-Archetype plates/videos, AI/real camera footage, and the bottom broadcast Korean subtitle!
+HIGH-END ANIMATED VOX ENGINE + REMOTION TIMELINE EDITOR ARCHITECTURE:
+- **DIVISION OF LABOR**:
+  1. **Vox Engine (`documentary/vox_engine` & `CofiBlenderStudio`) = High-End Multi-Layer Animated Vox & Satellite Motion Creator**:
+     - Creates voice-synced 30fps `.mp4` Vox motion clips (`vox/VOX_*.mp4`) with live moving video cutouts (`S_F*.mp4`), tactile paper-craft stop-motion choreography, clause-synced highlighter sweeps, progressive timelines, and real Esri Satellite GIS motion maps matching the spoken beat duration (`duration_sec = end_sec - start_sec`).
+  2. **Remotion (`CofiRemotion`) = Master Full-Video Timeline Editor & Compositor**:
+     - Sequences the full documentary timeline using `@remotion/media` (`<Video>` and `<Audio>`) with active-frame sequence windowing and the **Script-Driven Visual Mix (`~50% Real Footage + ~30% High-End Animated Vox & Satellite Maps + ~20% Scene-Locked AI Keyframes`, with `~10%` flexible adaptation)** aligned to the meaning of each spoken voice beat.
+     - Enforces `max_uses = 1` per real footage clip in standard view and **1-to-1 Scene-Locked AI Keyframes** (each `<beat_id>_ai_keyframe.jpg` belongs exclusively to its own `<beat_id>`).
+     - Applies **Optical Camera Motion (`1.005 -> 1.065`)** on real footage/stills, mixes voiceover + **Automated Audio Ducking BGM** + **Multi-Event Downloaded Foley SFX** (`public/audio_library/sfx/`), and renders `<SubtitleOverlay>`.
+
+UNIVERSAL MASTER EXPORT SYNC CONTRACT (MANDATORY FOR 100% PREVIEW-TO-EXPORT PARITY):
+- Always separate timeline data into a dedicated `<CompName>Data.ts` file alongside `<CompName>.tsx` and register `<Composition id="Documentary-{job.get('id')}" component={{<CompName>}} durationInFrames={{...}} fps={{30}} width={{1920}} height={{1080}} />` in `src/Composition.tsx`.
+- In `<CompName>Data.ts`, export `<PREFIX>_JOB_ID = "{job.get('id')}"`, `<PREFIX>_DURATION_FRAMES = <total_frames>`, and `<PREFIX>_BEATS` where every beat includes `beatId`, `startFrame`, `endFrame`, `durationInFrames`, `partAFrames`, `partBFrames`, `cameraMode`, `secondaryCameraMode`, `imageFile`, `secondaryImageFile`, `clausesA`, and `clausesB`.
+- In `<CompName>.tsx`, export `HIGHLIGHT_KEYWORDS: string[]` and merge consecutive sub-shots sharing the same `filePath` into `MERGED_VISUAL_SHOTS` so `turbo-nvenc-export.mjs` + `universal_master_render.py` can render the exact same camera curves, CSS filters, vignette, and subtitle plates with >32 dB PSNR parity.
 
 {_asset_variety_direction()}
 
@@ -793,10 +889,19 @@ ATTACHED IMAGES
 
 {_premium_editing_direction()}
 
-VOX 24-ARCHETYPE EDITORIAL & SATELLITE ENGINE (CRITICAL — NO RAW HTML/CSS `<div>` HUDS OR DARK BOX CARDS):
-- Before this Edit phase ran, the backend automatically executed `VoxBlenderBridge` and published the **24 Tactile Vox Documentary Archetype Plates & 30fps Motions** (`public/jobs/<job_id>/vox_renders/vox_<beat_id>_<ARCHETYPE>.mp4` / `footage/motion_*.mp4`).
-- Follow the Universal 4-Tier Semantic Visual Priority (1. Real Video Footage -> 2. Real Photo Footage -> 3. Semantic Vox -> 4. AI Image): use tactile Vox 30fps motions (`<OffthreadVideo>`) whenever the spoken voice line discusses **Hồ sơ vụ án (Case Files / Investigation Dossiers / Profiles / Property & Financial Records / Search & Utility Logs / Interrogation / Court Records)**, **Bản đồ vệ tinh (`#M1..#M8`)**, **Hồ sơ pháp y (`#D1..#D10`)**, **Báo chí/Truyền hình (`#P1..#P6`)**, or any analytical content clarified by Vox (prioritizing those core groups and limiting unrelated scenes). Vox scenes/maps are NOT restricted to `count = 1`; they may recur purposefully (`có chủ đích`), and **best practice** when returning to the same satellite map or case dossier across different voice lines is to **design a custom 30fps motion tailored to each specific voice line** rather than replaying an identical clip.
-- **STRICTLY FORBIDDEN**: Do NOT build pure HTML/CSS `<div>` chapter banners (`<ChapterHeroBanner>`), `<SceneTransitionStamp>`, dark `rounded_rectangle` HUD cards, or fake CSS tables/charts in Remotion. Remotion is ONLY the timeline compositor for tactile Vox 24-Archetype plates/videos, AI/real camera footage, and the bottom broadcast Korean subtitle!
+HIGH-END ANIMATED VOX ENGINE + REMOTION TIMELINE EDITOR ARCHITECTURE:
+- **DIVISION OF LABOR**:
+  1. **Vox Engine (`documentary/vox_engine` & `CofiBlenderStudio`) = High-End Multi-Layer Animated Vox & Satellite Motion Creator**:
+     - Creates voice-synced 30fps `.mp4` Vox motion clips (`vox/VOX_*.mp4`) with live moving video cutouts (`S_F*.mp4`), tactile paper-craft stop-motion choreography, clause-synced highlighter sweeps, progressive timelines, and real Esri Satellite GIS motion maps matching the spoken beat duration (`duration_sec = end_sec - start_sec`).
+  2. **Remotion (`CofiRemotion`) = Master Full-Video Timeline Editor & Compositor**:
+     - Sequences the full documentary timeline using `@remotion/media` (`<Video>` and `<Audio>`) with active-frame sequence windowing and the **Script-Driven Visual Mix (`~50% Real Footage + ~30% High-End Animated Vox & Satellite Maps + ~20% Scene-Locked AI Keyframes`, with `~10%` flexible adaptation)** aligned to the meaning of each spoken voice beat.
+     - Enforces `max_uses = 1` per real footage clip in standard view and **1-to-1 Scene-Locked AI Keyframes** (each `<beat_id>_ai_keyframe.jpg` belongs exclusively to its own `<beat_id>`).
+     - Applies **Optical Camera Motion (`1.005 -> 1.065`)** on real footage/stills, mixes voiceover + **Automated Audio Ducking BGM** + **Multi-Event Downloaded Foley SFX** (`public/audio_library/sfx/`), and renders `<SubtitleOverlay>`.
+
+UNIVERSAL MASTER EXPORT SYNC CONTRACT (MANDATORY FOR 100% PREVIEW-TO-EXPORT PARITY):
+- Always separate timeline data into a dedicated `<CompName>Data.ts` file alongside `<CompName>.tsx` and register `<Composition id="Documentary-{job.get('id')}" component={{<CompName>}} durationInFrames={{...}} fps={{30}} width={{1920}} height={{1080}} />` in `src/Composition.tsx`.
+- In `<CompName>Data.ts`, export `<PREFIX>_JOB_ID = "{job.get('id')}"`, `<PREFIX>_DURATION_FRAMES = <total_frames>`, and `<PREFIX>_BEATS` where every beat includes `beatId`, `startFrame`, `endFrame`, `durationInFrames`, `partAFrames`, `partBFrames`, `cameraMode`, `secondaryCameraMode`, `imageFile`, `secondaryImageFile`, `clausesA`, and `clausesB`.
+- In `<CompName>.tsx`, export `HIGHLIGHT_KEYWORDS: string[]` and merge consecutive sub-shots sharing the same `filePath` into `MERGED_VISUAL_SHOTS` so `turbo-nvenc-export.mjs` + `universal_master_render.py` can render the exact same camera curves, CSS filters, vignette, and subtitle plates with >32 dB PSNR parity.
 
 {_asset_variety_direction()}
 
@@ -862,7 +967,7 @@ Already completed in earlier batches:
 Rules for this batch:
 1. Preserve all already-completed beats. Do not rebuild or restyle them unless a shared composition-level fix is strictly required for this batch to work.
 2. Finish every beat in this batch: correct footage/still placement, timing, editorial subtitles/typography, useful native motion, authored cinematic motion/compositing, scene-specific transitions, and designed SFX/audio where appropriate. Review approved alternatives and nearby timeline usage so the same source file/time range is not repeated as filler when another accurate approved asset would improve the sequence. Keep one clear focal point and vary intensity by story function.
-2b. TRUE CRIME VOX 24-ARCHETYPE ENGINE (NO RAW <DIV> BOXES, NO DEPRECATED 3D): Follow the Universal 4-Tier Semantic Visual Priority (1. Video Footage -> 2. Photo Footage -> 3. Semantic Vox -> 4. AI Image). Use tactile 30fps Vox motions (`#M1..#M8` Real Satellite, `#D1..#D10` Case Files & Tactile Forensic Dossiers/Labs, `#P1..#P6` Archival Press/CRT) via `<OffthreadVideo>` whenever the spoken voice line calls for a case file (`hồ sơ vụ án`), satellite map, forensic test, broadcast/press record, or analytical graphic. Vox scenes are NOT limited to a single appearance (`count = 1`); they can recur purposefully (`có chủ đích`), and on shared maps/dossiers you should design custom voice-matched motions (`motion_*.mp4`) for each voice line rather than repeating the exact same clip. NEVER use `scene_01..04_*.mp4` (`#B1..#B4`) and NEVER invent raw CSS `<div>` banners, `<div>` HUD stamps, or flat 2D dark `rounded_rectangle` boxes in Remotion TSX.
+2b. HIGH-END ANIMATED VOX + REMOTION FULL-VIDEO EDITING RULE: Route beats by spoken narration meaning (~50% Real Video Footage [3–6s slices, max 1 standard use] + ~30% High-End Animated 30fps Vox `.mp4` + ~20% 1-to-1 Scene-Locked AI Keyframes). Purposeful callbacks to an earlier footage clip use a Transformative Layout (`Split-Screen A/B`, `Forensic PiP`, or `160% Macro Loupe`). The Vox Engine renders voice-synced 30fps `.mp4` animations (`vox/VOX_*.mp4`) with live moving video cutouts, tactile paper-craft choreography, and real Esri Satellite GIS motion matching the spoken beat duration and clauses. Remotion edits the full timeline using `@remotion/media`, applies optical camera moves + CCTV/Forensic framing on footage, mixes automated audio-ducking BGM + multi-event synced Foley SFX, and renders Korean subtitles (`<SubtitleOverlay>`).
 3. Save source changes frequently so Remotion Studio HMR can show them immediately. Publish live-edit events as required by the EDIT rules above.
 4. After EACH beat is fully finished and its viewer-facing changes are saved/published, immediately update `{workspace / 'edit_progress.json'}` before moving to the next beat. Preserve all existing fields and assigned IDs; add that beat ID to `completed_beat_ids`, remove it from `pending_beat_ids`, update `completed_beats` and `status_message`, and write the JSON safely through a temporary file + replace. This beat-level progress is the resume point after a disconnect or app restart.
 5. {finish_rule}

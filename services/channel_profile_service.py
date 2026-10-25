@@ -110,6 +110,7 @@ class DefaultCreativeBriefModel(BaseModel):
     opening_hook: str = "Opening hook line."
     notes: str = "Channel profile notes."
     custom_rules: str = "Standard DNA compliance"
+    cta_strategy: str = ""
 
 
 class TopicMemoryEntryModel(BaseModel):
@@ -210,6 +211,7 @@ class ChannelProfileCreateModel(BaseModel):
     monetization_safety_policy: str | None = None
     voice_and_structure: str | None = None
     reference_image_policy: str | None = None
+    cta_strategy: str | None = None
     default_creative_brief: dict[str, Any] | None = None
     editing_dna: dict[str, Any] | None = None
     self_learning_memory: dict[str, Any] | None = None
@@ -241,6 +243,7 @@ class ChannelProfileUpdateModel(BaseModel):
     monetization_safety_policy: str | None = None
     voice_and_structure: str | None = None
     reference_image_policy: str | None = None
+    cta_strategy: str | None = None
     default_creative_brief: dict[str, Any] | None = None
     editing_dna: dict[str, Any] | None = None
     self_learning_memory: dict[str, Any] | None = None
@@ -382,7 +385,8 @@ class ChannelProfileService:
             "editing_archetypes": list(brief_data.get("editing_archetypes") or ["2.5D maps", "document telemetry", "chapter title cards"]),
             "opening_hook": str(brief_data.get("opening_hook") or "Opening hook statement."),
             "notes": str(brief_data.get("notes") or raw_data.get("notes") or label),
-            "custom_rules": str(brief_data.get("custom_rules") or raw_data.get("custom_rules") or "Standard DNA compliance")
+            "custom_rules": str(brief_data.get("custom_rules") or raw_data.get("custom_rules") or "Standard DNA compliance"),
+            "cta_strategy": str(brief_data.get("cta_strategy") or raw_data.get("cta_strategy") or "")
         }
 
         # Initialize Editing DNA
@@ -452,6 +456,7 @@ class ChannelProfileService:
             "monetization_safety_policy": str(raw_data.get("monetization_safety_policy") or ""),
             "voice_and_structure": str(raw_data.get("voice_and_structure") or ""),
             "reference_image_policy": str(raw_data.get("reference_image_policy") or ""),
+            "cta_strategy": str(raw_data.get("cta_strategy") or brief.get("cta_strategy") or ""),
             "default_creative_brief": brief,
             "editing_dna": editing_dna,
             "self_learning_memory": self_learning_memory,

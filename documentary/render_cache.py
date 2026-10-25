@@ -358,7 +358,7 @@ def detect_hardware_profile(*, force_refresh: bool = False) -> dict[str, Any]:
         "cache_size_mb": cache_size_mb,
         "gl_backend": gl_backend,
         "hardware_acceleration": hardware_acceleration,
-        "x264_preset": "veryfast",
+        "x264_preset": "fast",
         "turbo_nvenc": gpu_vendor == "nvidia",
         "summary": (
             f"CPU trống {cpu_free_pct:.0f}% ({usable_cpu_threads}/{logical_cores} luồng khả dụng) · "
@@ -395,14 +395,14 @@ class BackgroundRenderCache:
     ) -> None:
         self.remotion_dir = Path(remotion_dir).resolve()
         self.hardware_profile = detect_hardware_profile()
-        # Default chunk size is 3600s (60 minutes) so videos render in 1 single continuous pass
-        # (bundling once, launching Chrome once, keeping Rust OffthreadVideo decoders warm).
+        # Default chunk size is 10800s (180 minutes) so videos render in 1 single continuous pass
+        # with per-shot content-hash caching in .render_cache/universal_segments/.
         self.chunk_seconds = max(
             10,
             int(
                 chunk_seconds
                 if chunk_seconds is not None
-                else _env_int("COFI_RENDER_CACHE_CHUNK_SEC", 3600, 10)
+                else _env_int("COFI_RENDER_CACHE_CHUNK_SEC", 10800, 10)
             ),
         )
         self.concurrency = max(
@@ -440,7 +440,34 @@ class BackgroundRenderCache:
         if turbo_script.is_file():
             digest.update(b"scripts/turbo-nvenc-export.mjs")
             digest.update(turbo_script.read_bytes())
+        universal_py = self.remotion_dir / "scripts" / "universal_master_render.py"
+        if universal_py.is_file():
+            digest.update(b"scripts/universal_master_render.py")
+            digest.update(universal_py.read_bytes())
         return digest.hexdigest()
+
+    def _resolve_composition_total_frames(self, job_id: str | None) -> int | None:
+        if not job_id:
+            return None
+        src_dir = self.remotion_dir / "src"
+        if not src_dir.is_dir():
+            return None
+        for path in sorted(src_dir.glob("*Data.ts")):
+            try:
+                text = path.read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            if str(job_id) not in text:
+                continue
+            match = re.search(
+                r"(?:DURATION_FRAMES|TOTAL_FRAMES)\s*=\s*(\d+)",
+                text,
+            )
+            if match:
+                val = int(match.group(1))
+                if val > 0:
+                    return val
+        return None
 
     @staticmethod
     def _read_json(path: Path) -> dict[str, Any]:
@@ -606,6 +633,9 @@ class BackgroundRenderCache:
         raw_frames = total_seconds * fps
         nearest_frames = round(raw_frames)
         total_frames = max(1, int(nearest_frames if abs(raw_frames - nearest_frames) <= 0.25 else math.ceil(raw_frames)))
+        comp_frames = self._resolve_composition_total_frames(str(job.get("id") or ""))
+        if comp_frames and abs(comp_frames - total_frames) <= 5:
+            total_frames = comp_frames
         frames_per_chunk = max(1, self.chunk_seconds * fps)
         cache_root = workspace / ".render_cache"
         video_dir = cache_root / "video"
@@ -871,6 +901,7 @@ class BackgroundRenderCache:
         affinity_mask: int = 0,
         process_slot: dict[str, subprocess.Popen[Any]] | None = None,
         slot_key: str = "",
+        append_log: bool = False,
     ) -> int:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
@@ -887,7 +918,8 @@ class BackgroundRenderCache:
         if env_overrides:
             env = dict(os.environ)
             env.update(env_overrides)
-        with log_path.open("w", encoding="utf-8", errors="replace") as handle:
+        mode = "a" if append_log else "w"
+        with log_path.open(mode, encoding="utf-8", errors="replace") as handle:
             process = subprocess.Popen(
                 launch,
                 cwd=str(cwd),
@@ -1000,7 +1032,9 @@ class BackgroundRenderCache:
             str(video),
             f"--frames={frame_range}",
             "--codec=h264",
-            "--crf=20",
+            "--crf=16",
+            "--jpeg-quality=95",
+            "--pixel-format=yuv420p",
             f"--x264-preset={x264_preset}",
             f"--concurrency={effective_concurrency}",
             f"--offthreadvideo-video-threads={offthread_threads}",
@@ -1013,12 +1047,7 @@ class BackgroundRenderCache:
         ]
         workspace = video.parent.parent.parent
         slot_key = str(workspace.resolve())
-        isolated_pub = self._prepare_isolated_public_dir(workspace, str(manifest.get("job_id") or ""))
-        if isolated_pub is not None:
-            command.append("--bundle-cache=false")
-            command.append(f"--public-dir={isolated_pub}")
-        else:
-            command.append("--bundle-cache")
+        direct_pub = self.remotion_dir / "public"
 
         chunk["status"] = "rendering"
         chunk["attempts"] = int(chunk.get("attempts") or 0) + 1
@@ -1042,7 +1071,9 @@ class BackgroundRenderCache:
                         if str(b).strip()
                     }
                 )
-                turbo_cmd = [
+                plan_path = video.parent.parent / "universal_render_plan.json"
+                plan_path.unlink(missing_ok=True)
+                turbo_prep_cmd = [
                     str(node_bin),
                     str(turbo_script),
                     "remotion",
@@ -1055,13 +1086,13 @@ class BackgroundRenderCache:
                     f"--ffmpeg-threads={ffmpeg_threads}",
                     f"--separate-audio-to={audio}",
                     f"--job-id={manifest.get('job_id') or ''}",
+                    f"--public-dir={direct_pub}",
+                    f"--prepare-plan-only={plan_path}",
                 ]
                 if dirty_beats:
-                    turbo_cmd.append(f"--dirty-beats={','.join(dirty_beats)}")
-                if isolated_pub is not None:
-                    turbo_cmd.append(f"--public-dir={isolated_pub}")
-                returncode = self._run_process(
-                    turbo_cmd,
+                    turbo_prep_cmd.append(f"--dirty-beats={','.join(dirty_beats)}")
+                prep_rc = self._run_process(
+                    turbo_prep_cmd,
                     self.remotion_dir,
                     log,
                     low_priority=True,
@@ -1070,7 +1101,26 @@ class BackgroundRenderCache:
                     process_slot=self._processes,
                     slot_key=slot_key,
                 )
+                universal_py = self.remotion_dir / "scripts" / "universal_master_render.py"
+                if prep_rc == 0 and plan_path.is_file() and universal_py.is_file():
+                    returncode = self._run_process(
+                        [sys.executable, str(universal_py), str(plan_path)],
+                        self.remotion_dir,
+                        log,
+                        low_priority=True,
+                        env_overrides=env_overrides,
+                        affinity_mask=affinity_mask,
+                        process_slot=self._processes,
+                        slot_key=slot_key,
+                        append_log=True,
+                    )
             if returncode != 0 or not video.exists() or video.stat().st_size <= 0 or not audio.exists() or audio.stat().st_size <= 0:
+                isolated_pub = self._prepare_isolated_public_dir(workspace, str(manifest.get("job_id") or ""))
+                if isolated_pub is not None:
+                    command.append("--bundle-cache=false")
+                    command.append(f"--public-dir={isolated_pub}")
+                else:
+                    command.append("--bundle-cache")
                 # Fallback to standard Remotion CLI with BELOW_NORMAL_PRIORITY_CLASS and CPU affinity mask
                 returncode = self._run_process(
                     command,
@@ -1083,6 +1133,12 @@ class BackgroundRenderCache:
                     slot_key=slot_key,
                 )
         else:
+            isolated_pub = self._prepare_isolated_public_dir(workspace, str(manifest.get("job_id") or ""))
+            if isolated_pub is not None:
+                command.append("--bundle-cache=false")
+                command.append(f"--public-dir={isolated_pub}")
+            else:
+                command.append("--bundle-cache")
             returncode = self.runner(command, self.remotion_dir, log)
         if returncode != 0 or not video.exists() or video.stat().st_size <= 0 or not audio.exists() or audio.stat().st_size <= 0:
             chunk["status"] = "failed"

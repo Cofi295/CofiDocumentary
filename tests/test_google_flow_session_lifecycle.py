@@ -312,3 +312,116 @@ def test_startup_resumes_persisted_profile_when_session_snapshot_is_missing(tmp_
     assert restored is not None
     assert restored["status"] == "connecting"
     assert restored["last_error"] is None
+
+
+def test_unauthenticated_about_landing_page_with_launch_button_is_not_ready():
+    class FakeLocator:
+        def __init__(self, count: int):
+            self._count = count
+
+        def count(self):
+            return self._count
+
+    class FakeAboutPage:
+        url = "https://flow.google.com/about"
+
+        def locator(self, selector):
+            if selector in ('button:has-text("Launch")', 'button:has-text("Khởi chạy")'):
+                return FakeLocator(1)
+            return FakeLocator(0)
+
+    assert BrowserLoginWorker._migrated_profile_ready(FakeAboutPage()) is False
+
+
+def test_ensure_visible_window_placement_resets_offscreen_preferences(tmp_path):
+    import json
+
+    pref_dir = tmp_path / "Default"
+    pref_dir.mkdir(parents=True)
+    pref_file = pref_dir / "Preferences"
+    pref_file.write_text(
+        json.dumps(
+            {
+                "browser": {
+                    "window_placement": {
+                        "left": 9999,
+                        "top": 9999,
+                        "right": 11279,
+                        "bottom": 10899,
+                        "maximized": False,
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    BrowserLoginWorker._ensure_visible_window_placement(tmp_path)
+    updated = json.loads(pref_file.read_text(encoding="utf-8"))
+    placement = updated["browser"]["window_placement"]
+    assert placement["left"] == 120
+    assert placement["top"] == 60
+    assert placement["right"] == 1400
+    assert placement["bottom"] == 920
+
+
+def test_concurrent_forced_resume_does_not_domino_kill_fresh_session(tmp_path):
+    from vendor.media_factory.backend.app.providers.google import GoogleFlowHeadlessClient
+
+    class _CountingWorker:
+        def __init__(self):
+            self.live = False
+            self.close_calls = 0
+            self.resume_calls = 0
+            self.first_entered = threading.Event()
+            self.release_first = threading.Event()
+
+        def has_live_session(self, _account_id: str) -> bool:
+            return self.live
+
+        def is_interactive(self, _account_id: str) -> bool:
+            return False
+
+        def close_session(self, _account_id: str) -> None:
+            self.close_calls += 1
+            self.live = False
+
+        def resume_session(self, _account_id, _profile_dir, _on_complete, _on_error) -> None:
+            self.resume_calls += 1
+            if self.resume_calls == 1:
+                self.first_entered.set()
+                self.release_first.wait(1.0)
+            self.live = True
+
+    worker = _CountingWorker()
+    db = Database(tmp_path / "media_factory.db")
+    secrets = _SecretStore()
+    manager = GoogleFlowAccountManager(
+        db,
+        secrets,  # type: ignore[arg-type]
+        profile_root=tmp_path / "profiles",
+        login_worker=worker,  # type: ignore[arg-type]
+    )
+    provider = GoogleFlowHeadlessClient(tmp_path / "out", account_manager=manager)
+    account = {"id": "acc-1"}
+
+    t1 = threading.Thread(
+        target=lambda: provider._resume_saved_live_session(account, {}, force=True),
+        daemon=True,
+    )
+    t2 = threading.Thread(
+        target=lambda: provider._resume_saved_live_session(account, {}, force=True),
+        daemon=True,
+    )
+    t1.start()
+    assert worker.first_entered.wait(0.5)
+    t2.start()
+    time.sleep(0.05)
+    worker.release_first.set()
+    t1.join(timeout=2.0)
+    t2.join(timeout=2.0)
+
+    assert worker.resume_calls == 1
+    assert worker.close_calls == 1
+    assert worker.live is True
+

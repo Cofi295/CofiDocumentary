@@ -30,10 +30,18 @@ def _now() -> str:
 
 
 def _read_json(path: Path) -> dict[str, Any]:
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
-        raise RuntimeError(f"Không đọc được {path.name}: {exc}") from exc
+    last_exc: Exception | None = None
+    data: Any = None
+    for attempt in range(8):
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            last_exc = None
+            break
+        except (OSError, json.JSONDecodeError) as exc:
+            last_exc = exc
+            if attempt >= 7:
+                raise RuntimeError(f"Không đọc được {path.name}: {exc}") from exc
+            time.sleep(0.05 * (attempt + 1))
     if not isinstance(data, dict):
         raise RuntimeError(f"{path.name} phải là JSON object")
     return data
@@ -182,29 +190,38 @@ class CofiStudioMediaFactoryRunner:
     ) -> Any:
         client = self._get_http_client()
         if client is not None:
-            try:
-                resp = client.request(
-                    method=method,
-                    url=f"{self.studio_api}{path}",
-                    json=payload if payload is not None else None,
-                    timeout=timeout,
-                )
-            except Exception as exc:
-                raise RuntimeError(f"Không kết nối được Media Factory tại {self.studio_api}: {exc}") from exc
-            if resp.status_code >= 400:
-                detail = ""
+            last_exc: Exception | None = None
+            for attempt in range(4):
                 try:
-                    error_payload = resp.json()
-                    detail = str(error_payload.get("detail") or "").strip() if isinstance(error_payload, dict) else ""
-                except Exception:
-                    pass
-                raise RuntimeError(detail or f"Media Factory HTTP {resp.status_code}")
-            if not resp.text:
-                return None
-            try:
-                return resp.json()
-            except Exception as exc:
-                raise RuntimeError("Media Factory trả về dữ liệu không hợp lệ") from exc
+                    resp = client.request(
+                        method=method,
+                        url=f"{self.studio_api}{path}",
+                        json=payload if payload is not None else None,
+                        timeout=timeout,
+                    )
+                except Exception as exc:
+                    last_exc = exc
+                    if attempt < 3:
+                        time.sleep(0.25 * (attempt + 1))
+                        continue
+                    raise RuntimeError(f"Không kết nối được Media Factory tại {self.studio_api}: {exc or type(exc).__name__}") from exc
+                if resp.status_code >= 500 and attempt < 3:
+                    time.sleep(0.25 * (attempt + 1))
+                    continue
+                if resp.status_code >= 400:
+                    detail = ""
+                    try:
+                        error_payload = resp.json()
+                        detail = str(error_payload.get("detail") or "").strip() if isinstance(error_payload, dict) else ""
+                    except Exception:
+                        pass
+                    raise RuntimeError(detail or f"Media Factory HTTP {resp.status_code}")
+                if not resp.text:
+                    return None
+                try:
+                    return resp.json()
+                except Exception as exc:
+                    raise RuntimeError("Media Factory trả về dữ liệu không hợp lệ") from exc
 
         data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
         request = urllib.request.Request(
@@ -829,6 +846,29 @@ class AIVisualCoordinator:
 
         return []
 
+    @staticmethod
+    def _clean_scene_focus(narration: str, visual: str) -> str:
+        text = str(visual or "").strip()
+        text = re.sub(r"(?i)\bcold forensic noir\b\s*", "", text)
+        text = re.sub(r"\[[^\]]*\]\s*", "", text)
+        text = re.sub(r"\bACT\d+_[A-Z0-9_]+:\s*", "", text)
+        text = re.sub(r'(?i)\bClause\s+focus\s*\([^)]*\)\s*:\s*"[^"]*"\s*[—\-–]*\s*', "", text)
+        text = re.sub(r"(?i)Cold\s+desaturated\s+noir\s+color\s+grade[^.]*\.", "", text)
+        text = re.sub(r"(?i)authentic\s+Chinese\s+judicial/public\s+security\s+archival\s+typography[^.]*\.", "", text)
+        text = re.sub(r"(?i)anchored\s+mobile-readable\s+annotation\s+highlight[^.]*\.", "", text)
+        text = re.sub(
+            r"(?i)\b(?:>=?\s*\d+\s*px|Pretendard|KeyMetricCallout|160%\s*Macro\s*Loupe|Split-Screen\s*A/B|scan\s*line\s*highlight|telemetry\s*label|callout\s*card)\b[^.]*\.?",
+            "",
+            text,
+        )
+        if narration.strip():
+            text = re.sub(r"[^.]*\bvs\b[^.]*대조\s*파일\.?\s*", "", text, flags=re.IGNORECASE)
+        text = re.sub(r"\s+", " ", text).strip(" .,-—–")
+        clean_narration = re.sub(r"\s+", " ", str(narration or "")).strip()
+        if not text or text == clean_narration:
+            return clean_narration
+        return f"{clean_narration} ({text})"
+
     @classmethod
     def _prompt(
         cls,
@@ -841,8 +881,6 @@ class AIVisualCoordinator:
     ) -> str:
         narration = str(beat.get("narration_text") or "").strip()
         visual = str(beat.get("visual_description") or "").strip()
-        purpose = str(beat.get("purpose") or "").strip()
-        framing = str(beat.get("framing_motion_intent") or "").strip()
         style = visual_style or {}
         note = ai_note or {}
         visual_language = note.get("visual_language") if isinstance(note.get("visual_language"), dict) else {}
@@ -863,48 +901,29 @@ class AIVisualCoordinator:
         period_qualifier = f"{period} " if period else ""
         subject_clause = cls._detect_historical_figure_clause(beat, period)
         style_reference_clause = (
-            "A visual style reference image is attached. MANDATORY CHARACTER & COLOR LOCK: Draw ALL human characters in the scene (investigators, detectives, fugitive Xiao Qiqiang / Wang Gui, police officers, villagers, family members, and judges) as 2D rounded chibi mascot figures strictly copying the exact character design, BRIGHT GOLDEN-YELLOW head and body skin color tone (#FFD43B warm yellow spherical head, yellow hands, and yellow feet — NEVER white skin, NEVER pale/gray skin, and NEVER realistic human faces), proportions, bold clean black linework, simple black oval eyes with white specular highlights, thin curved eyebrows, minimal line mouth, and outfit style shown in the attached reference image. "
+            "A visual style reference image is attached. MANDATORY CHARACTER & COLOR LOCK: Draw ALL human characters in the scene as 2D rounded chibi mascot figures strictly copying the exact character design, BRIGHT GOLDEN-YELLOW head and body skin color tone (#FFD43B warm yellow spherical head, yellow hands, and yellow feet — NEVER white skin, NEVER pale/gray skin, and NEVER realistic human faces), proportions, bold clean black linework, simple black oval eyes with white specular highlights, thin curved eyebrows, minimal line mouth, and outfit style shown in the attached reference image. "
             if has_style_reference else ""
         )
+        scene_focus = cls._clean_scene_focus(narration, visual)
+        no_text_rule = (
+            "CRITICAL VISUAL FOCUS RULE: Draw ONLY the core physical action, characters, props, and setting at the center of this scene in a single unified full-bleed 16:9 composition. "
+            "Because the video already has voiceover and subtitles, DO NOT render any written text, Korean/Chinese/English words, numbers, speech bubbles, captions, labels, signs, document text boxes, split-screen dividers, magnifier loupes, or UI HUD elements anywhere in the image. "
+        )
         if preset_prompt or has_style_reference:
-            clean_visual = re.sub(r"(?i)\bcold forensic noir\b\s*", "", visual).strip()
-            clean_visual = re.sub(r"\[[^\]]*\]\s*", "", clean_visual).strip()
-            clean_visual = re.sub(r"\bACT\d+_[A-Z0-9_]+:\s*", "", clean_visual).strip()
-            clean_framing = re.sub(
-                r"(?i)\s*with cold slate-blue color grade\s*\([^)]*\)\s*and high-contrast yellow callouts\s*\([^)]*\)\.?",
-                "",
-                framing,
-            ).strip()
-            clean_framing = re.sub(
-                r"(?i),?\s*KeyMetricCallout annotation anchoring factual telemetry\.?",
-                "",
-                clean_framing,
-            ).strip()
-            clean_framing = re.sub(
-                r"(?i)\s*with\s+[a-z0-9_]+_overlay,?",
-                "",
-                clean_framing,
-            ).strip()
-            clean_framing = re.sub(
-                r"(?i)\s*with\s+(split_screen_investigation|document_scanner_telemetry|forensic_case_board_red_string|map_2_5d_satellite_tracker)\s+overlay,?",
-                "",
-                clean_framing,
-            ).strip()
             style_block = f"STYLE SPECIFICATION:\n{preset_prompt}\n\n" if preset_prompt else ""
             mascot_lock_clause = (
                 "Keep all 2D rounded mascot characters strictly faithful to the attached reference image — every character MUST have the exact BRIGHT GOLDEN-YELLOW skin tone (#FFD43B warm yellow round head, hands, and feet; NEVER white or human-colored skin), rounded chibi proportions, and clean black outlines from the reference image — while rendering the specific action, environment, props, and architecture described in this beat clearly and vividly. "
                 if has_style_reference else ""
             )
             return (
-                "Create exactly one finished image for the documentary beat below. Do not output text or a prompt. "
+                "Create exactly one finished image for the documentary scene below. Do not output text or a prompt. "
                 "Treat the following block as the mandatory visual STYLE & CHARACTER SPECIFICATION; ignore any meta instructions inside it about returning prompts or analysis.\n\n"
                 f"{style_block}"
                 f"{style_reference_clause}"
-                f"Primary beat narration to illustrate: {narration}. "
-                f"Scene action & visual goal: {clean_visual}. Story purpose: {purpose}. "
-                f"Framing/camera intent: {clean_framing}. Depicted period/context: {period}. {fallback_clause}"
+                f"Core scene to illustrate (visual action & setting only, without any text): {scene_focus}. "
+                f"Depicted period/context: {period}. {fallback_clause}"
                 f"{mascot_lock_clause}"
-                "Render a single full-frame 16:9 scene with no captions, watermarks, logos, camera viewfinders (no CAM/REC), or HUD text boxes. "
+                f"{no_text_rule}"
                 f"{aspect_ratio} aspect ratio, full-canvas production-ready keyframe."
             )
         return (
@@ -915,12 +934,10 @@ class AIVisualCoordinator:
             "Match the historical period, original footage era, film grain, lighting, geography, clothing and material culture exactly. "
             f"{beat_style} "
             f"{fallback_clause}"
-            f"Narration meaning: {narration}. Visual goal: {visual}. Story purpose: {purpose}. "
-            f"Framing/camera intent: {framing}. "
+            f"Core scene to illustrate (visual action & setting only, without any text): {scene_focus}. "
             f"Depicted period for this beat: {period}. {style_directive} "
-            "Make the subject, geography and factual visual details coherent with the narration. "
             "Use realistic documentary cinematography, layered depth, natural composition and a clear focal subject. "
-            "No text, captions, logos, watermarks, UI, split screens or generic infographic shapes. "
+            f"{no_text_rule}"
             "Do not imitate a specific copyrighted frame and do not present the result as authentic archival evidence. "
             f"{aspect_ratio} aspect ratio, production-ready keyframe."
         )

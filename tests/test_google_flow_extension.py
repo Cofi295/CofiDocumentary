@@ -11,6 +11,7 @@ def test_flow_extension_is_loadable_and_scoped_to_local_controller():
     manifest = json.loads((EXTENSION_ROOT / "manifest.json").read_text(encoding="utf-8"))
 
     assert manifest["manifest_version"] == 3
+    assert "update_url" not in manifest
     assert manifest["background"]["service_worker"] == "background.js"
     assert manifest["action"]["default_popup"] == "popup.html"
     assert "http://127.0.0.1/*" in manifest["host_permissions"]
@@ -55,4 +56,25 @@ def test_hidden_worker_uses_real_chrome_window_instead_of_headless_mode():
     assert "--disable-gpu" not in args
     assert "--new-window" in args
     assert "--window-position=9999,9999" in args
+
+
+def test_auth_bridge_never_dispatches_tasks_to_closed_tab_peers():
+    from vendor.media_factory.backend.app.providers.auth_bridge import ExtensionAuthBridge
+
+    bridge = ExtensionAuthBridge(port=0)
+    bridge._pending_tasks.append({
+        "requestId": "req-1",
+        "siteKey": "site-key",
+        "action": "IMAGE_GENERATION",
+        "enqueued_at": 100.0,
+    })
+
+    assert bridge.pop_pending_task(tab_status="closed", ext_id="desktop-chrome") is None
+    assert bridge.pop_pending_task(tab_status="missing", ext_id="desktop-chrome") is None
+    assert len(bridge._pending_tasks) == 1
+
+    popped = bridge.pop_pending_task(tab_status="ready", ext_id="flow-worker")
+    assert popped is not None
+    assert popped["requestId"] == "req-1"
+
 

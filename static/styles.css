@@ -1645,7 +1645,7 @@ input[type="checkbox"] {
 .final-output-head span { display: block; color: var(--cyan); font-size: 11.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .final-output-head strong { display: block; margin-top: 4px; font-size: 14px; }
 .final-output-head small { display: block; margin-top: 3px; color: #8ea5b5; font-size: 12px; }
-.final-video { display: block; width: min(1100px, 100%); max-height: 620px; margin: 0 auto; background: #000; }
+.final-video { display: block; width: 100%; max-width: 1440px; max-height: calc(100vh - 220px); aspect-ratio: 16 / 9; object-fit: contain; margin: 0 auto; background: #000; }
 .director-report { margin-top: 12px; border: 1px solid var(--border-soft); border-radius: 11px; overflow: hidden; background: #08131d; }
 .director-report > span { display: block; padding: 10px 14px; border-bottom: 1px solid var(--border-soft); color: #8bb5cd; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
 .director-report pre { margin: 0; max-height: 320px; overflow: auto; padding: 12px 14px; color: #c4d5e0; font: 12px/1.6 Consolas, monospace; white-space: pre-wrap; }
@@ -8189,92 +8189,73 @@ body.global-chat-open .seo-clean-hub {
 /* === CANVA 2-SIDED WORKBENCH & CONTEXTUAL INSPECTOR V3 === */
 .canva-workbench-3col {
   display: grid !important;
-  grid-template-columns: 260px minmax(480px, 1fr) 340px !important;
-  grid-template-areas: "leftdock stage inspector" !important;
-  gap: 12px !important;
-  align-items: start !important;
-  padding: 12px !important;
+  grid-template-columns: 260px minmax(0, 1fr) 300px !important;
+  grid-template-areas: none !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+  padding: 10px !important;
   background: rgba(6, 10, 19, 0.96) !important;
-  border-top: 1px solid rgba(148, 163, 184, 0.2) !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.15) !important;
   box-sizing: border-box !important;
+  border-radius: 0 0 12px 12px !important;
 }
 
 .canva-left-dock {
-  grid-area: leftdock !important;
+  grid-area: auto !important;
   background: rgba(15, 23, 42, 0.95) !important;
   border: 1px solid rgba(148, 163, 184, 0.25) !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   display: flex !important;
   flex-direction: column !important;
-  max-height: 675px !important;
+  max-height: 640px !important;
   overflow: hidden !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
 .canva-center-stage {
-  grid-area: stage !important;
+  grid-area: auto !important;
   min-width: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  gap: 8px !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 6px !important;
 }
 
 .canva-right-inspector {
-  grid-area: inspector !important;
+  grid-area: auto !important;
   background: rgba(15, 23, 42, 0.95) !important;
   border: 1px solid rgba(148, 163, 184, 0.25) !important;
-  border-radius: 12px !important;
+  border-radius: 10px !important;
   display: flex !important;
   flex-direction: column !important;
-  max-height: 675px !important;
+  max-height: 640px !important;
   overflow: hidden !important;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
 }
 
-.thumb-editor-drawer.is-fullscreen-editor .canva-workbench-3col {
-  grid-template-columns: 280px minmax(520px, 1fr) 360px !important;
-  grid-template-areas: "leftdock stage inspector" !important;
-  height: calc(100vh - 76px) !important;
+.thumb-editor-drawer.is-fullscreen-editor .canva-workbench-3col,
+.is-fullscreen-editor .canva-workbench-3col {
+  grid-template-columns: 280px minmax(0, 1fr) 340px !important;
+  grid-template-areas: none !important;
+  height: calc(100vh - 120px) !important;
   overflow: hidden !important;
 }
 
-/* 2-Column Responsive Flow when Global Chat Dock is Open */
-body.global-chat-open .canva-workbench-3col {
-  grid-template-columns: minmax(400px, 1fr) 340px !important;
-  grid-template-areas:
-    "stage inspector"
-    "leftdock inspector" !important;
-  gap: 12px !important;
-}
-
-body.global-chat-open .canva-left-dock {
-  max-height: 520px !important;
-}
-
-/* 2-Column Responsive Flow when Window <= 1480px */
-@media (max-width: 1480px) {
+/* Graceful responsive scaling without dropping sidebars into rows */
+@media (max-width: 1280px) {
   .canva-workbench-3col {
-    grid-template-columns: minmax(400px, 1fr) 340px !important;
-    grid-template-areas:
-      "stage inspector"
-      "leftdock inspector" !important;
-    gap: 12px !important;
-  }
-
-  .canva-left-dock {
-    max-height: 520px !important;
+    grid-template-columns: 240px minmax(0, 1fr) 280px !important;
+    gap: 8px !important;
+    padding: 8px !important;
   }
 }
 
-/* 1-Column Responsive Flow for narrow screens <= 980px */
-@media (max-width: 980px) {
-  .canva-workbench-3col,
-  body.global-chat-open .canva-workbench-3col {
+@media (max-width: 900px) {
+  .canva-workbench-3col {
     grid-template-columns: 1fr !important;
-    grid-template-areas:
-      "stage"
-      "inspector"
-      "leftdock" !important;
+    grid-template-areas: none !important;
+    gap: 10px !important;
   }
 }
 

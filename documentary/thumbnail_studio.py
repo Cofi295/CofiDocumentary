@@ -2322,20 +2322,124 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                     angle = float(layer.get("angle") or 0.0)
                     frame_style = str(layer.get("frameStyle") or "").strip().lower()
                     border_hex = str(layer.get("borderColor") or "#ef4444").strip().lower()
-                    is_vintage = frame_style in ("vintage_paper", "polaroid") or border_hex in ("#f4ebd9", "#f3ead8", "#e8dcc8", "#efe5d1", "#fdf8ee")
+                    is_vintage = frame_style in ("vintage_paper", "polaroid") or (
+                        not frame_style and border_hex in ("#f4ebd9", "#f3ead8", "#e8dcc8", "#efe5d1", "#fdf8ee")
+                    )
 
-                    pad = 44
+                    pad = 48
                     card_w, card_h = iw + pad * 2, ih + pad * 2
                     card = Image.new("RGBA", (card_w, card_h), (0, 0, 0, 0))
                     cdraw = ImageDraw.Draw(card)
+                    bw = max(3, int(float(layer.get("borderWidth") or 6)))
+                    b_rgba = _hex_to_rgba(layer.get("borderColor") or "#fbbf24", 255)
 
-                    if is_vintage:
+                    def _crop_pip_rgba(w_t: int, h_t: int, rad: int = 12) -> tuple[Image.Image, Image.Image]:
+                        with Image.open(inset_file) as pim:
+                            pim_rgba = pim.convert("RGBA")
+                            pw, ph = pim_rgba.size
+                            sc = max(w_t / max(1, pw), h_t / max(1, ph))
+                            rw, rh = max(w_t, int(round(pw * sc))), max(h_t, int(round(ph * sc)))
+                            resized_p = pim_rgba.resize((rw, rh), Image.Resampling.LANCZOS)
+                            cx0, cy0 = (rw - w_t) // 2, (rh - h_t) // 2
+                            cropped = resized_p.crop((cx0, cy0, cx0 + w_t, cy0 + h_t))
+                        mask_im = Image.new("L", (w_t, h_t), 0)
+                        if rad > 0:
+                            ImageDraw.Draw(mask_im).rounded_rectangle([0, 0, w_t - 1, h_t - 1], radius=rad, fill=255)
+                        else:
+                            mask_im.paste(255, [0, 0, w_t, h_t])
+                        return cropped, mask_im
+
+                    if frame_style in ("torn_newspaper", "torn_paper"):
+                        # Realistic hand-ripped newspaper clipping contour (slow paper-grain drift + irregular fiber notches, never a regular sawtooth)
+                        def _torn_poly(x0_p: float, y0_p: float, w_p: float, h_p: float, amp: float = 4.6, seed_off: float = 0.0, deckle_bias: float = 0.0) -> list[tuple[float, float]]:
+                            def _tear_disp(pos: float, length: float, phase: float) -> float:
+                                # Low-frequency tear path + localized irregular notch
+                                drift = math.sin(pos * 0.031 + phase) * 0.52 + math.cos(pos * 0.074 + phase * 1.7) * 0.34
+                                micro = math.sin(pos * 0.33 + phase * 2.3) * math.cos(pos * 0.79 + phase * 0.9) * 0.38
+                                notch_wave = math.sin(pos * 0.089 + phase * 1.3)
+                                notch = (notch_wave ** 5) * 0.65
+                                fiber = deckle_bias * (0.4 + 0.6 * max(0.0, math.sin(pos * 0.053 + phase * 2.1)))
+                                return (drift + micro + notch) * amp + fiber
+
+                            pts: list[tuple[float, float]] = []
+                            step = 5
+                            for s_x in range(0, int(w_p) + 1, step):
+                                d = _tear_disp(s_x, w_p, 1.1 + seed_off)
+                                pts.append((x0_p + s_x, y0_p + d - deckle_bias))
+                            for s_y in range(step, int(h_p) + 1, step):
+                                d = _tear_disp(s_y, h_p, 2.7 + seed_off)
+                                pts.append((x0_p + w_p + d + deckle_bias, y0_p + s_y))
+                            for s_x in range(int(w_p) - step, -1, -step):
+                                d = _tear_disp(s_x, w_p, 4.3 + seed_off)
+                                pts.append((x0_p + max(0, s_x), y0_p + h_p + d + deckle_bias * 1.15))
+                            for s_y in range(int(h_p) - step, 0, -step):
+                                d = _tear_disp(s_y, h_p, 5.8 + seed_off)
+                                pts.append((x0_p + d - deckle_bias, y0_p + max(0, s_y)))
+                            return pts
+
+                        seed_val = float((ix * 13 + iy * 7) % 97) * 0.1
+                        shadow_poly = [(px + 6, py + 11) for (px, py) in _torn_poly(pad, pad, iw, ih, amp=4.8, seed_off=seed_val, deckle_bias=3.2)]
+                        cdraw.polygon(shadow_poly, fill=(0, 0, 0, 236))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        # 1. Outer exposed white paper pulp deckle edge (where newspaper fibers tore)
+                        outer_tear_poly = _torn_poly(pad, pad, iw, ih, amp=4.8, seed_off=seed_val, deckle_bias=3.0)
+                        cdraw.polygon(outer_tear_poly, fill=(252, 249, 242, 255), outline=(194, 182, 162, 240))
+
+                        # 2. Inner aged newsprint paper body (100% opaque RGB colors on paper_im so zero alpha holes occur)
+                        inner_tear_poly = _torn_poly(pad, pad, iw, ih, amp=4.2, seed_off=seed_val + 0.18, deckle_bias=0.0)
+                        paper_mask = Image.new("L", (card_w, card_h), 0)
+                        ImageDraw.Draw(paper_mask).polygon(inner_tear_poly, fill=255)
+
+                        paper_im = Image.new("RGBA", (card_w, card_h), (238, 229, 210, 255))
+                        pdraw = ImageDraw.Draw(paper_im)
+                        for py in range(ih + 24):
+                            t = py / max(1, ih + 23)
+                            r_c = int(243 - 20 * t)
+                            g_c = int(235 - 24 * t)
+                            b_c = int(218 - 30 * t)
+                            pdraw.line([(pad - 12, pad - 12 + py), (pad + iw + 12, pad - 12 + py)], fill=(r_c, g_c, b_c, 255))
+
+                        pad_side = max(13, int(float(layer.get("borderWidth") or 15)))
+                        pad_top = max(16, int(round(pad_side * 1.12)))
+                        pad_bot = max(23, int(round(pad_side * 1.52)))
+
+                        # Subtle newspaper column rule lines & printed text blocks in top/bottom torn margins (solid RGB -> alpha=255)
+                        pdraw.line([(pad + 6, pad + 6), (pad + iw - 6, pad + 6)], fill=(158, 146, 128, 255), width=1)
+                        pdraw.line([(pad + 8, pad + 10), (pad + int(iw * 0.42), pad + 10)], fill=(172, 160, 142, 255), width=2)
+                        pdraw.line([(pad + int(iw * 0.66), pad + 10), (pad + iw - 8, pad + 10)], fill=(176, 164, 146, 255), width=2)
+
+                        bot_y0 = pad + ih - pad_bot + 5
+                        pdraw.line([(pad + pad_side, bot_y0), (pad + iw - pad_side, bot_y0)], fill=(152, 140, 122, 255), width=1)
+                        for r_idx, w_frac in enumerate([0.88, 0.62]):
+                            ly = bot_y0 + 5 + r_idx * 5
+                            if ly < pad + ih - 3:
+                                pdraw.line(
+                                    [(pad + pad_side, ly), (pad + pad_side + int((iw - pad_side * 2) * w_frac), ly)],
+                                    fill=(166, 154, 136, 255),
+                                    width=2,
+                                )
+
+                        card.paste(paper_im, (0, 0), paper_mask)
+                        cdraw = ImageDraw.Draw(card)
+                        cdraw.line(inner_tear_poly + [inner_tear_poly[0]], fill=(162, 148, 126, 235), width=1)
+
+                        # 3. Inner newspaper photograph with editorial ink border
+                        ph_w = max(24, iw - pad_side * 2)
+                        ph_h = max(24, ih - pad_top - pad_bot)
+                        cropped_p, _ = _crop_pip_rgba(ph_w, ph_h, rad=0)
+                        px0, py0 = pad + pad_side, pad + pad_top
+                        card.paste(cropped_p, (px0, py0))
+                        cdraw.rectangle([px0 - 1, py0 - 1, px0 + ph_w, py0 + ph_h], outline=(42, 36, 30, 255), width=2)
+
+                    elif is_vintage:
                         # Deep realistic drop shadow under old photograph
                         cdraw.rounded_rectangle([pad + 6, pad + 10, pad + iw + 6, pad + ih + 10], radius=3, fill=(0, 0, 0, 228))
                         card = card.filter(ImageFilter.GaussianBlur(radius=9))
                         cdraw = ImageDraw.Draw(card)
 
-                        # Vintage aged cream photographic paper mat with subtle mottled paper texture
+                        # Vintage aged cream photographic paper mat
                         pad_side = max(11, int(float(layer.get("borderWidth") or 14)))
                         pad_bot = max(pad_side + 5, int(round(pad_side * 1.32)))
                         for py in range(ih):
@@ -2344,38 +2448,146 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                             g_c = int(238 - 25 * t)
                             b_c = int(220 - 34 * t)
                             cdraw.line([(pad, pad + py), (pad + iw - 1, pad + py)], fill=(r_c, g_c, b_c, 255))
-                        # Subtle aged outer border & inner bevel
                         cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=3, outline=(168, 146, 112, 255), width=2)
                         cdraw.rounded_rectangle([pad + 2, pad + 2, pad + iw - 2, pad + ih - 2], radius=2, outline=(252, 247, 236, 220), width=2)
 
-                        # Inner photo crop with subtle archival contrast
                         ph_w = max(24, iw - pad_side * 2)
                         ph_h = max(24, ih - pad_side - pad_bot)
-                        with Image.open(inset_file) as pim:
-                            pim_rgba = pim.convert("RGBA")
-                            pw, ph = pim_rgba.size
-                            sc = max(ph_w / max(1, pw), ph_h / max(1, ph))
-                            rw, rh = max(ph_w, int(round(pw * sc))), max(ph_h, int(round(ph * sc)))
-                            resized_p = pim_rgba.resize((rw, rh), Image.Resampling.LANCZOS)
-                            cx0, cy0 = (rw - ph_w) // 2, (rh - ph_h) // 2
-                            cropped_p = resized_p.crop((cx0, cy0, cx0 + ph_w, cy0 + ph_h))
+                        cropped_p, _ = _crop_pip_rgba(ph_w, ph_h, rad=0)
                         card.paste(cropped_p, (pad + pad_side, pad + pad_side))
                         cdraw.rectangle([pad + pad_side - 1, pad + pad_side - 1, pad + pad_side + ph_w, pad + pad_side + ph_h], outline=(58, 48, 38, 255), width=2)
+
+                    elif frame_style == "caution_tape":
+                        rad = 14
+                        # Outer shadow + colored rim glow
+                        cdraw.rounded_rectangle([pad + 4, pad + 9, pad + iw + 4, pad + ih + 9], radius=rad, fill=(0, 0, 0, 225))
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(b_rgba[0], b_rgba[1], b_rgba[2], 145), width=bw + 6)
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        # Draw caution tape bar at bottom of pip_im before masking
+                        tape_h = max(20, min(30, int(round(ih * 0.105))))
+                        ty0 = ih - tape_h
+                        pdraw = ImageDraw.Draw(pip_im)
+                        pdraw.rectangle([0, ty0, iw, ih], fill=(250, 204, 21, 255))
+                        stripe_step = 24
+                        for sx_pos in range(-tape_h, iw + tape_h, stripe_step):
+                            pdraw.polygon(
+                                [
+                                    (sx_pos, ih),
+                                    (sx_pos + 12, ih),
+                                    (sx_pos + 12 + int(tape_h * 0.75), ty0),
+                                    (sx_pos + int(tape_h * 0.75), ty0),
+                                ],
+                                fill=(10, 14, 23, 255),
+                            )
+                        pdraw.line([(0, ty0), (iw, ty0)], fill=(10, 14, 23, 255), width=3)
+                        pdraw.line([(0, ty0 + 2), (iw, ty0 + 2)], fill=(255, 255, 255, 190), width=1)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 235), width=bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=max(5, bw))
+                        cdraw.rounded_rectangle([pad + bw, pad + bw, pad + iw - bw, pad + ih - bw], radius=max(4, rad - bw), outline=(255, 255, 255, 165), width=2)
+
+                    elif frame_style in ("amber_glow_double", "double_neon", "neon_cyber"):
+                        rad = 15
+                        # Strong outer luminous halo glow + deep drop shadow
+                        cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=rad, fill=(0, 0, 0, 220))
+                        cdraw.rounded_rectangle([pad - 4, pad - 4, pad + iw + 4, pad + ih + 4], radius=rad + 4, outline=(b_rgba[0], b_rgba[1], b_rgba[2], 195), width=bw + 10)
+                        card = card.filter(ImageFilter.GaussianBlur(radius=10))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        # Outer dark contrast guard + main neon border + dark trench + inner bright core rim
+                        use_bw = max(6, bw)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 220), width=use_bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=use_bw)
+                        in_off = use_bw
+                        cdraw.rounded_rectangle([pad + in_off, pad + in_off, pad + iw - in_off, pad + ih - in_off], radius=max(4, rad - in_off), outline=(9, 13, 22, 245), width=4)
+                        in_off2 = in_off + 3
+                        inner_rim_col = (255, 251, 235, 240) if frame_style == "amber_glow_double" else (255, 255, 255, 240)
+                        cdraw.rounded_rectangle([pad + in_off2, pad + in_off2, pad + iw - in_off2, pad + ih - in_off2], radius=max(3, rad - in_off2), outline=inner_rim_col, width=2)
+
+                    elif frame_style == "cctv_hud":
+                        rad = 10
+                        cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=rad, fill=(0, 0, 0, 225))
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(b_rgba[0], b_rgba[1], b_rgba[2], 150), width=bw + 6)
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        # Top HUD bar & REC badge inside CCTV monitor
+                        pdraw.rectangle([0, 0, iw, 34], fill=(6, 10, 18, 145))
+                        pdraw.rounded_rectangle([12, 8, 96, 30], radius=6, fill=(9, 13, 22, 215), outline=(255, 255, 255, 90), width=1)
+                        pdraw.ellipse([20, 13, 32, 25], fill=(255, 36, 36, 255))
+                        try:
+                            hud_fnt = ImageFont.truetype(str(_resolve_pil_font_path("Pretendard ExtraBold", "REC")), 13)
+                            pdraw.text((38, 11), "REC", font=hud_fnt, fill=(255, 255, 255, 245))
+                        except Exception:
+                            pass
+                        # Center edge crosshair ticks
+                        mx, my = iw // 2, ih // 2
+                        for l_pts in [
+                            [(mx, 4), (mx, 14)],
+                            [(mx, ih - 14), (mx, ih - 4)],
+                            [(4, my), (14, my)],
+                            [(iw - 14, my), (iw - 4, my)],
+                        ]:
+                            pdraw.line(l_pts, fill=(255, 255, 255, 160), width=2)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=(9, 13, 22, 240), width=4)
+                        cdraw.rounded_rectangle([pad + 2, pad + 2, pad + iw - 2, pad + ih - 2], radius=max(4, rad - 2), outline=(b_rgba[0], b_rgba[1], b_rgba[2], 185), width=2)
+
+                        # 4 Tactical Corner Viewfinder Brackets
+                        c_len = max(26, int(min(iw, ih) * 0.22))
+                        c_w = max(6, bw + 2)
+                        x0, y0, x1, y1 = pad - 2, pad - 2, pad + iw + 2, pad + ih + 2
+                        corner_polys = [
+                            [(x0, y0 + c_len), (x0, y0), (x0 + c_len, y0)],
+                            [(x1 - c_len, y0), (x1, y0), (x1, y0 + c_len)],
+                            [(x1, y1 - c_len), (x1, y1), (x1 - c_len, y1)],
+                            [(x0 + c_len, y1), (x0, y1), (x0, y1 - c_len)],
+                        ]
+                        for c_pts in corner_polys:
+                            cdraw.line(c_pts, fill=(0, 0, 0, 235), width=c_w + 4, joint="curve")
+                            cdraw.line(c_pts, fill=b_rgba, width=c_w, joint="curve")
+
+                    elif frame_style == "dossier_tab":
+                        rad = 12
+                        cdraw.rounded_rectangle([pad + 4, pad + 9, pad + iw + 4, pad + ih + 9], radius=rad, fill=(0, 0, 0, 225))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        bar_h = 26
+                        pdraw.rectangle([0, 0, iw, bar_h], fill=(15, 23, 42, 242))
+                        pdraw.rectangle([0, 0, 74, bar_h], fill=b_rgba)
+                        pdraw.line([(0, bar_h), (iw, bar_h)], fill=b_rgba, width=2)
+                        for d_idx, d_col in enumerate([(255, 255, 255, 240), (255, 255, 255, 175), (255, 255, 255, 110)]):
+                            dx0 = 14 + d_idx * 16
+                            pdraw.ellipse([dx0, 9, dx0 + 8, 17], fill=d_col)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 235), width=bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=max(5, bw))
+                        cdraw.rounded_rectangle([pad + bw, pad + bw, pad + iw - bw, pad + ih - bw], radius=max(4, rad - bw), outline=(255, 255, 255, 150), width=2)
+
                     else:
-                        cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=12, fill=(0, 0, 0, 200))
+                        rad = 14
+                        cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=rad, fill=(0, 0, 0, 215))
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(b_rgba[0], b_rgba[1], b_rgba[2], 125), width=bw + 4)
                         card = card.filter(ImageFilter.GaussianBlur(radius=7))
                         cdraw = ImageDraw.Draw(card)
-                        with Image.open(inset_file) as pim:
-                            pim_rgba = pim.convert("RGBA")
-                            pw, ph = pim_rgba.size
-                            sc = max(iw / max(1, pw), ih / max(1, ph))
-                            rw, rh = max(iw, int(round(pw * sc))), max(ih, int(round(ph * sc)))
-                            resized_p = pim_rgba.resize((rw, rh), Image.Resampling.LANCZOS)
-                            cx0, cy0 = (rw - iw) // 2, (rh - ih) // 2
-                            pip = resized_p.crop((cx0, cy0, cx0 + iw, cy0 + ih))
-                        card.paste(pip, (pad, pad))
-                        bw = max(2, int(float(layer.get("borderWidth") or 5)))
-                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=12, outline=_hex_to_rgba(layer.get("borderColor") or "#ef4444"), width=bw)
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        cdraw.rounded_rectangle([pad - 1, pad - 1, pad + iw + 1, pad + ih + 1], radius=rad + 1, outline=(5, 8, 15, 220), width=bw + 3)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=bw)
+                        cdraw.rounded_rectangle([pad + bw, pad + bw, pad + iw - bw, pad + ih - bw], radius=max(4, rad - bw), outline=(255, 255, 255, 140), width=1)
 
                     if abs(angle) > 0.3:
                         card = card.rotate(-angle, resample=Image.Resampling.BICUBIC, expand=True)

@@ -1,71 +1,126 @@
-"""True Crime Vox & Real Satellite Semantic Scene Router.
+"""True Crime Animated Vox & Real Satellite Semantic Scene Router.
 
-Analyzes spoken voice narration (Korean / Vietnamese) to semantically select matching
-True Crime archetypes (#M1..#M8, #D1..#D10, #P1..#P6, cinema_full) with dynamic sliding-window
-anti-repetition protection and strict channel profile isolation to channel-e544a64b7c.
+Analyzes spoken voice narration (Korean / Vietnamese) to semantically route beats to matching animated Vox & Satellite Map scenes with sliding-window variety, voice-duration & clause synchronization (`voice_spec`), and channel profile isolation to channel-e544a64b7c.
 """
 
 from __future__ import annotations
 
 import re
 from typing import Any, Dict, List, Optional
+from documentary.audio_library_manager import select_contextual_sfx_for_beat
 
 
 VOX_ARCHETYPE_RULES: dict[str, dict[str, Any]] = {
+    "#V_FULLSCREEN_GIS_FLIGHT": {
+        "cluster": "fullscreen_map_flight",
+        "label": "Full-Screen 1920x1080 Regional/Basin Terrain & Administrative GeoJSON Map Flight (A->B Camera + Progressive Route + PiP Video)",
+        "regex_ko": r"(베이징.*운남|베이징.*쿤밍|독도조.*파견|제1교도소.*제2교도소|비밀\s*이감|최고인민법원.*복핵|광역.*이동|전역.*투입|2,100km|직할.*급파)",
+        "regex_vi": r"(Bắc\s*Kinh.*Vân\s*Nam|Bắc\s*Kinh.*Côn\s*Minh|tổ\s*đốc\s*đạo.*điều\s*động|trại\s*giam\s*số\s*1.*trại\s*giam\s*số\s*2|chuyển\s*trại|Tòa\s*án\s*tối\s*cao.*phúc\s*hạch|bay\s*qua\s*bản\s*đồ)",
+        "priority_score": 99,
+    },
+    "#V_FULLSCREEN_SATELLITE_RECON": {
+        "cluster": "fullscreen_satellite_recon",
+        "label": "Full-Screen 1920x1080 High-Res Urban Satellite Reconnaissance Map (A->B Camera + Radar Pins + PiP Video)",
+        "regex_ko": r"(도심.*유흥가|나이트클럽.*확장|관두구.*노래방|춘성만보.*특종|파출소.*무마|전면\s*위성|도심\s*전역)",
+        "regex_vi": r"(khu\s*ăn\s*chơi|hộp\s*đêm.*mở\s*rộng|quán\s*karaoke|đồn\s*công\s*an.*bao\s*che|vệ\s*tinh\s*toàn\s*màn\s*hình)",
+        "priority_score": 97,
+    },
+    "#V_FORENSIC_CROSS_SECTION": {
+        "cluster": "forensic_mechanism",
+        "label": "2D Spatial/Architectural Cross-Section & Mechanism Flow Diagram",
+        "regex_ko": r"(정화조|배관|파이프|하수구|단면도|802호.*지하|지하.*탱크|38대.*흡입|흡입차|분쇄.*배출|수돗물\s*2톤|수직\s*배관|거름망.*고압|특허|도면|구조도)",
+        "regex_vi": r"(hầm\s*tự\s*hoại|bể\s*phốt|đường\s*ống\s*ngầm|ống\s*thoát\s*nước|mặt\s*cắt\s*tòa\s*nhà|38\s*xe\s*hút\s*bùn|2\s*tấn\s*nước|cấu\s*trúc\s*đường\s*ống|bằng\s*sáng\s*chế|bản\s*vẽ)",
+        "priority_score": 98,
+    },
+    "#V_POPOUT_HIGHLIGHT": {
+        "cluster": "press_popout",
+        "label": "2D Blur-Background Document Pop-Out & Clause-Synced Highlighter",
+        "regex_ko": r"(형광펜|하이라이트|기사\s*일부|보고서.*구절|진술.*모순|밑줄|발췌|기록.*문구|결정적\s*구절|진술.*앞뒤|보도.*내용|수사\s*보고서.*줄)",
+        "regex_vi": r"(tô\s*sáng|nhấn\s*mạnh|đoạn\s*văn|trích\s*dẫn\s*báo|mâu\s*thuẫn\s*lời\s*khai|gạch\s*chân|phóng\s*nổi|chi\s*tiết\s*biên\s*bản)",
+        "priority_score": 96,
+    },
+    "#V_CLAUSE_TIMELINE": {
+        "cluster": "clause_timeline",
+        "label": "2D Voice-Synced Progressive Multi-Node Timeline & Causal Chain",
+        "regex_ko": r"(시간대별|분\s*단위|동선\s*추적|순서대로|이어서.*시각|연쇄\s*과정|오전.*오후|새벽.*밤|행적\s*재구성|단계별|인과\s*관계|17시\s*04분)",
+        "regex_vi": r"(theo\s*từng\s*mốc|từng\s*phút|lần\s*lượt|quá\s*trình\s*di\s*chuyển|tái\s*hiện\s*lộ\s*trình|chuỗi\s*nhân\s*quả|từng\s*bước)",
+        "priority_score": 95,
+    },
+    "#V_SAT_ZONE_DRAW": {
+        "cluster": "satellite_zone",
+        "label": "2D Real Esri Satellite Map & Animated Zone/Route Vector Drawing",
+        "regex_ko": r"(관할\s*구역|반경|포위망|도주\s*경로|위치\s*추적|위성\s*지도|구역\s*설정|이동\s*경로|지리적\s*배치)",
+        "regex_vi": r"(khoanh\s*vùng|bản\s*đồ\s*vệ\s*tinh|lộ\s*trình\s*di\s*chuyển|khu\s*vực\s*quản\s*lý|vòng\s*vây|tọa\s*độ\s*vệ\s*tinh)",
+        "priority_score": 94,
+    },
+    "#V_DOSSIER_BOARD": {
+        "cluster": "dossier_network",
+        "label": "2D Tactile Case Dossier Folder & Suspect Relationship Network Board",
+        "regex_ko": r"(보호우산|비호\s*세력|공모\s*관계|연루자|배후\s*인물|인맥\s*연결망|수사망|대조\s*파일|신원\s*대조)",
+        "regex_vi": r"(ô\s*dù\s*bảo\s*kê|mạng\s*lưới\s*quan\s*hệ|đồng\s*phạm|hồ\s*sơ\s*đối\s*chiếu|thế\s*lực\s*chống\s*lưng)",
+        "priority_score": 94,
+    },
+    "#V_BLENDER_3D_STAGE": {
+        "cluster": "blender_stage",
+        "label": "Multi-Layer Investigation Stage & Evidence Network",
+        "regex_ko": r"(입체\s*재구성|다층\s*수사망|3D\s*분석|증거\s*네트워크)",
+        "regex_vi": r"(tái\s*dựng\s*đa\s*tầng|mạng\s*lưới\s*bằng\s*chứng\s*lập\s*thể)",
+        "priority_score": 95,
+    },
     "#D4": {
         "cluster": "biometrics",
         "label": "Y-STR DNA Lightbox & Clan Pedigree Tree",
-        "regex_ko": r"(Y-염색체|유전자|족보|가문|DNA|부계|혈통|친척|가오씨|대조\s*검사|염색체|가계도)",
-        "regex_vi": r"(Y-STR|nhiễm\s*sắc\s*thể\s*Y|ADN\s*dòng\s*họ|phả\s*hệ|gia\s*tộc|huyết\s*thống|quan\s*hệ\s*họ\s*hàng|xét\s*nghiệm\s*ADN)",
+        "regex_ko": r"(Y-염색체|유전자|족보|가문|DNA|부계|혈통|친척|가오씨|대조\s*검사|염색체|가계도|인체\s*조직|20그램)",
+        "regex_vi": r"(Y-STR|nhiễm\s*sắc\s*thể\s*Y|ADN\s*dòng\s*họ|phả\s*hệ|gia\s*tộc|huyết\s*thống|quan\s*hệ\s*họ\s*hàng|xét\s*nghiệm\s*ADN|mô\s*người|20\s*gram)",
         "priority_score": 96,
     },
     "#M1": {
         "cluster": "satellite_zoom",
-        "label": "Zoom x16 Tactical Rooftop Store",
-        "regex_ko": r"(매점|학교|캠퍼스|지붕|옥상|건물|급습|현장\s*포위|주소|골목\s*안|매점\s*주인)",
-        "regex_vi": r"(tiệm\s*tạp\s*hóa|mái\s*nhà|trường\s*học|khuôn\s*viên|nóc\s*nhà|đột\s*kích|bao\s*vây|tạp\s*hóa\s*trường)",
+        "label": "Zoom x16 Tactical Rooftop Store / Compound",
+        "regex_ko": r"(매점|학교|캠퍼스|지붕|옥상|건물|급습|현장\s*포위|주소|골목\s*안|매점\s*주인|아파트\s*단지|산스화위안|4동)",
+        "regex_vi": r"(tiệm\s*tạp\s*hóa|mái\s*nhà|trường\s*học|khuôn\s*viên|nóc\s*nhà|đột\s*kích|bao\s*vây|tạp\s*hóa\s*trường|khu\s*chung\s*cư|tòa\s*4)",
         "priority_score": 92,
     },
     "#M6": {
         "cluster": "satellite_zoom",
         "label": "Split Dual Satellite (Macro vs Micro)",
-        "regex_ko": r"(광역.*좁혀졌|도심.*매점|위성.*분할|확대.*포착|줌인|광역.*정밀)",
+        "regex_ko": r"(광역.*좁혀졌|도심.*매점|위성.*분할|확대.*포착|줌인|광역.*정밀|항저우.*단지)",
         "regex_vi": r"(thu\s*hẹp.*phạm\s*vi|vệ\s*tinh.*phóng\s*to|từ\s*toàn\s*cảnh.*đến\s*chi\s*tiết|chia\s*đôi\s*vệ\s*tinh|vệ\s*tinh\s*kép)",
         "priority_score": 88,
     },
     "#M2": {
         "cluster": "satellite_corridor",
         "label": "Regional Satellite Corridor Z6/Z9",
-        "regex_ko": r"(황토\s*고원|공업\s*기지|광산|간쑤성|란저우|바이인시|고속도로|회랑|지형|성도|도주로)",
-        "regex_vi": r"(cao\s*nguyên\s*hoàng\s*thổ|mỏ\s*đồng|công\s*nghiệp|Cam\s*Túc|Lan\s*Châu|Bạch\s*Ngân|tuyến\s*đường|hành\s*lang)",
+        "regex_ko": r"(황토\s*고원|공업\s*기지|광산|간쑤성|란저우|바이인시|고속도로|회랑|지형|성도|도주로|장강\s*삼각주|저장성|항저우시)",
+        "regex_vi": r"(cao\s*nguyên\s*hoàng\s*thổ|mỏ\s*đồng|công\s*nghiệp|Cam\s*Túc|Lan\s*Châu|Bạch\s*Ngân|tuyến\s*đường|hành\s*lang|Chiết\s*Giang|Hàng\s*Châu)",
         "priority_score": 82,
     },
     "#M3": {
         "cluster": "satellite_corridor",
         "label": "Administrative Boundary / River Crossing",
-        "regex_ko": r"(성\s*경계|행정구역|도주로|호구|외지인|관할|경계선|강을\s*건너|철도|황하)",
-        "regex_vi": r"(ranh\s*giới\s*tỉnh|ranh\s*giới\s*hành\s*chính|đường\s*trốn\s*chạy|hộ\s*khẩu|ngoại\s*tỉnh|vượt\s*sông|ngoài\s*tầm\s*kiểm\s*soát|sông\s*Hoàng\s*Hà)",
+        "regex_ko": r"(성\s*경계|행정구역|도주로|호구|외지인|관할|경계선|강을\s*건너|철도|황하|쳰탕강|운하)",
+        "regex_vi": r"(ranh\s*giới\s*tỉnh|ranh\s*giới\s*hành\s*chính|đường\s*trốn\s*chạy|hộ\s*khẩu|ngoại\s*tỉnh|vượt\s*sông|ngoài\s*tầm\s*kiểm\s*soát|sông\s*Hoàng\s*Hà|sông\s*Tiền\s*Đường)",
         "priority_score": 87,
     },
     "#M5": {
         "cluster": "satellite_slab",
         "label": "2.5D Tilted Satellite Slab",
-        "regex_ko": r"(좌표|지리적\s*패턴|연결하자|입체|3차원|위성\s*지형|슬랩|동선\s*패턴|거리.*연결|좌표.*거리)",
+        "regex_ko": r"(좌표|지리적\s*패턴|연결하자|입체|3차원|위성\s*지형|슬랩|동선\s*패턴|거리.*연결|좌표.*거리|출입구.*카메라)",
         "regex_vi": r"(tọa\s*độ|mô\s*thức\s*địa\s*lý|bản\s*đồ\s*lập\s*thể|khối\s*3D|mô\s*hình\s*không\s*gian|khối\s*bản\s*đồ|khoảng\s*cách.*liên\s*kết|tọa\s*độ.*khoảng\s*cách)",
         "priority_score": 92,
     },
     "#M4": {
         "cluster": "satellite_slab",
         "label": "Detective Cork Pinboard & Crime Cluster",
-        "regex_ko": r"(핀보드|붉은\s*실|사건\s*연결|연쇄.*분포|범행.*연결|코르크)",
+        "regex_ko": r"(핀보드|붉은\s*실|사건\s*연결|연쇄.*분포|범행.*연결|코르크|수사\s*상황판)",
         "regex_vi": r"(bảng\s*điều\s*tra|dây\s*chỉ\s*đỏ|ghim\s*nối|chuỗi\s*án|phân\s*bố\s*tội\s*phạm|bảng\s*gỗ)",
         "priority_score": 86,
     },
     "#M7": {
         "cluster": "curfew_surveillance",
         "label": "Night-Ops Infrared Satellite Curfew",
-        "regex_ko": r"(야간\s*통제|통금|해가\s*지면|반경\s*3|적외선|외출\s*금지|밤거리|야간\s*순찰|봉쇄)",
-        "regex_vi": r"(giới\s*nghiêm|vùng\s*kiểm\s*soát|màn\s*đêm\s*buông\s*xuống|bán\s*kính\s*3\s*km|hồng\s*ngoại|cấm\s*ra\s*đường\s*đêm|tuần\s*tra\s*đêm|phong\s*tỏa)",
+        "regex_ko": r"(야간\s*통제|통금|해가\s*지면|반경\s*3|적외선|외출\s*금지|밤거리|야간\s*순찰|봉쇄|사각지대|6,000개.*카메라|CCTV\s*망)",
+        "regex_vi": r"(giới\s*nghiêm|vùng\s*kiểm\s*soát|màn\s*đêm\s*buông\s*xuống|bán\s*kính\s*3\s*km|hồng\s*ngoại|cấm\s*ra\s*đường\s*đêm|tuần\s*tra\s*đêm|phong\s*tỏa|6\.000\s*camera)",
         "priority_score": 95,
     },
     "#M8": {
@@ -78,7 +133,7 @@ VOX_ARCHETYPE_RULES: dict[str, dict[str, Any]] = {
     "#D9": {
         "cluster": "fingerprint",
         "label": "Microscope 14-Point Minutiae Comparator",
-        "regex_ko": r"(14개|특징점|포개졌|현미경|완벽히\s*일치|단\s*하나의\s*지문|융선)",
+        "regex_ko": r"(14개|특징점|포개졌|현미경|완벽히\s*일치|단\s*하나의\s*지문|융선|미세\s*조직\s*대조)",
         "regex_vi": r"(đặc\s*điểm\s*vân|14\s*điểm|trùng\s*khớp\s*hoàn\s*hảo|kính\s*hiển\s*vi|vân\s*ngón\s*tay|điểm\s*đặc\s*trưng)",
         "priority_score": 97,
     },
@@ -92,7 +147,7 @@ VOX_ARCHETYPE_RULES: dict[str, dict[str, Any]] = {
     "#D3": {
         "cluster": "fingerprint",
         "label": "Three Physical Clues & Case Evidence Dossier",
-        "regex_ko": r"(생체\s*시료|혈액형|족적|3대\s*단서|물증|현장\s*증거|신발\s*자국|유류품|신분증|지갑|계량기|수돗물\s*2톤)",
+        "regex_ko": r"(생체\s*시료|혈액형|족적|3대\s*단서|물증|현장\s*증거|신발\s*자국|유류품|신분증|지갑|계량기|수돗물\s*2톤|잠옷|휴대전화)",
         "regex_vi": r"(mẫu\s*sinh\s*học|nhóm\s*máu|dấu\s*chân|3\s*manh\s*mối\s*vật\s*chứng|dấu\s*vết\s*hiện\s*trường|vật\s*chứng\s*để\s*lại|đồng\s*hồ\s*nước)",
         "priority_score": 85,
     },
@@ -106,28 +161,28 @@ VOX_ARCHETYPE_RULES: dict[str, dict[str, Any]] = {
     "#D2": {
         "cluster": "interrogation",
         "label": "Dual Identity / Suspect-Victim Case Profile Dossier",
-        "regex_ko": r"(두\s*얼굴|이중생활|남편|아버지|괴물|평범한|가면|악마|한\s*지붕|재혼|아파트.*소유|주식\s*투자|빚|재산)",
+        "regex_ko": r"(두\s*얼굴|이중생활|남편|아버지|괴물|평범한|가면|악마|한\s*지붕|재혼|아파트.*소유|주식\s*투자|빚|재산|쉬궈리|라이후이리)",
         "regex_vi": r"(hai\s*mặt|vỏ\s*bọc|cuộc\s*sống\s*hai\s*mặt|người\s*chồng\s*mẫu\s*mực|quỷ\s*dữ|đội\s*lốt|hồ\s*sơ\s*nhân\s*thân|tài\s*sản|nợ\s*nần)",
         "priority_score": 81,
     },
     "#D6": {
         "cluster": "warrant_sketch",
         "label": "Class-A Red Wanted Warrant & Sketch",
-        "regex_ko": r"(수배령|현상금|몽타주|공안부|1급\s*수배|공개수배|인상착의|스케치|20만\s*위안)",
+        "regex_ko": r"(수배령|현상금|몽타주|공안부|1급\s*수배|공개수배|인상착의|스케치|20만\s*위안|10만\s*위안)",
         "regex_vi": r"(lệnh\s*truy\s*nã|tiền\s*thưởng|phác\s*họa\s*chân\s*dung|truy\s*nã\s*đỏ|truy\s*nã\s*cấp\s*A|phác\s*thảo|20\s*vạn)",
         "priority_score": 96,
     },
     "#D7": {
         "cluster": "biometrics",
         "label": "Ballistics & Toolmark Comparator",
-        "regex_ko": r"(조흔|흉기\s*흔적|공구흔|칼자국|절단흔|탄도)",
+        "regex_ko": r"(조흔|흉기\s*흔적|공구흔|칼자국|절단흔|탄도|분쇄기)",
         "regex_vi": r"(vết\s*cắt|dấu\s*vết\s*hung\s*khí|vết\s*xước\s*kim\s*loại|dấu\s*kìm|đạn\s*đạo)",
         "priority_score": 84,
     },
     "#D8": {
         "cluster": "biometrics",
         "label": "Autopsy & Medical Examiner Report",
-        "regex_ko": r"(부검|검시|사망\s*원인|법의학|시신|타살|질식|사체\s*감정)",
+        "regex_ko": r"(부검|검시|사망\s*원인|법의학|시신|타살|질식|사체\s*감정|약물\s*검출)",
         "regex_vi": r"(khám\s*nghiệm\s*tử\s*thi|pháp\s*y|nguyên\s*nhân\s*tử\s*vong|giải\s*phẫu|ngạt\s*thở)",
         "priority_score": 86,
     },
@@ -140,36 +195,36 @@ VOX_ARCHETYPE_RULES: dict[str, dict[str, Any]] = {
     },
     "#P3": {
         "cluster": "broadcast",
-        "label": "1990s CRT TV Broadcast Monitor",
-        "regex_ko": r"(방송|뉴스|특보|TV|화면|앵커|보도자료|아카이브\s*영상|당시\s*보도|브라운관|CRT)",
-        "regex_vi": r"(bản\s*tin\s*truyền\s*hình|phát\s*sóng|thời\s*sự|ti\s*vi|đài\s*truyền\s*hình|băng\s*VHS|màn\s*hình\s*CRT)",
+        "label": "1990s/2020s TV Broadcast Monitor & Interview",
+        "regex_ko": r"(방송|뉴스|특보|TV|화면|앵커|보도자료|아카이브\s*영상|당시\s*보도|브라운관|CRT|인터뷰|카메라\s*앞)",
+        "regex_vi": r"(bản\s*tin\s*truyền\s*hình|phát\s*sóng|thời\s*sự|ti\s*vi|đài\s*truyền\s*hình|băng\s*VHS|màn\s*hình\s*CRT|phỏng\s*vấn)",
         "priority_score": 93,
     },
     "#P2": {
         "cluster": "curfew_surveillance",
-        "label": "Archival Newspaper Panic & Curfew Notice",
-        "regex_ko": r"(신문|보도|신문\s*1면|공포에\s*휩싸|비상\s*통고|경고문|호외|붉은\s*옷)",
-        "regex_vi": r"(báo\s*chí|trang\s*nhất|hoảng\s*loạn|thông\s*báo\s*khẩn|giấy\s*cảnh\s*báo|áo\s*đỏ|dư\s*luận)",
+        "label": "Archival Newspaper Panic & Public Notice",
+        "regex_ko": r"(신문|보도|신문\s*1면|공포에\s*휩싸|비상\s*통고|경고문|호외|붉은\s*옷|실종\s*전단)",
+        "regex_vi": r"(báo\s*chí|trang\s*nhất|hoảng\s*loạn|thông\s*báo\s*khẩn|giấy\s*cảnh\s*báo|áo\s*đỏ|dư\s*luận|tờ\s*rơi\s*tìm\s*người)",
         "priority_score": 82,
     },
     "#P1": {
         "cluster": "timeline",
         "label": "Chronological Timeline / Silent Gap",
-        "regex_ko": r"(년\s*만에|년\s*동안|세월|침묵|공백|타임라인|미제로\s*남은|흐른\s*뒤|6년|28년)",
+        "regex_ko": r"(년\s*만에|년\s*동안|세월|침묵|공백|타임라인|미제로\s*남은|흐른\s*뒤|6년|28년|19일\s*동안)",
         "regex_vi": r"(suốt\s*bao\s*nhiêu\s*năm|dòng\s*thời\s*gian|năm\s*im\s*lặng|chưa\s*có\s*lời\s*giải|thời\s*gian\s*trôi|khoảng\s*lặng|6\s*năm|28\s*năm)",
         "priority_score": 88,
     },
     "#P4": {
         "cluster": "warrant_sketch",
         "label": "Police Bulletin Teletype / Telex Dispatch",
-        "regex_ko": r"(전신|전문|급보|타자기|전국\s*전파|공안\s*전신)",
+        "regex_ko": r"(전신|전문|급보|타자기|전국\s*전파|공안\s*전신|수사\s*속보)",
         "regex_vi": r"(điện\s*báo|bản\s*tin\s*khẩn|máy\s*đánh\s*chữ|báo\s*động\s*toàn\s*quốc|điện\s*mật)",
         "priority_score": 84,
     },
     "#P5": {
         "cluster": "broadcast",
         "label": "Emergency Radio Dispatch Frequency Log",
-        "regex_ko": r"(무전|무전기|주파수|순찰차\s*교신|무전\s*일지|신호음)",
+        "regex_ko": r"(무전|무전기|주파수|순찰차\s*교신|무전\s*일지|신호음|지휘\s*본부)",
         "regex_vi": r"(bộ\s*đàm|tần\s*số|xe\s*tuần\s*tra|liên\s*lạc\s*vô\s*tuyến|sóng\s*radio)",
         "priority_score": 83,
     },
@@ -183,11 +238,137 @@ VOX_ARCHETYPE_RULES: dict[str, dict[str, Any]] = {
     "cinema_full": {
         "cluster": "cinema",
         "label": "Fullscreen Cinematic Documentary Frame",
-        "regex_ko": r"(눈물|슬픔|유가족|통곡|비통|오열|망연자실|주저앉아|말을\s*잇지\s*못|가슴이\s*무너|희생자의\s*어머니)",
+        "regex_ko": r"(눈물|슬픔|유가족|통곡|비통|오열|망연자실|주저앉아|말을\s*잇지\s*못|가슴이\s*무너|희생자의\s*어머니|딸)",
         "regex_vi": r"(nước\s*mắt|đau\s*đớn|người\s*nhà\s*nạn\s*nhân|bi\s*kịch|tưởng\s*niệm|nghẹn\s*ngào|gục\s*ngã|thương\s*tâm|không\s*nói\s*nên\s*lời|người\s*mẹ\s*nạn\s*nhân)",
         "priority_score": 90,
     },
 }
+
+
+_CALLBACK_RE = re.compile(
+    r"(다시\s*돌려|앞서\s*살펴본|비교해|대조해|모순|거짓말이|처음\s*진술|재검토|화면\s*속.*다시|일치하지\s*않|đối\s*chiếu\s*lại|mâu\s*thuẫn\s*với|lật\s*lại)",
+    re.IGNORECASE,
+)
+
+_METRIC_RE = re.compile(
+    r"(\d{1,2}시\s*\d{1,2}분|\d{1,2}:\d{2}|\d{4}년\s*\d{1,2}월\s*\d{1,2}일|\d{4}년|\d+(?:,\d+)*(?:\.\d+)?\s*(?:개|대|명|톤|그램|g|kg|도|℃|시간|일|년|층|호|동|만\s*위안|위안|m|km|%))"
+)
+
+
+def split_narration_into_clauses(narration_text: str, max_clauses: int = 3) -> list[str]:
+    """Splits a spoken narration sentence into 2-3 natural broadcast clauses for progressive reveal."""
+    text = str(narration_text or "").strip()
+    if not text:
+        return ["수사 기록 정밀 분석 진행 중", "핵심 물증 교차 대조 및 검증"]
+
+    # Split on sentence punctuation, em-dashes, commas, or Korean connective endings
+    raw_parts = re.split(r"(?<=[.?!,])\s+|\s+—\s+|\s+(?=(?:하지만|그러나|그런데|결국|즉시|이때|그리고)\s)", text)
+    parts = [p.strip() for p in raw_parts if p and len(p.strip()) >= 4]
+
+    if len(parts) <= 1:
+        # Split long single clause on Korean connective particles (fixed-width lookbehinds)
+        sub_parts = re.split(r"(?<=[고며자때])\s+|(?<=지만)\s+|(?<=는데)\s+", text)
+        parts = [p.strip() for p in sub_parts if p and len(p.strip()) >= 5]
+
+    if len(parts) <= 1:
+        mid = max(1, len(text) // 2)
+        space_idx = text.find(" ", mid)
+        if space_idx != -1:
+            parts = [text[:space_idx].strip(), text[space_idx + 1:].strip()]
+        else:
+            parts = [text]
+
+    # Merge if more than max_clauses
+    while len(parts) > max_clauses:
+        # Merge the two shortest adjacent segments
+        min_len = 999999
+        merge_idx = 0
+        for i in range(len(parts) - 1):
+            combined_len = len(parts[i]) + len(parts[i + 1])
+            if combined_len < min_len:
+                min_len = combined_len
+                merge_idx = i
+        parts[merge_idx] = f"{parts[merge_idx]} {parts[merge_idx + 1]}".strip()
+        parts.pop(merge_idx + 1)
+
+    return parts
+
+
+def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict[str, Any]:
+    """Extracts full voice-duration timing, progressive clause windows, and spoken metrics from a beat.
+
+    Matches the full spoken sentence duration (`end_sec - start_sec`) and progressive clause windows.
+    """
+    narration = str(
+        beat.get("narration_text")
+        or beat.get("narration")
+        or beat.get("voice_text")
+        or beat.get("text")
+        or beat.get("script_text")
+        or ""
+    ).strip()
+
+    # Compute exact voice duration without a 6.0s cap
+    dur = float(beat.get("duration_sec") or beat.get("duration") or 0.0)
+    if dur <= 0.0:
+        start_s = float(beat.get("start_sec") or 0.0)
+        end_s = float(beat.get("end_sec") or 0.0)
+        if end_s > start_s:
+            dur = end_s - start_s
+    if dur <= 0.0:
+        # Estimate naturally from character count (approx 7.2 Korean chars/sec)
+        dur = max(4.0, min(14.5, round(max(12, len(narration)) / 7.2, 2)))
+
+    clauses = split_narration_into_clauses(narration, max_clauses=3)
+    char_lengths = [max(4, len(c)) for c in clauses]
+    total_chars = float(sum(char_lengths))
+
+    clause_windows: list[tuple[float, float]] = []
+    clause_timestamps_sec: list[tuple[float, float]] = []
+    cursor = 0.0
+    for clen in char_lengths:
+        span = clen / total_chars
+        w_start = round(cursor, 4)
+        w_end = round(min(1.0, cursor + span), 4)
+        clause_windows.append((w_start, w_end))
+        clause_timestamps_sec.append((round(w_start * dur, 2), round(w_end * dur, 2)))
+        cursor += span
+
+    metrics = []
+    for m in _METRIC_RE.findall(narration):
+        m_clean = m.strip()
+        if m_clean and m_clean not in metrics:
+            metrics.append(m_clean)
+    if not metrics:
+        metrics = [f"BEAT #{beat_index + 1:03d}", f"{dur:.1f}s"]
+
+    beat_id = str(beat.get("beat_id") or beat.get("id") or f"B{beat_index + 1:03d}").strip()
+    act_label = str(beat.get("act") or beat.get("chapter") or f"ACT {(beat_index // 65) + 1}").strip()
+    location_label = str(beat.get("location") or beat.get("header_ko") or "형사 과학수사 증거 분석실").strip()
+    is_callback = bool(beat.get("is_purposeful_callback") or _CALLBACK_RE.search(narration))
+
+    # Build a concise Korean header from the first clause or beat title
+    first_clause = clauses[0] if clauses else narration
+    header_ko = str(beat.get("vox_header_ko") or first_clause[:28]).strip()
+    sub_ko = str(beat.get("vox_sub_ko") or (clauses[1][:42] if len(clauses) > 1 else first_clause[:42])).strip()
+
+    return {
+        "beat_id": beat_id,
+        "beat_index": beat_index,
+        "duration_sec": round(dur, 2),
+        "narration_text": narration,
+        "clauses": clauses,
+        "clause_windows": clause_windows,
+        "clause_timestamps_sec": clause_timestamps_sec,
+        "metrics": metrics[:4],
+        "act_label": act_label,
+        "location_label": location_label,
+        "header_ko": header_ko,
+        "sub_ko": sub_ko,
+        "is_purposeful_callback": is_callback,
+        "variation_seed": beat_index * 37 + sum(ord(c) for c in beat_id),
+        "contextual_sfx": select_contextual_sfx_for_beat(narration, str(beat.get("scene_archetype") or ""), beat_index),
+    }
 
 
 def is_vox_satellite_enabled(job: dict[str, Any], profile: dict[str, Any] | None = None) -> bool:
@@ -236,16 +417,19 @@ class VoxSemanticRouter:
 
     Implements:
     1. Bilingual intent scoring (Korean broadcast voice + Vietnamese briefs).
-    2. Sliding window anti-repetition mechanism (recency penalty + sibling rotation).
-    3. Emotion bypass to cinema_full.
+    2. Voice-synced animated Vox & Satellite GIS modes.
+    3. Sliding-window scene variety and purposeful callback awareness.
+    4. Full voice-duration & clause synchronization via `voice_spec`.
     """
 
-    def __init__(self, history_size: int = 4):
+    def __init__(self, history_size: int = 6):
         self.history_size = history_size
         self.recent_archetypes: list[str] = []
+        self.archetype_usage_counts: dict[str, int] = {}
 
     def reset_history(self) -> None:
         self.recent_archetypes.clear()
+        self.archetype_usage_counts.clear()
 
     def _same_cluster(self, arch1: str, arch2: str) -> bool:
         c1 = (VOX_ARCHETYPE_RULES.get(arch1) or {}).get("cluster")
@@ -261,6 +445,7 @@ class VoxSemanticRouter:
         """Classifies a single narration beat and resolves the optimal archetype."""
         text = str(narration_text or "").strip()
         history = list(recent_history) if recent_history is not None else list(self.recent_archetypes)
+        is_callback = bool((metadata or {}).get("is_purposeful_callback") or _CALLBACK_RE.search(text))
 
         candidates: list[tuple[float, str, str, str]] = []
 
@@ -269,7 +454,6 @@ class VoxSemanticRouter:
         ko_emotion = bool(re.search(cinema_rule["regex_ko"], text, re.IGNORECASE))
         vi_emotion = bool(re.search(cinema_rule["regex_vi"], text, re.IGNORECASE))
         if ko_emotion or vi_emotion:
-            # Emotional grief / human confrontation takes precedence unless just used
             penalty = 180.0 if history and history[-1] == "cinema_full" else 0.0
             score = max(0.0, 120.0 - penalty)
             if score > 0.0:
@@ -291,19 +475,15 @@ class VoxSemanticRouter:
             if match_vi:
                 base_score += 25.0
 
-            # Recency penalty calculation
+            # Recency penalty calculation (sliding window)
             penalty = 0.0
             if history:
-                # Immediate predecessor (Beat i-1): >= 160.0 to prevent consecutive repetition
                 if history[-1] == arch_id:
                     penalty += 180.0
-                # Two beats ago (Beat i-2): -40 points
                 if len(history) >= 2 and history[-2] == arch_id:
                     penalty += 40.0
-                # Three beats ago (Beat i-3): -15 points
                 if len(history) >= 3 and history[-3] == arch_id:
                     penalty += 15.0
-                # Same cluster predecessor (e.g. #M1 immediately after #M6): -25 points
                 if self._same_cluster(history[-1], arch_id):
                     penalty += 25.0
 
@@ -311,14 +491,12 @@ class VoxSemanticRouter:
             reason = f"Matched tokens on {arch_id} ({rule['label']}) [base={base_score:.0f}, penalty={penalty:.0f}]"
             candidates.append((final_score, arch_id, rule["label"], reason))
 
-        # Filter for valid candidates with positive scores that do not repeat the immediate previous archetype
         valid_candidates = [
             c for c in candidates
             if c[0] > 0.0 and (not history or c[1] != history[-1])
         ]
 
         if not valid_candidates:
-            # Fallback to cinema_full if neutral / no match or avoiding repetition
             chosen_id = "cinema_full" if history and history[-1] != "cinema_full" else "#D2"
             chosen_label = VOX_ARCHETYPE_RULES[chosen_id]["label"]
             chosen_reason = f"Default fallback / anti-repetition rotation away from {history[-1] if history else 'none'}"
@@ -329,10 +507,11 @@ class VoxSemanticRouter:
             winning_score, chosen_id, chosen_label, chosen_reason = valid_candidates[0]
             chosen_cluster = VOX_ARCHETYPE_RULES[chosen_id]["cluster"]
 
-        # Update sliding history
         self.recent_archetypes.append(chosen_id)
         if len(self.recent_archetypes) > self.history_size:
             self.recent_archetypes.pop(0)
+        if chosen_id != "cinema_full":
+            self.archetype_usage_counts[chosen_id] = self.archetype_usage_counts.get(chosen_id, 0) + 1
 
         return {
             "archetype": chosen_id,
@@ -340,6 +519,7 @@ class VoxSemanticRouter:
             "cluster": chosen_cluster,
             "score": winning_score,
             "reason": chosen_reason,
+            "is_purposeful_callback": is_callback,
         }
 
     def route_timeline(
@@ -348,14 +528,14 @@ class VoxSemanticRouter:
         job: dict[str, Any],
         profile: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
-        """Tags all beats in a project timeline with their resolved scene archetypes.
+        """Tags all beats in a project timeline with their resolved scene archetypes and `voice_spec`.
 
-        Enforces the Universal 4-Tier Semantic Visual Priority Rule:
-        1. Real Video Footage -> 2. Real Photo Footage -> 3. Semantic Vox (Case Files, Satellite Maps,
-           Forensic Dossiers, Press/Broadcast & any analytical graphic) -> 4. AI Image.
-        Vox archetypes (#M*, #D*, #P*) are assigned whenever the spoken narration semantically matches
-        (score > 0). Archetypes are NOT restricted to count = 1; they may recur purposefully across
-        the investigation timeline, and each beat receives its own voice-specific rendered motion.
+        Enforces:
+        1. Universal 4-Tier Semantic Visual Priority Rule (Real Video -> Real Photo -> Blender Vox -> AI Image).
+        2. Anti-Repetition & Anti-Density Pacing Guard: spaces out Vox beats (`min_vox_gap = 3` in full
+           documentaries unless score >= 124 and gap >= 2) so Vox graphics never feel overly dense or boring.
+        3. Full Voice Duration & Clause Sync: attaches `voice_spec` (`duration_sec`, `clauses`,
+           `clause_windows`, `metrics`, `variation_seed`) to every beat.
         """
         if not is_vox_satellite_enabled(job, profile):
             return beats
@@ -363,25 +543,26 @@ class VoxSemanticRouter:
         self.reset_history()
         routed_beats: list[dict[str, Any]] = []
         used_archetypes: dict[str, int] = {}
-        is_full_documentary = len(beats) > 12
+        is_full_documentary = len(beats) > 15
         last_vox_idx = -99
 
         for idx, beat in enumerate(beats):
             text = str(beat.get("narration_text") or beat.get("text") or "").strip()
-            decision = self.route_beat(text, metadata=beat)
+            voice_spec = build_voice_spec_for_beat(beat, beat_index=idx)
+            decision = self.route_beat(text, metadata={**beat, "is_purposeful_callback": voice_spec["is_purposeful_callback"]})
             arch = decision["archetype"]
             label = decision["label"]
             cluster = decision["cluster"]
             score = float(decision.get("score") or 0.0)
 
-            # Never force a Vox graphic when the voice narration has zero semantic match (score <= 0)
             if score <= 0.0:
                 arch = "cinema_full"
                 label = VOX_ARCHETYPE_RULES["cinema_full"]["label"]
                 cluster = "cinema"
             elif is_full_documentary and arch != "cinema_full":
-                # Allow purposeful recurrence across the documentary while preventing back-to-back clustering
-                if (idx - last_vox_idx) < 2:
+                gap = idx - last_vox_idx
+                min_gap = 2 if score >= 124.0 else 3
+                if gap < min_gap:
                     arch = "cinema_full"
                     label = VOX_ARCHETYPE_RULES["cinema_full"]["label"]
                     cluster = "cinema"
@@ -389,11 +570,14 @@ class VoxSemanticRouter:
                     used_archetypes[arch] = used_archetypes.get(arch, 0) + 1
                     last_vox_idx = idx
 
+            voice_spec["occurrence_index"] = used_archetypes.get(arch, 1)
+            voice_spec["contextual_sfx"] = select_contextual_sfx_for_beat(text, arch, beat_index=idx)
             updated_beat = {
                 **beat,
                 "scene_archetype": arch,
                 "archetype_label": label,
                 "archetype_cluster": cluster,
+                "voice_spec": voice_spec,
             }
             routed_beats.append(updated_beat)
 

@@ -12,34 +12,34 @@
         "title": "특급수배록",
         "url": "http://www.youtube.com/@%ED%8A%B9%EA%B8%89%EC%88%98%EB%B0%B0%EB%A1%9D",
         "thumbnail_url": "https://yt3.googleusercontent.com/Lzm6yPVAFQruZHjJLHfOerFQmCdiBXlGvzfWHiYe_X5b5El9XhMkrB0awpX2-5Z66AsoLrGNuBs=s900-c-k-c0x00ffffff-no-rj",
-        "subscribers": 92,
-        "total_views": 20435,
-        "total_videos": 5,
+        "subscribers": 146,
+        "total_views": 40864,
+        "total_videos": 6,
         "published_at": "2026-10-19",
         "niche_id": null,
-        "scan_id": 510,
+        "scan_id": 535,
         "dna": {
           "top_terms": [
             "사건",
             "실화",
             "중국",
+            "증발한",
             "수배범",
+            "000개",
+            "cctv",
+            "감쪽같",
+            "남편",
+            "눈물",
+            "실종",
+            "아내",
+            "아파트",
+            "얼굴",
+            "항저우",
+            "흘리던",
             "17명의",
             "1km에서",
             "남문촌",
-            "멈춘",
-            "모든",
-            "미제",
-            "반경",
-            "사라진",
-            "윈난성",
-            "좌표",
-            "청년들",
-            "추적",
-            "17년",
-            "굳어버린",
-            "끝에",
-            "돋는"
+            "멈춘"
           ],
           "winner_terms": [
             "사건",
@@ -86,32 +86,32 @@
             "길광"
           ],
           "weak_terms": [
+            "사건",
+            "실화",
+            "중국",
+            "000개",
+            "cctv",
+            "감쪽같",
+            "남편",
+            "눈물",
+            "실종",
+            "아내",
+            "아파트",
+            "얼굴",
+            "증발한",
+            "항저우",
+            "흘리던",
             "17명의",
             "1km에서",
             "남문촌",
             "멈춘",
-            "모든",
-            "미제",
-            "반경",
-            "사건",
-            "사라진",
-            "실화",
-            "윈난성",
-            "좌표",
-            "중국",
-            "청년들",
-            "추적",
-            "11명을",
-            "28년간",
-            "고등학교",
-            "노린",
-            "매점"
+            "모든"
           ],
-          "sampled_videos": 5,
+          "sampled_videos": 6,
           "win_count": 2,
-          "win_rate": 0.4,
+          "win_rate": 0.3333,
           "weak_count": 2,
-          "median_views": 5387.0,
+          "median_views": 9078.5,
           "median_outlier": 1.0,
           "momentum": 100.0,
           "winner_titles": [
@@ -120,8 +120,8 @@
               "title": "중국에서붉은 옷 입은 여성 11명을 노린 악마 | 28년간 고등학교 매점에 숨어 웃고 있었다",
               "url": "https://www.youtube.com/watch?v=XLpEJUOSkUA",
               "thumbnail_url": "https://i.ytimg.com/vi/XLpEJUOSkUA/maxresdefault.jpg",
-              "views": 4197,
-              "vph": 900.0,
+              "views": 9707,
+              "vph": 1200.0,
               "outlier": 156.5
             },
             {
@@ -129,7 +129,7 @@
               "title": "[중국 실화 사건] 형사 습격 후 13년 증발한 1급 수배범 | 안방극장 한복판으로 숨어든 길광 도주 사건",
               "url": "https://www.youtube.com/watch?v=AfIa6XT8w4k",
               "thumbnail_url": "https://i.ytimg.com/vi/AfIa6XT8w4k/maxresdefault.jpg",
-              "views": 15749,
+              "views": 28735,
               "vph": 2940.0,
               "outlier": 6.66
             },
@@ -138,7 +138,7 @@
               "title": "[중국 실화 사건] 시골 마을 불쌍한 벙어리 아저씨의 소름 돋는 정체 | 17년 침묵 끝에 성대가 굳어버린 수배범",
               "url": "https://www.youtube.com/watch?v=d3Zo6ln6Jgg",
               "thumbnail_url": "https://i.ytimg.com/vi_webp/d3Zo6ln6Jgg/maxresdefault.webp",
-              "views": 18429,
+              "views": 31254,
               "vph": 6874.1,
               "outlier": 5.32
             },
@@ -147,25 +147,34 @@
               "title": "중국 실화 사건 | 22년 전 미제사건 범인이 베스트셀러 작가가 된 사연 | 호주 여관 사건",
               "url": "https://www.youtube.com/watch?v=KiNsFe9zgEk",
               "thumbnail_url": "https://i.ytimg.com/vi/KiNsFe9zgEk/maxresdefault.jpg",
-              "views": 5387,
+              "views": 8450,
               "vph": 4020.0,
-              "outlier": 1.0
+              "outlier": 1.08
             },
             {
               "id": "fYFBS9FYy8Y",
               "title": "[중국 실화 사건] 반경 1km에서 사라진 17명의 청년들, 모든 좌표가 멈춘 한 집 | 윈난성 남문촌 미제 추적",
               "url": "https://www.youtube.com/watch?v=fYFBS9FYy8Y",
               "thumbnail_url": "https://i.ytimg.com/vi/fYFBS9FYy8Y/maxresdefault.jpg",
-              "views": 2760,
-              "vph": 310.51,
-              "outlier": 0.52
+              "views": 4991,
+              "vph": 960.0,
+              "outlier": 0.56
+            },
+            {
+              "id": "csPEkVFlulY",
+              "title": "[중국 실화 사건] 6,000개 CCTV 속 감쪽같이 증발한 아내와 눈물 흘리던 남편의 두 얼굴 | 항저우 아파트 실종 사건",
+              "url": "https://www.youtube.com/watch?v=csPEkVFlulY",
+              "thumbnail_url": "https://i.ytimg.com/vi/csPEkVFlulY/maxresdefault.jpg",
+              "views": 1785,
+              "vph": 840.0,
+              "outlier": 0.2
             }
           ],
-          "inferred_winner_count": 1,
+          "inferred_winner_count": 0,
           "basis": "public_titles_and_metrics",
           "limitation": "DNA dùng tiêu đề và chỉ số công khai đã quét để đo độ khớp; đây không phải dự đoán chắc chắn về hiệu suất tương lai."
         },
-        "last_scan_at": "2026-10-24T15:25:25.499267+00:00",
+        "last_scan_at": "2026-10-25T16:41:47.470269+00:00",
         "error": null,
         "source_role": "own_channel"
       },
@@ -861,11 +870,11 @@
           "cold_open": "00:00–03:30: Mở đầu bằng nghịch lý rùng mình về vỏ bọc hai mặt của tên tội phạm nguy hiểm hoặc hiện trường vụ án khóa kín không dấu vết tại Trung Quốc, dẫn thẳng vào câu hỏi điều tra cốt lõi.",
           "story_engine": "Trọng án hình sự có thật tại Trung Quốc (중국 강력범죄 실화) — Tội phạm đặc biệt nguy hiểm, kẻ sát nhân có IQ cao xóa dấu vết, vỏ bọc hai mặt lẩn trốn 10–30 năm, hiện trường bí ẩn và cuộc truy bắt/đấu trí pháp y của cảnh sát hình sự.",
           "structure_30m": [
-            "Hồi 1 (00:00 - 03:30): Mỏ neo Nghịch lý & Hiện trường Khóa kín (Cold Open & Mystery Scene)",
-            "Hồi 2 (03:30 - 10:00): Giải mã Pháp y & Ngõ cụt Điều tra (Forensic Clues & Dead End)",
+            "Hồi 1 (00:00 - 03:30): Mỏ neo Nghịch lý & Hiện trường Khóa kín (Cold Open & Mystery Scene — CẤM đặt CTA trong 2 phút đầu)",
+            "Hồi 2 (03:30 - 10:00): Giải mã Pháp y & Ngõ cụt Điều tra + [ĐIỂM CHẠM 1: Mid-roll Soft CTA 5–7s ở khoảng ~30% thời lượng / phút 6–8 ngay điểm chuyển tiếp tình tiết, biến thiên linh hoạt theo vụ án kèm icon Subscribe nhỏ góc dưới, không ngắt BGM]",
             "Hồi 3 (10:00 - 18:00): Vỏ bọc Hai Mặt của Kẻ Thủ Ác Nguy Hiểm (The Fugitive Double Life)",
             "Hồi 4 (18:00 - 25:00): Manh mối Chí mạng & Chiến dịch Vây bắt (Fatal Flaw & Manhunt)",
-            "Hồi 5 (25:00 - 30:00): Đấu trí Phòng Thẩm vấn & Bản án Công lý (Interrogation Breakdown & Verdict)"
+            "Hồi 5 (25:00 - 30:00): Đấu trí Phòng Thẩm vấn & Bản án Công lý + [ĐIỂM CHẠM 2: 30–45s trước khi hết video, NGAY SAU phán quyết và TRƯỚC câu chào tạm biệt '시청해 주셔서 감사합니다' — (1) Đúc kết bài học vụ án 10s -> (2) Kêu gọi Đăng ký & Bật chuông 10s -> (3) Bridge gợi ý xem tiếp hồ sơ vụ án tương tự trên End Screen 10s -> (4) Chào kết ngắn]"
           ],
           "section_rhythm": "hiện trường bí ẩn -> phân tích vật chứng pháp y -> vỏ bọc lẩn trốn tinh vi -> sơ hở chí mạng -> đấu trí thẩm vấn & phán quyết",
           "curiosity_gap": "Định kỳ mở lại nút thắt bằng một vật chứng pháp y bất thường, một sơ hở trong vỏ bọc ngụy trang, hoặc lời khai mâu thuẫn trong phòng thẩm vấn.",
@@ -878,7 +887,48 @@
             "cuộc truy lùng 10-30 năm không bỏ cuộc",
             "đấu trí tâm lý trong phòng thẩm vấn",
             "công lý và bản án cuối cùng"
-          ]
+          ],
+          "cta_strategy": "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối).",
+          "cta_architecture": {
+            "version": 1,
+            "mode": "dynamic_case_adaptive_2_touchpoints",
+            "based_on_analytics_videos": [
+              "fYFBS9FYy8Y",
+              "d3Zo6ln6Jgg"
+            ],
+            "retention_curve_profile": {
+              "early_filter_0_to_60s": "Rơi tự nhiên từ 100% xuống ~50%–57% (giai đoạn lọc khán giả thông thường — CẤM đặt CTA).",
+              "core_body_2m_to_20m": "Giữ chân cực kỳ ổn định và phẳng lì ở mức 40%–50% suốt thân bài (đặt 1 Soft CTA tại ~30% thời lượng).",
+              "ending_last_1_to_2m": "Sụt giảm khi vụ án ngã ngũ và rơi thấp nhất khi nghe câu chào tạm biệt (đặt Hard CTA + Bridge End Screen TRƯỚC câu cảm ơn)."
+            },
+            "anti_template_law": "Mỗi video PHẢI viết lời dẫn CTA mới 100% bám theo tình tiết, vật chứng, địa điểm và tâm lý hung thủ của chính vụ án đó. Tuyệt đối cấm copy-paste một câu CTA giống hệt nhau giữa các tập.",
+            "rules_summary": "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối).",
+            "touchpoints": [
+              {
+                "id": "no_early_cta",
+                "window": "00:00 - 02:00 (Hồi 1 Cold Open)",
+                "rule": "Tuyệt đối KHÔNG đặt bất kỳ lời kêu gọi Subscribe/Like hay giới thiệu kênh rườm rà nào trong 1–2 phút đầu."
+              },
+              {
+                "id": "touchpoint_1_mid_roll_soft_cta",
+                "window": "Khoảng 30% thời lượng (~phút 06:00 - 08:00, điểm chuyển tiếp Hồi 2 -> Hồi 3)",
+                "duration_sec": "5 - 7 giây",
+                "purpose_tag": "mid_roll_soft_cta",
+                "on_screen_text_ko": "구독 · 좋아요 | 사건 추적 계속",
+                "narrative_integration": "Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi bước sang giai đoạn phá án mới. Lồng tiếng mượt mà 5–7s nối trực tiếp từ tình tiết thực tế của vụ án đang kể (bế tắc hiện trường / vỏ bọc hai mặt / vật chứng pháp y), mời khán giả yêu thích hồ sơ điều tra thực tế nhấn Đăng ký kênh (구독과 좋아요) để đồng hành, rồi lập tức tung manh mối then chốt tiếp theo.",
+                "visual_and_audio_rule": "Chỉ hiển thị icon/nhãn nút Subscribe nhỏ gọn ở góc dưới màn hình, tuyệt đối không ngắt ngang nhạc nền BGM hay làm gián đoạn cảnh phim."
+              },
+              {
+                "id": "touchpoint_2_end_screen_value_cta_bridge",
+                "window": "30 - 45 giây trước khi hết video (Hồi 5: NGAY SAU phán quyết/bản án, TRƯỚC câu chào '시청해 주셔서 감사합니다')",
+                "duration_sec": "25 - 35 giây",
+                "purpose_tag": "end_screen_cta_bridge",
+                "on_screen_text_ko": "구독 · 알림 설정 | 다음 사건 파일 확인",
+                "narrative_integration": "Triển khai 3 nhịp linh hoạt theo vụ án trước khi nói lời cảm ơn kết thúc: (1) Tóm tắt dư âm/bài học cảnh tỉnh riêng của vụ án vừa kể (8–10s) -> (2) Kêu gọi bấm Đăng ký & Bật chuông thông báo (구독과 알림 설정) để không bỏ lỡ hồ sơ giải mã tội phạm tuần tới (8–10s) -> (3) Bridge bắc cầu sang video tiếp theo trên End Screen (8–10s): dựa trên mô-típ của vụ án hiện tại (mất tích bí ẩn trong khu dân cư / kẻ trốn truy nã đội lốt người thường / đột phá pháp y), mời khán giả bấm xem ngay hồ sơ vụ án tương tự đang hiển thị trên màn hình lúc này -> (4) Câu chào kết ngắn gọn ở 3–5 giây cuối cùng.",
+                "visual_and_audio_rule": "Bố cục khung hình 20–30 giây cuối chừa khoảng trống hợp lý cho thẻ End Screen YouTube trỏ thẳng vào video khác của kênh."
+              }
+            ]
+          }
         },
         "footage": {
           "importance": "full_ai_with_reference",
@@ -913,13 +963,15 @@
           "writing_style": "Phóng sự Điều tra Hình sự Hàn Quốc Sắc Lạnh (그것이 알고싶다 / 꼬꼬무 스타일 — 5 Hồi 30 Phút)",
           "hook_archetype": "Mỏ neo Nghịch lý Vỏ bọc Hai Mặt & Hiện trường Khóa kín (00:00–03:30)",
           "editing_archetypes": [
-            "Hồ sơ điều tra & Sơ đồ mạng lưới",
-            "Phóng to chi tiết & Quét tài liệu",
-            "Chia đôi màn hình đối chiếu",
-            "Bản đồ 2.5D & Camera vệ tinh"
+            "Vox Báo chí & Hồ sơ Pháp y Đa Kiểu (N1..N6 — Dịu mắt cho khán giả 45–70 tuổi, 1 Intro duy nhất không chớp nháy)",
+            "Bản đồ Full Màn Hình 1920x1080 Bay Camera A->B & Vẽ Lộ Trình Động (S3_FULLSCREEN_GIS_FLIGHT & S4_FULLSCREEN_SATELLITE_RECON)",
+            "Bản đồ Vệ tinh Chia Cột Đối Chiếu Hồ Sơ (S1_KUNMING_SATELLITE_MAP & S2_DUAL_SATELLITE_ROUTE)",
+            "Chia đôi màn hình đối chiếu & Kính lúp pháp y (max_uses=1 không lặp lại footage)",
+            "Kho 28+ SFX Foley Theo Ngữ Cảnh & 5 Nhạc Nền BGM Theo Cảm Xúc Chương (Tự động tải thêm âm thanh mới về kho)"
           ],
           "opening_hook": "",
-          "custom_rules": "CHUẨN DNA KÊNH ĐỘC QUYỀN (KR - 30 PHÚT - 100% FULL AI): (1) CHỈ LÀM Trọng án hình sự có thật tại Trung Quốc (중국 강력범죄 실화 / 일급 수배범 / 미제사건): Tội phạm cực kỳ nguy hiểm có IQ cao xóa dấu vết, vỏ bọc hai mặt lẩn trốn 10-30 năm, hiện trường bí ẩn và cuộc truy bắt/đấu trí pháp y của cảnh sát hình sự; (2) TUYỆT ĐỐI CẤM: Án tham nhũng quan chức, kinh tế, hối lộ, chính trị, hạ tầng; (3) AN TOÀN KIẾM TIỀN 100% XANH TIỀN (GREEN MONETIZATION): Ngôi kể thứ 3 theo góc nhìn Điều tra viên Hình sự, cắt bỏ 100% miêu tả hành vi đâm chém/tra tấn/thi thể máu me (dùng kỹ thuật Cắt cảnh Sau Cơn Bão chuyển thẳng sang khám nghiệm pháp y), cấm từ khóa cờ đỏ trong 60s đầu; (4) CẤU TRÚC 5 HỒI 30 PHÚT (~280-320 beats): Hồi 1 (00:00-03:30) Mỏ neo Nghịch lý & Hiện trường khóa kín -> Hồi 2 (03:30-10:00) Giải mã Pháp y & Ngõ cụt -> Hồi 3 (10:00-18:00) Vỏ bọc Hai Mặt của Kẻ Thủ Ác -> Hồi 4 (18:00-25:00) Manh mối Chí mạng & Vây bắt -> Hồi 5 (25:00-30:00) Đấu trí Phòng Thẩm vấn & Phán quyết; (5) HÌNH ẢNH: 100% Full AI đồng bộ theo Ảnh tham chiếu (Reference Image) nạp ở mỗi tập. [QUY TẮC SEO & THUMBNAIL ĐỘC QUYỀN]: (1) Tiêu đề dưới 80 ký tự (chuẩn 42-55 ký tự), luôn có [중국 실화 사건] ở đầu hoặc sau dấu |; tuyệt đối cấm từ '연쇄살인사건' (thay bằng 최악의 미제사건) và cấm '[중국에서 있었던 실제 사례]'; (2) Thumbnail chuẩn @판세의이면: 1 Tag xanh lá góc trái trên + 2 dòng chữ cực to dưới đáy (Dòng 1 Vàng to - Hook gây sốc/lời thú tội, Dòng 2 Đỏ cực to - Thân phận rợn người) + 1 Mũi tên đỏ chỉ điểm; cấm để tên riêng hung thủ lạ lẫm, cấm dòng thứ 3 spoiler làm lộ kết quả; (3) Thumbnail và Tiêu đề phải bổ sung mảnh ghép cho nhau, không được chép lại nhau. | QUY TẮC VÀNG THUMBNAIL & TIÊU ĐỀ CHUẨN CTR CAO (@판세의이면 DNA): (1) THUMBNAIL: Tuyệt đối CẤM đặt tên riêng nhân vật/hung thủ Trung Quốc xa lạ (như 가오청융) ở vị trí chữ Vàng trung tâm; phải thay bằng chi tiết/lời khai gây sốc nhất vụ án (VD: \"아들 대학 보내려 멈췄다\" hoặc 23만 명 지문 찍고도 놓쳤다). Xóa bỏ hoàn toàn dòng chữ trắng thứ 3 nhỏ ở đáy và CẤM tiết lộ kết quả phá án (spoiler như bị bắt nhờ Y-DNA của chú ruột) ngay trên Thumbnail. Chỉ giữ đúng 1 Tag màu xanh lá ở góc trái trên (chữ #4ade80 trên nền tối viền xanh #22c55e) + 2 dòng chữ thật to ở dưới đáy (Dòng 1 Vàng #ffe600 cỡ 80-84px + Dòng 2 Đỏ #ff2424 cỡ 84-88px) + 1 Mũi tên đỏ chỉ trực tiếp vào mặt hung thủ hoặc biển hiệu hiện trường đắt giá. (2) TIÊU ĐỀ YOUTUBE: Bắt buộc dưới 80 ký tự tiếng Hàn, luôn giữ cấu trúc có nhãn [중국 실화 사건] và dấu ngăn cách '|' ([중국 실화 사건] ở đầu hoặc sau dấu '|'). Tuyệt đối CẤM dùng cụm rườm rà [중국에서 있었던 실제 사례] làm lãng phí 25 ký tự đầu tiên trên điện thoại. Tuyệt đối CẤM lặp lại y hệt chữ đã viết trên Thumbnail (Tiêu đề và Thumbnail phải bổ sung mảnh ghép thông tin cho nhau). Tuyệt đối CẤM viết thẳng từ nhạy cảm 연쇄살인사건 trên tiêu đề hay chữ Thumbnail (đổi thành 최악의 미제사건 hoặc 11명을 해친 진범 để tránh hạn chế đề xuất/vàng tiền)."
+          "custom_rules": "CHUẨN DNA KÊNH ĐỘC QUYỀN (KR - 30 PHÚT - 100% FULL AI): (1) CHỈ LÀM Trọng án hình sự có thật tại Trung Quốc (중국 강력범죄 실화 / 일급 수배범 / 미제사건): Tội phạm cực kỳ nguy hiểm có IQ cao xóa dấu vết, vỏ bọc hai mặt lẩn trốn 10-30 năm, hiện trường bí ẩn và cuộc truy bắt/đấu trí pháp y của cảnh sát hình sự; (2) TUYỆT ĐỐI CẤM: Án tham nhũng quan chức, kinh tế, hối lộ, chính trị, hạ tầng; (3) AN TOÀN KIẾM TIỀN 100% XANH TIỀN (GREEN MONETIZATION): Ngôi kể thứ 3 theo góc nhìn Điều tra viên Hình sự, cắt bỏ 100% miêu tả hành vi đâm chém/tra tấn/thi thể máu me (dùng kỹ thuật Cắt cảnh Sau Cơn Bão chuyển thẳng sang khám nghiệm pháp y), cấm từ khóa cờ đỏ trong 60s đầu; (4) CẤU TRÚC 5 HỒI 30 PHÚT (~280-320 beats): Hồi 1 (00:00-03:30) Mỏ neo Nghịch lý & Hiện trường khóa kín -> Hồi 2 (03:30-10:00) Giải mã Pháp y & Ngõ cụt -> Hồi 3 (10:00-18:00) Vỏ bọc Hai Mặt của Kẻ Thủ Ác -> Hồi 4 (18:00-25:00) Manh mối Chí mạng & Vây bắt -> Hồi 5 (25:00-30:00) Đấu trí Phòng Thẩm vấn & Phán quyết; (5) HÌNH ẢNH: 100% Full AI đồng bộ theo Ảnh tham chiếu (Reference Image) nạp ở mỗi tập. [QUY TẮC SEO & THUMBNAIL ĐỘC QUYỀN]: (1) Tiêu đề dưới 80 ký tự (chuẩn 42-55 ký tự), luôn có [중국 실화 사건] ở đầu hoặc sau dấu |; tuyệt đối cấm từ '연쇄살인사건' (thay bằng 최악의 미제사건) và cấm '[중국에서 있었던 실제 사례]'; (2) Thumbnail chuẩn @판세의이면: 1 Tag xanh lá góc trái trên + 2 dòng chữ cực to dưới đáy (Dòng 1 Vàng to - Hook gây sốc/lời thú tội, Dòng 2 Đỏ cực to - Thân phận rợn người) + 1 Mũi tên đỏ chỉ điểm; cấm để tên riêng hung thủ lạ lẫm, cấm dòng thứ 3 spoiler làm lộ kết quả; (3) Thumbnail và Tiêu đề phải bổ sung mảnh ghép cho nhau, không được chép lại nhau. | QUY TẮC VÀNG THUMBNAIL & TIÊU ĐỀ CHUẨN CTR CAO (@판세의이면 DNA): (1) THUMBNAIL: Tuyệt đối CẤM đặt tên riêng nhân vật/hung thủ Trung Quốc xa lạ (như 가오청융) ở vị trí chữ Vàng trung tâm; phải thay bằng chi tiết/lời khai gây sốc nhất vụ án (VD: \"아들 대학 보내려 멈췄다\" hoặc 23만 명 지문 찍고도 놓쳤다). Xóa bỏ hoàn toàn dòng chữ trắng thứ 3 nhỏ ở đáy và CẤM tiết lộ kết quả phá án (spoiler như bị bắt nhờ Y-DNA của chú ruột) ngay trên Thumbnail. Chỉ giữ đúng 1 Tag màu xanh lá ở góc trái trên (chữ #4ade80 trên nền tối viền xanh #22c55e) + 2 dòng chữ thật to ở dưới đáy (Dòng 1 Vàng #ffe600 cỡ 80-84px + Dòng 2 Đỏ #ff2424 cỡ 84-88px) + 1 Mũi tên đỏ chỉ trực tiếp vào mặt hung thủ hoặc biển hiệu hiện trường đắt giá. (2) TIÊU ĐỀ YOUTUBE: Bắt buộc dưới 80 ký tự tiếng Hàn, luôn giữ cấu trúc có nhãn [중국 실화 사건] và dấu ngăn cách '|' ([중국 실화 사건] ở đầu hoặc sau dấu '|'). Tuyệt đối CẤM dùng cụm rườm rà [중국에서 있었던 실제 사례] làm lãng phí 25 ký tự đầu tiên trên điện thoại. Tuyệt đối CẤM lặp lại y hệt chữ đã viết trên Thumbnail (Tiêu đề và Thumbnail phải bổ sung mảnh ghép thông tin cho nhau). Tuyệt đối CẤM viết thẳng từ nhạy cảm 연쇄살인사건 trên tiêu đề hay chữ Thumbnail (đổi thành 최악의 미제사건 hoặc 11명을 해친 진범 để tránh hạn chế đề xuất/vàng tiền). | [CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM LINH HOẠT THEO TỪNG VỤ ÁN]: CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối).",
+          "cta_strategy": "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối)."
         },
         "curated_today_candidates": [
           {
@@ -1016,6 +1068,47 @@
             "bottom_lines": "2 dòng chữ cỡ đại (broadcast_left_heavy / split_duality): Dòng 1 Trắng tinh (#FFFFFF, viền đen dày) dẫn nghịch lý + Dòng 2 Vàng rực (#FFE600 chuẩn 실화사건25시 50x outlier) hoặc Đỏ tươi (#EF4444 chuẩn 대륙실화록) chốt điểm sốc.",
             "visual_indicator": "Nhân vật Thám tử Vàng 2D (#FFE84A mặc áo măng-tô đội mũ thám tử) hoặc chân dung nghi phạm bên phải 1/3 + Khung ảnh đối chứng (PiP) + Mũi tên đỏ & vòng tròn đỏ khoanh vật chứng."
           }
+        },
+        "cta_strategy": "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối).",
+        "cta_architecture": {
+          "version": 1,
+          "mode": "dynamic_case_adaptive_2_touchpoints",
+          "based_on_analytics_videos": [
+            "fYFBS9FYy8Y",
+            "d3Zo6ln6Jgg"
+          ],
+          "retention_curve_profile": {
+            "early_filter_0_to_60s": "Rơi tự nhiên từ 100% xuống ~50%–57% (giai đoạn lọc khán giả thông thường — CẤM đặt CTA).",
+            "core_body_2m_to_20m": "Giữ chân cực kỳ ổn định và phẳng lì ở mức 40%–50% suốt thân bài (đặt 1 Soft CTA tại ~30% thời lượng).",
+            "ending_last_1_to_2m": "Sụt giảm khi vụ án ngã ngũ và rơi thấp nhất khi nghe câu chào tạm biệt (đặt Hard CTA + Bridge End Screen TRƯỚC câu cảm ơn)."
+          },
+          "anti_template_law": "Mỗi video PHẢI viết lời dẫn CTA mới 100% bám theo tình tiết, vật chứng, địa điểm và tâm lý hung thủ của chính vụ án đó. Tuyệt đối cấm copy-paste một câu CTA giống hệt nhau giữa các tập.",
+          "rules_summary": "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối).",
+          "touchpoints": [
+            {
+              "id": "no_early_cta",
+              "window": "00:00 - 02:00 (Hồi 1 Cold Open)",
+              "rule": "Tuyệt đối KHÔNG đặt bất kỳ lời kêu gọi Subscribe/Like hay giới thiệu kênh rườm rà nào trong 1–2 phút đầu."
+            },
+            {
+              "id": "touchpoint_1_mid_roll_soft_cta",
+              "window": "Khoảng 30% thời lượng (~phút 06:00 - 08:00, điểm chuyển tiếp Hồi 2 -> Hồi 3)",
+              "duration_sec": "5 - 7 giây",
+              "purpose_tag": "mid_roll_soft_cta",
+              "on_screen_text_ko": "구독 · 좋아요 | 사건 추적 계속",
+              "narrative_integration": "Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi bước sang giai đoạn phá án mới. Lồng tiếng mượt mà 5–7s nối trực tiếp từ tình tiết thực tế của vụ án đang kể (bế tắc hiện trường / vỏ bọc hai mặt / vật chứng pháp y), mời khán giả yêu thích hồ sơ điều tra thực tế nhấn Đăng ký kênh (구독과 좋아요) để đồng hành, rồi lập tức tung manh mối then chốt tiếp theo.",
+              "visual_and_audio_rule": "Chỉ hiển thị icon/nhãn nút Subscribe nhỏ gọn ở góc dưới màn hình, tuyệt đối không ngắt ngang nhạc nền BGM hay làm gián đoạn cảnh phim."
+            },
+            {
+              "id": "touchpoint_2_end_screen_value_cta_bridge",
+              "window": "30 - 45 giây trước khi hết video (Hồi 5: NGAY SAU phán quyết/bản án, TRƯỚC câu chào '시청해 주셔서 감사합니다')",
+              "duration_sec": "25 - 35 giây",
+              "purpose_tag": "end_screen_cta_bridge",
+              "on_screen_text_ko": "구독 · 알림 설정 | 다음 사건 파일 확인",
+              "narrative_integration": "Triển khai 3 nhịp linh hoạt theo vụ án trước khi nói lời cảm ơn kết thúc: (1) Tóm tắt dư âm/bài học cảnh tỉnh riêng của vụ án vừa kể (8–10s) -> (2) Kêu gọi bấm Đăng ký & Bật chuông thông báo (구독과 알림 설정) để không bỏ lỡ hồ sơ giải mã tội phạm tuần tới (8–10s) -> (3) Bridge bắc cầu sang video tiếp theo trên End Screen (8–10s): dựa trên mô-típ của vụ án hiện tại (mất tích bí ẩn trong khu dân cư / kẻ trốn truy nã đội lốt người thường / đột phá pháp y), mời khán giả bấm xem ngay hồ sơ vụ án tương tự đang hiển thị trên màn hình lúc này -> (4) Câu chào kết ngắn gọn ở 3–5 giây cuối cùng.",
+              "visual_and_audio_rule": "Bố cục khung hình 20–30 giây cuối chừa khoảng trống hợp lý cho thẻ End Screen YouTube trỏ thẳng vào video khác của kênh."
+            }
+          ]
         }
       },
       "plan": {},
@@ -1023,26 +1116,26 @@
         "scan_id": null,
         "plan_id": null,
         "niche_id": null,
-        "count": 3,
+        "count": 2,
         "source_mode": "custom_dna_only",
         "discovery_mode": "dna_strict",
         "decision_engine": "strict_channel_dna",
         "codex_status": "ok",
         "target_duration_minutes": 20,
-        "checked_at": "2026-10-24T15:25:25.588320+00:00"
+        "checked_at": "2026-10-25T16:41:47.569982+00:00"
       },
       "latest_codex_analysis": {},
       "created_at": "2026-10-13T13:18:03.663532+00:00",
-      "updated_at": "2026-10-24T15:25:25.588322+00:00",
+      "updated_at": "2026-10-25T16:41:47.569985+00:00",
       "source_mode": "custom_dna_only",
       "latest_analysis": {
-        "checked_at": "2026-10-24T15:25:25.560656+00:00",
+        "checked_at": "2026-10-25T16:41:47.537488+00:00",
         "source_mode": "custom_dna_only",
         "own": {
-          "win_rate": 0.4,
+          "win_rate": 0.3333,
           "momentum": 100.0,
-          "median_views": 5387.0,
-          "sampled_videos": 5,
+          "median_views": 9078.5,
+          "sampled_videos": 6,
           "winner_terms": [
             "사건",
             "수배범",
@@ -1066,26 +1159,26 @@
             "길광"
           ],
           "weak_terms": [
+            "사건",
+            "실화",
+            "중국",
+            "000개",
+            "cctv",
+            "감쪽같",
+            "남편",
+            "눈물",
+            "실종",
+            "아내",
+            "아파트",
+            "얼굴",
+            "증발한",
+            "항저우",
+            "흘리던",
             "17명의",
             "1km에서",
             "남문촌",
             "멈춘",
-            "모든",
-            "미제",
-            "반경",
-            "사건",
-            "사라진",
-            "실화",
-            "윈난성",
-            "좌표",
-            "중국",
-            "청년들",
-            "추적",
-            "11명을",
-            "28년간",
-            "고등학교",
-            "노린",
-            "매점"
+            "모든"
           ]
         },
         "competitors": {
@@ -1128,7 +1221,7 @@
       "monetization_safety_policy": "Ngôi thứ 3 theo góc nhìn Hồ sơ Điều tra viên Hình sự. Cắt bỏ 100% miêu tả hành vi bạo lực, tra tấn, máu me trực diện (áp dụng kỹ thuật Cắt cảnh Sau Cơn Bão — chuyển ngay sang khám nghiệm hiện trường, hồ sơ vật chứng và biên bản điều tra). 100% Green Monetization.",
       "reference_image_policy": "100% Full AI (full_ai) sử dụng bộ ảnh tái hiện phong cách Cold Forensic Noir, khóa nhân vật nhất quán và không hiển thị cảnh máu me phản cảm.",
       "default_creative_brief": {
-        "custom_rules": "CHUẨN DNA KÊNH ĐỘC QUYỀN (KR - 100% FULL AI)",
+        "custom_rules": "CHUẨN DNA KÊNH ĐỘC QUYỀN (KR - 100% FULL AI) | [CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM LINH HOẠT THEO TỪNG VỤ ÁN]: CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối).",
         "narrative_angle": "Điều tra Hồ sơ Hình sự & Giải mã Tâm lý Tội phạm Nguy hiểm (형사 수사 기록 & 프로파일링 — Ngôi thứ 3)",
         "writing_style": "Phóng sự Điều tra Hình sự Hàn Quốc Sắc Lạnh (그것이 알고싶다 / 꼬꼬무 스타일 — 5 Hồi)",
         "market": "KR",
@@ -1138,13 +1231,15 @@
         "visual_strategy": "full_ai",
         "hook_archetype": "Mỏ neo Nghịch lý Vỏ bọc Hai Mặt & Hiện trường Khóa kín (00:00–03:30)",
         "editing_archetypes": [
-          "Hồ sơ điều tra & Sơ đồ mạng lưới",
-          "Phóng to chi tiết & Quét tài liệu",
-          "Chia đôi màn hình đối chiếu",
-          "Bản đồ 2.5D & Camera vệ tinh"
+          "Vox Báo chí & Hồ sơ Pháp y Đa Kiểu (N1..N6 — Dịu mắt cho khán giả 45–70 tuổi, 1 Intro duy nhất không chớp nháy)",
+          "Bản đồ Full Màn Hình 1920x1080 Bay Camera A->B & Vẽ Lộ Trình Động (S3_FULLSCREEN_GIS_FLIGHT & S4_FULLSCREEN_SATELLITE_RECON)",
+          "Bản đồ Vệ tinh Chia Cột Đối Chiếu Hồ Sơ (S1_KUNMING_SATELLITE_MAP & S2_DUAL_SATELLITE_ROUTE)",
+          "Chia đôi màn hình đối chiếu & Kính lúp pháp y (max_uses=1 không lặp lại footage)",
+          "Kho 28+ SFX Foley Theo Ngữ Cảnh & 5 Nhạc Nền BGM Theo Cảm Xúc Chương (Tự động tải thêm âm thanh mới về kho)"
         ],
         "opening_hook": "샤먼의 한 고급 쇼핑몰 시계 매장. 20년 동안 단 한 번도 신분증을 쓰지 않고 유령처럼 살아온 그녀의 진짜 이름은 라오룽즈. 중국 전역을 공포에 떨게 했던 최악의 1급 수배범이었습니다.",
-        "notes": "Hồ sơ Kênh True Crime Hình Sự Trung Quốc (KR · Full AI). Điều tra trọng án hình sự, 100% Green Monetization."
+        "notes": "Hồ sơ Kênh True Crime Hình Sự Trung Quốc (KR · Full AI). Điều tra trọng án hình sự, 100% Green Monetization.",
+        "cta_strategy": "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối)."
       },
       "curated_today_candidates": [
         {
@@ -1170,59 +1265,6 @@
           "already_produced": false,
           "title_target": "[중국 실화 사건] 8년간 8개 성을 넘나든 '역추적의 달인'을 무너뜨린 단 한 장의 CCTV | 주극화 추적 사건",
           "title_vi": "Một bức ảnh CCTV đánh sập 'bậc thầy phản trinh sát' vượt 8 tỉnh suốt 8 năm | Chuyên án truy bắt Chu Khắc Hoa",
-          "seo_keyword_dna": {
-            "primary_title_keyword": "중국 실화 사건",
-            "primary_title_keyword_meaning_vi": "Vụ Án Có Thật ở Trung Quốc",
-            "keyword_placement_rule": "smart_seo_flexible",
-            "secondary_anchor_keywords": [
-              "중국 미제사건",
-              "실제 사건 파일",
-              "공안 수사 기록",
-              "특급수배록",
-              "중국 강력범죄 실화"
-            ],
-            "mandatory_hashtags": [
-              "#중국실화사건",
-              "#특급수배록",
-              "#중국미제사건",
-              "#실화사건"
-            ],
-            "default_seo_tags": [
-              "중국실화사건",
-              "특급수배록",
-              "중국미제사건",
-              "실제사건파일",
-              "공안수사기록",
-              "중국강력범죄실화",
-              "그것이알고싶다",
-              "범죄실화"
-            ]
-          }
-        },
-        {
-          "id": "tc_cn_01",
-          "title": "[중국 실화 사건] 사형 집행 21년 만에 다시 법정에 선 '되살아난 사형수' — 중국 사법부를 뒤흔든 쑨샤오궈 사건의 전말 ([Vụ Án Có Thật ở Trung Quốc] Tử tù 'hồi sinh' sau 21 năm thi hành án — Toàn cảnh đại án Tôn Tiểu Quả làm rúng động nền tư pháp)",
-          "topic_anchor": "사형 집행 21년 만에 다시 법정에 선 '되살아난 사형수' — 중국 사법부를 뒤흔든 쑨샤오궈 사건의 전말",
-          "winner_cluster": "Trọng án Hình sự & Chuyên án Đặc biệt (중앙 지도조 특별 수사 실화)",
-          "codex_score": 98,
-          "profile_score": 98,
-          "codex_angle": "Ngôi thứ 3 — Hồ sơ Điều tra Chuyên án & Lật tẩy Mạng lưới Bao che (Cắt cảnh Sau Cơn Bão, 100% Xanh tiền)",
-          "codex_reasons": [
-            "Khớp 100% DNA Trọng án hình sự có thật tại Trung Quốc (중국 강력범죄 실화 — Đại án Tôn Tiểu Quả Sun Xiaoguo)",
-            "Có đầy đủ 5 Hồi điều tra: tử tù biến mất năm 1998 -> 21 năm sống ngoài vòng pháp luật -> manh mối hộp đêm Côn Minh -> chuyên án Trung ương tái thẩm -> thi hành án đúng pháp luật",
-            "100% Green Monetization: tập trung vào tài liệu pháp lý và chiến dịch phá án, không mô tả bạo lực trực diện"
-          ],
-          "opening_hook": "1998년 사형 판결을 받고 총살된 줄 알았던 남자가, 21년 뒤 버젓이 도심 나이트클럽의 실소유주로 살아가고 있었습니다. 죽은 자가 어떻게 살아 돌아와 다시 법정에 서게 되었을까요? 중국 사법부 전체를 발칵 뒤집어놓은 '되살아난 사형수' 쑨샤오궈 사건의 전말을 추적합니다.",
-          "note": "Vụ án Tôn Tiểu Quả (Sun Xiaoguo, Côn Minh, Vân Nam) — Góc kể Hồ sơ Chuyên án Bộ Công an & Lật lại vụ án 21 năm, khắc họa mạng lưới bao che bị triệt phá và đưa kẻ thủ ác ra ánh sáng (100% Xanh tiền YouTube).",
-          "profile_id": "channel-e544a64b7c",
-          "target_duration_minutes": 20,
-          "codex_status": "ok",
-          "codex_verdict": "approve",
-          "proven_winner_match": true,
-          "trend_source": "strict_channel_dna",
-          "already_produced": false,
-          "title_target": "[중국 실화 사건] 사형 집행 21년 만에 다시 법정에 선 '되살아난 사형수' — 중국 사법부를 뒤흔든 쑨샤오궈 사건의 전말",
-          "title_vi": "[Vụ Án Có Thật ở Trung Quốc] Tử tù 'hồi sinh' sau 21 năm thi hành án — Toàn cảnh đại án Tôn Tiểu Quả làm rúng động nền tư pháp",
           "seo_keyword_dna": {
             "primary_title_keyword": "중국 실화 사건",
             "primary_title_keyword_meaning_vi": "Vụ Án Có Thật ở Trung Quốc",
@@ -1337,10 +1379,11 @@
           "preferred_routing": "full_ai"
         },
         "editing_archetypes": [
-          "Hồ sơ điều tra & Sơ đồ mạng lưới",
-          "Phóng to chi tiết & Quét tài liệu",
-          "Chia đôi màn hình đối chiếu",
-          "Bản đồ 2.5D & Camera vệ tinh"
+          "Vox Báo chí & Hồ sơ Pháp y Đa Kiểu (N1..N6 — Dịu mắt cho khán giả 45–70 tuổi, 1 Intro duy nhất không chớp nháy)",
+          "Bản đồ Full Màn Hình 1920x1080 Bay Camera A->B & Vẽ Lộ Trình Động (S3_FULLSCREEN_GIS_FLIGHT & S4_FULLSCREEN_SATELLITE_RECON)",
+          "Bản đồ Vệ tinh Chia Cột Đối Chiếu Hồ Sơ (S1_KUNMING_SATELLITE_MAP & S2_DUAL_SATELLITE_ROUTE)",
+          "Chia đôi màn hình đối chiếu & Kính lúp pháp y (max_uses=1 không lặp lại footage)",
+          "Kho 28+ SFX Foley Theo Ngữ Cảnh & 5 Nhạc Nền BGM Theo Cảm Xúc Chương (Tự động tải thêm âm thanh mới về kho)"
         ],
         "subtitle_style": {
           "font_family": "Pretendard",
@@ -1368,12 +1411,17 @@
           "tension_drone_under_interrogation": false
         },
         "editorial_rules": [
-          "Always ground technical claims with KeyMetricCallout telemetry cards",
-          "Maintain voice-visual alignment within 0.3s tolerance"
+          "Flexible Lore/DNA Principle: Lore là DNA mẫu; tuyệt đối cấm lười biếng lặp đi lặp lại 1-2 kiểu Vox hoặc 1-2 tiếng SFX cho cả video",
+          "Linh hoạt giữa Bản đồ Full Màn Hình 1920x1080 (S3_FULLSCREEN_GIS_FLIGHT, S4_FULLSCREEN_SATELLITE_RECON) và Bản đồ Chia Cột (S1, S2) tùy theo quy mô không gian của câu thoại",
+          "Chuẩn khán giả 45-70 tuổi: Chỉ 1 intro nhẹ nhàng đầu video, không nháy strobe, khung ảnh vuông vắn kèm nhãn chú thích tiếng Hàn rõ nghĩa",
+          "Âm thanh đa dạng theo ngữ cảnh: 28+ SFX Foley thật (2 sự kiện/clip) + 5 BGM theo tâm trạng chương + tự động tải thêm audio mới về kho khi cần"
         ],
         "locked_from_job_id": "20261023-084718-f20824bc",
         "locked_at": "2026-10-23T18:22:46.655210+00:00",
-        "notes": "Integrity audit test"
+        "notes": "Integrity audit test",
+        "vox_blender_role": "LINH HOẠT TUYỆT ĐỐI THEO NỘI DUNG VIDEO (CẤM LƯỜI BIẾNG LẶP LẠI 1–2 MẪU VOX): Lore chỉ là DNA mẫu. Tự động biến hóa trên 10+ kiểu Vox & Bản đồ 30fps (.mp4) khớp 100% thời lượng và ngữ nghĩa từng câu thoại: (1) Khi câu thoại nói về điều động liên tỉnh (Bắc Kinh -> Vân Nam), chuyển trại giam (Trại 1 -> Trại 2) hoặc mở rộng địa bàn toàn thành phố -> BẮT BUỘC mở rộng Bản đồ Địa hình / Vệ tinh ra FULL MÀN HÌNH 1920x1080 (S3_FULLSCREEN_GIS_FLIGHT / S4_FULLSCREEN_SATELLITE_RECON) với camera bay mượt từ A sang B, vẽ đường nối điểm tiến dần 0%->100%, vòng sóng radar nở tại điểm đến, ghim ①->②->③ bật theo nhịp thoại, kèm cửa sổ video PiP góc trên phải và thanh highlight câu thoại nổi ở đáy; (2) Khi cần đối chiếu vị trí với bài báo/hồ sơ -> dùng Bản đồ Chia Cột (S1/S2); (3) Với tài liệu -> xoay vòng 6 kiểu Báo chí, Bản án Tòa án, Hồ sơ Trại giam, Bản vẽ Bằng sáng chế, Trục thời gian, Bảng vật chứng (N1..N6) trên nền giấy kem ấm dịu mắt cho khán giả 45–70 tuổi (chỉ 1 intro êm dịu đầu video, không chớp nháy, không xé lẹm vào mặt người).",
+        "remotion_editor_role": "Remotion (CofiRemotion) dựng timeline tổng thể (~50% Footage thật max_uses=1 + ~30% Vox & Bản đồ Full/Split động + ~20% Ảnh AI 1-to-1 theo từng beat), kết hợp hệ thống âm thanh 28+ SFX Foley theo đúng ngữ cảnh từng cảnh (búa tòa, cửa sắt trại giam, bước chân hành lang, bộ đàm cảnh sát, còi hụ xa, sóng radar vệ tinh, gió bay bản đồ, bút dạ quang, lật hồ sơ, đồng hồ tích tắc...) và 5 bản nhạc nền BGM thay đổi theo cảm xúc từng chương (ducking tự động). Nếu gặp bối cảnh/cảm xúc mới chưa có trong kho, tự động gọi documentary/audio_library_manager.py tải nhạc/SFX CC0 mới về kho.",
+        "anti_repetition_policy": "Chuẩn YPP YouTube chống trùng lặp & nội dung tái sử dụng: max_uses = 1 cho mọi clip footage video và ảnh tư liệu; bắt buộc sử dụng đầy đủ bộ ảnh AI đã vẽ cho từng beat (<beat_id>_ai_keyframe.jpg) kết hợp footage video thật, ảnh footage Vox, ảnh vệ tinh và Vox motion 2D khoanh vùng bản đồ/hồ sơ vụ án; chỉ lặp lại có chủ đích đối chiếu qua Split-Screen A/B, Forensic PiP hoặc 160% Macro Loupe."
       },
       "self_learning_memory": {
         "status": "success",
@@ -1397,16 +1445,21 @@
         "upgrade_rules": {
           "what_to_stop_doing": [
             "Không mô tả chi tiết vết thương hay máu me trực diện",
-            "Không dùng từ ngữ bạo lực trong 60 giây đầu"
+            "Không dùng từ ngữ bạo lực trong 60 giây đầu",
+            "Không đặt CTA ở 1–2 phút đầu làm mất kiên nhẫn khán giả đang vào vụ án",
+            "Không nói câu cảm ơn/chào tạm biệt ('시청해 주셔서 감사합니다') trước khi kêu gọi CTA cuối video",
+            "Không dùng chung một câu CTA văn mẫu rập khuôn giống hệt nhau giữa các video"
           ],
           "what_to_double_down_on": [
             "Khóa chặt góc nhìn Điều tra viên Hình sự",
-            "Tập trung vào đấu trí phòng thẩm vấn và dấu vết Big Data"
+            "Tập trung vào đấu trí phòng thẩm vấn và dấu vết Big Data",
+            "Chiến lược CTA 2 điểm chạm linh hoạt theo từng vụ án: (1) 1 Soft CTA 5–7s ở giữa video (~30% thời lượng / phút 6–8 ngay điểm chuyển tình tiết, biến thiên theo manh mối vụ án + icon Subscribe nhỏ góc dưới không ngắt nhạc); (2) 1 Hard CTA + Bridge sang video tiếp theo trên End Screen ở 30–45s cuối (ngay sau phán quyết và TRƯỚC lời chào kết thúc)"
           ],
           "next_video_upgrades": [
             "Khóa chặt góc nhìn Điều tra viên",
             "Không hiển thị vũ khí sát thương",
-            "Tăng nhịp cắt màn hình đối chiếu hồ sơ"
+            "Tăng nhịp cắt màn hình đối chiếu hồ sơ",
+            "Áp dụng CTA 2 điểm chạm linh hoạt theo tình tiết riêng của từng vụ án (Cấm CTA 2 phút đầu; Mid-roll Soft CTA 5–7s ở ~30% thời lượng gắn với nút thắt vụ án + icon góc dưới; End-screen Value CTA + Bridge gợi ý vụ án tương tự ở 30–45s cuối ngay sau bản án và TRƯỚC câu chào cảm ơn)"
           ]
         },
         "thumbnail_dna": {
@@ -1475,7 +1528,12 @@
         "next_video_upgrades": [
           "Khóa chặt góc nhìn Điều tra viên",
           "Không hiển thị vũ khí sát thương",
-          "Tăng nhịp cắt màn hình đối chiếu hồ sơ"
+          "Tăng nhịp cắt màn hình đối chiếu hồ sơ",
+          "Áp dụng CTA 2 điểm chạm linh hoạt theo tình tiết riêng của từng vụ án (Cấm CTA 2 phút đầu; Mid-roll Soft CTA 5–7s ở ~30% thời lượng gắn với nút thắt vụ án + icon góc dưới; End-screen Value CTA + Bridge gợi ý vụ án tương tự ở 30–45s cuối ngay sau bản án và TRƯỚC câu chào cảm ơn)"
+        ],
+        "injected_rules": [
+          "Lore là DNA mẫu, tuyệt đối không làm máy móc 1-2 kiểu Vox lặp đi lặp lại: tự động kết hợp Bản đồ Full Màn Hình 1920x1080 bay camera A->B (S3/S4), Bản đồ Chia Cột (S1/S2) và 6 kiểu Báo chí/Bản án/Trại giam/Bằng sáng chế (N1..N6) dịu mắt cho khán giả 45-70 tuổi",
+          "SFX và BGM phải biến thiên theo đúng hoàn cảnh và cảm xúc từng đoạn (28+ SFX Foley thực tế + 5 BGM theo chương + tự động tải thêm nhạc/SFX mới về kho qua documentary/audio_library_manager.py)"
         ]
       },
       "editing_dna_history": [
@@ -1788,6 +1846,83 @@
           ],
           "created_at": "2026-10-24T05:34:42.730608+00:00",
           "source": "job"
+        },
+        {
+          "id": "topic-da4eb753",
+          "job_id": "",
+          "title": "[중국 실화 사건] 반경 1km에서 사라진 17명의 청년들, 모든 좌표가 멈춘 한 집 | 윈난성 남문촌 미제 추적",
+          "topic": "[중국 실화 사건] 반경 1km에서 사라진 17명의 청년들, 모든 좌표가 멈춘 한 집 | 윈난성 남문촌 미제 추적",
+          "tags": [
+            "청년들",
+            "좌표가",
+            "윈난성",
+            "남문촌"
+          ],
+          "anchors": [
+            "청년들",
+            "좌표가",
+            "윈난성",
+            "남문촌",
+            "1km"
+          ],
+          "created_at": "2026-10-24T21:32:36.905672+00:00",
+          "source": "own_channel_youtube"
+        },
+        {
+          "id": "topic-431aa1e6",
+          "job_id": "",
+          "title": "[중국 실화 사건] 6,000개 CCTV 속 감쪽같이 증발한 아내와 눈물 흘리던 남편의 두 얼굴 | 항저우 아파트 실종 사건",
+          "topic": "[중국 실화 사건] 6,000개 CCTV 속 감쪽같이 증발한 아내와 눈물 흘리던 남편의 두 얼굴 | 항저우 아파트 실종 사건",
+          "tags": [
+            "감쪽같이",
+            "증발한",
+            "아내와",
+            "흘리던",
+            "남편의",
+            "항저우",
+            "아파트"
+          ],
+          "anchors": [
+            "감쪽같이",
+            "증발한",
+            "아내와",
+            "흘리던",
+            "남편의",
+            "항저우",
+            "아파트"
+          ],
+          "created_at": "2026-10-24T21:32:36.906354+00:00",
+          "source": "own_channel_youtube"
+        },
+        {
+          "id": "topic-4e7831a3",
+          "job_id": "20261025-044448-3c4a4cf9",
+          "title": "[중국 실화 사건] 사형 집행 21년 만에 다시 법정에 선 '되살아난 사형수' — 중국 사법부를 뒤흔든 쑨샤오궈 사건의 전말 ([Vụ Án Có Thật ở Trung Quốc] Tử tù 'hồi sinh' sau 21 năm thi hành án — Toàn cảnh đại án Tôn Tiểu Quả làm rúng động nền tư pháp)",
+          "topic": "[중국 실화 사건] 사형 집행 21년 만에 다시 법정에 선 '되살아난 사형수' — 중국 사법부를 뒤흔든 쑨샤오궈 사건의 전말 ([Vụ Án Có Thật ở Trung Quốc] Tử tù 'hồi sinh' sau 21 năm thi hành án — Toàn cảnh đại án Tôn Tiểu Quả làm rúng động nền tư pháp)",
+          "tags": [
+            "법정에",
+            "되살아난",
+            "사형수",
+            "사법부를",
+            "뒤흔든",
+            "쑨샤오궈",
+            "ành án",
+            "ảnh đại án Tôn"
+          ],
+          "anchors": [
+            "법정에",
+            "되살아난",
+            "사형수",
+            "사법부를",
+            "뒤흔든",
+            "쑨샤오궈",
+            "ành án",
+            "ảnh đại án Tôn",
+            "21년",
+            "21 năm"
+          ],
+          "created_at": "2026-10-25T04:44:48.380541+00:00",
+          "source": "job"
         }
       ],
       "channel_brand_name": "특급수배록",
@@ -1844,7 +1979,11 @@
         "mascot_lock": false,
         "version": 3
       },
-      "thumbnail_dna_history": []
+      "thumbnail_dna_history": [],
+      "cta_strategy": "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM THEO BIỂU ĐỒ GIỮ CHÂN THỰC TẾ (LINH HOẠT THEO TỪNG VỤ ÁN — CẤM RẬP KHUÔN VĂN MẪU): (1) CẤM TUYỆT ĐỐI CTA Ở 00:00–02:00: Không chèn bất kỳ lời kêu gọi đăng ký/like nào trong 2 phút đầu (giai đoạn lọc khán giả tự nhiên từ 100% xuống 50–57%) để đưa người xem vào thẳng hiện trường vụ án. (2) ĐIỂM CHẠM 1 — MID-ROLL SOFT CTA (~30% thời lượng / khoảng phút thứ 6–8 tại điểm chuyển tiếp Hồi 2 sang Hồi 3, kéo dài 5–7 giây): Đặt ngay sau khi hé lộ tình tiết bế tắc/bất ngờ hoặc trước khi lật mở manh mối phá án mới (khi 45–50% khán giả trung thành đang tò mò cao độ). BẮT BUỘC BIẾN THIÊN LINH HOẠT THEO TÌNH TIẾT VỤ ÁN ĐANG KỂ (tuyệt đối không dùng chung một câu mẫu lặp lại giữa các video): móc nối trực tiếp từ chính bế tắc/vật chứng/vỏ bọc của tập đó (VD: bế tắc giữa 6.000 camera / vỏ bọc ngụy trang 17 năm / mẫu vật chứng pháp y siêu nhỏ) -> lồng 1 câu mời nhấn Đăng ký & Thích kênh (구독과 좋아요) mượt như lời dẫn điều tra -> lập tức mở sang manh mối then chốt tiếp theo; Hình ảnh & Âm thanh: chỉ hiện icon/nhãn Subscribe nhỏ gọn ở góc dưới màn hình (purpose='mid_roll_soft_cta'), tuyệt đối không ngắt nhạc nền BGM hay cắt đứt mạch hình ảnh. (3) ĐIỂM CHẠM 2 — HARD CTA GIÁ TRỊ + BRIDGE GỢI Ý VIDEO TIẾP THEO KẾT HỢP END SCREEN (30–45 giây trước khi kết thúc video, ở Hồi 5 NGAY SAU KHI CÓ PHÁN QUYẾT/BẢN ÁN và BẮT BUỘC TRƯỚC CÂU CHÀO TẠM BIỆT '시청해 주셔서 감사합니다'): Triển khai 3 nhịp linh hoạt bám sát chủ đề tập phim: [Nhịp 1 - Dư âm/Bài học riêng của vụ án (~8–10s)] Đúc kết thông điệp cảnh tỉnh hoặc nghịch lý tâm lý/pháp y đặc trưng của chính vụ án vừa kể -> [Nhịp 2 - Kêu gọi Đăng ký & Bật chuông (~8–10s)] Biến tấu tự nhiên lời mời bấm Đăng ký và Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ giải mã tội phạm tiếp theo vào tuần tới -> [Nhịp 3 - Bridge bắc cầu sang Video tiếp theo trên Màn hình kết thúc (~8–10s - Rất quan trọng)] Dựa vào mô-típ của vụ án vừa xem (VD: bốc hơi trong khu dân cư / kẻ trốn truy nã tẩy trắng thân phận / kỳ án pháp y lật ngược), gợi mở trực tiếp sang một hồ sơ vụ án tương tự đang hiện ngay trên màn hình kết thúc (End Screen) lúc này -> Sau cùng mới nói câu cảm ơn/chào kết ngắn gọn (3–5s cuối).",
+      "creative_brief": {
+        "custom_rules": "[PHÂN VAI RÕ RÀNG BLENDER VOX & REMOTION EDITOR + CẤM LẶP LẠI VÔ NGHĨA]: (1) TÁCH BIỆT TRÁCH NHIỆM TUYỆT ĐỐI: Blender (`CofiBlenderStudio` + `vox_engine` + `blender.exe`) chuyên trách tạo các clip đồ họa điều tra/bản đồ/hồ sơ/mặt cắt kỹ thuật `.mp4` 30fps đồng bộ 100% thời lượng & từng cụm từ câu voice (`duration_sec = end_sec - start_sec`, không ép trần 6s, `subtitle_text=''`); Remotion (`CofiRemotion`) chuyên trách dựng timeline tổng thể, cắt tư liệu 3-6s (crop 12-16% mép, tắt tiếng gốc), áp dụng chuyển động ống kính quang học (`1.005 -> 1.065`), đóng khung biến đổi (`CCTV HUD`, `Forensic Evidence Frame`, `Split-Screen A/B`, `Forensic PiP`, `160% Macro Loupe`), trộn BGM Audio Ducking + SFX khớp frame và phụ đề Hàn ngữ. Cấm Remotion tự vẽ Vox giả bằng HTML/CSS và cấm Blender dựng full video. (2) VOX BLENDER LINH HOẠT THEO CÂU VOICE (KHÔNG KHÓA CỨNG MẪU): 24 mẫu `#M1..#M8, #D1..#D10, #P1..#P6` chỉ là chuẩn chất lượng tối thiểu; ưu tiên thiết kế linh hoạt theo câu voice với `#V_POPOUT_HIGHLIGHT` (làm mờ nền báo chí/biên bản + phóng nổi câu chữ + quét highlight dạ quang khớp từng vế câu đọc), `#V_CLAUSE_TIMELINE` (dòng thời gian nhân quả mở từng nút theo giọng đọc), `#V_FORENSIC_CROSS_SECTION` (mặt cắt không gian/đường ống/hiện trường), và `#V_BLENDER_3D_STAGE` (sân khấu chứng cứ 3D nhiều lớp EEVEE DOF f/2.8). Giữ khoảng nghỉ 2-3+ cảnh tư liệu/điện ảnh giữa các cảnh Vox để không gây dày đặc nhàm chán. (3) CẤM LẶP LẠI TƯ LIỆU & VOX KHÔNG CÓ CHỦ ĐÍCH: Mỗi mảnh video tư liệu (`sourced_video`) chỉ xuất hiện tối đa 1 lần (`max_uses = 1`) ở chế độ toàn màn hình chuẩn. Chỉ được phép gọi lại (Purposeful Callback) khi lời thoại chủ động nhắc lại đúng tình tiết đó để bóc trần mâu thuẫn lời khai/đối chiếu trước-sau, và bắt buộc hiển thị trong bố cục biến đổi (`Split-Screen Comparison A/B`, `Forensic PiP Window`, hoặc `160% Macro Loupe Zoom`)."
+      }
     },
     {
       "id": "channel-f6ec4dfff3",
@@ -2860,7 +2999,7 @@
         "checked_at": "2026-09-20T13:22:43.980352+00:00"
       },
       "created_at": "2026-09-06T09:25:22.166093+00:00",
-      "updated_at": "2026-10-23T18:03:29.615113+00:00",
+      "updated_at": "2026-10-24T21:32:38.345442+00:00",
       "source_mode": "hybrid",
       "latest_analysis": {
         "checked_at": "2026-09-20T13:19:18.566999+00:00",
@@ -3222,8 +3361,8 @@
         "layout_template": "evidence_spotlight",
         "reference_character_path": "",
         "mascot_lock": false,
-        "version": 13,
-        "locked_at": "2026-10-23T18:03:29.615111+00:00"
+        "version": 14,
+        "locked_at": "2026-10-24T21:32:38.345440+00:00"
       },
       "thumbnail_dna_history": [
         {
@@ -3521,6 +3660,31 @@
           "version": 12,
           "locked_at": "2026-10-19T22:33:47.205443+00:00",
           "archived_at": "2026-10-23T18:03:29.615093+00:00"
+        },
+        {
+          "style_preset": "archival_intelligence",
+          "visual_signature": {
+            "stamp_badge": "속보"
+          },
+          "color_palette": {
+            "primary": "#F8FAFC",
+            "secondary": "#7F1D1D",
+            "accent": "#DC2626",
+            "background": "#1C1917",
+            "headline_accent": "#facc15"
+          },
+          "typography_preset": {
+            "font_family": "Pretendard",
+            "title_weight": "900",
+            "stroke_color": "#000000",
+            "stroke_width": 6
+          },
+          "layout_template": "evidence_spotlight",
+          "reference_character_path": "",
+          "mascot_lock": false,
+          "version": 13,
+          "locked_at": "2026-10-23T18:03:29.615111+00:00",
+          "archived_at": "2026-10-24T21:32:38.345421+00:00"
         }
       ]
     },

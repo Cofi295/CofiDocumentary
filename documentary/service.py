@@ -441,11 +441,25 @@ class DocumentaryService:
             if prof_mm in {"image", "video", "mixed"} and not initial.get("ai_media_mode"):
                 initial["ai_media_mode"] = prof_mm
             prof_brief = profile.get("default_creative_brief")
+            prof_cta = str(
+                profile.get("cta_strategy")
+                or (profile.get("editorial_dna") or {}).get("cta_strategy")
+                or ((profile.get("editorial_dna") or {}).get("narrative") or {}).get("cta_strategy")
+                or (prof_brief or {}).get("cta_strategy")
+                or ""
+            ).strip()
             if isinstance(prof_brief, dict) and prof_brief:
                 merged_brief = dict(prof_brief)
+                if prof_cta and not merged_brief.get("cta_strategy"):
+                    merged_brief["cta_strategy"] = prof_cta
                 for k, v in (initial.get("creative_brief") or {}).items():
                     if v not in (None, "", []):
                         merged_brief[k] = v
+                initial["creative_brief"] = self._normalize_creative_brief(merged_brief, playbook_id=playbook_id)
+            elif prof_cta:
+                merged_brief = dict(initial.get("creative_brief") or {})
+                if not merged_brief.get("cta_strategy"):
+                    merged_brief["cta_strategy"] = prof_cta
                 initial["creative_brief"] = self._normalize_creative_brief(merged_brief, playbook_id=playbook_id)
             if not initial.get("seo_keyword_dna") and profile.get("seo_keyword_dna"):
                 initial["seo_keyword_dna"] = copy.deepcopy(profile["seo_keyword_dna"])
@@ -455,6 +469,7 @@ class DocumentaryService:
                 "market": profile.get("market"),
                 "source_mode": profile.get("source_mode"),
                 "default_duration_minutes": profile.get("default_duration_minutes"),
+                "cta_strategy": prof_cta,
                 "editorial_dna": dict(profile.get("editorial_dna") or {}),
                 "seo_keyword_dna": copy.deepcopy(profile.get("seo_keyword_dna") or {}),
             }
@@ -2326,6 +2341,29 @@ class DocumentaryService:
             _write_json_atomic(workspace / "qc_content_report.json", {**content, "created_at": _now()})
             raise RuntimeError("File xuất có lỗi nội dung: " + "; ".join(problems))
 
+        # Fast OpenCV visual sanity verification across 5 timeline checkpoints
+        visual_sanity_ok = True
+        try:
+            import cv2  # type: ignore[import-not-found]
+            import numpy as np  # type: ignore[import-not-found]
+
+            cap = cv2.VideoCapture(str(video))
+            if cap.isOpened():
+                total_f = max(1, int(metrics.get("video_frames") or cap.get(cv2.CAP_PROP_FRAME_COUNT) or 1))
+                blank_samples = 0
+                for pct in (0.10, 0.30, 0.50, 0.70, 0.90):
+                    sample_f = min(total_f - 1, max(0, int(total_f * pct)))
+                    cap.set(cv2.CAP_PROP_POS_FRAMES, float(sample_f))
+                    ok_f, frm = cap.read()
+                    if not ok_f or frm is None or float(np.std(frm)) < 2.0:
+                        blank_samples += 1
+                cap.release()
+                if blank_samples >= 3:
+                    visual_sanity_ok = False
+                    raise RuntimeError("File xuất có từ 3/5 mẫu khung hình bị rỗng/đồng màu bất thường")
+        except ImportError:
+            pass
+
         try:
             _write_json_atomic(
                 workspace / "qc_scan_passed.json",
@@ -2368,6 +2406,7 @@ class DocumentaryService:
                 "av_sync_ok": True,
                 "no_long_black": True,
                 "no_long_silence": True,
+                "visual_sanity_ok": visual_sanity_ok,
             },
             "content_checks": content,
             "created_at": _now(),
@@ -6167,6 +6206,15 @@ class DocumentaryService:
         forbidden_topics = _pick_str("forbidden_topics")
         monetization_safety_policy = _pick_str("monetization_safety_policy")
         reference_image_policy = _pick_str("reference_image_policy")
+        cta_strategy = _pick_str("cta_strategy")
+        if not cta_strategy:
+            cta_strategy = str(
+                ((payload.get("default_creative_brief") or {}) if isinstance(payload.get("default_creative_brief"), dict) else {}).get("cta_strategy")
+                or ((existing or {}).get("editorial_dna") or {}).get("cta_strategy")
+                or (((existing or {}).get("editorial_dna") or {}).get("narrative") or {}).get("cta_strategy")
+                or ((existing or {}).get("default_creative_brief") or {}).get("cta_strategy")
+                or ""
+            ).strip()
         default_visual_strategy = _pick_str("default_visual_strategy").lower()
         if default_visual_strategy in {"semi_content", "ban_content", "edit_footage"}:
             default_visual_strategy = "edit_direct_footage"
@@ -6231,6 +6279,7 @@ class DocumentaryService:
             or monetization_safety_policy
             or voice_and_structure
             or reference_image_policy
+            or cta_strategy
         )
         if has_explicit_rulebook:
             narrative_dna = dict(editorial_dna.get("narrative") or {})
@@ -6242,6 +6291,8 @@ class DocumentaryService:
                 narrative_dna["pov"] = monetization_safety_policy
             if voice_and_structure:
                 narrative_dna["language"] = voice_and_structure
+            if cta_strategy:
+                narrative_dna["cta_strategy"] = cta_strategy
             if forbidden_topics:
                 avoid_list = [item.strip() for item in forbidden_topics.split("\n") if item.strip()]
                 if not avoid_list:
@@ -6254,6 +6305,7 @@ class DocumentaryService:
                 "forbidden_topics": forbidden_topics or editorial_dna.get("forbidden_topics") or "",
                 "voice_and_structure": voice_and_structure or editorial_dna.get("voice_and_structure") or "",
                 "monetization_safety_policy": monetization_safety_policy or editorial_dna.get("monetization_safety_policy") or "",
+                "cta_strategy": cta_strategy or editorial_dna.get("cta_strategy") or "",
                 "reference_image_policy": (
                     reference_image_policy
                     or editorial_dna.get("reference_image_policy")
@@ -6268,6 +6320,8 @@ class DocumentaryService:
             if isinstance(payload.get("default_creative_brief"), dict) and payload.get("default_creative_brief")
             else (existing or {}).get("default_creative_brief") or {}
         )
+        if cta_strategy:
+            default_creative_brief["cta_strategy"] = cta_strategy
         if has_custom_dna_fields or dna_mode == "custom_dna_only":
             rule_parts = []
             if allowed_topics:
@@ -6278,6 +6332,8 @@ class DocumentaryService:
                 rule_parts.append(f"[NGÔI KỂ & AN TOÀN XANH TIỀN 100%]: {monetization_safety_policy}")
             if voice_and_structure:
                 rule_parts.append(f"[GIỌNG KỂ & CẤU TRÚC]: {voice_and_structure}")
+            if cta_strategy:
+                rule_parts.append(f"[CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM LINH HOẠT THEO TỪNG VỤ ÁN]: {cta_strategy}")
             if rule_parts:
                 default_creative_brief["custom_rules"] = " | ".join(rule_parts)
             if not default_creative_brief.get("narrative_angle") and monetization_safety_policy:
@@ -6351,6 +6407,7 @@ class DocumentaryService:
             "forbidden_topics": forbidden_topics,
             "monetization_safety_policy": monetization_safety_policy,
             "reference_image_policy": reference_image_policy,
+            "cta_strategy": cta_strategy,
             "default_creative_brief": default_creative_brief,
             "editorial_dna": editorial_dna,
             "seo_keyword_dna": seo_keyword_dna,
@@ -9057,6 +9114,7 @@ class DocumentaryService:
             "editing_archetypes": [],
             "opening_hook": "",
             "custom_rules": "",
+            "cta_strategy": "",
         }
         if playbook_id:
             pb = self.get_playbook(playbook_id)
@@ -9069,11 +9127,13 @@ class DocumentaryService:
         if isinstance(raw, dict):
             nested = raw.get("creative_brief") if isinstance(raw.get("creative_brief"), dict) else {}
             merged_raw = {**raw, **nested}
-            for key in ("narrative_angle", "writing_style", "hook_archetype", "opening_hook", "custom_rules"):
+            for key in ("narrative_angle", "writing_style", "hook_archetype", "opening_hook", "custom_rules", "cta_strategy"):
                 if key in merged_raw and merged_raw[key] is not None:
                     val_str = str(merged_raw[key]).strip()
                     if val_str or not playbook_id:
                         base[key] = val_str
+            if isinstance(merged_raw.get("self_learning_injected_rules"), list):
+                base["self_learning_injected_rules"] = [str(x).strip() for x in merged_raw["self_learning_injected_rules"] if str(x).strip()]
             raw_editing = merged_raw.get("editing_archetypes")
             if raw_editing is None and "editing_grammar" in merged_raw:
                 raw_editing = merged_raw.get("editing_grammar")

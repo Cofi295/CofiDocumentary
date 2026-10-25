@@ -30,10 +30,24 @@ def is_retryable_provider_error(exc: Exception) -> bool:
         return False
     if isinstance(exc, (ProviderQuotaError, ProviderTransientError, TimeoutError, ConnectionError)):
         return True
+    message = str(exc).lower()
+    session_crash_markers = (
+        'live browser session closed',
+        'live browser session is unavailable',
+        'live browser command waited too long',
+        'live browser session did not respond',
+        'target crashed',
+        'page crashed',
+        'target page, context or browser has been closed',
+        'context or browser has been closed',
+        'browser has been closed',
+        'target closed',
+    )
+    if any(marker in message for marker in session_crash_markers):
+        return True
     if not isinstance(exc, ProviderError):
         return False
 
-    message = str(exc).lower()
     if re.search(r'http\s+(?:408|425|429|5\d\d)\b', message):
         return True
     transient_markers = (

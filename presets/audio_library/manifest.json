@@ -1,103 +1,565 @@
 {
-  "library_version": "2.1.0",
-  "description": "COFI Documentary Real Studio BGM & Foley SFX Library (100% Real Recorded Audio)",
-  "bgm": [
-    {
-      "file": "bgm_dark_ambient_drone.mp3",
-      "size_kb": 16501,
-      "duration_sec": 600.03
+  "version": "2.0-contextual-dynamic",
+  "updated_at": "2026-10-25",
+  "sfx": {
+    "sfx_gavel_hit.mp3": {
+      "path": "audio_library/sfx/sfx_gavel_hit.mp3",
+      "category": "judicial",
+      "description": "Courtroom wooden gavel strike / verdict pronouncement",
+      "keywords": [
+        "법원",
+        "판결",
+        "선고",
+        "재판",
+        "재심",
+        "사형",
+        "법정",
+        "판사",
+        "징역",
+        "감형",
+        "무기징역",
+        "court",
+        "verdict",
+        "trial",
+        "gavel",
+        "sentence"
+      ]
     },
-    {
-      "file": "bgm_emerging_mysteries.mp3",
-      "size_kb": 2174,
-      "duration_sec": 84.87
+    "sfx_dossier_stamp.mp3": {
+      "path": "audio_library/sfx/sfx_dossier_stamp.mp3",
+      "category": "judicial",
+      "description": "Official ink stamp on legal/confidential dossier",
+      "keywords": [
+        "도장",
+        "직인",
+        "비준",
+        "승인",
+        "기밀",
+        "문건",
+        "공문",
+        "결정문",
+        "집행",
+        "stamp",
+        "approved",
+        "classified"
+      ]
     },
-    {
-      "file": "bgm_forensic_pulse.mp3",
-      "size_kb": 10461,
-      "duration_sec": 267.76
+    "sfx_official_seal_thud.mp3": {
+      "path": "audio_library/sfx/sfx_official_seal_thud.mp3",
+      "category": "judicial",
+      "description": "Heavy institutional seal & case-closed folder thud",
+      "keywords": [
+        "최고인민법원",
+        "특허",
+        "특혜",
+        "사면",
+        "석방",
+        "집행유예",
+        "확정",
+        "최종",
+        "seal",
+        "supreme court"
+      ]
     },
-    {
-      "file": "bgm_gathering_darkness.mp3",
-      "size_kb": 10352,
-      "duration_sec": 264.96
+    "sfx_court_bell_toll.mp3": {
+      "path": "audio_library/sfx/sfx_court_bell_toll.mp3",
+      "category": "judicial",
+      "description": "Solemn low bronze bell chime for final reckoning / execution",
+      "keywords": [
+        "사형 집행",
+        "처형",
+        "최후",
+        "종말",
+        "영원히",
+        "역사",
+        "정의",
+        "심판",
+        "execution",
+        "reckoning"
+      ]
     },
-    {
-      "file": "bgm_investigative_bed.mp3",
-      "size_kb": 11140,
-      "duration_sec": 285.15
+    "sfx_cell_door.mp3": {
+      "path": "audio_library/sfx/sfx_cell_door.mp3",
+      "category": "prison",
+      "description": "Heavy prison iron gate / cell door closing",
+      "keywords": [
+        "교도소",
+        "감옥",
+        "수감",
+        "독방",
+        "구치소",
+        "철창",
+        "복역",
+        "이감",
+        "prison",
+        "jail",
+        "cell"
+      ]
+    },
+    "sfx_iron_lock_latch.mp3": {
+      "path": "audio_library/sfx/sfx_iron_lock_latch.mp3",
+      "category": "prison",
+      "description": "Metallic prison lock latch / handcuff arrest click",
+      "keywords": [
+        "체포",
+        "구속",
+        "수갑",
+        "연행",
+        "압송",
+        "제1교도소",
+        "제2교도소",
+        "감방",
+        "arrest",
+        "lock",
+        "custody"
+      ]
+    },
+    "sfx_footsteps_corridor.mp3": {
+      "path": "audio_library/sfx/sfx_footsteps_corridor.mp3",
+      "category": "prison",
+      "description": "Measured footsteps in stone corridor / night patrol",
+      "keywords": [
+        "복도",
+        "밤",
+        "새벽",
+        "잠입",
+        "출입",
+        "호위",
+        "간수",
+        "행보",
+        "corridor",
+        "footsteps",
+        "walk"
+      ]
+    },
+    "sfx_paper_turn.mp3": {
+      "path": "audio_library/sfx/sfx_paper_turn.mp3",
+      "category": "editorial",
+      "description": "Crisp archival dossier page turn",
+      "keywords": [
+        "기록",
+        "페이지",
+        "서류",
+        "파일",
+        "문서",
+        "조서",
+        "진술서",
+        "열람",
+        "page",
+        "document"
+      ]
+    },
+    "sfx_newspaper_unfold.mp3": {
+      "path": "audio_library/sfx/sfx_newspaper_unfold.mp3",
+      "category": "editorial",
+      "description": "Broadsheet newspaper unfolding / press exposé reveal",
+      "keywords": [
+        "신문",
+        "보도",
+        "언론",
+        "기사",
+        "특종",
+        "폭로",
+        "헤드라인",
+        "취재",
+        "기자",
+        "newspaper",
+        "press"
+      ]
+    },
+    "sfx_highlighter_swipe.mp3": {
+      "path": "audio_library/sfx/sfx_highlighter_swipe.mp3",
+      "category": "editorial",
+      "description": "Soft felt-pen marker swipe across newspaper headline",
+      "keywords": [
+        "강조",
+        "핵심",
+        "밑줄",
+        "주목",
+        "문구",
+        "적시",
+        "밝혀",
+        "드러나",
+        "highlight",
+        "marker"
+      ]
+    },
+    "sfx_folder_open.mp3": {
+      "path": "audio_library/sfx/sfx_folder_open.mp3",
+      "category": "editorial",
+      "description": "Case file folder opening on investigation desk",
+      "keywords": [
+        "사건 파일",
+        "수사 기록",
+        "내사",
+        "보관",
+        "미제",
+        "봉인",
+        "철",
+        "folder",
+        "case file"
+      ]
+    },
+    "sfx_radar_ping_sonar.mp3": {
+      "path": "audio_library/sfx/sfx_radar_ping_sonar.mp3",
+      "category": "map_gis",
+      "description": "Warm tactical radar / sonar location lock pulse",
+      "keywords": [
+        "위성",
+        "좌표",
+        "위치",
+        "반경",
+        "추적",
+        "거점",
+        "포착",
+        "지점",
+        "타깃",
+        "radar",
+        "satellite",
+        "pin"
+      ]
+    },
+    "sfx_map_route_sweep.mp3": {
+      "path": "audio_library/sfx/sfx_map_route_sweep.mp3",
+      "category": "map_gis",
+      "description": "Smooth cartographic camera flight & route line sweep",
+      "keywords": [
+        "이동",
+        "경로",
+        "노선",
+        "베이징",
+        "쿤밍",
+        "윈난",
+        "전역",
+        "투입",
+        "파견",
+        "지도",
+        "route",
+        "map",
+        "flight"
+      ]
+    },
+    "sfx_satellite_lock_beep.mp3": {
+      "path": "audio_library/sfx/sfx_satellite_lock_beep.mp3",
+      "category": "map_gis",
+      "description": "Subtle orbital telemetry lock chime for map pins",
+      "keywords": [
+        "관할",
+        "구역",
+        "거리",
+        "야시",
+        "나이트클럽",
+        "술집",
+        "현장",
+        "지도",
+        "zone",
+        "district"
+      ]
+    },
+    "sfx_telemetry_tick.mp3": {
+      "path": "audio_library/sfx/sfx_telemetry_tick.mp3",
+      "category": "map_gis",
+      "description": "Crisp forensic telemetry counter tick",
+      "keywords": [
+        "수치",
+        "통계",
+        "건수",
+        "비율",
+        "데이터",
+        "카운트",
+        "명단",
+        "리스트",
+        "count",
+        "metric"
+      ]
+    },
+    "sfx_camera_shutter.mp3": {
+      "path": "audio_library/sfx/sfx_camera_shutter.mp3",
+      "category": "forensic",
+      "description": "Archival evidence camera shutter click",
+      "keywords": [
+        "사진",
+        "현장",
+        "목격",
+        "촬영",
+        "증거물",
+        "초상",
+        "얼굴",
+        "신원",
+        "photo",
+        "evidence"
+      ]
+    },
+    "sfx_biometric_match_chime.mp3": {
+      "path": "audio_library/sfx/sfx_biometric_match_chime.mp3",
+      "category": "forensic",
+      "description": "Biometric fingerprint / DNA database match confirmation",
+      "keywords": [
+        "지문",
+        "대조",
+        "생체",
+        "일치",
+        "신분",
+        "위조",
+        "리린",
+        "리루이",
+        "호적",
+        "fingerprint",
+        "biometric",
+        "match"
+      ]
+    },
+    "sfx_document_scanner_hum.mp3": {
+      "path": "audio_library/sfx/sfx_document_scanner_hum.mp3",
+      "category": "forensic",
+      "description": "Forensic optical document & microfilm scanner pass",
+      "keywords": [
+        "감식",
+        "검증",
+        "전산",
+        "시스템",
+        "조회",
+        "데이터베이스",
+        "스캔",
+        "추적",
+        "scan",
+        "database"
+      ]
+    },
+    "sfx_police_radio_chirp.mp3": {
+      "path": "audio_library/sfx/sfx_police_radio_chirp.mp3",
+      "category": "forensic",
+      "description": "Subtle police dispatch / central taskforce comms tone",
+      "keywords": [
+        "공안",
+        "경찰",
+        "출동",
+        "신고",
+        "파출소",
+        "독도조",
+        "특수팀",
+        "수사관",
+        "체포조",
+        "police",
+        "dispatch",
+        "taskforce"
+      ]
+    },
+    "sfx_typing_log.mp3": {
+      "path": "audio_library/sfx/sfx_typing_log.mp3",
+      "category": "forensic",
+      "description": "Mechanical investigation log typing",
+      "keywords": [
+        "작성",
+        "보고서",
+        "입력",
+        "타자",
+        "기록관",
+        "록",
+        "타이핑",
+        "log",
+        "report"
+      ]
+    },
+    "sfx_data_ping.mp3": {
+      "path": "audio_library/sfx/sfx_data_ping.mp3",
+      "category": "forensic",
+      "description": "Clean analytical node connection ping",
+      "keywords": [
+        "연결",
+        "고리",
+        "네트워크",
+        "관계도",
+        "조직도",
+        "커넥션",
+        "배후",
+        "보호막",
+        "network",
+        "node"
+      ]
+    },
+    "sfx_clock_tick_tense.mp3": {
+      "path": "audio_library/sfx/sfx_clock_tick_tense.mp3",
+      "category": "chronology",
+      "description": "Measured analog clock ticking for timeline progression",
+      "keywords": [
+        "년",
+        "월",
+        "일",
+        "시간",
+        "흐르",
+        "세월",
+        "연도",
+        "20년",
+        "기간",
+        "당시",
+        "timeline",
+        "year",
+        "clock"
+      ]
+    },
+    "sfx_somber_chime.mp3": {
+      "path": "audio_library/sfx/sfx_somber_chime.mp3",
+      "category": "emotional",
+      "description": "Warm somber resonant chime for tragic / reflective beats",
+      "keywords": [
+        "피해자",
+        "고문",
+        "비극",
+        "고통",
+        "눈물",
+        "소녀",
+        "치아",
+        "상처",
+        "분노",
+        "충격",
+        "victim",
+        "tragedy"
+      ]
+    },
+    "sfx_soft_whoosh.mp3": {
+      "path": "audio_library/sfx/sfx_soft_whoosh.mp3",
+      "category": "transition",
+      "description": "Gentle warm air whoosh for card entrance",
+      "keywords": [
+        "전환",
+        "장면",
+        "이어",
+        "한편",
+        "그리고",
+        "transition"
+      ]
+    },
+    "sfx_transition_whoosh.mp3": {
+      "path": "audio_library/sfx/sfx_transition_whoosh.mp3",
+      "category": "transition",
+      "description": "Smooth editorial slide transition",
+      "keywords": [
+        "배경",
+        "과정",
+        "전말",
+        "실체",
+        "slide"
+      ]
+    },
+    "sfx_soft_impact.mp3": {
+      "path": "audio_library/sfx/sfx_soft_impact.mp3",
+      "category": "emphasis",
+      "description": "Warm cushioned low-end impact for key revelation",
+      "keywords": [
+        "반전",
+        "실상",
+        "진실",
+        "충격적",
+        "전대미문",
+        "미스터리",
+        "impact",
+        "reveal"
+      ]
+    },
+    "sfx_chapter_hit.mp3": {
+      "path": "audio_library/sfx/sfx_chapter_hit.mp3",
+      "category": "emphasis",
+      "description": "Deep documentary chapter transition hit",
+      "keywords": [
+        "장",
+        "챕터",
+        "시작",
+        "서막",
+        "결말",
+        "chapter"
+      ]
+    },
+    "sfx_deep_impact.mp3": {
+      "path": "audio_library/sfx/sfx_deep_impact.mp3",
+      "category": "emphasis",
+      "description": "Deep cinematic sub-bass accent",
+      "keywords": [
+        "암흑",
+        "권력",
+        "제국",
+        "붕괴",
+        "몰락",
+        "empire",
+        "collapse"
+      ]
     }
-  ],
-  "sfx": [
-    {
-      "file": "sfx_camera_shutter.mp3",
-      "size_kb": 36,
-      "duration_sec": 1.54
+  },
+  "bgm": {
+    "bgm_emerging_mysteries.mp3": {
+      "path": "audio_library/bgm/bgm_emerging_mysteries.mp3",
+      "mood": "mystery_hook",
+      "description": "Suspenseful investigative opening & paradoxical mystery hook",
+      "keywords": [
+        "미스터리",
+        "의문",
+        "왜",
+        "과연",
+        "사형수",
+        "부활",
+        "시작"
+      ]
     },
-    {
-      "file": "sfx_cell_door.mp3",
-      "size_kb": 67,
-      "duration_sec": 2.85
+    "bgm_gathering_darkness.mp3": {
+      "path": "audio_library/bgm/bgm_gathering_darkness.mp3",
+      "mood": "dark_crime",
+      "description": "Somber, tense undertone for brutal crimes, victims & fear",
+      "keywords": [
+        "폭행",
+        "고문",
+        "피해자",
+        "범행",
+        "공포",
+        "야간",
+        "나이트클럽",
+        "만행"
+      ]
     },
-    {
-      "file": "sfx_chapter_hit.mp3",
-      "size_kb": 66,
-      "duration_sec": 2.12
+    "bgm_investigative_bed.mp3": {
+      "path": "audio_library/bgm/bgm_investigative_bed.mp3",
+      "mood": "institutional_corruption",
+      "description": "Measured journalistic investigation bed for bribery, paper trails & collusion",
+      "keywords": [
+        "부모",
+        "권력",
+        "뇌물",
+        "감형",
+        "특허",
+        "가짜",
+        "서류",
+        "조작",
+        "보호막"
+      ]
     },
-    {
-      "file": "sfx_data_ping.mp3",
-      "size_kb": 25,
-      "duration_sec": 1.32
+    "bgm_forensic_pulse.mp3": {
+      "path": "audio_library/bgm/bgm_forensic_pulse.mp3",
+      "mood": "forensic_pursuit",
+      "description": "Focused analytical pulse for fingerprint match, central taskforce & arrest",
+      "keywords": [
+        "지문",
+        "대조",
+        "독도조",
+        "베이징",
+        "수사",
+        "체포",
+        "추적",
+        "포위"
+      ]
     },
-    {
-      "file": "sfx_deep_impact.mp3",
-      "size_kb": 81,
-      "duration_sec": 2.59
-    },
-    {
-      "file": "sfx_dossier_stamp.mp3",
-      "size_kb": 53,
-      "duration_sec": 2.25
-    },
-    {
-      "file": "sfx_paper_turn.mp3",
-      "size_kb": 43,
-      "duration_sec": 1.83
-    },
-    {
-      "file": "sfx_soft_impact.mp3",
-      "size_kb": 81,
-      "duration_sec": 2.59
-    },
-    {
-      "file": "sfx_soft_whoosh.mp3",
-      "size_kb": 17,
-      "duration_sec": 0.57
-    },
-    {
-      "file": "sfx_somber_chime.mp3",
-      "size_kb": 26,
-      "duration_sec": 2.54
-    },
-    {
-      "file": "sfx_telemetry_tick.mp3",
-      "size_kb": 11,
-      "duration_sec": 0.37
-    },
-    {
-      "file": "sfx_tension_riser.mp3",
-      "size_kb": 313,
-      "duration_sec": 10.03
-    },
-    {
-      "file": "sfx_transition_whoosh.mp3",
-      "size_kb": 173,
-      "duration_sec": 5.54
-    },
-    {
-      "file": "sfx_typing_log.mp3",
-      "size_kb": 26,
-      "duration_sec": 1.54
+    "bgm_dark_ambient_drone.mp3": {
+      "path": "audio_library/bgm/bgm_dark_ambient_drone.mp3",
+      "mood": "solemn_reckoning",
+      "description": "Solemn atmospheric drone for supreme court retrial, execution & historical reflection",
+      "keywords": [
+        "재심",
+        "사형 선고",
+        "집행",
+        "처형",
+        "역사",
+        "정의",
+        "심판",
+        "최후"
+      ]
     }
-  ]
+  }
 }

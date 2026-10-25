@@ -172,24 +172,24 @@ class ExtensionAuthBridge:
     def is_connected(self) -> bool:
         return self.server is not None
 
-    def pop_pending_task(self, *, ext_id: str = "", tab_status: str = "") -> dict[str, Any] | None:
+    def has_open_tab(self) -> bool:
         now = time.time()
+        with self._lock:
+            return any(
+                peer.get("tab_status") in {"open", "ready"}
+                and (now - float(peer.get("last_seen") or 0.0)) < 10.0
+                for peer in self._ext_states.values()
+            )
+
+    def pop_pending_task(self, *, ext_id: str = "", tab_status: str = "") -> dict[str, Any] | None:
         with self._lock:
             if not self._pending_tasks:
                 return None
-            # If this extension instance reports its Flow tab is closed/missing,
-            # check whether another active extension instance has an open Flow tab
-            # or if the task was just queued (< 4s ago) so the worker tab can claim it first.
+            # Never hand a Flow reCAPTCHA mint task to a browser instance whose
+            # Flow tab is closed/missing (e.g. the user's main desktop Chrome),
+            # otherwise it immediately fails with "No tab available".
             if tab_status in {"closed", "missing"}:
-                has_open_peer = any(
-                    peer_id != ext_id
-                    and peer.get("tab_status") in {"open", "ready"}
-                    and (now - float(peer.get("last_seen") or 0.0)) < 6.0
-                    for peer_id, peer in self._ext_states.items()
-                )
-                oldest_age = now - float(self._pending_tasks[0].get("_queued_at") or now)
-                if has_open_peer or oldest_age < 4.0:
-                    return None
+                return None
             task = dict(self._pending_tasks.pop(0))
             task.pop("_queued_at", None)
             return task
@@ -209,6 +209,17 @@ class ExtensionAuthBridge:
             self.start()
         if self.server is None:
             return None
+        # If extensions have polled recently and none of them has an open Flow tab,
+        # skip waiting so in-page reCAPTCHA minting is not delayed by a closed peer.
+        now = time.time()
+        with self._lock:
+            recent_peers = [
+                peer for peer in self._ext_states.values()
+                if (now - float(peer.get("last_seen") or 0.0)) < 10.0
+            ]
+            if recent_peers and not any(peer.get("tab_status") in {"open", "ready"} for peer in recent_peers):
+                return None
+
         req_id = str(uuid.uuid4())
         event = threading.Event()
         container: list[Any] = []
@@ -225,6 +236,7 @@ class ExtensionAuthBridge:
         finished = event.wait(timeout)
         with self._lock:
             self._waiting_results.pop(req_id, None)
+            self._pending_tasks = [t for t in self._pending_tasks if t.get("r") != req_id]
 
         if not finished or not container:
             return None

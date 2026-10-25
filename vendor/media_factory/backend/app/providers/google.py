@@ -38,7 +38,13 @@ from .base import (
     scene_output_stem,
 )
 from .auth_bridge import get_extension_bridge, DEFAULT_SITE_KEY
-from .google_flow_migrated import MigratedFlowImageDriver, MigratedFlowVideoDriver
+from .google_flow_migrated import (
+    MigratedFlowImageDriver,
+    MigratedFlowVideoDriver,
+    _flow_public_error_codes,
+    image_records,
+    parse_frames,
+)
 
 
 GOOGLE_FLOW_MODELS: list[dict[str, Any]] = [
@@ -203,6 +209,7 @@ class BrowserLoginWorker:
         self.idle_timeout_seconds = max(30.0, default_idle)
         self._live_sessions: dict[str, _LiveBrowserSession] = {}
         self._starting_sessions: set[str] = set()
+        self._interactive_accounts: set[str] = set()
         self._live_sessions_lock = threading.RLock()
         self._live_command_sequence = 0
 
@@ -229,8 +236,6 @@ class BrowserLoginWorker:
                 'a[href*="/project/"]',
                 'a[href*="SignOutOptions"]',
                 'a[href*="accounts.google.com/SignOutOptions"]',
-                'button:has-text("Launch")',
-                'button:has-text("Khởi chạy")',
                 'flow-prompt-box',
                 '[contenteditable="true"]',
             )
@@ -251,6 +256,13 @@ class BrowserLoginWorker:
             if session is None or session.stop.is_set():
                 return None
             return session.mode
+
+    def is_interactive(self, account_id: str) -> bool:
+        with self._live_sessions_lock:
+            if account_id in self._interactive_accounts:
+                return True
+            session = self._live_sessions.get(account_id)
+            return bool(session is not None and not session.stop.is_set() and session.mode == 'visible')
 
     def has_reusable_profile(self, profile_dir: Path) -> bool:
         profile_dir = Path(profile_dir)
@@ -348,7 +360,11 @@ class BrowserLoginWorker:
             if on_ready is not None:
                 on_ready()
             while not session.stop.is_set() and (is_alive is None or is_alive()):
-                if self.idle_timeout_seconds > 0 and time.monotonic() - last_activity >= self.idle_timeout_seconds:
+                if (
+                    mode != 'visible'
+                    and self.idle_timeout_seconds > 0
+                    and time.monotonic() - last_activity >= self.idle_timeout_seconds
+                ):
                     logger.info(
                         "Closing idle Google Flow Chrome session for account %s (idle %.1fs >= %.1fs) to free RAM.",
                         account_id,
@@ -417,16 +433,38 @@ class BrowserLoginWorker:
         # thread needs a short moment to unwind and clear _starting_sessions.
         # Dropping the new resume request during that window leaves no browser
         # session at all and is later misreported as an expired Google login.
+        if interactive:
+            with self._live_sessions_lock:
+                self._interactive_accounts.add(account_id)
+            try:
+                self.close_session(account_id)
+            except Exception:
+                pass
         wait_deadline = time.monotonic() + 5.0
         while True:
             with self._live_sessions_lock:
+                if not interactive and (
+                    account_id in self._interactive_accounts
+                    or (
+                        self._live_sessions.get(account_id) is not None
+                        and not self._live_sessions[account_id].stop.is_set()
+                        and self._live_sessions[account_id].mode == 'visible'
+                    )
+                ):
+                    return
                 live = self._live_sessions.get(account_id)
                 if live is not None and not live.stop.is_set():
-                    return
+                    if interactive:
+                        live.stop.set()
+                    else:
+                        return
                 if account_id not in self._starting_sessions:
                     self._starting_sessions.add(account_id)
                     break
             if time.monotonic() >= wait_deadline:
+                if interactive:
+                    with self._live_sessions_lock:
+                        self._interactive_accounts.discard(account_id)
                 return
             time.sleep(0.05)
 
@@ -436,6 +474,8 @@ class BrowserLoginWorker:
             finally:
                 with self._live_sessions_lock:
                     self._starting_sessions.discard(account_id)
+                    if interactive:
+                        self._interactive_accounts.discard(account_id)
 
         thread = threading.Thread(target=run, name=thread_name, daemon=True)
         try:
@@ -443,6 +483,8 @@ class BrowserLoginWorker:
         except BaseException:
             with self._live_sessions_lock:
                 self._starting_sessions.discard(account_id)
+                if interactive:
+                    self._interactive_accounts.discard(account_id)
             raise
 
     def start_login(
@@ -608,6 +650,8 @@ class BrowserLoginWorker:
                 'context or browser has been closed',
                 'browser has been closed',
                 'browsercontext.new_page: target page',
+                'target closed',
+                'connection closed',
             )
         )
 
@@ -688,6 +732,97 @@ class BrowserLoginWorker:
         except Exception:
             return
 
+    @classmethod
+    def _ensure_visible_window_placement(cls, profile_dir: Path) -> None:
+        """Reset saved Chrome window_placement in Default/Preferences so interactive login/verify
+        always opens centered on the primary screen instead of at (9999, 9999) or off-screen."""
+        placement = {
+            'bottom': 920,
+            'left': 120,
+            'maximized': False,
+            'right': 1400,
+            'top': 60,
+            'work_area_bottom': 1032,
+            'work_area_left': 0,
+            'work_area_right': 1920,
+            'work_area_top': 0,
+        }
+        for sub in ('Default', 'Profile 1'):
+            pref_dir = Path(profile_dir) / sub
+            pref_path = pref_dir / 'Preferences'
+            if not pref_path.is_file() and sub != 'Default':
+                continue
+            try:
+                pref_dir.mkdir(parents=True, exist_ok=True)
+                data: dict[str, Any] = {}
+                if pref_path.is_file():
+                    loaded = json.loads(pref_path.read_text(encoding='utf-8', errors='ignore'))
+                    if isinstance(loaded, dict):
+                        data = loaded
+                browser_sec = data.setdefault('browser', {})
+                if isinstance(browser_sec, dict):
+                    browser_sec['window_placement'] = dict(placement)
+                    browser_sec['app_window_placement'] = dict(placement)
+                profile_sec = data.setdefault('profile', {})
+                if isinstance(profile_sec, dict):
+                    profile_sec['exit_type'] = 'Normal'
+                    profile_sec['exited_cleanly'] = True
+                pref_path.write_text(json.dumps(data, ensure_ascii=False), encoding='utf-8')
+            except Exception:
+                continue
+
+    @classmethod
+    def _bring_profile_windows_to_front(cls, profile_dir: Path, *, only_if_offscreen: bool = False) -> None:
+        """Force all top-level Chrome windows for this profile onto the primary screen (120, 60, 1280x860)
+        and bring them to the foreground so the user can immediately interact and log in."""
+        if os.name != 'nt':
+            return
+        pids = set(cls._profile_process_ids(profile_dir))
+        if not pids:
+            return
+        try:
+            import ctypes
+            from ctypes import wintypes
+
+            user32 = ctypes.windll.user32
+            enum_proc_type = ctypes.WINFUNCTYPE(ctypes.c_bool, wintypes.HWND, wintypes.LPARAM)
+            SW_RESTORE = 9
+            SWP_SHOWWINDOW = 0x0040
+
+            @enum_proc_type
+            def restore_and_center(hwnd, _lparam):
+                pid = wintypes.DWORD()
+                user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+                if pid.value in pids:
+                    cls_buf = ctypes.create_unicode_buffer(128)
+                    user32.GetClassNameW(hwnd, cls_buf, 128)
+                    title_buf = ctypes.create_unicode_buffer(256)
+                    user32.GetWindowTextW(hwnd, title_buf, 256)
+                    if cls_buf.value == 'Chrome_WidgetWin_1' and title_buf.value:
+                        rect = wintypes.RECT()
+                        user32.GetWindowRect(hwnd, ctypes.byref(rect))
+                        w = rect.right - rect.left
+                        h = rect.bottom - rect.top
+                        is_offscreen = (
+                            rect.left < -50
+                            or rect.top < -20
+                            or rect.left > 1400
+                            or rect.top > 600
+                            or w < 500
+                            or h < 400
+                        )
+                        if not only_if_offscreen or is_offscreen:
+                            user32.ShowWindow(hwnd, SW_RESTORE)
+                            user32.MoveWindow(hwnd, 120, 60, 1280, 860, True)
+                            user32.SetWindowPos(hwnd, 0, 120, 60, 1280, 860, SWP_SHOWWINDOW)
+                            if not only_if_offscreen:
+                                user32.SetForegroundWindow(hwnd)
+                return True
+
+            user32.EnumWindows(restore_and_center, 0)
+        except Exception:
+            return
+
     @staticmethod
     def _reserve_debug_port() -> int:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
@@ -749,15 +884,22 @@ class BrowserLoginWorker:
         except (OSError, ValueError):
             pass
 
+        owned_ports = set(cls._profile_process_debug_ports(profile_dir))
         if saved_port is not None:
-            endpoint = cls._probe_cdp_port(saved_port)
-            if endpoint:
-                return endpoint
+            if saved_port in owned_ports:
+                endpoint = cls._probe_cdp_port(saved_port)
+                if endpoint:
+                    return endpoint
             try:
                 marker.unlink()
             except OSError:
                 pass
             return None
+
+        for port in sorted(owned_ports):
+            endpoint = cls._probe_cdp_port(port)
+            if endpoint:
+                return endpoint
         return None
 
     @staticmethod
@@ -798,6 +940,14 @@ class BrowserLoginWorker:
         owns_profile_processes = False
         try:
             chrome_path = self._find_chrome()
+            if interactive:
+                self._terminate_profile_processes(profile_dir)
+                try:
+                    (Path(profile_dir) / '.cofi-debug-port').unlink(missing_ok=True)
+                except OSError:
+                    pass
+                time.sleep(0.25)
+                self._ensure_visible_window_placement(profile_dir)
             cdp_endpoint = None if interactive else self._existing_profile_cdp_endpoint(profile_dir)
             reused_profile_endpoint = cdp_endpoint is not None
             if cdp_endpoint is None:
@@ -807,13 +957,22 @@ class BrowserLoginWorker:
                     f'--remote-debugging-port={debug_port}',
                     f'--user-data-dir={profile_dir}',
                     '--disable-blink-features=AutomationControlled',
+                    '--disable-features=Translate,TranslateUI',
+                    '--enable-unsafe-extension-debugging',
+                    '--hide-crash-restore-bubble',
                     '--no-first-run',
                     '--no-default-browser-check',
                     '--disable-sync',
                     *self._extension_launch_args(),
                 ]
                 if interactive:
-                    chrome_args.extend(['--new-window', FLOW_HOME_URL])
+                    self._ensure_visible_window_placement(profile_dir)
+                    chrome_args.extend([
+                        '--new-window',
+                        '--window-position=120,60',
+                        '--window-size=1280,860',
+                        FLOW_HOME_URL,
+                    ])
                 else:
                     chrome_args.extend(self._hidden_worker_launch_args())
                 startupinfo = None
@@ -837,7 +996,9 @@ class BrowserLoginWorker:
                 except OSError:
                     pass
                 cdp_endpoint = self._wait_for_cdp(debug_port, chrome_process)
-                if not interactive:
+                if interactive:
+                    self._bring_profile_windows_to_front(profile_dir)
+                else:
                     self._hide_profile_windows(profile_dir)
             elif not interactive:
                 self._hide_profile_windows(profile_dir)
@@ -845,6 +1006,27 @@ class BrowserLoginWorker:
             with sync_playwright() as playwright:
                 browser = playwright.chromium.connect_over_cdp(cdp_endpoint)
                 self._ensure_companion_extension(browser)
+                if interactive:
+                    try:
+                        cdp_sess = browser.new_browser_cdp_session()
+                        targets = cdp_sess.send('Target.getTargets').get('targetInfos', [])
+                        for t_info in targets:
+                            if t_info.get('type') == 'page':
+                                win_info = cdp_sess.send('Browser.getWindowForTarget', {'targetId': t_info['targetId']})
+                                win_id = win_info.get('windowId')
+                                if win_id is not None:
+                                    cdp_sess.send('Browser.setWindowBounds', {
+                                        'windowId': win_id,
+                                        'bounds': {'windowState': 'normal'},
+                                    })
+                                    cdp_sess.send('Browser.setWindowBounds', {
+                                        'windowId': win_id,
+                                        'bounds': {'left': 120, 'top': 60, 'width': 1280, 'height': 860, 'windowState': 'normal'},
+                                    })
+                                    break
+                    except Exception:
+                        pass
+                    self._bring_profile_windows_to_front(profile_dir)
                 context = browser.contexts[0] if browser.contexts else None
                 if context is None:
                     raise RuntimeError('Chrome opened, but its persistent profile context was unavailable.')
@@ -863,6 +1045,8 @@ class BrowserLoginWorker:
                             browser_closed_early = True
                             break
 
+                        if interactive:
+                            self._bring_profile_windows_to_front(profile_dir, only_if_offscreen=True)
                         try:
                             pages = [p for p in context.pages if not getattr(p, 'is_closed', lambda: False)()]
                             page = pages[0] if pages else context.new_page()
@@ -1326,6 +1510,8 @@ class GoogleFlowAccountManager:
 
         candidates = []
         for acc_id, session in current_active:
+            if getattr(session, 'mode', '') == 'visible':
+                continue
             if self._active_jobs.get(acc_id, 0) == 0:
                 last_act = getattr(session, 'last_activity', 0.0)
                 candidates.append((last_act, acc_id))
@@ -1352,13 +1538,17 @@ class GoogleFlowAccountManager:
             return 0
         with lock:
             current = list(live_sessions.items())
-            starting_ids = set(getattr(self.login_worker, '_starting_sessions', set()))
+            starting_ids = set(getattr(self.login_worker, '_starting_sessions', set())) | set(
+                getattr(self.login_worker, '_interactive_accounts', set())
+            )
 
         active_profile_paths: set[str] = set()
         for acc_id, session in current:
             p_dir = getattr(session, 'profile_dir', None)
             if p_dir:
                 active_profile_paths.add(str(Path(p_dir).resolve()).lower().replace('/', '\\'))
+            if getattr(session, 'mode', '') == 'visible':
+                continue
             # Never close an account that is actively executing a generation job
             if self._active_jobs.get(acc_id, 0) == 0:
                 last_act = getattr(session, 'last_activity', 0.0)
@@ -2511,8 +2701,14 @@ class GoogleFlowAccountManager:
                     acc_id,
                     {'status': 'auth_expired', 'last_error': 'No saved session found.'},
                 )
+            is_interactive = getattr(self.login_worker, 'is_interactive', None)
+            session_mode = getattr(self.login_worker, 'session_mode', None)
+            currently_visible = (
+                (callable(is_interactive) and is_interactive(acc_id))
+                or (callable(session_mode) and session_mode(acc_id) == 'visible')
+            )
             hide_profile_windows = getattr(self.login_worker, '_hide_profile_windows', None)
-            if callable(hide_profile_windows):
+            if callable(hide_profile_windows) and not currently_visible:
                 try:
                     hide_profile_windows(profile_dir)
                 except Exception:
@@ -2922,6 +3118,8 @@ def _looks_like_closed_session(exc: BaseException) -> bool:
             'live browser session is unavailable',
             'live browser session closed',
             'target closed',
+            'target crashed',
+            'page crashed',
             'connection closed',
         )
     )
@@ -3032,12 +3230,25 @@ class GoogleFlowBrowserClient:
 
     @staticmethod
     def _flow_page(context: Any) -> Any:
-        pages = list(getattr(context, 'pages', []) or [])
-        page = next((candidate for candidate in pages if '/project/' in str(getattr(candidate, 'url', ''))), None)
-        if page is not None:
-            return page
-        if pages:
-            return pages[0]
+        raw_pages = [
+            p for p in list(getattr(context, 'pages', []) or [])
+            if not getattr(p, 'is_closed', lambda: False)()
+        ]
+        ordered = sorted(
+            raw_pages,
+            key=lambda p: 0 if '/project/' in str(getattr(p, 'url', '')) else 1,
+        )
+        for candidate in ordered:
+            if hasattr(candidate, '_impl_obj') and hasattr(candidate, 'evaluate'):
+                try:
+                    candidate.evaluate('1')
+                except Exception:
+                    try:
+                        candidate.close()
+                    except Exception:
+                        pass
+                    continue
+            return candidate
         new_page = getattr(context, 'new_page', None)
         if callable(new_page):
             return new_page()
@@ -4127,7 +4338,22 @@ class GoogleFlowBrowserClient:
                         captured_fife.append(full_url)
                     return
                 if any(k in url for k in ('batchGenerateImages', 'generateImage', 'generateImages', 'flowMedia', 'predict', 'media', 'batchexecute')):
-                    if 'batchexecute' not in url and 'uploadImage' not in url:
+                    if 'batchexecute' in url:
+                        body_text = response.text()
+                        if status == 200 and body_text:
+                            for frame_rpc, frame_payload in parse_frames(body_text):
+                                try:
+                                    for rec in image_records(frame_rpc, frame_payload):
+                                        if rec.image_url and rec.image_url not in previous_urls_set:
+                                            captured_fife.append(rec.image_url)
+                                except Exception:
+                                    pass
+                            err_codes = _flow_public_error_codes(body_text)
+                            if err_codes and not captured_fife:
+                                api_error.append(', '.join(err_codes))
+                        elif status >= 400:
+                            api_error.append(f"Flow batchexecute HTTP {status}")
+                    elif 'uploadImage' not in url:
                         data = response.json()
                         if status == 200:
                             fife = self._find_nested_string(data, 'fifeUrl')
@@ -5571,6 +5797,7 @@ class GoogleFlowHeadlessClient(GoogleFlowBrowserClient):
             raise ProviderAuthError('The saved Google Flow session could not be reopened; renew this account once.')
         worker = getattr(self.account_manager, 'login_worker', None)
         account_id = str(account.get('id') or '')
+        request_started_at = time.monotonic()
         with self._prepared_image_auth_lock:
             resume_locks = getattr(self, '_resume_locks', None)
             if resume_locks is None:
@@ -5580,11 +5807,21 @@ class GoogleFlowHeadlessClient(GoogleFlowBrowserClient):
             if acc_lock is None:
                 acc_lock = threading.Lock()
                 resume_locks[account_id] = acc_lock
+            resumed_at_map = getattr(self, '_last_session_resumed_at', None)
+            if resumed_at_map is None:
+                resumed_at_map = {}
+                self._last_session_resumed_at = resumed_at_map
 
         with acc_lock:
             has_live_session = getattr(worker, 'has_live_session', None)
-            if callable(has_live_session) and has_live_session(account_id) and not force:
-                return
+            is_interactive = getattr(worker, 'is_interactive', None)
+            if callable(is_interactive) and is_interactive(account_id):
+                if callable(has_live_session) and has_live_session(account_id):
+                    return
+                raise ProviderTransientError('Google Flow account is currently open for interactive verification.')
+            if callable(has_live_session) and has_live_session(account_id):
+                if not force or resumed_at_map.get(account_id, 0.0) >= request_started_at:
+                    return
             with self._prepared_image_auth_lock:
                 self._prepared_image_auth.discard(account_id)
             if force:
@@ -5610,6 +5847,7 @@ class GoogleFlowHeadlessClient(GoogleFlowBrowserClient):
             deadline = time.monotonic() + 60.0
             while callable(has_live_session) and time.monotonic() < deadline:
                 if has_live_session(account_id):
+                    resumed_at_map[account_id] = time.monotonic()
                     return
                 time.sleep(0.2)
             if not callable(has_live_session) or not has_live_session(account_id):

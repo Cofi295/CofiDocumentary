@@ -14,41 +14,394 @@
       document.head.appendChild(st);
     }
     st.textContent = `
-      /* Compact polish for Original Step 7 Thumbnail Studio & SEO */
-      .thumb-studio-card { padding: 12px 14px !important; margin-bottom: 12px !important; }
-      .thumb-studio-header { margin-bottom: 8px !important; gap: 8px !important; padding-bottom: 8px !important; }
-      .thumb-studio-header h3 { font-size: 16px !important; margin: 2px 0 !important; }
-      .thumb-studio-header p { font-size: 12px !important; margin: 0 !important; }
-      .thumb-studio-top-actions button, .thumb-topic-style-bar button { min-height: 28px !important; height: 28px !important; padding: 0 9px !important; font-size: 11px !important; }
-      .thumb-topic-style-bar { margin: 0 0 8px 0 !important; padding: 6px 10px !important; gap: 5px !important; }
-      .thumb-boxcard-grid { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 10px !important; margin-bottom: 10px !important; }
-      @media (max-width: 1360px) { .thumb-boxcard-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
-      .thumb-test-boxcard { padding: 8px 10px !important; gap: 6px !important; border-radius: 10px !important; }
-      .thumb-boxcard-top { margin-bottom: 2px !important; }
-      .thumb-boxcard-caption { gap: 3px !important; font-size: 12px !important; }
-      .thumb-boxcard-caption strong { font-size: 13px !important; line-height: 1.35 !important; display: block !important; }
-      .thumb-vi-breakdown-mini { margin-top: 3px !important; padding: 4px 7px !important; font-size: 11.5px !important; line-height: 1.38 !important; }
-      .thumb-boxcard-actions { gap: 4px !important; margin-top: 4px !important; }
-      .thumb-boxcard-actions button { min-height: 26px !important; height: 26px !important; padding: 0 6px !important; font-size: 11px !important; }
-      .thumb-editor-drawer-bar { padding: 7px 12px !important; gap: 8px !important; }
-      .thumb-editor-drawer-bar button { min-height: 27px !important; height: 27px !important; padding: 0 8px !important; font-size: 11px !important; }
-      .canva-workbench-3col { display: grid !important; grid-template-columns: 252px minmax(0, 1fr) 304px !important; gap: 10px !important; align-items: start !important; padding: 10px !important; background: rgba(6, 10, 19, 0.96) !important; }
-      .canva-left-dock, .canva-right-inspector { background: rgba(15, 23, 42, 0.95) !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; border-radius: 10px !important; display: flex !important; flex-direction: column !important; max-height: 620px !important; overflow: hidden !important; }
-      .canva-left-tabs button { min-height: 30px !important; height: 30px !important; padding: 0 6px !important; font-size: 11px !important; }
+      /* ==========================================================================
+         UNIFIED YOUTUBE PACKAGING STUDIO (THUMBNAIL + SEO TOGETHER)
+         ========================================================================== */
+      .thumb-studio-card { padding: 14px 16px !important; margin-bottom: 12px !important; background: linear-gradient(180deg, rgba(13, 18, 30, 0.98) 0%, rgba(9, 13, 22, 0.98) 100%) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 14px !important; }
+      
+      /* Master Header */
+      .thumb-master-header { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; flex-wrap: wrap !important; padding: 12px 16px !important; background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(9, 14, 26, 0.98) 100%) !important; border: 1px solid rgba(255, 255, 255, 0.09) !important; border-radius: 12px !important; margin-bottom: 10px !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important; }
+      .header-kicker { font-size: 10px !important; font-weight: 800 !important; letter-spacing: 0.1em !important; color: #38bdf8 !important; text-transform: uppercase !important; margin-bottom: 3px !important; }
+      .header-title { margin: 0 0 5px 0 !important; font-size: 17px !important; font-weight: 800 !important; color: #f8fafc !important; letter-spacing: -0.2px !important; }
+      .header-status-line { display: flex !important; align-items: center !important; gap: 8px !important; flex-wrap: wrap !important; }
+      .status-pill { font-size: 11px !important; font-weight: 700 !important; padding: 2px 9px !important; border-radius: 6px !important; line-height: 1.4 !important; }
+      .status-pill.winner { background: rgba(250, 204, 21, 0.15) !important; border: 1px solid rgba(250, 204, 21, 0.45) !important; color: #fde047 !important; }
+      .status-pill.safe { background: rgba(34, 197, 94, 0.15) !important; border: 1px solid rgba(34, 197, 94, 0.4) !important; color: #4ade80 !important; }
+      .status-pill.dna { background: rgba(148, 163, 184, 0.12) !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; color: #cbd5e1 !important; }
+      .header-right { display: flex !important; align-items: center !important; gap: 6px !important; flex-wrap: wrap !important; }
+      .header-right button { min-height: 28px !important; height: 28px !important; font-size: 11px !important; padding: 0 10px !important; }
+
+      /* Hide redundant legacy subnav bar when unified studio is mounted */
+      .seo-subnav-bar { display: none !important; }
+
+      /* Unified Navigation Tabs (Step 1 -> 4 Workflow) */
+      .thumb-unified-nav { display: flex !important; gap: 8px !important; margin-bottom: 12px !important; background: rgba(10, 14, 24, 0.9) !important; padding: 6px !important; border-radius: 12px !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; flex-wrap: wrap !important; }
+      .thumb-nav-tab { flex: 1 1 180px !important; display: flex !important; align-items: center !important; gap: 10px !important; padding: 8px 12px !important; background: rgba(15, 23, 42, 0.65) !important; border: 1px solid rgba(255, 255, 255, 0.06) !important; border-radius: 8px !important; color: #94a3b8 !important; cursor: pointer !important; text-align: left !important; transition: all 0.18s ease !important; min-height: 48px !important; position: relative !important; }
+      .thumb-nav-tab:hover { background: rgba(30, 41, 59, 0.85) !important; color: #f1f5f9 !important; border-color: rgba(255, 255, 255, 0.16) !important; }
+      .thumb-nav-tab.active { background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(15, 23, 42, 0.98) 100%) !important; border-color: rgba(56, 189, 248, 0.55) !important; color: #ffffff !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(56, 189, 248, 0.3) !important; }
+      .tab-badge-num { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 22px !important; height: 22px !important; border-radius: 50% !important; background: rgba(148, 163, 184, 0.15) !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; font-size: 11px !important; font-weight: 800 !important; color: #94a3b8 !important; flex-shrink: 0 !important; }
+      .thumb-nav-tab.active .tab-badge-num { background: #38bdf8 !important; border-color: #38bdf8 !important; color: #020617 !important; font-weight: 900 !important; }
+      .thumb-nav-tab .tab-icon { font-size: 18px !important; line-height: 1 !important; flex-shrink: 0 !important; }
+      .thumb-nav-tab .tab-labels { display: flex !important; flex-direction: column !important; gap: 2px !important; min-width: 0 !important; }
+      .thumb-nav-tab .tab-title { font-size: 12.5px !important; font-weight: 800 !important; letter-spacing: -0.1px !important; color: inherit !important; }
+      .thumb-nav-tab.active .tab-title { color: #38bdf8 !important; }
+      .thumb-nav-tab .tab-sub { font-size: 10.5px !important; color: #64748b !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
+      .thumb-nav-tab.active .tab-sub { color: #93c5fd !important; }
+
+      /* ==========================================================================
+         UNIFIED STUDIO EDITOR (TAB 2) — SINGLE COHESIVE CONSOLE (NO FRAGMENTATION)
+         ========================================================================== */
+      .unified-studio-frame {
+        display: flex !important;
+        flex-direction: column !important;
+        background: rgba(10, 15, 26, 0.98) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        overflow: hidden !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
+        margin-bottom: 12px !important;
+      }
+
+      /* Integrated Studio Topbar (Variant Segments + Master Actions) */
+      .studio-topbar {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+        padding: 8px 12px !important;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(10, 15, 26, 0.98) 100%) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        flex-wrap: wrap !important;
+      }
+      .studio-topbar-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+      }
+      .studio-topbar-label {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        color: #64748b !important;
+        letter-spacing: 0.08em !important;
+        text-transform: uppercase !important;
+      }
+      .studio-variant-segments {
+        display: inline-flex !important;
+        background: rgba(2, 6, 23, 0.7) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px !important;
+        padding: 3px !important;
+        gap: 4px !important;
+        flex-wrap: wrap !important;
+      }
+      .studio-variant-seg {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 4px 10px !important;
+        background: transparent !important;
+        border: 1px solid transparent !important;
+        border-radius: 6px !important;
+        color: #94a3b8 !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        transition: all 0.16s ease !important;
+        min-height: 26px !important;
+      }
+      .studio-variant-seg:hover {
+        background: rgba(255, 255, 255, 0.06) !important;
+        color: #f1f5f9 !important;
+      }
+      .studio-variant-seg.active {
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+        border-color: rgba(56, 189, 248, 0.5) !important;
+        color: #ffffff !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+      }
+      .studio-variant-seg.is-winner {
+        border-color: rgba(250, 204, 21, 0.4) !important;
+      }
+      .studio-variant-seg.is-winner.active {
+        border-color: #fbbf24 !important;
+        box-shadow: 0 0 0 1px #fbbf24, 0 2px 8px rgba(251, 191, 36, 0.25) !important;
+      }
+      .studio-variant-seg .seg-tag {
+        font-size: 10.5px !important;
+        font-weight: 900 !important;
+        color: #38bdf8 !important;
+      }
+      .studio-variant-seg.active .seg-tag {
+        color: #7dd3fc !important;
+      }
+      .studio-variant-seg.is-winner .seg-tag {
+        color: #fde047 !important;
+      }
+      .studio-variant-seg .seg-name {
+        color: inherit !important;
+        font-weight: 600 !important;
+      }
+      .studio-variant-seg .seg-ctr {
+        font-size: 9.5px !important;
+        font-weight: 800 !important;
+        padding: 1px 5px !important;
+        border-radius: 4px !important;
+      }
+      .studio-variant-seg .seg-ctr.ok {
+        background: rgba(34, 197, 94, 0.18) !important;
+        color: #4ade80 !important;
+      }
+      .studio-variant-seg .seg-ctr.warn {
+        background: rgba(251, 191, 36, 0.18) !important;
+        color: #fbbf24 !important;
+      }
+      .studio-variant-seg .seg-win {
+        color: #fbbf24 !important;
+        font-size: 11px !important;
+      }
+
+      .studio-topbar-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+      }
+      .studio-topbar-right button {
+        min-height: 27px !important;
+        height: 27px !important;
+        font-size: 11px !important;
+        padding: 0 9px !important;
+      }
+      .studio-win-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        padding: 2px 8px !important;
+        border-radius: 5px !important;
+        background: rgba(34, 197, 94, 0.18) !important;
+        border: 1px solid rgba(34, 197, 94, 0.45) !important;
+        color: #4ade80 !important;
+        font-size: 10.5px !important;
+        font-weight: 800 !important;
+      }
+
+      /* Integrated Paired Title Sub-Bar */
+      .studio-paired-bar {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        padding: 6px 12px !important;
+        background: rgba(13, 18, 30, 0.92) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
+        flex-wrap: wrap !important;
+      }
+      .paired-bar-tag {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        color: #38bdf8 !important;
+        letter-spacing: 0.05em !important;
+        flex-shrink: 0 !important;
+      }
+      .paired-bar-content {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex: 1 1 360px !important;
+        min-width: 0 !important;
+        font-size: 12px !important;
+      }
+      .paired-bar-ko {
+        font-weight: 800 !important;
+        color: #ffffff !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .paired-bar-vi {
+        color: #4ade80 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .paired-bar-syn {
+        font-size: 11px !important;
+        color: #94a3b8 !important;
+        flex-shrink: 0 !important;
+      }
+      .paired-bar-actions {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex-shrink: 0 !important;
+      }
+      .paired-bar-actions button {
+        min-height: 24px !important;
+        height: 24px !important;
+        font-size: 10.5px !important;
+        padding: 0 7px !important;
+      }
+
+      /* Canva 3-Col Workbench in Studio Frame */
+      .canva-workbench-3col {
+        display: grid !important;
+        grid-template-columns: 260px minmax(0, 1fr) 300px !important;
+        grid-template-areas: none !important;
+        gap: 10px !important;
+        align-items: stretch !important;
+        padding: 10px !important;
+        background: rgba(6, 10, 19, 0.96) !important;
+        box-sizing: border-box !important;
+      }
+      .canva-left-dock, .canva-right-inspector {
+        grid-area: auto !important;
+        background: rgba(15, 23, 42, 0.95) !important;
+        border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        border-radius: 10px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        max-height: 640px !important;
+        overflow: hidden !important;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+      }
+      .canva-dock-tabs { display: flex !important; background: rgba(10, 14, 24, 0.9) !important; border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important; }
+      .canva-dock-tab { flex: 1 1 0 !important; padding: 6px 2px !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 2px !important; background: transparent !important; border: none !important; color: #94a3b8 !important; cursor: pointer !important; font-size: 10px !important; }
+      .canva-dock-tab:hover { background: rgba(255, 255, 255, 0.04) !important; color: #f1f5f9 !important; }
+      .canva-dock-tab.active { background: rgba(14, 165, 233, 0.18) !important; color: #38bdf8 !important; font-weight: 700 !important; box-shadow: inset 0 -2px 0 #38bdf8 !important; }
       .canva-dock-body, .canva-inspector-scroll { padding: 8px !important; overflow-y: auto !important; display: flex !important; flex-direction: column !important; gap: 8px !important; flex: 1 1 auto !important; }
       .canva-dock-body button, .canva-inspector-scroll button { min-height: 27px !important; padding: 3px 8px !important; font-size: 11px !important; }
-      .thumb-quick-layers-bar { padding: 5px 8px !important; gap: 4px !important; margin-bottom: 6px !important; }
-      .thumb-quick-layer-pill, .thumb-quick-layers-bar button { min-height: 25px !important; height: 25px !important; padding: 0 7px !important; font-size: 11px !important; border-radius: 6px !important; }
-      .thumb-color-swatch { width: 20px !important; height: 20px !important; min-width: 20px !important; min-height: 20px !important; max-width: 20px !important; max-height: 20px !important; padding: 0 !important; border-radius: 50% !important; aspect-ratio: 1 / 1 !important; flex: 0 0 20px !important; }
-      .canva-candidates-grid { display: grid !important; grid-template-columns: repeat(3, minmax(0, 1fr)) !important; gap: 5px !important; max-height: 165px !important; overflow-y: auto !important; padding-right: 2px !important; }
-      .canva-cand-card { border-radius: 6px !important; overflow: hidden !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; background: rgba(9, 13, 22, 0.9) !important; max-width: 100% !important; }
-      .canva-cand-card.selected { border-color: #fbbf24 !important; box-shadow: 0 0 0 1px #fbbf24 !important; }
-      .canva-cand-card img { width: 100% !important; height: 46px !important; max-height: 46px !important; aspect-ratio: 16 / 9 !important; object-fit: cover !important; display: block !important; cursor: pointer !important; }
-      .canva-cand-actions { display: flex !important; gap: 2px !important; padding: 2px !important; }
-      .canva-cand-actions button { flex: 1 1 0 !important; min-height: 20px !important; height: 20px !important; font-size: 9px !important; padding: 1px 3px !important; border-radius: 3px !important; background: rgba(30, 41, 59, 0.9) !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; color: #e2e8f0 !important; cursor: pointer !important; white-space: nowrap !important; }
-      #seoWorkspace .seo-clean-hub { gap: 10px !important; margin-top: 8px !important; }
-      #seoWorkspace .seo-clean-col { gap: 10px !important; }
-      #seoWorkspace .seo-result-card { padding: 10px 12px !important; }
+
+      .canva-center-stage {
+        grid-area: auto !important;
+        min-width: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+      }
+
+      /* Stage Toolbar */
+      .thumb-stage-toolbar { width: 100% !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; padding: 5px 8px !important; background: rgba(15, 23, 42, 0.92) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 8px !important; flex-wrap: wrap !important; margin-bottom: 2px !important; }
+      .stage-tools-left { display: flex !important; align-items: center !important; gap: 6px !important; flex: 1 1 auto !important; }
+      .stage-tools-right { display: flex !important; align-items: center !important; gap: 5px !important; flex-shrink: 0 !important; }
+      .stage-tools-right button { min-height: 25px !important; height: 25px !important; padding: 0 7px !important; font-size: 11px !important; }
+      .thumb-quick-layers-bar { display: flex !important; gap: 4px !important; overflow-x: auto !important; padding: 0 !important; margin: 0 !important; }
+      .thumb-quick-layer-pill { min-height: 24px !important; height: 24px !important; padding: 0 7px !important; font-size: 10.5px !important; border-radius: 5px !important; }
+      
+      .thumb-canvas-stage-viewport {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        background: radial-gradient(#1e293b 1px, transparent 1px) #0b0f19 !important;
+        background-size: 16px 16px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 8px !important;
+        padding: 8px !important;
+      }
+      .thumb-stage-vi-bar { width: 100% !important; box-sizing: border-box !important; margin-top: 4px !important; padding: 6px 10px !important; background: rgba(15, 23, 42, 0.92) !important; border: 1px solid rgba(34, 197, 94, 0.38) !important; border-radius: 8px !important; font-size: 11.5px !important; line-height: 1.4 !important; color: #f1f5f9 !important; }
+
+      /* Comparison Suite (Compare View) */
+      .thumb-compare-suite { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+      .thumb-compare-info-bar { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 10px !important; padding: 10px 14px !important; background: rgba(15, 23, 42, 0.9) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 10px !important; flex-wrap: wrap !important; font-size: 12.5px !important; }
+      .thumb-compare-grid { display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)) !important; gap: 10px !important; }
+      @media (max-width: 1400px) { .thumb-compare-grid { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+      @media (max-width: 768px) { .thumb-compare-grid { grid-template-columns: 1fr !important; } }
+      .thumb-compare-card { background: rgba(13, 18, 30, 0.92) !important; border: 1px solid rgba(255, 255, 255, 0.09) !important; border-radius: 12px !important; padding: 10px !important; display: flex !important; flex-direction: column !important; gap: 8px !important; transition: all 0.18s ease !important; }
+      .thumb-compare-card:hover { border-color: rgba(56, 189, 248, 0.45) !important; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important; transform: translateY(-2px) !important; }
+      .thumb-compare-card.is-winner { border-color: rgba(250, 204, 21, 0.65) !important; background: linear-gradient(180deg, rgba(20, 24, 38, 0.95) 0%, rgba(13, 18, 30, 0.98) 100%) !important; box-shadow: 0 0 0 1px rgba(250, 204, 21, 0.3) !important; }
+      .compare-card-head { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 6px !important; }
+      .head-tags { display: flex !important; align-items: center !important; gap: 6px !important; }
+      .tag-pill { font-size: 11px !important; font-weight: 900 !important; padding: 2px 7px !important; border-radius: 4px !important; background: rgba(56, 189, 248, 0.18) !important; border: 1px solid rgba(56, 189, 248, 0.4) !important; color: #7dd3fc !important; }
+      .thumb-compare-card.is-winner .tag-pill { background: rgba(250, 204, 21, 0.2) !important; border-color: rgba(250, 204, 21, 0.5) !important; color: #fde047 !important; }
+      .arch-pill { font-size: 11px !important; color: #cbd5e1 !important; }
+      .winner-pill { font-size: 10.5px !important; font-weight: 800 !important; background: rgba(250, 204, 21, 0.2) !important; border: 1px solid rgba(250, 204, 21, 0.5) !important; color: #fde047 !important; padding: 1px 6px !important; border-radius: 4px !important; }
+      .ctr-badge { font-size: 11px !important; font-weight: 800 !important; padding: 2px 7px !important; border-radius: 4px !important; }
+      .ctr-badge.ok { background: rgba(34, 197, 94, 0.16) !important; color: #4ade80 !important; }
+      .ctr-badge.warn { background: rgba(251, 191, 36, 0.16) !important; color: #fbbf24 !important; }
+      .compare-preview-frame { position: relative !important; aspect-ratio: 16 / 9 !important; background: #000000 !important; border-radius: 8px !important; overflow: hidden !important; cursor: zoom-in !important; }
+      .compare-preview-frame canvas { width: 100% !important; height: 100% !important; display: block !important; }
+      .compare-yt-duration { position: absolute !important; bottom: 6px !important; right: 6px !important; background: rgba(0, 0, 0, 0.85) !important; color: #ffffff !important; font-size: 11px !important; font-weight: 800 !important; padding: 1px 5px !important; border-radius: 3px !important; }
+      .compare-hover-zoom { position: absolute !important; inset: 0 !important; background: rgba(0, 0, 0, 0.45) !important; display: flex !important; align-items: center !important; justify-content: center !important; color: #ffffff !important; font-size: 11.5px !important; font-weight: 700 !important; opacity: 0 !important; transition: opacity 0.15s ease !important; }
+      .compare-preview-frame:hover .compare-hover-zoom { opacity: 1 !important; }
+      .compare-card-body { display: flex !important; flex-direction: column !important; gap: 4px !important; font-size: 11.5px !important; }
+      .hook-badge-line { font-size: 10.5px !important; font-weight: 800 !important; color: #4ade80 !important; }
+      .hook-text-line { font-size: 12.5px !important; line-height: 1.35 !important; color: #f8fafc !important; }
+      .compare-vi-text { padding: 4px 7px !important; background: rgba(15, 23, 42, 0.85) !important; border-left: 3px solid #22c55e !important; border-radius: 4px !important; font-size: 11px !important; line-height: 1.38 !important; color: #e2e8f0 !important; }
+      .compare-paired-title { padding: 5px 8px !important; background: rgba(15, 23, 42, 0.65) !important; border-radius: 4px !important; font-size: 11px !important; line-height: 1.35 !important; color: #cbd5e1 !important; }
+      .compare-paired-title .title-ko { font-weight: 700 !important; color: #f1f5f9 !important; }
+      .compare-paired-title .title-vi { color: #4ade80 !important; margin-top: 2px !important; }
+      .compare-card-actions { display: flex !important; gap: 4px !important; margin-top: auto !important; }
+      .compare-card-actions button { min-height: 26px !important; height: 26px !important; font-size: 11px !important; padding: 0 6px !important; }
+
+      /* SEO Suite (Unified Packaging View) */
+      .thumb-seo-suite { display: flex !important; flex-direction: column !important; gap: 12px !important; }
+      .thumb-seo-preflight-bar { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; padding: 10px 14px !important; background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(9, 14, 26, 0.98) 100%) !important; border: 1px solid rgba(56, 189, 248, 0.35) !important; border-radius: 10px !important; flex-wrap: wrap !important; }
+      .preflight-status { display: flex !important; align-items: center !important; gap: 8px !important; flex-wrap: wrap !important; }
+      .safe-pill { font-size: 11px !important; font-weight: 800 !important; color: #4ade80 !important; background: rgba(34, 197, 94, 0.15) !important; border: 1px solid rgba(34, 197, 94, 0.35) !important; padding: 3px 9px !important; border-radius: 6px !important; }
+      .patterns-matched { display: flex !important; gap: 6px !important; flex-wrap: wrap !important; }
+      .pat-tag { font-size: 11px !important; font-weight: 600 !important; color: #7dd3fc !important; background: rgba(56, 189, 248, 0.12) !important; border: 1px solid rgba(56, 189, 248, 0.28) !important; padding: 2px 8px !important; border-radius: 12px !important; }
+      .thumb-seo-grid-2col { display: grid !important; grid-template-columns: minmax(0, 1.4fr) minmax(360px, 0.85fr) !important; gap: 12px !important; align-items: start !important; }
+      @media (max-width: 1200px) { .thumb-seo-grid-2col { grid-template-columns: 1fr !important; } }
+      .thumb-seo-col-main, .thumb-seo-col-side { display: flex !important; flex-direction: column !important; gap: 12px !important; }
+      .seo-card-unified { background: rgba(13, 18, 30, 0.94) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 12px !important; padding: 12px 14px !important; display: flex !important; flex-direction: column !important; gap: 8px !important; }
+      .seo-card-unified.prominent { border-color: rgba(56, 189, 248, 0.4) !important; background: linear-gradient(180deg, rgba(16, 26, 46, 0.95) 0%, rgba(11, 16, 28, 0.98) 100%) !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important; }
+      .seo-card-head { display: flex !important; align-items: flex-start !important; justify-content: space-between !important; gap: 10px !important; }
+      .head-title { display: flex !important; flex-direction: column !important; gap: 2px !important; }
+      .head-badge { font-size: 10px !important; font-weight: 800 !important; letter-spacing: 0.06em !important; color: #38bdf8 !important; text-transform: uppercase !important; }
+      .head-badge.gold { color: #fde047 !important; }
+      .seo-card-head strong { font-size: 13px !important; color: #f8fafc !important; }
+      .seo-title-display-box { padding: 9px 12px !important; background: rgba(10, 14, 24, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.1) !important; border-radius: 8px !important; display: flex !important; flex-direction: column !important; gap: 5px !important; }
+      .ko-title { font-size: 14.5px !important; font-weight: 800 !important; color: #ffffff !important; line-height: 1.4 !important; }
+      .vi-title { font-size: 12.5px !important; line-height: 1.45 !important; color: #e2e8f0 !important; padding: 4px 8px !important; background: rgba(34, 197, 94, 0.12) !important; border-left: 3px solid #22c55e !important; border-radius: 4px !important; }
+      .seo-title-meta-box { display: flex !important; flex-direction: column !important; gap: 4px !important; font-size: 11.5px !important; line-height: 1.4 !important; color: #cbd5e1 !important; }
+      .seo-options-grid-2col { display: grid !important; grid-template-columns: 1fr 1fr !important; gap: 8px !important; }
+      @media (max-width: 900px) { .seo-options-grid-2col { grid-template-columns: 1fr !important; } }
+      .seo-title-option-card { background: rgba(10, 14, 24, 0.8) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 8px !important; padding: 9px !important; display: flex !important; flex-direction: column !important; gap: 5px !important; font-size: 11.5px !important; }
+      .opt-card-top { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 6px !important; }
+      .opt-card-badges { display: flex !important; align-items: center !important; gap: 6px !important; }
+      .opt-num { font-weight: 800 !important; color: #38bdf8 !important; font-size: 11.5px !important; }
+      .opt-paired-pill { font-size: 10px !important; font-weight: 800 !important; padding: 2px 6px !important; border-radius: 4px !important; background: rgba(251, 191, 36, 0.18) !important; border: 1px solid rgba(251, 191, 36, 0.4) !important; color: #fde047 !important; cursor: pointer !important; }
+      .opt-paired-pill:hover { background: rgba(251, 191, 36, 0.3) !important; }
+      .opt-ko-title { font-size: 12.5px !important; font-weight: 800 !important; color: #f8fafc !important; line-height: 1.35 !important; }
+      .opt-vi-title { font-size: 11.5px !important; color: #86efac !important; padding-left: 6px !important; border-left: 2px solid #22c55e !important; line-height: 1.35 !important; }
+      .opt-kw-anchor, .opt-synergy { font-size: 10.5px !important; color: #94a3b8 !important; line-height: 1.3 !important; }
+      .opt-card-actions { margin-top: auto !important; padding-top: 4px !important; }
+      .seo-raw-prebox { white-space: pre-wrap !important; font-family: inherit !important; font-size: 12px !important; line-height: 1.55 !important; color: #cbd5e1 !important; background: rgba(10, 14, 24, 0.85) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 8px !important; padding: 10px !important; margin: 0 !important; max-height: 340px !important; overflow-y: auto !important; }
+      .seo-winner-thumb-frame { position: relative !important; aspect-ratio: 16 / 9 !important; background: #000000 !important; border-radius: 8px !important; overflow: hidden !important; cursor: zoom-in !important; }
+      .seo-winner-thumb-frame canvas { width: 100% !important; height: 100% !important; display: block !important; }
+      .winner-thumb-overlay { position: absolute !important; inset: 0 !important; background: rgba(0, 0, 0, 0.4) !important; display: flex !important; align-items: center !important; justify-content: center !important; color: #ffffff !important; font-size: 11.5px !important; font-weight: 700 !important; opacity: 0 !important; transition: opacity 0.15s ease !important; }
+      .seo-winner-thumb-frame:hover .winner-thumb-overlay { opacity: 1 !important; }
+      .seo-tags-display-box { display: flex !important; flex-wrap: wrap !important; gap: 5px !important; max-height: 180px !important; overflow-y: auto !important; padding: 8px !important; background: rgba(10, 14, 24, 0.8) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 8px !important; }
+      .yt-tag-pill { font-size: 10.5px !important; color: #e2e8f0 !important; background: rgba(30, 41, 59, 0.9) !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; padding: 2px 7px !important; border-radius: 4px !important; white-space: nowrap !important; }
+
+      /* Preview Suite */
+      .thumb-preview-suite { display: flex !important; flex-direction: column !important; gap: 10px !important; }
+      .thumb-preview-nav { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 10px !important; padding: 10px 14px !important; background: rgba(15, 23, 42, 0.9) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 10px !important; flex-wrap: wrap !important; }
+      .yt-home-feed-grid { display: grid !important; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)) !important; gap: 14px !important; padding: 12px !important; background: #0f0f0f !important; border-radius: 10px !important; }
+      .yt-sidebar-feed-stack { display: flex !important; flex-direction: column !important; gap: 10px !important; max-width: 440px !important; padding: 12px !important; background: #0f0f0f !important; border-radius: 10px !important; }
+      .yt-feed-card { background: #0f0f0f !important; border: 1px solid #27272a !important; border-radius: 12px !important; overflow: hidden !important; transition: all 0.18s ease !important; }
+      .yt-feed-card.is-winner-card { border-color: #fbbf24 !important; box-shadow: 0 0 16px rgba(251, 191, 36, 0.15) !important; }
+      .yt-feed-thumb { position: relative !important; aspect-ratio: 16 / 9 !important; background: #000 !important; cursor: zoom-in !important; }
+      .yt-feed-thumb canvas { width: 100% !important; height: 100% !important; display: block !important; }
+      .yt-time-badge { position: absolute !important; bottom: 8px !important; right: 8px !important; background: rgba(0, 0, 0, 0.85) !important; color: #fff !important; font-size: 11px !important; font-weight: 700 !important; padding: 2px 6px !important; border-radius: 4px !important; }
+      .yt-feed-info { display: flex !important; gap: 10px !important; padding: 12px !important; }
+      .yt-feed-avatar { width: 34px !important; height: 34px !important; border-radius: 50% !important; background: #27272a !important; display: flex !important; align-items: center !important; justify-content: center !important; font-size: 16px !important; flex-shrink: 0 !important; }
+      .yt-feed-meta { flex: 1 !important; min-width: 0 !important; }
+      .yt-video-title { margin: 0 0 4px 0 !important; font-size: 13.5px !important; font-weight: 700 !important; color: #f1f5f9 !important; line-height: 1.35 !important; }
+      .yt-video-title-vi { font-size: 11.5px !important; color: #4ade80 !important; margin-bottom: 4px !important; line-height: 1.35 !important; }
+      .yt-channel-line { font-size: 11.5px !important; color: #a1a1aa !important; }
+      .yt-card-actions { display: flex !important; gap: 6px !important; align-items: center !important; margin-top: 8px !important; }
+      .ctr-tag { font-size: 11px !important; font-weight: 800 !important; color: #22c55e !important; }
+      .yt-sidebar-card { display: flex !important; gap: 10px !important; background: #0f0f0f !important; border: 1px solid #27272a !important; border-radius: 8px !important; padding: 6px !important; }
+      .yt-sidebar-card.is-winner { border-color: #fbbf24 !important; }
+      .yt-sidebar-thumb { width: 160px !important; aspect-ratio: 16 / 9 !important; position: relative !important; background: #000 !important; border-radius: 6px !important; overflow: hidden !important; flex-shrink: 0 !important; cursor: zoom-in !important; }
+      .yt-sidebar-thumb canvas { width: 100% !important; height: 100% !important; display: block !important; }
+      .yt-sidebar-info { flex: 1 !important; min-width: 0 !important; }
+      .yt-sidebar-title { margin: 0 0 3px 0 !important; font-size: 11.5px !important; font-weight: 700 !important; color: #f1f5f9 !important; line-height: 1.3 !important; }
+      .yt-sidebar-channel, .yt-sidebar-views { font-size: 10.5px !important; color: #a1a1aa !important; }
     `;
   }
   injectCanvaCompactStyles();
@@ -497,7 +850,8 @@
     jobId: null,
     data: null,
     selectedLayerId: "line_2",
-    leftDockTab: "style", // "style" | "text" | "graphics" | "media"
+    leftDockTab: "style", // "style" | "text" | "graphics" | "media" | "layers"
+    activeTab: localStorage.getItem("cofi-thumb-active-tab-v3") || (localStorage.getItem("cofi-seo-subtab") === "copy" ? "seo" : "compare"), // "compare" | "editor" | "seo" | "preview"
     editorOpen: true, // Open editor by default so user can see and edit immediately
     editorZoomed: false, // Fullscreen / Zoomed Editor mode
     canvasZoom: 1.0, // 0.5 to 2.5 (50% to 250%)
@@ -509,7 +863,7 @@
     busyExportAll: false,
     busyExportAbPack: false,
     busyLockDna: false,
-    previewViewMode: "grid", // "grid" | "home" | "sidebar"
+    previewViewMode: "home", // "home" | "sidebar"
     saveTimer: null,
     lightboxVariantId: null,
   };
@@ -1284,12 +1638,128 @@
       const img = loadCachedImage(src);
       const frameStyle = String(layer.frameStyle || "").trim().toLowerCase();
       const borderHex = String(layer.borderColor || "#ef4444").trim().toLowerCase();
+      const bw = Math.max(3, Number(layer.borderWidth || 6));
+      const bColor = layer.borderColor || "#fbbf24";
+      const isTornNewspaper = frameStyle === "torn_newspaper" || frameStyle === "torn_paper";
       const isVintagePaper =
         frameStyle === "vintage_paper" ||
         frameStyle === "polaroid" ||
-        ["#f4ebd9", "#f3ead8", "#e8dcc8", "#efe5d1", "#fdf8ee"].includes(borderHex);
+        (!frameStyle && ["#f4ebd9", "#f3ead8", "#e8dcc8", "#efe5d1", "#fdf8ee"].includes(borderHex));
 
-      if (isVintagePaper) {
+      if (isTornNewspaper) {
+        const seedOff = (((Math.round(left) * 13 + Math.round(top) * 7) % 97) * 0.1);
+        const tearDisp = (pos, phase, amp, deckleBias) => {
+          const drift = Math.sin(pos * 0.031 + phase) * 0.52 + Math.cos(pos * 0.074 + phase * 1.7) * 0.34;
+          const micro = Math.sin(pos * 0.33 + phase * 2.3) * Math.cos(pos * 0.79 + phase * 0.9) * 0.38;
+          const notchWave = Math.sin(pos * 0.089 + phase * 1.3);
+          const notch = Math.pow(notchWave, 5) * 0.65;
+          const fiber = deckleBias * (0.4 + 0.6 * Math.max(0.0, Math.sin(pos * 0.053 + phase * 2.1)));
+          return (drift + micro + notch) * amp + fiber;
+        };
+        const buildTornPts = (x0, y0, wP, hP, amp, sOff, deckleBias) => {
+          const pts = [];
+          const step = 5;
+          for (let sx = 0; sx <= wP; sx += step) {
+            const d = tearDisp(sx, 1.1 + sOff, amp, deckleBias);
+            pts.push([x0 + sx, y0 + d - deckleBias]);
+          }
+          for (let sy = step; sy <= hP; sy += step) {
+            const d = tearDisp(sy, 2.7 + sOff, amp, deckleBias);
+            pts.push([x0 + wP + d + deckleBias, y0 + sy]);
+          }
+          for (let sx = wP - step; sx >= 0; sx -= step) {
+            const d = tearDisp(sx, 4.3 + sOff, amp, deckleBias);
+            pts.push([x0 + Math.max(0, sx), y0 + hP + d + deckleBias * 1.15]);
+          }
+          for (let sy = hP - step; sy > 0; sy -= step) {
+            const d = tearDisp(sy, 5.8 + sOff, amp, deckleBias);
+            pts.push([x0 + d - deckleBias, y0 + Math.max(0, sy)]);
+          }
+          return pts;
+        };
+        const tracePoly = (pts) => {
+          ctx.beginPath();
+          pts.forEach(([px, py], idx) => {
+            if (idx === 0) ctx.moveTo(px, py);
+            else ctx.lineTo(px, py);
+          });
+          ctx.closePath();
+        };
+
+        const outerPts = buildTornPts(left, top, width, height, 4.8, seedOff, 3.0);
+        const innerPts = buildTornPts(left, top, width, height, 4.2, seedOff + 0.18, 0.0);
+
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetX = 5;
+        ctx.shadowOffsetY = 11;
+        tracePoly(outerPts);
+        ctx.fillStyle = "#fcfaf2";
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        tracePoly(outerPts);
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#bcaea0";
+        ctx.stroke();
+
+        tracePoly(innerPts);
+        const paperGrad = ctx.createLinearGradient(left, top, left + width, top + height);
+        paperGrad.addColorStop(0, "#f1e8d5");
+        paperGrad.addColorStop(0.55, "#e6dac2");
+        paperGrad.addColorStop(1, "#d7c6ab");
+        ctx.fillStyle = paperGrad;
+        ctx.fill();
+        ctx.lineWidth = 1.2;
+        ctx.strokeStyle = "#8e7e66";
+        ctx.stroke();
+
+        const padSide = Math.max(13, Math.round(Number(layer.borderWidth || 15)));
+        const padTop = Math.max(15, Math.round(padSide * 1.08));
+        const padBot = Math.max(22, Math.round(padSide * 1.48));
+
+        ctx.strokeStyle = "rgba(96,86,72,0.65)";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(left + 8, top + 6);
+        ctx.lineTo(left + width - 8, top + 6);
+        ctx.stroke();
+
+        ctx.fillStyle = "rgba(110,98,82,0.55)";
+        ctx.fillRect(left + 8, top + 8, width * 0.38, 2);
+        ctx.fillRect(left + width * 0.68, top + 8, width * 0.24, 2);
+
+        const botY0 = top + height - padBot + 5;
+        ctx.beginPath();
+        ctx.moveTo(left + padSide, botY0);
+        ctx.lineTo(left + width - padSide, botY0);
+        ctx.stroke();
+        ctx.fillRect(left + padSide, botY0 + 4, (width - padSide * 2) * 0.86, 2.2);
+        ctx.fillRect(left + padSide, botY0 + 9, (width - padSide * 2) * 0.62, 2.2);
+        ctx.restore();
+
+        const ix = left + padSide;
+        const iy = top + padTop;
+        const iw = Math.max(32, width - padSide * 2);
+        const ih = Math.max(32, height - padTop - padBot);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(ix, iy, iw, ih);
+        ctx.clip();
+        if (img) {
+          drawCoverImage(ctx, img, ix, iy, iw, ih);
+        } else {
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(ix, iy, iw, ih);
+        }
+        ctx.restore();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#26211c";
+        ctx.strokeRect(ix, iy, iw, ih);
+      } else if (isVintagePaper) {
         const padSide = Math.max(10, Math.round(Number(layer.borderWidth || 13)));
         const padBottom = Math.max(padSide + 4, Math.round(padSide * 1.28));
         ctx.save();
@@ -1330,12 +1800,66 @@
         ctx.lineWidth = 2;
         ctx.strokeStyle = "#292524";
         ctx.strokeRect(ix, iy, iw, ih);
-      } else {
+      } else if (frameStyle === "caution_tape") {
+        const rad = 14;
         ctx.save();
-        ctx.shadowColor = "rgba(0,0,0,0.85)";
-        ctx.shadowBlur = 24;
-        ctx.shadowOffsetY = 8;
-        roundRectPath(ctx, left, top, width, height, 12);
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 26;
+        ctx.shadowOffsetY = 9;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill();
+        ctx.clip();
+        if (img) {
+          drawCoverImage(ctx, img, left, top, width, height);
+        } else {
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(left, top, width, height);
+        }
+        const tapeH = Math.max(20, Math.min(30, Math.round(height * 0.105)));
+        const ty0 = top + height - tapeH;
+        ctx.fillStyle = "#facc15";
+        ctx.fillRect(left, ty0, width, tapeH);
+        ctx.fillStyle = "#0a0e17";
+        for (let sxPos = -tapeH; sxPos < width + tapeH; sxPos += 24) {
+          ctx.beginPath();
+          ctx.moveTo(left + sxPos, top + height);
+          ctx.lineTo(left + sxPos + 12, top + height);
+          ctx.lineTo(left + sxPos + 12 + tapeH * 0.75, ty0);
+          ctx.lineTo(left + sxPos + tapeH * 0.75, ty0);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.strokeStyle = "#0a0e17";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(left, ty0);
+        ctx.lineTo(left + width, ty0);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.lineWidth = bw + 4;
+        ctx.strokeStyle = "rgba(5, 8, 15, 0.92)";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = Math.max(5, bw);
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255,255,255,0.68)";
+        roundRectPath(ctx, left + bw * 0.65, top + bw * 0.65, width - bw * 1.3, height - bw * 1.3, Math.max(4, rad - bw));
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "amber_glow_double" || frameStyle === "double_neon" || frameStyle === "neon_cyber") {
+        const rad = 15;
+        const useBw = Math.max(6, bw);
+        ctx.save();
+        ctx.shadowColor = bColor;
+        ctx.shadowBlur = 28;
+        ctx.shadowOffsetY = 4;
+        roundRectPath(ctx, left, top, width, height, rad);
         ctx.fillStyle = "#0f172a";
         ctx.fill();
         ctx.clip();
@@ -1346,9 +1870,154 @@
           ctx.fillRect(left, top, width, height);
         }
         ctx.restore();
-        ctx.lineWidth = Number(layer.borderWidth || 6);
-        ctx.strokeStyle = layer.borderColor || "#ef4444";
-        roundRectPath(ctx, left, top, width, height, 12);
+
+        ctx.save();
+        ctx.lineWidth = useBw + 4;
+        ctx.strokeStyle = "rgba(5, 8, 15, 0.88)";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = useBw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        const inOff = useBw * 0.72;
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#090d16";
+        roundRectPath(ctx, left + inOff, top + inOff, width - inOff * 2, height - inOff * 2, Math.max(4, rad - inOff));
+        ctx.stroke();
+        const inOff2 = inOff + 3;
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = frameStyle === "amber_glow_double" ? "#fffbeb" : "#ffffff";
+        roundRectPath(ctx, left + inOff2, top + inOff2, width - inOff2 * 2, height - inOff2 * 2, Math.max(3, rad - inOff2));
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "cctv_hud") {
+        const rad = 10;
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#090d16";
+        ctx.fill();
+        ctx.clip();
+        if (img) {
+          drawCoverImage(ctx, img, left, top, width, height);
+        } else {
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(left, top, width, height);
+        }
+        ctx.fillStyle = "rgba(6, 10, 18, 0.58)";
+        ctx.fillRect(left, top, width, 34);
+        roundRectPath(ctx, left + 12, top + 8, 84, 22, 6);
+        ctx.fillStyle = "rgba(9, 13, 22, 0.86)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(left + 26, top + 19, 6, 0, Math.PI * 2);
+        ctx.fillStyle = "#ff2424";
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 13px 'Pretendard ExtraBold', sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText("REC", left + 38, top + 20);
+        ctx.restore();
+
+        ctx.save();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#090d16";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left + 2, top + 2, width - 4, height - 4, Math.max(4, rad - 2));
+        ctx.stroke();
+
+        const cLen = Math.max(26, Math.round(Math.min(width, height) * 0.22));
+        const cW = Math.max(6, bw + 2);
+        const x0 = left - 2;
+        const y0 = top - 2;
+        const x1 = left + width + 2;
+        const y1 = top + height + 2;
+        const drawCorners = (col, wPx) => {
+          ctx.beginPath();
+          ctx.moveTo(x0, y0 + cLen); ctx.lineTo(x0, y0); ctx.lineTo(x0 + cLen, y0);
+          ctx.moveTo(x1 - cLen, y0); ctx.lineTo(x1, y0); ctx.lineTo(x1, y0 + cLen);
+          ctx.moveTo(x1, y1 - cLen); ctx.lineTo(x1, y1); ctx.lineTo(x1 - cLen, y1);
+          ctx.moveTo(x0 + cLen, y1); ctx.lineTo(x0, y1); ctx.lineTo(x0, y1 - cLen);
+          ctx.strokeStyle = col;
+          ctx.lineWidth = wPx;
+          ctx.lineJoin = "round";
+          ctx.lineCap = "round";
+          ctx.stroke();
+        };
+        drawCorners("rgba(0,0,0,0.92)", cW + 4);
+        drawCorners(bColor, cW);
+        ctx.restore();
+      } else if (frameStyle === "dossier_tab") {
+        const rad = 12;
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.9)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill();
+        ctx.clip();
+        if (img) {
+          drawCoverImage(ctx, img, left, top, width, height);
+        } else {
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(left, top, width, height);
+        }
+        const barH = 26;
+        ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
+        ctx.fillRect(left, top, width, barH);
+        ctx.fillStyle = bColor;
+        ctx.fillRect(left, top, 74, barH);
+        ctx.strokeStyle = bColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(left, top + barH);
+        ctx.lineTo(left + width, top + barH);
+        ctx.stroke();
+        [0, 1, 2].forEach((dIdx) => {
+          ctx.beginPath();
+          ctx.arc(left + 18 + dIdx * 16, top + 13, 4, 0, Math.PI * 2);
+          ctx.fillStyle = dIdx === 0 ? "#ffffff" : "rgba(255,255,255,0.65)";
+          ctx.fill();
+        });
+        ctx.restore();
+
+        ctx.save();
+        ctx.lineWidth = bw + 4;
+        ctx.strokeStyle = "rgba(5, 8, 15, 0.9)";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = Math.max(5, bw);
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.restore();
+      } else {
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.85)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        roundRectPath(ctx, left, top, width, height, 14);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill();
+        ctx.clip();
+        if (img) {
+          drawCoverImage(ctx, img, left, top, width, height);
+        } else {
+          ctx.fillStyle = "#1e293b";
+          ctx.fillRect(left, top, width, height);
+        }
+        ctx.restore();
+        ctx.lineWidth = bw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, 14);
         ctx.stroke();
       }
     } else if (type === "circle") {
@@ -2728,7 +3397,7 @@
               </button>`;
             }).join("")}
           </div>
-          <button type="button" class="ghost compact" id="leftApplyPresetAllBtn" style="width:100%;margin-top:6px;border-color:rgba(56,189,248,0.45);color:#7dd3fc;">⚡ Áp dụng Phong cách này cho cả 4 Bản</button>
+          <button type="button" class="ghost compact" id="applyTopicPresetAllBtn" style="width:100%;margin-top:6px;border-color:rgba(56,189,248,0.45);color:#7dd3fc;">⚡ Áp dụng Phong cách này cho cả 4 Bản</button>
         </div>
 
         <div class="canva-side-section">
@@ -3185,6 +3854,16 @@
       const bW = Math.round(Number(selected.borderWidth ?? 6));
       const iW = Math.round(Number(selected.width || 320));
       const iH = Math.round(Number(selected.height || 240));
+      const curFrameStyle = String(selected.frameStyle || "caution_tape").toLowerCase();
+      const pipFrameOptions = [
+        { id: "torn_newspaper", label: "📰 Ảnh Xé Báo", defaultColor: "#f3ead8" },
+        { id: "caution_tape", label: "🚧 Dải Phong Tỏa", defaultColor: "#ff2424" },
+        { id: "amber_glow_double", label: "✨ Viền Kép Sáng", defaultColor: "#fbbf24" },
+        { id: "cctv_hud", label: "📹 Khung CCTV", defaultColor: "#00f0ff" },
+        { id: "dossier_tab", label: "📁 Hồ Sơ Pháp Y", defaultColor: "#ef4444" },
+        { id: "vintage_paper", label: "📜 Giấy Ảnh Xưa", defaultColor: "#f4ebd9" },
+        { id: "classic_rounded", label: "🖼 Bo Góc Cơ Bản", defaultColor: "#ffffff" },
+      ];
       const candidates = getCleanCandidates();
       return `
         <div class="canva-inspector-header">
@@ -3196,7 +3875,14 @@
         ${switcherHtml}
         <div class="canva-inspector-scroll">
           <div class="canva-context-card">
-            <div class="canva-side-title">1. KHUNG VIỀN &amp; KÍCH THƯỚC ẢNH PIP</div>
+            <div class="canva-side-title">1. KIỂU THIẾT KẾ KHUNG PIP &amp; VIỀN</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;">
+              ${pipFrameOptions
+                .map(
+                  (fo) => `<button type="button" class="ghost compact ${curFrameStyle === fo.id ? "primary" : ""}" data-pick-pip-frame-style="${esc(fo.id)}" data-default-pip-color="${esc(fo.defaultColor)}">${esc(fo.label)}</button>`
+                )
+                .join("")}
+            </div>
             <div class="thumb-manual-color-row">
               <span class="thumb-mini-color-lbl">🎨 Màu khung viền:</span>
               <input type="color" id="ctxPipBorderColor" value="${esc(bCol)}" />
@@ -4221,6 +4907,29 @@
       renderAllCanvases();
       scheduleSaveDesign();
     });
+    host.querySelectorAll("[data-pick-pip-frame-style]").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        const sel = getLayer(studioState.selectedLayerId, activeVariant);
+        if (!sel || sel.type !== "inset_image") return;
+        pushUndoSnapshot();
+        const st = String(btn.dataset.pickPipFrameStyle || "caution_tape");
+        sel.frameStyle = st;
+        if (btn.dataset.defaultPipColor) {
+          sel.borderColor = normalizeHexColor(btn.dataset.defaultPipColor, "#fbbf24");
+        }
+        if (st === "vintage_paper" && Number(sel.borderWidth || 6) < 11) {
+          sel.borderWidth = 13;
+        } else if (st !== "vintage_paper" && Number(sel.borderWidth || 6) > 10) {
+          sel.borderWidth = 6;
+        }
+        renderAllCanvases();
+        refreshContextualPanels();
+        scheduleSaveDesign();
+        showToast(`🖼 Đã đổi kiểu khung PiP sang «${btn.textContent.trim()}»!`);
+      });
+    });
     host.querySelector("#ctxPipBorderColor")?.addEventListener("input", (e) => {
       const sel = getLayer(studioState.selectedLayerId, activeVariant);
       if (!sel) return;
@@ -4495,6 +5204,586 @@
     });
   }
 
+  function copyAllSeoBundle() {
+    const pack = studioState.seoPack || studioState.data?.seo_package || {};
+    const variants = getVariants();
+    const design = studioState.data?.design || {};
+    const activeVariant = getActiveVariant() || variants[0] || {};
+    const activeIdx = Math.max(0, variants.findIndex((v) => v.id === activeVariant.id));
+    const activeVi = parseVariantVietnamese(activeVariant, activeIdx);
+    const titleKo = String(activeVi.pairedTitleKo || pack.recommended_title || "").trim();
+    const desc = String(pack.description || "").trim();
+    const hashtags = Array.isArray(pack.hashtags) ? pack.hashtags.join(" ") : "";
+    const tags = Array.isArray(pack.tags) ? pack.tags.join(", ") : "";
+    const fullDesc = [desc, hashtags].filter(Boolean).join("\n\n");
+
+    const bundleText = [
+      "=== [1. TIÊU ĐỀ YOUTUBE] ===",
+      titleKo,
+      "",
+      "=== [2. MÔ TẢ YOUTUBE + TIMESTAMPS] ===",
+      fullDesc,
+      "",
+      "=== [3. TAGS YOUTUBE (DÁN VÀO YOUTUBE STUDIO)] ===",
+      tags,
+    ].join("\n");
+
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(bundleText).then(() => {
+        showToast("📋 Đã sao chép Trọn Bộ YouTube (Tiêu đề + Mô tả + Tags)!");
+      }).catch(() => {
+        showToast("Không thể sao chép vào bộ nhớ tạm", true);
+      });
+    }
+  }
+
+  function buildMasterHeaderHtml(winnerVariant, channelDnaSig, variants) {
+    const winnerLabel = winnerVariant ? (winnerVariant.short_label || "BẢN A") : "BẢN A";
+    const winnerCtr = winnerVariant ? evaluateVariantCtr(winnerVariant) : { score: 83, predicted_ctr_pct: 11.8 };
+
+    return `
+      <div class="thumb-master-header">
+        <div class="header-left">
+          <div class="header-kicker">PHASE 07 · BAO BÌ &amp; ĐÓNG GÓI PHÁT HÀNH YOUTUBE</div>
+          <h2 class="header-title">YouTube Packaging Studio · Thumbnail &amp; SEO</h2>
+          <div class="header-status-line">
+            <span class="status-pill winner">★ Winner: ${esc(winnerLabel)} (CTR ${winnerCtr.score}점 · ${winnerCtr.predicted_ctr_pct || 11.8}%)</span>
+            <span class="status-pill safe">✓ 100% An toàn Kiếm tiền Xanh</span>
+            <span class="status-pill dna">Hồ sơ: ${esc(channelDnaSig)}</span>
+          </div>
+        </div>
+        <div class="header-right">
+          <button type="button" class="primary compact" id="thumbCopyAllSeoBtn" title="Sao chép toàn bộ Tiêu đề, Mô tả và Tags YouTube">📋 Sao chép Trọn Gói SEO</button>
+          <button type="button" class="ghost compact" id="thumbDownloadAllBtn" ${studioState.busyExportAll ? "disabled" : ""}>📦 Tải hết ${variants.length} Bản (.JPG)</button>
+          <button type="button" class="ghost compact" id="thumbExportAbPackBtn" ${studioState.busyExportAbPack ? "disabled" : ""}>📦 Xuất Gói A/B Test</button>
+          <button type="button" class="ghost compact" id="thumbBatchFlowBtn" ${studioState.busyBatchFlow ? "disabled" : ""}>🎨 Tạo 3 Nền Flow</button>
+          <button type="button" class="ghost compact" id="thumbLockChannelDnaBtn" ${studioState.busyLockDna ? "disabled" : ""}>🔒 Lưu DNA Kênh</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildUnifiedNavHtml(activeTab) {
+    return `
+      <div class="thumb-unified-nav">
+        <button type="button" class="thumb-nav-tab ${activeTab === 'compare' ? 'active' : ''}" data-thumb-main-tab="compare">
+          <span class="tab-badge-num">1</span>
+          <span class="tab-icon">⊞</span>
+          <div class="tab-labels">
+            <span class="tab-title">So Sánh 4 Bản Test (A/B/C/D)</span>
+            <span class="tab-sub">Lưới 4 phương án · Dự đoán CTR &amp; Tải lẻ</span>
+          </div>
+        </button>
+        <button type="button" class="thumb-nav-tab ${activeTab === 'editor' ? 'active' : ''}" data-thumb-main-tab="editor">
+          <span class="tab-badge-num">2</span>
+          <span class="tab-icon">🎨</span>
+          <div class="tab-labels">
+            <span class="tab-title">Bàn Dựng Canva Studio (Chỉnh Sửa)</span>
+            <span class="tab-sub">Chỉnh sửa trực quan · 10 Font Hàn · Khung &amp; Hiệu ứng</span>
+          </div>
+        </button>
+        <button type="button" class="thumb-nav-tab ${activeTab === 'seo' ? 'active' : ''}" data-thumb-main-tab="seo">
+          <span class="tab-badge-num">3</span>
+          <span class="tab-icon">📋</span>
+          <div class="tab-labels">
+            <span class="tab-title">Gói SEO YouTube Studio</span>
+            <span class="tab-sub">8 Tiêu Đề Song Ngữ · Mô Tả · Tags</span>
+          </div>
+        </button>
+        <button type="button" class="thumb-nav-tab ${activeTab === 'preview' ? 'active' : ''}" data-thumb-main-tab="preview">
+          <span class="tab-badge-num">4</span>
+          <span class="tab-icon">📺</span>
+          <div class="tab-labels">
+            <span class="tab-title">Mô Phỏng YouTube Feed</span>
+            <span class="tab-sub">Kiểm tra thực tế Home &amp; Sidebar</span>
+          </div>
+        </button>
+      </div>
+    `;
+  }
+
+  function buildEditorViewHtml(variants, activeVariant, activeVi, design, curZoomPct) {
+    const isWinner = activeVariant.id === (design.active_variant_id || "v1");
+    const pairedTitleKo = activeVi.pairedTitleKo || `${activeVariant.line_1 || ""} ${activeVariant.line_2 || ""}`;
+    const pairedTitleVi = activeVi.pairedTitleVi || "";
+
+    return `
+      <div class="thumb-editor-suite unified-studio-frame">
+        <!-- 1. INTEGRATED STUDIO TOPBAR -->
+        <div class="studio-topbar">
+          <div class="studio-topbar-left">
+            <span class="studio-topbar-label">PHƯƠNG ÁN:</span>
+            <div class="studio-variant-segments">
+              ${variants.map((v, idx) => {
+                const isAct = v.id === activeVariant.id;
+                const isWin = v.id === (design.active_variant_id || "v1");
+                const ctr = evaluateVariantCtr(v);
+                const label = v.short_label || `BẢN ${String.fromCharCode(65 + idx)}`;
+                const aObj = (studioState.data?.archetypes || []).find(a => a.id === v.archetype);
+                const aName = aObj ? aObj.name.split("—")[0].trim() : v.archetype;
+
+                return `
+                  <button type="button" class="studio-variant-seg ${isAct ? 'active' : ''} ${isWin ? 'is-winner' : ''}" data-switch-workbench-variant="${esc(v.id)}" title="${esc(aName)}">
+                    <span class="seg-tag">${esc(label)}</span>
+                    <span class="seg-name">${esc(aName)}</span>
+                    <span class="seg-ctr ${ctr.score >= 85 ? 'ok' : 'warn'}">${ctr.score}점 (${ctr.predicted_ctr_pct || 10.5}%)</span>
+                    ${isWin ? `<span class="seg-win">★</span>` : ""}
+                  </button>
+                `;
+              }).join("")}
+            </div>
+          </div>
+          <div class="studio-topbar-right">
+            ${isWinner ? `<span class="studio-win-badge">✓ Đang là Winner</span>` : `<button type="button" class="primary compact" id="editorSavePrimaryBtn" data-select-winner="${esc(activeVariant.id)}">★ Chọn Làm Winner</button>`}
+            <button type="button" class="ghost compact" id="editorDownloadThisBtn" data-download-variant="${esc(activeVariant.id)}">⬇ Tải .JPG</button>
+            <button type="button" class="ghost compact" data-thumb-main-tab="compare">⊞ Bảng So Sánh</button>
+            <button type="button" class="ghost compact" data-zoom-variant="${esc(activeVariant.id)}">🔍 Phóng to</button>
+            <button type="button" class="ghost compact" id="thumbToggleDrawerBtn" style="display:none;" title="Thu gọn/Mở">▼</button>
+            <button type="button" class="${studioState.editorZoomed ? "primary" : "ghost"} compact" id="thumbToggleZoomEditorBtn">${studioState.editorZoomed ? "🗗 Thoát Full" : "⛶ Toàn màn hình"}</button>
+          </div>
+        </div>
+
+        <!-- 2. INTEGRATED PAIRED YOUTUBE TITLE STRIP -->
+        <div class="studio-paired-bar">
+          <div class="paired-bar-tag">🎬 TIÊU ĐỀ YOUTUBE GHÉP CẶP (${esc(activeVariant.short_label || 'Bản này')}):</div>
+          <div class="paired-bar-content">
+            <span class="paired-bar-ko">🇰🇷 <b>${esc(pairedTitleKo)}</b></span>
+            ${pairedTitleVi ? `<span class="paired-bar-vi">🇻🇳 ${esc(pairedTitleVi)}</span>` : ""}
+            ${activeVi.synergyVi ? `<span class="paired-bar-syn">🔗 ${esc(activeVi.synergyVi)}</span>` : ""}
+          </div>
+          <div class="paired-bar-actions">
+            <button type="button" class="ghost compact" data-copy-raw-title="${esc(pairedTitleKo)}">📋 Sao chép Tiêu đề</button>
+            <button type="button" class="ghost compact" data-switch-to-seo-tab="1">👉 Mở Gói SEO</button>
+          </div>
+        </div>
+
+        <!-- 3. CANVA 3-COLUMN WORKBENCH -->
+        <div class="canva-workbench-3col">
+          <!-- CỘT TRÁI: DOCK CÔNG CỤ & THƯ VIỆN -->
+          <aside class="canva-left-dock" id="cofiThumbLeftDock">
+            ${buildLeftDockInnerHtml(activeVariant)}
+          </aside>
+
+          <!-- CỘT GIỮA: STAGE CANVAS 16:9 -->
+          <main class="canva-center-stage" id="cofiThumbCenterStage">
+            <!-- THANH CÔNG CỤ CANVAS NHANH -->
+            <div class="thumb-stage-toolbar">
+              <div class="stage-tools-left">
+                <span style="font-size:11px;font-weight:700;color:#94a3b8;margin-right:2px;">LỚP:</span>
+                <div class="thumb-quick-layers-bar" id="cofiThumbQuickLayersBar">
+                  ${buildQuickLayersBarInnerHtml(activeVariant)}
+                </div>
+              </div>
+              <div class="stage-tools-right">
+                <button type="button" class="ghost compact" id="thumbUndoBtn" title="Hoàn tác (Ctrl+Z)">↶</button>
+                <button type="button" class="ghost compact" id="thumbDuplicateLayerBtn" title="Nhân bản (Ctrl+D)">📋</button>
+                <button type="button" class="ghost compact thumb-danger-btn" id="thumbDeleteSelectedBtn" title="Xóa (Del)">🗑</button>
+                <label class="thumb-safezone-toggle" title="Khung thời lượng 30:15">
+                  <input type="checkbox" id="thumbSafeZoneToggle" ${design.safe_zone_visible ? "checked" : ""} />
+                  <span>30:15</span>
+                </label>
+                <div class="thumb-zoom-controls">
+                  <button type="button" class="ghost compact" id="thumbZoomOutBtn">−</button>
+                  <span class="thumb-zoom-readout" id="thumbZoomReadout">${curZoomPct}%</span>
+                  <button type="button" class="ghost compact" id="thumbZoomInBtn">+</button>
+                  <button type="button" class="ghost compact ${Math.abs(studioState.canvasZoom - 1) < 0.03 ? "active" : ""}" data-zoom-preset="1">100%</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="thumb-canvas-stage-viewport" id="cofiThumbStageViewport">
+              <div class="thumb-canvas-stage-inner" id="cofiThumbStageInner" style="width:${curZoomPct}%;">
+                <div class="thumb-canvas-stage">
+                  <canvas id="cofiThumbMainCanvas" width="${CW}" height="${CH}" tabindex="0"></canvas>
+                </div>
+              </div>
+            </div>
+
+            <!-- THANH GIẢI NGHĨA TIẾNG VIỆT -->
+            <div class="thumb-stage-vi-bar">
+              <span class="vi-title"><b style="color:#4ade80;">🇻🇳 Nghĩa chữ Thumbnail:</b></span>
+              <span class="vi-badge">[Tag: ${esc(activeVi.badgeVi || activeVariant.badge_text || "")}]</span> ·
+              <span class="vi-line1">D1: ${esc(activeVi.line1Vi || "")}</span> ·
+              <span class="vi-line2">D2: ${esc(activeVi.line2Vi || "")}</span>
+            </div>
+          </main>
+
+          <!-- CỘT PHẢI: INSPECTOR THEO NGỮ CẢNH -->
+          <aside class="canva-right-inspector" id="cofiThumbRightInspector">
+            ${buildRightContextualInspectorHtml(activeVariant)}
+          </aside>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildCompareViewHtml(variants, archetypes, design) {
+    const cardsHtml = variants.map((v, idx) => {
+      const isPrimary = v.id === (design.active_variant_id || "v1");
+      const ctr = evaluateVariantCtr(v);
+      const vVi = parseVariantVietnamese(v, idx);
+      const shortLabel = v.short_label || `BẢN ${String.fromCharCode(65 + idx)}`;
+      const archObj = archetypes.find(a => a.id === v.archetype);
+      const archName = archObj ? archObj.name.split("—")[0].trim() : v.archetype;
+      const hookBadge = v.hook_badge || (idx === 0 ? "🎯 Tò mò / Nghịch lý" : idx === 1 ? "🔍 Bằng chứng độc quyền" : idx === 2 ? "⚡ Đối đầu / Hồ sơ mật" : `Variant ${String.fromCharCode(65 + idx)}`);
+      const ytTitleKo = vVi.pairedTitleKo || `${v.line_1 || ""} ${v.line_2 || ""}`;
+
+      return `
+        <article class="thumb-compare-card ${isPrimary ? 'is-winner' : ''}" data-card-variant="${esc(v.id)}">
+          <div class="compare-card-head">
+            <div class="head-tags">
+              <span class="tag-pill">${esc(shortLabel)}</span>
+              <span class="arch-pill">${esc(archName)}</span>
+              ${isPrimary ? `<span class="winner-pill">★ Winner</span>` : ""}
+            </div>
+            <span class="ctr-badge ${ctr.score >= 85 ? 'ok' : 'warn'}">CTR ${ctr.score}점 (${ctr.predicted_ctr_pct || 10.5}%)</span>
+          </div>
+
+          <div class="compare-preview-frame" data-zoom-variant="${esc(v.id)}" title="Ấn để phóng to xem ảnh 1280x720">
+            <canvas data-thumb-card-canvas="${esc(v.id)}" width="${CW}" height="${CH}"></canvas>
+            <span class="compare-yt-duration">30:15</span>
+            <div class="compare-hover-zoom"><span>🔍 Phóng to</span></div>
+          </div>
+
+          <div class="compare-card-body">
+            <div class="hook-badge-line">🏷 [${esc(v.badge_text || "")}] · <span style="color:#93c5fd;">${esc(hookBadge)}</span></div>
+            <div class="hook-text-line"><strong>${esc(v.line_1 || "")}</strong> · <span style="color:#fbbf24;">${esc(v.line_2 || "")}</span></div>
+            ${(vVi.line1Vi || vVi.line2Vi) ? `
+              <div class="compare-vi-text">
+                ${vVi.badgeVi ? `<div><b style="color:#4ade80;">Tag:</b> ${esc(vVi.badgeVi)}</div>` : ""}
+                ${vVi.line1Vi ? `<div><b style="color:#fde047;">D1:</b> ${esc(vVi.line1Vi)}</div>` : ""}
+                ${vVi.line2Vi ? `<div><b style="color:#f87171;">D2:</b> ${esc(vVi.line2Vi)}</div>` : ""}
+              </div>` : ""}
+            
+            <div class="compare-paired-title">
+              <div class="title-ko">🎬 <b>Tiêu đề ghép:</b> 🇰🇷 ${esc(ytTitleKo)}</div>
+              ${vVi.pairedTitleVi ? `<div class="title-vi">🇻🇳 ${esc(vVi.pairedTitleVi)}</div>` : ""}
+            </div>
+          </div>
+
+          <div class="compare-card-actions">
+            <button type="button" class="primary compact" data-edit-variant="${esc(v.id)}" style="flex:1.4;font-weight:800;background:linear-gradient(135deg,#0284c7,#0369a1);border-color:#38bdf8;">🎨 Chỉnh sửa bản này</button>
+            <button type="button" class="ghost compact" data-select-winner="${esc(v.id)}" style="flex:1;">${isPrimary ? '✓ Winner' : '★ Chọn'}</button>
+            <button type="button" class="ghost compact" data-download-variant="${esc(v.id)}">⬇ Tải</button>
+            <button type="button" class="ghost compact" data-zoom-variant="${esc(v.id)}">🔍</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+    return `
+      <div class="thumb-compare-suite">
+        <div class="thumb-compare-info-bar">
+          <div>
+            <strong>SO SÁNH ĐA PHƯƠNG ÁN (A / B / C / D) CHUẨN CTR ĐÀI HÀN QUỐC</strong>
+            <small style="display:block;color:#94a3b8;margin-top:2px;">So sánh 4 góc độ tâm lý khác nhau (Nghịch lý / Bằng chứng / Đối đầu / Cao trào). Bấm <b>🎨 Chỉnh sửa bản này</b> để chuyển sang Tab 2 (Bàn Dựng Studio) chỉnh sửa trực quan.</small>
+          </div>
+          <button type="button" class="primary compact" id="compareExportAbPackBtn">📦 Xuất Gói A/B Test YouTube</button>
+        </div>
+        <div class="thumb-compare-grid">${cardsHtml}</div>
+      </div>
+    `;
+  }
+
+  function buildSeoViewHtml(activeVariant, winnerVariant) {
+    const pack = studioState.seoPack || studioState.data?.seo_package || {};
+    const recKo = String(pack.recommended_title || "").trim();
+    const recVi = String(pack.recommended_title_vi || "").trim();
+    const rawPrimaryKw = pack.primary_keywords_summary;
+    const kwSummary = rawPrimaryKw && typeof rawPrimaryKw === "object"
+      ? Object.values(rawPrimaryKw).map(v => String(v || "").trim()).filter(Boolean).join(" · ")
+      : String(rawPrimaryKw || "").trim();
+    const synergyVi = String(pack.title_thumb_synergy_vi || "").trim();
+    const rawOpts = Array.isArray(pack.title_options) ? pack.title_options : [];
+    const details = Array.isArray(pack.title_options_details) ? pack.title_options_details : [];
+    const optsVi = Array.isArray(pack.title_options_vi) ? pack.title_options_vi : [];
+    const desc = String(pack.description || "").trim();
+    const descVi = String(pack.description_vi || "").trim();
+    const hashtags = Array.isArray(pack.hashtags) ? pack.hashtags.join(" ") : "";
+    const tags = Array.isArray(pack.tags) ? pack.tags.join(", ") : "";
+    const keywords = Array.isArray(pack.keywords) ? pack.keywords.join(", ") : "";
+    const kwVi = Array.isArray(pack.keywords_vi) ? pack.keywords_vi : [];
+    const fullDesc = [desc, hashtags].filter(Boolean).join("\n\n");
+    const preflight = pack.preflight_summary || {};
+    const preflightPassed = preflight.passed !== false;
+    const matchedPatterns = Array.isArray(preflight.winner_patterns_matched) && preflight.winner_patterns_matched.length
+      ? preflight.winner_patterns_matched
+      : [
+        "중국 실화 사건 Khóa chính",
+        "Con số định lượng (6,000 CCTV, 38 xe)",
+        "Tam giác Bổ trợ Title + Thumb 0% trùng lặp"
+      ];
+    const fw = pack.channel_framework || {};
+
+    return `
+      <div class="thumb-seo-suite">
+        <!-- PRE-FLIGHT AUDIT & ALL-IN-ONE COPY BAR -->
+        <div class="thumb-seo-preflight-bar">
+          <div class="preflight-status">
+            <span class="safe-pill">✓ 100% GREEN MONETIZATION SAFE (XANH TIỀN YOUTUBE)</span>
+            <span class="safe-pill" style="background:rgba(56,189,248,0.15);border-color:rgba(56,189,248,0.35);color:#7dd3fc;">✈ CHANNEL DNA PRE-FLIGHT PASSED</span>
+            <div class="patterns-matched">
+              ${matchedPatterns.map(p => `<span class="pat-tag">★ ${esc(p)}</span>`).join("")}
+            </div>
+          </div>
+          <div class="preflight-actions">
+            <button type="button" class="primary compact" id="seoCopyAllBundleBtn" style="font-weight:800;font-size:12px;padding:6px 14px;">📋 Sao Chép Trọn Gói YouTube (Tiêu Đề + Mô Tả + Tags)</button>
+          </div>
+        </div>
+
+        <div class="thumb-seo-grid-2col">
+          <!-- CỘT TRÁI: TIÊU ĐỀ & MÔ TẢ -->
+          <div class="thumb-seo-col-main">
+            <!-- TIÊU ĐỀ ĐỀ XUẤT CHÍNH -->
+            <section class="seo-card-unified prominent">
+              <div class="seo-card-head">
+                <div class="head-title">
+                  <span class="head-badge">TIÊU ĐỀ ĐỀ XUẤT CHÍNH (KHỚP WINNER ${esc(winnerVariant?.short_label || 'BẢN A')})</span>
+                  <strong>Chuẩn CTR &amp; DNA Kênh · Song Ngữ Hàn — Việt</strong>
+                </div>
+                <button type="button" class="primary compact" data-copy-raw-title="${esc(recKo)}">📋 Sao chép</button>
+              </div>
+              <div class="seo-title-display-box">
+                <div class="ko-title">🇰🇷 ${esc(recKo || "Chưa có tiêu đề")}</div>
+                ${recVi ? `<div class="vi-title"><b style="color:#4ade80;">🇻🇳 Nghĩa Tiếng Việt:</b> ${esc(recVi)}</div>` : ""}
+              </div>
+              ${(kwSummary || synergyVi) ? `
+                <div class="seo-title-meta-box">
+                  ${kwSummary ? `<div><b style="color:#38bdf8;">📍 Từ khóa &amp; Địa danh:</b> ${esc(kwSummary)}</div>` : ""}
+                  ${synergyVi ? `<div><b style="color:#fbbf24;">🔗 Bổ trợ nghĩa với Thumbnail:</b> ${esc(synergyVi)}</div>` : ""}
+                </div>` : ""}
+            </section>
+
+            <!-- 8 PHƯƠNG ÁN TIÊU ĐỀ & GHÉP CẶP THUMBNAIL -->
+            <section class="seo-card-unified">
+              <div class="seo-card-head">
+                <div class="head-title">
+                  <span class="head-badge">8 PHƯƠNG ÁN TIÊU ĐỀ THEO BỘ BẢN TEST (A / B / C / D)</span>
+                  <strong>Mỗi tiêu đề được tối ưu hóa cho từng góc tiếp cận tâm lý</strong>
+                </div>
+              </div>
+              <div class="seo-options-grid-2col">
+                ${rawOpts.map((opt, idx) => {
+                  const d = (typeof opt === "object" && opt !== null) ? opt : (details[idx] || {});
+                  const ko = typeof opt === "object" && opt !== null ? String(opt.title_ko || opt.title || "").trim() : String(opt || "").trim();
+                  const vi = String(d.title_vi || optsVi[idx] || "").trim();
+                  const paired = String(d.paired_variant || (idx % 4 === 0 ? "v1" : idx % 4 === 1 ? "v2" : idx % 4 === 2 ? "v3" : "v4")).trim();
+                  const pairedLabel = paired === "v1" ? "BẢN A" : paired === "v2" ? "BẢN B" : paired === "v3" ? "BẢN C" : "BẢN D";
+                  const kw = String(d.keyword_anchor || "").trim();
+                  const syn = String(d.synergy_vi || "").trim();
+
+                  return `
+                    <div class="seo-title-option-card">
+                      <div class="opt-card-top">
+                        <div class="opt-card-badges">
+                          <span class="opt-num">#${idx + 1}</span>
+                          <span class="opt-paired-pill" data-edit-variant="${esc(paired)}" title="Ấn để mở Bàn Dựng sửa ${esc(pairedLabel)}">🎯 Ghép ${esc(pairedLabel)}</span>
+                        </div>
+                        <button type="button" class="ghost compact" data-copy-raw-title="${esc(ko)}">📋 Sao chép</button>
+                      </div>
+                      <div class="opt-ko-title">🇰🇷 ${esc(ko)}</div>
+                      ${vi ? `<div class="opt-vi-title"><b>🇻🇳 Nghĩa:</b> ${esc(vi)}</div>` : ""}
+                      ${kw ? `<div class="opt-kw-anchor"><b>📍 Khóa:</b> ${esc(kw)}</div>` : ""}
+                      ${syn ? `<div class="opt-synergy"><b>🔗 Bổ trợ:</b> ${esc(syn)}</div>` : ""}
+                      <div class="opt-card-actions">
+                        <button type="button" class="ghost compact" data-edit-variant="${esc(paired)}">✎ Sửa Thumbnail ${esc(pairedLabel)}</button>
+                      </div>
+                    </div>
+                  `;
+                }).join("")}
+              </div>
+            </section>
+
+            <!-- MÔ TẢ YOUTUBE ĐẦY ĐỦ + TIMESTAMPS -->
+            <section class="seo-card-unified">
+              <div class="seo-card-head">
+                <div class="head-title">
+                  <span class="head-badge">MÔ TẢ YOUTUBE + TIMESTAMPS &amp; HASHTAGS</span>
+                  <strong>Đầy đủ Hook, Chương phân đoạn (Acts), Bản án pháp lý và Hashtags chuẩn SEO</strong>
+                </div>
+                <button type="button" class="primary compact" data-copy-raw-desc="1">📋 Sao chép Mô Tả</button>
+              </div>
+              <pre class="seo-raw-prebox" id="seoRawDescBox">${esc(fullDesc || "Chưa có mô tả")}</pre>
+              ${descVi ? `
+                <details class="seo-desc-vi-accordion" style="margin-top:10px;">
+                  <summary style="cursor:pointer;color:#4ade80;font-weight:700;font-size:12px;">▼ Bấm để xem Bản dịch Nghĩa Tiếng Việt của Phần Mô Tả</summary>
+                  <pre class="seo-raw-prebox vi" style="margin-top:6px;background:rgba(15,23,42,0.92);border-color:rgba(34,197,94,0.3);color:#e2e8f0;">${esc(descVi)}</pre>
+                </details>` : ""}
+            </section>
+          </div>
+
+          <!-- CỘT PHẢI: WINNER THUMB PREVIEW, TAGS, TỪ KHÓA, CHANNEL FRAMEWORK -->
+          <div class="thumb-seo-col-side">
+            <!-- WINNER THUMBNAIL PREVIEW CARD -->
+            <section class="seo-card-unified">
+              <div class="seo-card-head">
+                <div class="head-title">
+                  <span class="head-badge gold">★ WINNER THUMBNAIL HIỆN TẠI</span>
+                  <strong>${esc(winnerVariant?.short_label || 'BẢN A')} · CTR Dự đoán ${winnerVariant ? evaluateVariantCtr(winnerVariant).predicted_ctr_pct : 11.8}%</strong>
+                </div>
+                <button type="button" class="ghost compact" data-download-variant="${esc(winnerVariant?.id || 'v1')}">⬇ Tải .JPG</button>
+              </div>
+              <div class="seo-winner-thumb-frame" data-zoom-variant="${esc(winnerVariant?.id || 'v1')}" title="Ấn để phóng to">
+                <canvas data-thumb-card-canvas="${esc(winnerVariant?.id || 'v1')}" width="${CW}" height="${CH}"></canvas>
+                <div class="winner-thumb-overlay"><span>🔍 Xem Full</span></div>
+              </div>
+              <div style="margin-top:8px;font-size:12px;color:#cbd5e1;line-height:1.4;">
+                <b style="color:#fbbf24;">Hook trên ảnh:</b> ${esc(winnerVariant?.line_1 || "")} ${esc(winnerVariant?.line_2 || "")}
+              </div>
+              <div style="margin-top:8px;display:flex;gap:6px;">
+                <button type="button" class="ghost compact" data-edit-variant="${esc(winnerVariant?.id || 'v1')}" style="flex:1;">✎ Chỉnh sửa bản này</button>
+                <button type="button" class="ghost compact" data-thumb-main-tab="compare" style="flex:1;">⊞ So sánh 4 bản</button>
+              </div>
+            </section>
+
+            <!-- VIDEO TAGS (DÁN STUDIO) -->
+            <section class="seo-card-unified">
+              <div class="seo-card-head">
+                <div class="head-title">
+                  <span class="head-badge">TAGS YOUTUBE (DÁN VÀO STUDIO)</span>
+                  <strong>Dấu phẩy phân tách · Chuẩn 500 ký tự YouTube</strong>
+                </div>
+                <button type="button" class="primary compact" data-copy-raw-tags="1">📋 Sao chép Tags</button>
+              </div>
+              <div class="seo-tags-display-box" id="seoRawTagsBox">
+                ${tags ? tags.split(",").map(t => `<span class="yt-tag-pill">${esc(t.trim())}</span>`).join("") : "Chưa có tags"}
+              </div>
+            </section>
+
+            <!-- TỪ KHÓA SEO TRỤ CỘT -->
+            <section class="seo-card-unified">
+              <div class="seo-card-head">
+                <div class="head-title">
+                  <span class="head-badge">TỪ KHÓA SEO TRỤ CỘT</span>
+                  <strong>Korean Keyword Anchors &amp; Giải nghĩa</strong>
+                </div>
+                <button type="button" class="ghost compact" data-copy-raw-kw="1">📋 Sao chép</button>
+              </div>
+              <div class="seo-keywords-list" id="seoRawKwBox">
+                <div style="color:#f8fafc;font-weight:700;font-size:13px;">${esc(keywords || "Chưa có")}</div>
+                ${kwVi.length ? `<div style="margin-top:6px;font-size:12px;color:#4ade80;line-height:1.45;"><b>🇻🇳 Giải nghĩa:</b> ${kwVi.map(k => esc(k)).join(" · ")}</div>` : ""}
+              </div>
+            </section>
+
+            <!-- BỘ KHUNG SEO CHUẨN KÊNH -->
+            ${fw.title_formula ? `
+              <section class="seo-card-unified">
+                <div class="seo-card-head">
+                  <div class="head-title">
+                    <span class="head-badge">BỘ KHUNG CÔNG THỨC KÊNH (${esc(fw.series_key || "중국 실화 사건")})</span>
+                  </div>
+                </div>
+                <div style="font-size:12px;line-height:1.5;color:#cbd5e1;display:flex;flex-direction:column;gap:6px;">
+                  <div><b style="color:#38bdf8;">Công thức Tiêu đề:</b><br/><code>${esc(fw.title_formula)}</code></div>
+                  <div><b style="color:#fbbf24;">Công thức Text Thumb:</b><br/><code>${esc(fw.thumb_text_formula || "")}</code></div>
+                </div>
+              </section>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function buildPreviewViewHtml(variants, design) {
+    const homeFeedHtml = variants.map((v, idx) => {
+      const isPrimary = v.id === (design.active_variant_id || "v1");
+      const ctr = evaluateVariantCtr(v);
+      const vVi = parseVariantVietnamese(v, idx);
+      const ytTitleKo = vVi.pairedTitleKo || `${v.line_1 || ""} ${v.line_2 || ""}`;
+
+      return `
+        <div class="yt-feed-card ${isPrimary ? 'is-winner-card' : ''}">
+          <div class="yt-feed-thumb" data-zoom-variant="${esc(v.id)}">
+            <canvas data-thumb-card-canvas="${esc(v.id)}" width="${CW}" height="${CH}"></canvas>
+            <span class="yt-time-badge">30:15</span>
+          </div>
+          <div class="yt-feed-info">
+            <div class="yt-feed-avatar">🕵</div>
+            <div class="yt-feed-meta">
+              <h4 class="yt-video-title">${esc(ytTitleKo)}</h4>
+              ${vVi.pairedTitleVi ? `<div class="yt-video-title-vi">🇻🇳 ${esc(vVi.pairedTitleVi)}</div>` : ""}
+              <div class="yt-channel-line">사건수첩 25시 · 조회수 18만회 · 2일 전</div>
+              <div class="yt-card-actions">
+                <span class="ctr-tag">CTR: ${ctr.predicted_ctr_pct || 10.5}%</span>
+                <button type="button" class="ghost compact" data-edit-variant="${esc(v.id)}">✎ Sửa bản này</button>
+                <button type="button" class="${isPrimary ? 'primary' : 'ghost'} compact" data-select-winner="${esc(v.id)}">${isPrimary ? '✓ Winner' : '★ Chọn'}</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    const sidebarFeedHtml = variants.map((v, idx) => {
+      const isPrimary = v.id === (design.active_variant_id || "v1");
+      const vVi = parseVariantVietnamese(v, idx);
+      const ytTitleKo = vVi.pairedTitleKo || `${v.line_1 || ""} ${v.line_2 || ""}`;
+
+      return `
+        <div class="yt-sidebar-card ${isPrimary ? 'is-winner' : ''}">
+          <div class="yt-sidebar-thumb" data-zoom-variant="${esc(v.id)}">
+            <canvas data-thumb-card-canvas="${esc(v.id)}" width="${CW}" height="${CH}"></canvas>
+            <span class="yt-time-badge">30:15</span>
+          </div>
+          <div class="yt-sidebar-info">
+            <h5 class="yt-sidebar-title">${esc(ytTitleKo)}</h5>
+            <div class="yt-sidebar-channel">사건수첩 25시</div>
+            <div class="yt-sidebar-views">조회수 18만회 · 2일 전</div>
+            <button type="button" class="ghost compact" data-edit-variant="${esc(v.id)}" style="margin-top:4px;font-size:10.5px;">✎ Sửa</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    return `
+      <div class="thumb-preview-suite">
+        <div class="thumb-preview-nav">
+          <div class="nav-left">
+            <strong>MÔ PHỎNG GIAO DIỆN YOUTUBE THỰC TẾ</strong>
+            <small style="color:#94a3b8;display:block;">Kiểm tra độ nổi bật của hình đại diện khi đứng cạnh các video khác trên YouTube</small>
+          </div>
+          <div class="thumb-view-mode-switcher">
+            <button type="button" class="ghost compact ${studioState.previewViewMode === 'home' ? 'primary' : ''}" data-thumb-view-mode="home">📱 Trang Chủ YouTube (Home Feed)</button>
+            <button type="button" class="ghost compact ${studioState.previewViewMode === 'sidebar' ? 'primary' : ''}" data-thumb-view-mode="sidebar">📑 Cột Gợi Ý (Sidebar)</button>
+          </div>
+        </div>
+        <div class="thumb-preview-stage">
+          ${studioState.previewViewMode === 'home' ? `<div class="yt-home-feed-grid">${homeFeedHtml}</div>` : `<div class="yt-sidebar-feed-stack">${sidebarFeedHtml}</div>`}
+        </div>
+      </div>
+    `;
+  }
+
+  function buildLightboxHtml(lbVariant, lbVi) {
+    if (!lbVariant) return "";
+    return `
+      <div class="thumb-final-lightbox-backdrop" id="cofiThumbLightboxBackdrop">
+        <div class="thumb-final-lightbox-modal" role="dialog" aria-modal="true">
+          <div class="thumb-final-lightbox-head">
+            <div class="thumb-final-lightbox-title">
+              <span class="thumb-boxcard-tag">${esc(lbVariant.short_label || lbVariant.id)}</span>
+              <strong>${esc(lbVariant.badge_text ? `[${lbVariant.badge_text}] ` : "")}${esc(lbVariant.line_1 || "")} — <span style="color:#fbbf24">${esc(lbVariant.line_2 || "")}</span></strong>
+            </div>
+            <div class="thumb-final-lightbox-actions">
+              <button type="button" class="ghost compact" id="lbPrevBtn">◀ Trước</button>
+              <button type="button" class="ghost compact" id="lbNextBtn">Tiếp ▶</button>
+              <button type="button" class="ghost compact" id="lbEditBtn">✎ Sửa bản này</button>
+              <button type="button" class="primary compact" id="lbDownloadBtn">⬇ Tải ảnh (.JPG)</button>
+              <button type="button" class="ghost compact" id="lbCloseBtn">✕ Đóng</button>
+            </div>
+          </div>
+          ${(lbVi && (lbVi.badgeVi || lbVi.line1Vi || lbVi.line2Vi)) ? `
+            <div style="background:rgba(15,23,42,0.95);border:1px solid rgba(34,197,94,0.45);border-radius:8px;padding:8px 12px;font-size:12.5px;color:#f8fafc;">
+              <b style="color:#4ade80;">🇻🇳 Dịch nghĩa:</b> [Tag: ${esc(lbVi.badgeVi)}] · [Dòng 1: ${esc(lbVi.line1Vi)}] · [Dòng 2: ${esc(lbVi.line2Vi)}]
+            </div>` : ""}
+          <div class="thumb-final-lightbox-stage">
+            <canvas id="cofiThumbLightboxCanvas" width="${CW}" height="${CH}"></canvas>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderStudioDom() {
     const host = document.getElementById("cofiThumbnailStudioHost");
     if (!host || !studioState.data) return;
@@ -4507,268 +5796,32 @@
     const data = studioState.data;
     const design = data.design || {};
     const variants = getVariants();
-    const activeVariant = getActiveVariant() || {};
+    const activeVariant = getActiveVariant() || variants[0] || {};
     const activeIdx = Math.max(0, variants.findIndex((item) => item && item.id === activeVariant.id));
     const activeVi = parseVariantVietnamese(activeVariant, activeIdx);
     const archetypes = data.archetypes || [];
-
-    const lBadge = getLayer("badge", activeVariant) || {};
-    const selectedLayer = getLayer(studioState.selectedLayerId, activeVariant);
-    const hasSel = Boolean(selectedLayer && selectedLayer.visible !== false && selectedLayer.type !== "vignette");
-    const curZoomPct = Math.round((studioState.canvasZoom || 1) * 100);
-    const curStylePreset = String(activeVariant.style_preset || design.style_preset || design.channel_thumbnail_dna?.style_preset || "sbs_criminal_profiling");
-    const channelDnaVersion = design.channel_thumbnail_dna?.version || 1;
+    const winnerVariant = variants.find(v => v.id === (design.active_variant_id || "v1")) || variants[0];
     const channelDnaSig = String(design.channel_thumbnail_dna?.visual_signature || design.channel_thumbnail_dna?.style_preset || "Mặc định Kênh");
-
-    // Build 4 Box Cards HTML
-    const cardsHtml = variants
-      .map((v, idx) => {
-        const isPrimary = v.id === (design.active_variant_id || "v1");
-        const isEditing = studioState.editorOpen && isPrimary;
-        const isBusy = studioState.busyVariants.has(v.id);
-        const ctr = evaluateVariantCtr(v);
-        const vVi = parseVariantVietnamese(v, idx);
-        const shortLabel = v.short_label || `BẢN ${String.fromCharCode(65 + idx)}`;
-        const archObj = archetypes.find((a) => a.id === v.archetype);
-        const archName = archObj ? archObj.name.split("—")[0].trim() : v.archetype;
-        const hookBadge = v.hook_badge || (idx === 0 ? "🎯 Variant A: Tò mò / Nghịch lý" : idx === 1 ? "🔍 Variant B: Bằng chứng độc quyền" : idx === 2 ? "⚡ Variant C: Đối đầu / Hồ sơ mật" : `Variant ${String.fromCharCode(65 + idx)}`);
-
-        return `<article class="thumb-test-boxcard ${isPrimary ? "is-primary" : ""} ${isEditing ? "is-editing" : ""}" data-card-variant="${esc(v.id)}">
-          <div class="thumb-boxcard-top">
-            <div class="thumb-boxcard-badges">
-              <span class="thumb-boxcard-tag">${esc(shortLabel)}</span>
-              <span class="thumb-boxcard-arch">${esc(archName)}</span>
-              ${isPrimary ? `<span class="thumb-boxcard-primary-pill">★ Đang chọn</span>` : ""}
-            </div>
-            <span class="thumb-boxcard-ctr ${ctr.score >= 85 ? "ok" : "warn"}">CTR ${ctr.score}점 (${ctr.predicted_ctr_pct || 10.5}%)</span>
-          </div>
-
-          <div class="thumb-boxcard-preview" data-zoom-variant="${esc(v.id)}" title="Ấn để phóng to xem ảnh Final (1280×720) kèm nghĩa Tiếng Việt">
-            <canvas data-thumb-card-canvas="${esc(v.id)}" width="${CW}" height="${CH}"></canvas>
-            <span class="thumb-boxcard-yt-duration">30:15</span>
-            <div class="thumb-boxcard-hover-zoom"><span>🔍 Phóng to xem Final + Nghĩa Việt</span></div>
-            ${isBusy ? `<div class="thumb-boxcard-loading"><div class="thumb-spinner"></div><span>Flow đang vẽ ảnh nền…</span></div>` : ""}
-          </div>
-
-          <div class="thumb-boxcard-caption">
-            <div style="font-size:11px;color:#4ade80;font-weight:800;">🏷 [${esc(v.badge_text || "")}] · <span style="color:#93c5fd">${esc(hookBadge)}</span></div>
-            <strong>${esc(v.line_1 || "")} · <span style="color:#fbbf24">${esc(v.line_2 || "")}</span></strong>
-            ${
-              vVi.line1Vi || vVi.line2Vi
-                ? `<div class="thumb-vi-breakdown-mini" style="margin-top:4px;padding:5px 7px;background:rgba(15,23,42,0.88);border-left:3px solid #22c55e;border-radius:5px;font-size:11px;line-height:1.4;color:#e2e8f0;">
-                    ${vVi.badgeVi ? `<div><b style="color:#4ade80;">Tag:</b> ${esc(vVi.badgeVi)}</div>` : ""}
-                    ${vVi.line1Vi ? `<div><b style="color:#fde047;">D1:</b> ${esc(vVi.line1Vi)}</div>` : ""}
-                    ${vVi.line2Vi ? `<div><b style="color:#f87171;">D2:</b> ${esc(vVi.line2Vi)}</div>` : ""}
-                  </div>`
-                : ""
-            }
-          </div>
-
-          <div class="thumb-boxcard-actions">
-            <button type="button" class="ghost compact" data-zoom-variant="${esc(v.id)}">🔍 Phóng to</button>
-            <button type="button" class="ghost compact" data-download-variant="${esc(v.id)}">⬇ Tải</button>
-            <button type="button" class="ghost compact ${isEditing ? "active-edit" : ""}" data-edit-variant="${esc(v.id)}">✎ ${isEditing ? "Đang sửa" : "Sửa bản này"}</button>
-            <button type="button" class="${isPrimary ? "primary" : "ghost"} compact" data-select-winner="${esc(v.id)}">${isPrimary ? "★ Winner" : "★ Chọn Winner"}</button>
-          </div>
-        </article>`;
-      })
-      .join("");
-
-    const homeFeedHtml = variants
-      .map((v, idx) => {
-        const isPrimary = v.id === (design.active_variant_id || "v1");
-        const ctr = evaluateVariantCtr(v);
-        const vVi = parseVariantVietnamese(v, idx);
-        const ytTitleKo = vVi.pairedTitleKo || `${v.line_1 || ""} ${v.line_2 || ""}`;
-        return `<div class="yt-feed-card ${isPrimary ? "is-winner-card" : ""}" style="background:#0f0f0f;border:1px solid ${isPrimary ? '#fbbf24' : '#27272a'};border-radius:12px;overflow:hidden;">
-          <div style="position:relative;aspect-ratio:16/9;background:#000;cursor:zoom-in;" data-zoom-variant="${esc(v.id)}">
-            <canvas data-thumb-card-canvas="${esc(v.id)}" width="${CW}" height="${CH}" style="width:100%;height:100%;display:block;"></canvas>
-            <span style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.8);color:#fff;font-size:12px;font-weight:700;padding:2px 6px;border-radius:4px;">30:15</span>
-          </div>
-          <div style="padding:12px;">
-            <h4 style="margin:0 0 4px 0;font-size:14px;font-weight:700;color:#f1f5f9;">${esc(ytTitleKo)}</h4>
-            ${vVi.pairedTitleVi ? `<div style="font-size:12px;color:#4ade80;margin-bottom:4px;">🇻🇳 ${esc(vVi.pairedTitleVi)}</div>` : ""}
-            <div style="display:flex;gap:6px;align-items:center;">
-              <span style="font-size:11px;color:#22c55e;font-weight:700;">CTR: ${ctr.predicted_ctr_pct || 10.5}%</span>
-              <button type="button" class="ghost compact" data-edit-variant="${esc(v.id)}" style="margin-left:auto;font-size:11px;">✎ Sửa</button>
-              <button type="button" class="${isPrimary ? 'primary' : 'ghost'} compact" data-select-winner="${esc(v.id)}" style="font-size:11px;">${isPrimary ? "✓ Winner" : "★ Chọn"}</button>
-            </div>
-          </div>
-        </div>`;
-      })
-      .join("");
-
-    const sidebarFeedHtml = variants
-      .map((v, idx) => {
-        const isPrimary = v.id === (design.active_variant_id || "v1");
-        const vVi = parseVariantVietnamese(v, idx);
-        const ytTitleKo = vVi.pairedTitleKo || `${v.line_1 || ""} ${v.line_2 || ""}`;
-        return `<div class="yt-sidebar-card" style="display:flex;gap:10px;background:#0f0f0f;border:1px solid ${isPrimary ? '#fbbf24' : '#27272a'};border-radius:8px;padding:6px;">
-          <div style="width:168px;aspect-ratio:16/9;position:relative;background:#000;border-radius:6px;overflow:hidden;flex-shrink:0;cursor:zoom-in;" data-zoom-variant="${esc(v.id)}">
-            <canvas data-thumb-card-canvas="${esc(v.id)}" width="${CW}" height="${CH}" style="width:100%;height:100%;display:block;"></canvas>
-          </div>
-          <div style="flex:1;min-width:0;">
-            <h5 style="margin:0 0 4px 0;font-size:12px;font-weight:700;color:#f1f5f9;">${esc(ytTitleKo)}</h5>
-            <button type="button" class="ghost compact" data-edit-variant="${esc(v.id)}" style="font-size:10px;padding:2px 6px;">✎ Sửa</button>
-          </div>
-        </div>`;
-      })
-      .join("");
+    const curZoomPct = Math.round((studioState.canvasZoom || 1) * 100);
 
     const lbVariant = studioState.lightboxVariantId ? getVariantById(studioState.lightboxVariantId) : null;
     const lbIdx = lbVariant ? Math.max(0, variants.findIndex((item) => item && item.id === lbVariant.id)) : 0;
     const lbVi = lbVariant ? parseVariantVietnamese(lbVariant, lbIdx) : null;
-    const lightboxHtml = lbVariant
-      ? `<div class="thumb-final-lightbox-backdrop" id="cofiThumbLightboxBackdrop">
-          <div class="thumb-final-lightbox-modal" role="dialog" aria-modal="true">
-            <div class="thumb-final-lightbox-head">
-              <div class="thumb-final-lightbox-title">
-                <span class="thumb-boxcard-tag">${esc(lbVariant.short_label || lbVariant.id)}</span>
-                <strong>${esc(lbVariant.badge_text ? `[${lbVariant.badge_text}] ` : "")}${esc(lbVariant.line_1 || "")} — <span style="color:#fbbf24">${esc(lbVariant.line_2 || "")}</span></strong>
-              </div>
-              <div class="thumb-final-lightbox-actions">
-                <button type="button" class="ghost compact" id="lbPrevBtn">◀ Trước</button>
-                <button type="button" class="ghost compact" id="lbNextBtn">Tiếp ▶</button>
-                <button type="button" class="ghost compact" id="lbEditBtn">✎ Sửa bản này</button>
-                <button type="button" class="primary compact" id="lbDownloadBtn">⬇ Tải ảnh (.JPG)</button>
-                <button type="button" class="ghost compact" id="lbCloseBtn">✕ Đóng</button>
-              </div>
-            </div>
-            ${
-              lbVi && (lbVi.badgeVi || lbVi.line1Vi || lbVi.line2Vi)
-                ? `<div style="background:rgba(15,23,42,0.95);border:1px solid rgba(34,197,94,0.45);border-radius:8px;padding:8px 12px;font-size:12.5px;color:#f8fafc;">
-                    <b style="color:#4ade80;">🇻🇳 Dịch nghĩa:</b> [Tag: ${esc(lbVi.badgeVi)}] · [Dòng 1: ${esc(lbVi.line1Vi)}] · [Dòng 2: ${esc(lbVi.line2Vi)}]
-                  </div>`
-                : ""
-            }
-            <div class="thumb-final-lightbox-stage">
-              <canvas id="cofiThumbLightboxCanvas" width="${CW}" height="${CH}"></canvas>
-            </div>
-          </div>
-        </div>`
-      : "";
+    const lightboxHtml = lbVariant ? buildLightboxHtml(lbVariant, lbVi) : "";
 
     host.innerHTML = `
-      <div class="thumb-studio-card">
-        <div class="thumb-studio-header">
-          <div>
-            <span class="thumb-studio-kicker">BỘ TEST THUMBNAIL ĐA PHƯƠNG ÁN (A / B / C / D) — BÀN DỰNG CANVA 2 BÊN (KHÔNG NHẢY MÀN HÌNH)</span>
-            <h3>So sánh &amp; Chỉnh sửa Thumbnail Chuẩn Đài Hàn Quốc (${variants.length} Bản)</h3>
-            <p>Ấn trực tiếp vào <b>Chữ, Tag, Mũi tên, Vòng tròn, Ảnh PiP hoặc Nền</b> trên Canvas ở giữa — <b>cột bên phải sẽ lập tức hiện bảng chỉnh sửa tương ứng</b> mà không làm trang bị nhảy.</p>
-          </div>
-          <div class="thumb-studio-top-actions" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-            <div class="thumb-view-mode-switcher" style="display:inline-flex;background:rgba(255,255,255,0.06);border-radius:6px;padding:2px;gap:2px;">
-              <button type="button" class="ghost compact ${studioState.previewViewMode === 'grid' ? 'primary' : ''}" data-thumb-view-mode="grid">⊞ Lưới 4 Bản</button>
-              <button type="button" class="ghost compact ${studioState.previewViewMode === 'home' ? 'primary' : ''}" data-thumb-view-mode="home">📱 YT Home</button>
-              <button type="button" class="ghost compact ${studioState.previewViewMode === 'sidebar' ? 'primary' : ''}" data-thumb-view-mode="sidebar">📑 YT Sidebar</button>
-            </div>
-            <button type="button" class="ghost compact" id="thumbLockChannelDnaBtn" style="border-color:rgba(250,204,21,0.55);color:#fde047;font-weight:800;" ${studioState.busyLockDna ? "disabled" : ""}>${studioState.busyLockDna ? "⏳ Đang lưu…" : "🔒 Chốt Lưu Phong Cách Này Làm DNA Kênh"}</button>
-            <button type="button" class="ghost compact" id="thumbExportAbPackBtn" ${studioState.busyExportAbPack ? "disabled" : ""}>📦 Xuất Gói A/B Test</button>
-            <button type="button" class="ghost compact" id="thumbBatchFlowBtn" ${studioState.busyBatchFlow ? "disabled" : ""}>🎨 Vẽ 3 nền Flow mới</button>
-            <button type="button" class="primary compact" id="thumbDownloadAllBtn" ${studioState.busyExportAll ? "disabled" : ""}>📦 Tải hết (${variants.length} bản .JPG)</button>
-          </div>
-        </div>
+      <div class="thumb-studio-card ${studioState.editorZoomed ? 'is-fullscreen-editor' : ''}">
+        ${buildMasterHeaderHtml(winnerVariant, channelDnaSig, variants)}
+        ${buildUnifiedNavHtml(studioState.activeTab)}
 
-        <!-- THANH CHỌN PHONG CÁCH CHỦ ĐỀ LINH HOẠT -->
-        <div class="thumb-topic-style-bar" style="margin:0 0 12px 0;padding:9px 12px;background:linear-gradient(90deg,rgba(30,41,59,0.95),rgba(15,23,42,0.95));border:1px solid rgba(139,92,246,0.42);border-radius:10px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-          <span style="font-size:11.5px;font-weight:800;color:#c4b5fd;">🎨 Phong cách Chủ đề (Linh hoạt · DNA v${esc(channelDnaVersion)}):</span>
-          ${TOPIC_STYLE_PRESETS.map((p) => {
-            const isAct = curStylePreset === p.id;
-            return `<button type="button" class="ghost compact ${isAct ? "primary" : ""}" data-apply-topic-preset="${esc(p.id)}" title="${esc(p.desc)}" style="font-size:11px;padding:3px 9px;">${esc(p.shortLabel)}</button>`;
-          }).join("")}
-          <button type="button" class="ghost compact" id="applyTopicPresetAllBtn" style="margin-left:auto;font-size:11px;padding:3px 9px;border-color:rgba(56,189,248,0.45);color:#7dd3fc;">⚡ Áp dụng cả 4 Bản</button>
-        </div>
-
-        ${buildBilingualTitlesBannerHtml()}
-
-        ${studioState.previewViewMode === "grid"
-          ? `<div class="thumb-boxcard-grid">${cardsHtml}</div>`
-          : studioState.previewViewMode === "home"
-          ? `<div class="thumb-yt-home-preview" style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:16px;padding:12px;background:#000000;border-radius:8px;margin-bottom:16px;">${homeFeedHtml}</div>`
-          : `<div class="thumb-yt-sidebar-preview" style="display:flex;flex-direction:column;gap:10px;max-width:440px;padding:12px;background:#000000;border-radius:8px;margin-bottom:16px;">${sidebarFeedHtml}</div>`
+        ${studioState.activeTab === 'compare'
+          ? buildCompareViewHtml(variants, archetypes, design)
+          : studioState.activeTab === 'editor'
+          ? buildEditorViewHtml(variants, activeVariant, activeVi, design, curZoomPct)
+          : studioState.activeTab === 'seo'
+          ? buildSeoViewHtml(activeVariant, winnerVariant)
+          : buildPreviewViewHtml(variants, design)
         }
-
-        <!-- BÀN DỰNG CANVA 2 BÊN (TRÁI: CÔNG CỤ & THƯ VIỆN | GIỮA: CANVAS 16:9 | PHẢI: INSPECTOR THEO NGỮ CẢNH) -->
-        <div class="thumb-editor-drawer ${studioState.editorOpen ? "open" : ""} ${studioState.editorZoomed ? "is-fullscreen-editor" : ""}">
-          <div class="thumb-editor-drawer-bar" id="thumbToggleDrawerBar">
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <strong>✎ Bàn dựng Canva Studio 2 Bên:</strong>
-              <div class="canva-variant-tabs" style="display:inline-flex;gap:4px;">
-                ${variants
-                  .map((v, idx) => {
-                    const isAct = v.id === activeVariant.id;
-                    return `<button type="button" class="${isAct ? "primary" : "ghost"} compact" data-switch-workbench-variant="${esc(v.id)}" style="font-size:11.5px;padding:3px 10px;">${esc(v.short_label || `BẢN ${String.fromCharCode(65 + idx)}`)}</button>`;
-                  })
-                  .join("")}
-              </div>
-              <span class="thumb-selected-pill" id="thumbSelectedLayerLabel">
-                ${hasSel ? `🎯 Đang sửa: ${esc(selectedLayer.name || selectedLayer.id)}` : "🖼 Đang sửa: Ảnh nền & Ánh sáng"}
-              </span>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
-              ${
-                studioState.editorOpen
-                  ? `<button type="button" class="ghost compact" id="thumbUndoBtn" title="Hoàn tác (Ctrl+Z)">↶ Hoàn tác</button>
-                     <button type="button" class="ghost compact" data-canva-need-sel id="thumbDuplicateLayerBtn" ${!hasSel ? "disabled" : ""} title="Nhân bản (Ctrl+D)">📋 Nhân bản</button>
-                     <button type="button" class="ghost compact thumb-danger-btn" id="thumbDeleteSelectedBtn" ${!hasSel ? "disabled" : ""} title="Xóa mục đang chọn (Delete)">🗑 Xóa</button>
-                     <label class="thumb-safezone-toggle">
-                       <input type="checkbox" id="thumbSafeZoneToggle" ${design.safe_zone_visible ? "checked" : ""} />
-                       <span>30:15</span>
-                     </label>
-                     <div class="thumb-zoom-controls">
-                       <button type="button" class="ghost compact" id="thumbZoomOutBtn">−</button>
-                       <span class="thumb-zoom-readout" id="thumbZoomReadout">${curZoomPct}%</span>
-                       <button type="button" class="ghost compact" id="thumbZoomInBtn">+</button>
-                       <button type="button" class="ghost compact ${Math.abs(studioState.canvasZoom - 1) < 0.03 ? "active" : ""}" data-zoom-preset="1">100%</button>
-                     </div>
-                     <button type="button" class="ghost compact" id="editorDownloadThisBtn">⬇ Tải ảnh</button>
-                     <button type="button" class="primary compact" id="editorSavePrimaryBtn">✓ Lưu Winner</button>
-                     <button type="button" class="${studioState.editorZoomed ? "primary" : "ghost"} compact" id="thumbToggleZoomEditorBtn">${studioState.editorZoomed ? "🗗 Thoát Full" : "⛶ Toàn màn hình"}</button>`
-                  : ""
-              }
-              <button type="button" class="ghost compact" id="thumbToggleDrawerBtn">${studioState.editorOpen ? "▲ Thu gọn" : "▼ Mở bàn dựng"}</button>
-            </div>
-          </div>
-
-          ${
-            studioState.editorOpen
-              ? `<div class="canva-workbench-3col">
-                  <!-- CỘT TRÁI: THƯ VIỆN PHONG CÁCH / FONT / MŨI TÊN / VÒNG TRÒN / ẢNH & LỚP -->
-                  <aside class="canva-left-dock" id="cofiThumbLeftDock">
-                    ${buildLeftDockInnerHtml(activeVariant)}
-                  </aside>
-
-                  <!-- Ở GIỮA: MÀN CHỈNH SỬA CANVAS 16:9 + THANH CHỌN LỚP NHANH + NGHĨA TIẾNG VIỆT -->
-                  <main class="canva-center-stage" id="cofiThumbCenterStage">
-                    <div class="thumb-quick-layers-bar" id="cofiThumbQuickLayersBar">
-                      ${buildQuickLayersBarInnerHtml(activeVariant)}
-                    </div>
-
-                    <div class="thumb-canvas-stage-viewport" id="cofiThumbStageViewport">
-                      <div class="thumb-canvas-stage-inner" id="cofiThumbStageInner" style="width:${curZoomPct}%;">
-                        <div class="thumb-canvas-stage">
-                          <canvas id="cofiThumbMainCanvas" width="${CW}" height="${CH}" tabindex="0"></canvas>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div class="thumb-stage-vi-bar" style="margin-top:8px;padding:8px 12px;background:rgba(15,23,42,0.92);border:1px solid rgba(34,197,94,0.38);border-radius:8px;font-size:12px;line-height:1.45;color:#f1f5f9;">
-                      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-                        <span><b style="color:#4ade80;">🇻🇳 Nghĩa ${esc(activeVariant.short_label || "Bản này")}:</b> <span style="color:#86efac;">[${esc(activeVi.badgeVi || lBadge.text || "")}]</span> · <span style="color:#fde047;">${esc(activeVi.line1Vi || "")}</span> · <span style="color:#f87171;">${esc(activeVi.line2Vi || "")}</span></span>
-                        ${activeVi.pairedTitleKo ? `<button type="button" class="ghost compact" data-copy-paired-title="${esc(activeVariant.id)}" style="font-size:10.5px;padding:2px 8px;">📋 Copy Tiêu đề Hàn</button>` : ""}
-                      </div>
-                      ${activeVi.pairedTitleKo ? `<div style="margin-top:4px;color:#cbd5e1;font-size:11.5px;">🎬 <b>Tiêu đề đi kèm:</b> 🇰🇷 ${esc(activeVi.pairedTitleKo)} ${activeVi.pairedTitleVi ? `<span style="color:#4ade80;">(🇻🇳 ${esc(activeVi.pairedTitleVi)})</span>` : ""}</div>` : ""}
-                    </div>
-                  </main>
-
-                  <!-- CỘT PHẢI: BẢNG CHỈNH SỬA NGỮ CẢNH (TỰ ĐỘNG ĐỔI THEO MỤC ĐANG ẤN TRÊN CANVAS) -->
-                  <aside class="canva-right-inspector" id="cofiThumbRightInspector">
-                    ${buildRightContextualInspectorHtml(activeVariant)}
-                  </aside>
-                </div>`
-              : ""
-          }
-        </div>
       </div>
       ${lightboxHtml}
     `;
@@ -4784,22 +5837,48 @@
     renderAllCanvases();
 
     const mainCanvas = document.getElementById("cofiThumbMainCanvas");
-    if (mainCanvas) bindMainCanvasPointerEvents(mainCanvas);
+    if (mainCanvas && studioState.activeTab === 'editor') bindMainCanvasPointerEvents(mainCanvas);
 
     // Top bar & Card actions
+    host.querySelector("#thumbCopyAllSeoBtn")?.addEventListener("click", copyAllSeoBundle);
+    host.querySelector("#seoCopyAllBundleBtn")?.addEventListener("click", copyAllSeoBundle);
     host.querySelector("#thumbBatchFlowBtn")?.addEventListener("click", generateFlowBatch3);
     host.querySelector("#thumbDownloadAllBtn")?.addEventListener("click", downloadAllVariants);
     host.querySelector("#thumbExportAbPackBtn")?.addEventListener("click", exportAbTestPack);
+    host.querySelector("#compareExportAbPackBtn")?.addEventListener("click", exportAbTestPack);
     host.querySelector("#thumbLockChannelDnaBtn")?.addEventListener("click", lockThumbnailDnaToChannel);
 
-    host.querySelectorAll("[data-thumb-view-mode]").forEach((btn) => {
+    // Main unified tab navigation
+    host.querySelectorAll("[data-thumb-main-tab]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        studioState.previewViewMode = btn.dataset.thumbViewMode || "grid";
+        const tab = btn.dataset.thumbMainTab || "editor";
+        studioState.activeTab = tab;
+        localStorage.setItem("cofi-thumb-active-tab-v3", tab);
         renderStudioDom();
       });
     });
 
+    // Jump from title strip to SEO tab
+    host.querySelectorAll("[data-switch-to-seo-tab]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        studioState.activeTab = "seo";
+        localStorage.setItem("cofi-thumb-active-tab-v3", "seo");
+        renderStudioDom();
+      });
+    });
+
+    // Preview view mode
+    host.querySelectorAll("[data-thumb-view-mode]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        studioState.previewViewMode = btn.dataset.thumbViewMode || "home";
+        renderStudioDom();
+      });
+    });
+
+    // Winner selection
     host.querySelectorAll("[data-select-winner]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -4807,6 +5886,7 @@
       });
     });
 
+    // Lightbox zoom
     host.querySelectorAll("[data-zoom-variant]").forEach((el) => {
       el.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -4814,6 +5894,7 @@
       });
     });
 
+    // Single variant download
     host.querySelectorAll("[data-download-variant]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
@@ -4821,67 +5902,41 @@
       });
     });
 
-    // Switch variant from cards or top workbench bar WITHOUT scroll jump
-    host.querySelectorAll("[data-edit-variant], [data-switch-workbench-variant]").forEach((btn) => {
+    // Switch active variant and jump to editor
+    host.querySelectorAll("[data-edit-variant]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        const vid = btn.dataset.editVariant || btn.dataset.switchWorkbenchVariant;
+        const vid = btn.dataset.editVariant;
         design.active_variant_id = vid;
-        studioState.editorOpen = true;
+        studioState.activeTab = "editor";
+        localStorage.setItem("cofi-thumb-active-tab-v3", "editor");
         renderStudioDom();
         scheduleSaveDesign();
       });
     });
 
-    // Header bar controls
-    host.querySelector("#thumbZoomOutBtn")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      setCanvasZoom((studioState.canvasZoom || 1) - 0.15);
-    });
-    host.querySelector("#thumbZoomInBtn")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      setCanvasZoom((studioState.canvasZoom || 1) + 0.15);
-    });
-    host.querySelectorAll("[data-zoom-preset]").forEach((btn) => {
+    // Switch variant within editor
+    host.querySelectorAll("[data-switch-workbench-variant]").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.stopPropagation();
-        setCanvasZoom(Number(btn.dataset.zoomPreset || 1));
+        const vid = btn.dataset.switchWorkbenchVariant;
+        design.active_variant_id = vid;
+        renderStudioDom();
+        scheduleSaveDesign();
       });
     });
 
-    host.querySelector("#thumbToggleZoomEditorBtn")?.addEventListener("click", (e) => {
-      e.stopPropagation();
-      studioState.editorOpen = true;
-      studioState.editorZoomed = !studioState.editorZoomed;
-      renderStudioDom();
-    });
-
-    host.querySelector("#thumbToggleDrawerBar")?.addEventListener("click", (e) => {
-      if (e.target.closest("button") && e.target.id !== "thumbToggleDrawerBtn") return;
-      if (e.target.closest("label") || e.target.closest("input")) return;
-      if (studioState.editorZoomed) {
-        studioState.editorZoomed = false;
-      } else {
-        studioState.editorOpen = !studioState.editorOpen;
-      }
-      renderStudioDom();
-    });
-
-    host.querySelector("#thumbUndoBtn")?.addEventListener("click", undoLastAction);
-    host.querySelector("#thumbDuplicateLayerBtn")?.addEventListener("click", () => duplicateSelectedLayer());
-    host.querySelector("#thumbDeleteSelectedBtn")?.addEventListener("click", () => {
-      if (studioState.selectedLayerId) deleteLayerById(studioState.selectedLayerId);
-    });
-    host.querySelector("#thumbSafeZoneToggle")?.addEventListener("change", (e) => {
-      design.safe_zone_visible = Boolean(e.target.checked);
-      renderAllCanvases();
-      scheduleSaveDesign();
-    });
-    host.querySelector("#editorDownloadThisBtn")?.addEventListener("click", () => {
-      downloadSingleVariant(activeVariant.id, { setPrimary: false });
-    });
-    host.querySelector("#editorSavePrimaryBtn")?.addEventListener("click", () => {
-      downloadSingleVariant(activeVariant.id, { setPrimary: true });
+    // Copy handlers
+    host.querySelectorAll("[data-copy-raw-title]").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const titleToCopy = String(btn.dataset.copyRawTitle || "").trim();
+        if (titleToCopy && navigator.clipboard) {
+          navigator.clipboard.writeText(titleToCopy).then(() => {
+            showToast("📋 Đã sao chép Tiêu đề Tiếng Hàn!");
+          });
+        }
+      });
     });
 
     host.querySelectorAll("[data-copy-paired-title]").forEach((btn) => {
@@ -4892,26 +5947,86 @@
         const vObj = getVariantById(vid);
         const vVi = parseVariantVietnamese(vObj, vIdx);
         const titleToCopy = String(vObj?.paired_title || vVi.pairedTitleKo || "").trim();
-        if (titleToCopy) {
-          navigator.clipboard?.writeText(titleToCopy);
-          showToast(`📋 Đã copy tiêu đề YouTube của ${vObj?.short_label || vid}!`);
+        if (titleToCopy && navigator.clipboard) {
+          navigator.clipboard.writeText(titleToCopy).then(() => {
+            showToast(`📋 Đã copy tiêu đề YouTube của ${vObj?.short_label || vid}!`);
+          });
         }
       });
     });
 
-    host.querySelectorAll("[data-copy-raw-title]").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
+    host.querySelector("[data-copy-raw-desc]")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const pack = studioState.seoPack || studioState.data?.seo_package || {};
+      const desc = String(pack.description || "").trim();
+      const hashtags = Array.isArray(pack.hashtags) ? pack.hashtags.join(" ") : "";
+      const full = [desc, hashtags].filter(Boolean).join("\n\n");
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(full).then(() => {
+          showToast("📋 Đã sao chép Mô tả YouTube + Timestamps!");
+        });
+      }
+    });
+
+    host.querySelector("[data-copy-raw-tags]")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const pack = studioState.seoPack || studioState.data?.seo_package || {};
+      const tags = Array.isArray(pack.tags) ? pack.tags.join(", ") : "";
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(tags).then(() => {
+          showToast("📋 Đã sao chép Tags YouTube!");
+        });
+      }
+    });
+
+    host.querySelector("[data-copy-raw-kw]")?.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const pack = studioState.seoPack || studioState.data?.seo_package || {};
+      const kw = Array.isArray(pack.keywords) ? pack.keywords.join(", ") : "";
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(kw).then(() => {
+          showToast("📋 Đã sao chép Từ khóa SEO!");
+        });
+      }
+    });
+
+    // Editor-specific bindings
+    if (studioState.activeTab === "editor") {
+      host.querySelector("#thumbZoomOutBtn")?.addEventListener("click", (e) => {
         e.stopPropagation();
-        const titleToCopy = String(btn.dataset.copyRawTitle || "").trim();
-        if (titleToCopy) {
-          navigator.clipboard?.writeText(titleToCopy);
-          showToast("📋 Đã sao chép Tiêu đề Tiếng Hàn!");
-        }
+        setCanvasZoom((studioState.canvasZoom || 1) - 0.15);
       });
-    });
+      host.querySelector("#thumbZoomInBtn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        setCanvasZoom((studioState.canvasZoom || 1) + 0.15);
+      });
+      host.querySelectorAll("[data-zoom-preset]").forEach((btn) => {
+        btn.addEventListener("click", (e) => {
+          e.stopPropagation();
+          setCanvasZoom(Number(btn.dataset.zoomPreset || 1));
+        });
+      });
 
-    // Bind all Left Dock & Right Contextual Inspector events
-    bindWorkbenchDynamicEvents();
+      host.querySelector("#thumbToggleZoomEditorBtn")?.addEventListener("click", (e) => {
+        e.stopPropagation();
+        studioState.editorZoomed = !studioState.editorZoomed;
+        renderStudioDom();
+      });
+
+      host.querySelector("#thumbUndoBtn")?.addEventListener("click", undoLastAction);
+      host.querySelector("#thumbDuplicateLayerBtn")?.addEventListener("click", () => duplicateSelectedLayer());
+      host.querySelector("#thumbDeleteSelectedBtn")?.addEventListener("click", () => {
+        if (studioState.selectedLayerId) deleteLayerById(studioState.selectedLayerId);
+      });
+      host.querySelector("#thumbSafeZoneToggle")?.addEventListener("change", (e) => {
+        design.safe_zone_visible = Boolean(e.target.checked);
+        renderAllCanvases();
+        scheduleSaveDesign();
+      });
+
+      // Bind all Left Dock & Right Contextual Inspector events
+      bindWorkbenchDynamicEvents();
+    }
 
     // Lightbox events
     host.querySelector("#cofiThumbLightboxBackdrop")?.addEventListener("click", (e) => {
@@ -4928,7 +6043,7 @@
     host.querySelector("#lbEditBtn")?.addEventListener("click", () => {
       if (studioState.lightboxVariantId) {
         design.active_variant_id = studioState.lightboxVariantId;
-        studioState.editorOpen = true;
+        studioState.activeTab = "editor";
         studioState.lightboxVariantId = null;
         renderStudioDom();
       }

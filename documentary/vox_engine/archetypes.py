@@ -518,70 +518,43 @@ def render_archetype_m4(seq_p: float, frame_c1: Image.Image | None, frame_c2: Im
 
 
 def render_archetype_m5(seq_p: float, frame_a: Image.Image | None, frame_b: Image.Image | None, subtitle_text: str = "") -> Image.Image:
-    """#M5: 2.5D Perspective Tilted Satellite Slab + 3D Elevation Beacons."""
-    canvas = Image.new("RGB", (W, H), (11, 15, 22))
+    """#M5: 2D Vox Real Satellite Map + Animated Multi-Zone Perimeter Drawing & Route Vector."""
+    p = ease_in_out_cubic(seq_p)
+    if frame_a is not None:
+        sat_base = fit_crop(frame_a, W, H)
+    else:
+        plate_img, meta = get_vox_styled_baiyin_urban_base(sat_weight=0.96)
+        sat_base, _ = crop_map_camera(plate_img, meta, 104.142, 36.548, zoom_scale=1.15)
+    canvas = ImageEnhance.Brightness(sat_base).enhance(0.82)
     draw = ImageDraw.Draw(canvas, "RGBA")
-    for gy in range(0, H, 40):
-        draw.line([(0, gy), (W, gy)], fill=(30, 41, 59, 65), width=1)
-    for gx in range(0, W, 60):
-        draw.line([(gx, 0), (gx, H)], fill=(30, 41, 59, 45), width=1)
 
-    plate_img, meta = get_vox_styled_baiyin_urban_base(sat_weight=0.96)
-    sat_crop, _ = crop_map_camera(plate_img, meta, 104.142, 36.548, zoom_scale=1.22)
+    # Subtle 2D Vox cartographic grid
+    for gx in range(0, W, 120):
+        draw.line([(gx, 0), (gx, H)], fill=(255, 255, 255, 22), width=1)
+    for gy in range(0, H, 120):
+        draw.line([(0, gy), (W, gy)], fill=(255, 255, 255, 22), width=1)
 
-    slab_w, slab_h = 1280, 620
-    slab_x0, slab_y0 = 76, 260
-    sat_src = sat_crop.resize((slab_w, slab_h), Image.Resampling.BILINEAR)
-    sat_arr = np.array(sat_src)
+    # Animated Zone 1 Polygon (Red Investigation Perimeter)
+    poly_a = [(260, 280), (620, 230), (710, 480), (480, 610), (230, 510)]
+    draw.polygon(poly_a, fill=(239, 68, 68, int(48 * p)), outline=(239, 68, 68, 235), width=4)
 
-    top_indent = 135
-    poly_top = [
-        (slab_x0 + top_indent, slab_y0),
-        (slab_x0 + slab_w - top_indent, slab_y0),
-        (slab_x0 + slab_w, slab_y0 + slab_h),
-        (slab_x0, slab_y0 + slab_h),
-    ]
+    # Animated Zone 2 Polygon (Amber Jurisdiction / Secondary Zone)
+    p2 = max(0.0, min(1.0, (seq_p - 0.25) / 0.65))
+    if p2 > 0.02:
+        poly_b = [(780, 340), (1140, 300), (1210, 620), (830, 680)]
+        draw.polygon(poly_b, fill=(250, 204, 21, int(42 * p2)), outline=(250, 204, 21, int(235 * p2)), width=4)
+        # Animated connecting vector between Zone 1 and Zone 2
+        vx0, vy0 = 490, 420
+        vx1 = int(vx0 + (980 - vx0) * p2)
+        vy1 = int(vy0 + (490 - vy0) * p2)
+        draw.line([(vx0, vy0), (vx1, vy1)], fill=(250, 204, 21, 245), width=5)
+        draw.ellipse([vx0 - 10, vy0 - 10, vx0 + 10, vy0 + 10], fill=(239, 68, 68, 255), outline=(255, 255, 255, 255), width=2)
+        draw.ellipse([vx1 - 10, vy1 - 10, vx1 + 10, vy1 + 10], fill=(250, 204, 21, 255), outline=(255, 255, 255, 255), width=2)
 
-    # Warp scanlines into trapezoid
-    warped = np.zeros((H, W, 4), dtype=np.uint8)
-    for row in range(slab_h):
-        v = row / float(slab_h - 1)
-        x_left = int(slab_x0 + top_indent * (1.0 - v))
-        x_right = int(slab_x0 + slab_w - top_indent * (1.0 - v))
-        cur_w = max(2, x_right - x_left)
-        row_img = Image.fromarray(sat_arr[row : row + 1, :, :]).resize((cur_w, 1), Image.Resampling.BILINEAR)
-        warped[slab_y0 + row, x_left : x_left + cur_w, :3] = np.array(row_img)[0]
-        warped[slab_y0 + row, x_left : x_left + cur_w, 3] = 255
+    p_card = fit_crop(frame_b or frame_a or get_fallback_image(420, 260, "SATELLITE EVIDENCE"), 420, 260)
+    paste_photo_polaroid(canvas, p_card, (1590, 390), caption="핵심 구역 위성 포위망 대조", angle_deg=-1.2, accent_badge="구역특정")
 
-    canvas = Image.alpha_composite(canvas.convert("RGBA"), Image.fromarray(warped, "RGBA")).convert("RGB")
-    draw = ImageDraw.Draw(canvas, "RGBA")
-    draw.polygon(poly_top, outline=(56, 189, 248, 230), width=3)
-
-    beacons = [
-        (395, 655, 185, "제1차 융펑가 현장 (1988)", "최초 지문·DNA 확보", (250, 204, 21)),
-        (695, 520, 215, "바이인 전력국 숙소 (1994)", "6년 공백 후 재출현", (239, 68, 68)),
-        (985, 595, 195, "공업학교 매점 (2016)", "28년 만의 최종 검거", (56, 189, 248)),
-    ]
-
-    for bx, by, bh, b_title, b_sub, b_col in beacons:
-        draw.ellipse([bx - 36, by - 16, bx + 36, by + 16], outline=b_col + (235,), width=3)
-        top_y = by - bh
-        draw.line([(bx, by), (bx, top_y)], fill=b_col + (245,), width=4)
-        draw.ellipse([bx - 8, top_y - 8, bx + 8, top_y + 8], fill=(255, 255, 255, 255), outline=b_col + (255,), width=3)
-        # Floating callout
-        cw_b = int(max(draw.textlength(b_title, font=get_font(18, bold=True)), draw.textlength(b_sub, font=get_font(14, bold=True))) + 28)
-        cx0, cy0 = bx - cw_b // 2, top_y - 68
-        draw.rounded_rectangle([cx0, cy0, cx0 + cw_b, cy0 + 58], radius=6, fill=(15, 23, 34, 242), outline=b_col + (235,), width=2)
-        draw_text_safe(draw, (cx0 + 14, cy0 + 6), b_title, fill=b_col + (255,), font_size=18, bold=True)
-        draw_text_safe(draw, (cx0 + 14, cy0 + 32), b_sub, fill=(241, 245, 249, 245), font_size=14, bold=True)
-
-    p1 = fit_crop(frame_a or get_fallback_image(420, 240, "ELEVATION 01"), 420, 240)
-    p2 = fit_crop(frame_b or get_fallback_image(420, 240, "ELEVATION 02"), 420, 240)
-    paste_photo_polaroid(canvas, p1, (1615, 330), caption="2.5D 위성 궤적 #01 · 숙소 밀집구역", angle_deg=-1.0, accent_badge="위성A")
-    paste_photo_polaroid(canvas, p2, (1615, 695), caption="2.5D 위성 궤적 #02 · 매점 은신처", angle_deg=1.0, accent_badge="위성B")
-
-    draw_satellite_hud_grid(canvas, coord_text_ko="2.5D 입체 위성 지형 프로파일링 · 고도 분석", scale_label="500m")
-    draw_vox_footage_lower_third(canvas, "2.5D 입체 위성 지리 프로파일링 (GEO-PROFILING)", "1988~2016 주요 범행 좌표와 검거 지점의 3차원 동선", wipe_p=1.0, accent=VOX_YELLOW)
+    draw_satellite_hud_grid(canvas, coord_text_ko="정밀 위성 구역 설정 및 이동 반경 추적", scale_label="500m")
     draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=False)
     return canvas
 
@@ -1215,8 +1188,871 @@ def render_cinema_full(seq_p: float, frame_img: Image.Image | None, subtitle_tex
     return canvas
 
 
-# Registry of all 24 archetypes
+
+
+# ==============================================================================
+# UNLOCKED VOICE-FLEXIBLE BESPOKE VOX MODES (#V_POPOUT_HIGHLIGHT, #V_CLAUSE_TIMELINE,
+# ==============================================================================
+
+def _extract_voice_clauses_and_windows(
+    voice_spec: dict[str, Any] | None,
+    fallback_clauses: list[str],
+) -> tuple[list[str], list[tuple[float, float]], list[str], str, str]:
+    if not voice_spec:
+        n = max(1, len(fallback_clauses))
+        windows = [(i / n, (i + 1) / n) for i in range(n)]
+        return fallback_clauses, windows, ["EVIDENCE #01", "VERIFIED"], "형사 과학수사 정밀 분석", "음성 문구 동기화 증거 브리핑"
+    clauses = list(voice_spec.get("clauses") or fallback_clauses)
+    if not clauses:
+        clauses = fallback_clauses
+    windows = list(voice_spec.get("clause_windows") or [])
+    if len(windows) != len(clauses):
+        n = max(1, len(clauses))
+        windows = [(i / n, (i + 1) / n) for i in range(n)]
+    metrics = list(voice_spec.get("metrics") or ["EVIDENCE #01"])
+    header_ko = str(voice_spec.get("header_ko") or clauses[0][:28]).strip()
+    sub_ko = str(voice_spec.get("sub_ko") or (clauses[1][:42] if len(clauses) > 1 else clauses[0][:42])).strip()
+    return clauses, windows, metrics, header_ko, sub_ko
+
+
+def render_vox_blur_popout_highlight(
+    seq_p: float,
+    frame_a: Image.Image | None,
+    frame_b: Image.Image | None = None,
+    subtitle_text: str = "",
+    voice_spec: dict[str, Any] | None = None,
+) -> Image.Image:
+    """#V_POPOUT_HIGHLIGHT: Blur-Background Document/Press Pop-Out & Clause-Synced Neon Highlighter."""
+    p = ease_in_out_cubic(seq_p)
+    clauses, windows, metrics, header_ko, sub_ko = _extract_voice_clauses_and_windows(
+        voice_spec,
+        [
+            "엘리베이터와 출입구 6,000개 CCTV 정밀 대조",
+            "아내가 단지를 빠져나간 흔적은 단 한 컷도 없었다",
+            "실종 신고 진술과 17시 04분 마지막 포착 시각의 결정적 모순",
+        ],
+    )
+
+    # 1. Build full-bleed archival background from frame_a + newsprint columns, then blur & darken
+    bg_raw = fit_crop(frame_a or get_fallback_image(W, H, "ARCHIVAL DOCUMENT PLATE"), W, H)
+    paper_bg = get_torn_paper_sheet(W - 140, H - 120, fill_rgb=VOX_NEWSPRINT, roughness=2.5, seed=41).convert("RGB")
+    paper_bg = fit_crop(paper_bg, W, H)
+    bg_mix = Image.blend(bg_raw, paper_bg, 0.58)
+    bdraw = ImageDraw.Draw(bg_mix, "RGBA")
+    for col_x in (90, 680, 1270):
+        bdraw.rectangle([col_x, 90, col_x + 520, H - 90], outline=(60, 52, 44, 90), width=2)
+        for row_y in range(130, H - 120, 28):
+            bdraw.rectangle([col_x + 20, row_y, col_x + 490, row_y + 10], fill=(70, 64, 56, 75))
+
+    blur_rad = 3.0 + 8.0 * min(1.0, seq_p * 2.2)
+    canvas = bg_mix.filter(ImageFilter.GaussianBlur(radius=blur_rad))
+    canvas = ImageEnhance.Brightness(canvas).enhance(0.42)
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    # Top forensic classification bar
+    draw.rectangle([0, 0, W, 86], fill=(12, 16, 22, 235))
+    draw.line([(0, 86), (W, 86)], fill=(245, 158, 11, 210), width=3)
+    draw_text_safe(draw, (64, 24), f"DOCUMENT POP-OUT ANALYSIS · {header_ko}", fill=(248, 250, 252, 255), font_size=26, bold=True)
+    dur_val = float((voice_spec or {}).get("duration_sec") or 6.0)
+    draw_text_safe(draw, (W - 440, 28), f"VOICE SYNC: {seq_p * dur_val:04.1f}s / {dur_val:04.1f}s", fill=(245, 158, 11, 255), font_size=20, bold=True)
+
+    # Right-side supporting evidence Polaroid card
+    ev_img = fit_crop(frame_b or frame_a or get_fallback_image(480, 560, "EVIDENCE EXHIBIT"), 460, 520)
+    ev_card = get_torn_paper_sheet(500, 620, fill_rgb=VOX_CREAM_CARD, roughness=3.0, seed=53)
+    edraw = ImageDraw.Draw(ev_card, "RGBA")
+    ev_card.paste(ev_img, (48, 52))
+    edraw.rectangle([48, 52, 48 + 460, 52 + 520], outline=(30, 26, 22, 200), width=2)
+    m_badge = metrics[0] if metrics else "핵심 물증"
+    draw_text_safe(edraw, (58, 588), f"EXHIBIT TAG · {m_badge}", fill=VOX_CRIMSON, font_size=22, bold=True)
+    _draw_paperclip(edraw, 90, 18, tall=58)
+    canvas.paste(ev_card, (1310, 150), ev_card)
+
+    # 2. Progressive 3D Pop-Out Torn Paper Strips synced to each spoken clause window
+    num_c = min(3, len(clauses))
+    base_y = 155
+    strip_h = 225 if num_c == 3 else 270
+    strip_gap = 248 if num_c == 3 else 305
+
+    for idx in range(num_c):
+        clause_str = clauses[idx]
+        w0, w1 = windows[idx] if idx < len(windows) else (idx / num_c, (idx + 1) / num_c)
+        span = max(0.08, w1 - w0)
+        local_p = max(0.0, min(1.0, (seq_p - max(0.0, w0 - 0.04)) / span))
+        pop_ease = ease_out_cubic(local_p)
+
+        if pop_ease <= 0.01:
+            continue
+
+        strip_w = 1160
+        strip = get_torn_paper_sheet(strip_w, strip_h, fill_rgb=(248, 244, 232), roughness=3.5, seed=71 + idx * 13)
+        sdraw = ImageDraw.Draw(strip, "RGBA")
+
+        # Clause index badge & timestamp window
+        t0_s = round(w0 * dur_val, 1)
+        t1_s = round(w1 * dur_val, 1)
+        badge_col = VOX_CRIMSON if idx == num_c - 1 else (24, 32, 44)
+        sdraw.rounded_rectangle([46, 36, 290, 78], radius=6, fill=badge_col + (245,))
+        draw_text_safe(sdraw, (62, 45), f"CLAUSE 0{idx + 1} · {t0_s:.1f}s–{t1_s:.1f}s", fill=(255, 255, 255, 255), font_size=18, bold=True)
+
+        if idx < len(metrics):
+            sdraw.rounded_rectangle([strip_w - 260, 36, strip_w - 30, 78], radius=6, fill=(245, 158, 11, 45), outline=VOX_CRIMSON + (220,), width=2)
+            draw_text_safe(sdraw, (strip_w - 242, 44), f"핵심 수치: {metrics[idx]}", fill=VOX_CRIMSON, font_size=18, bold=True)
+
+        # Split Korean clause into 1-2 balanced lines and sweep neon highlighter bar
+        _lines = split_balanced_korean(clause_str, max_chars=28)
+        line1 = _lines[0] if _lines else clause_str
+        line2 = _lines[1] if len(_lines) > 1 else "" 
+        hl_p = ease_in_out_cubic(max(0.0, min(1.0, (local_p - 0.12) / 0.78)))
+        f_clause = get_font(28, bold=True)
+
+        w_l1 = max(120, int(sdraw.textlength(line1, font=f_clause)))
+        hl_w1 = int(w_l1 * min(1.0, hl_p * (1.6 if line2 else 1.0)))
+        if hl_w1 > 4:
+            hl_color = (250, 204, 21, 165) if idx < num_c - 1 else (239, 68, 68, 145)
+            sdraw.rounded_rectangle([52, 98, 52 + hl_w1 + 16, 142], radius=4, fill=hl_color)
+        draw_text_safe(sdraw, (58, 102), line1, fill=VOX_INK, font_size=28, bold=True)
+
+        if line2:
+            w_l2 = max(100, int(sdraw.textlength(line2, font=f_clause)))
+            hl_p2 = max(0.0, min(1.0, (hl_p - 0.45) / 0.55))
+            hl_w2 = int(w_l2 * hl_p2)
+            if hl_w2 > 4:
+                hl_color2 = (250, 204, 21, 165) if idx < num_c - 1 else (239, 68, 68, 145)
+                sdraw.rounded_rectangle([52, 150, 52 + hl_w2 + 16, 194], radius=4, fill=hl_color2)
+            draw_text_safe(sdraw, (58, 154), line2, fill=VOX_INK, font_size=28, bold=True)
+
+        # Red forensic bracket on left edge
+        sdraw.rectangle([32, 36, 40, strip_h - 24], fill=VOX_CRIMSON + (235,))
+
+        # 3D pop-out lift offset
+        lift_x = int(68 + (1.0 - pop_ease) * -45)
+        lift_y = int(base_y + idx * strip_gap + (1.0 - pop_ease) * 28)
+        canvas.paste(strip, (lift_x, lift_y), strip)
+
+    draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=False)
+    return canvas
+
+
+def render_vox_progressive_clause_timeline(
+    seq_p: float,
+    frame_a: Image.Image | None,
+    frame_b: Image.Image | None = None,
+    subtitle_text: str = "",
+    voice_spec: dict[str, Any] | None = None,
+) -> Image.Image:
+    """#V_CLAUSE_TIMELINE: Voice-Synced Progressive Multi-Node Timeline & Causal Chain."""
+    canvas = get_dark_investigation_desk()
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    clauses, windows, metrics, header_ko, sub_ko = _extract_voice_clauses_and_windows(
+        voice_spec,
+        [
+            "17:04 엘리베이터 귀가 후 외부 유출 흔적 완전 소실",
+            "6,000시간 CCTV 전수 판독 및 출입구 동선 교차 검증",
+            "단 하나의 사각지대 — 단지 내부 지하 정화조 특정",
+        ],
+    )
+    dur_val = float((voice_spec or {}).get("duration_sec") or 6.0)
+
+    # Tactical grid & header
+    for gx in range(80, W - 80, 120):
+        draw.line([(gx, 110), (gx, H - 110)], fill=(255, 255, 255, 14), width=1)
+    for gy in range(110, H - 110, 120):
+        draw.line([(80, gy), (W - 80, gy)], fill=(255, 255, 255, 14), width=1)
+
+    draw.rectangle([0, 0, W, 92], fill=(14, 18, 24, 240))
+    draw.line([(0, 92), (W, 92)], fill=VOX_CRIMSON + (220,), width=3)
+    draw_text_safe(draw, (72, 26), f"PROGRESSIVE TIMELINE CHAIN · {header_ko}", fill=(248, 250, 252, 255), font_size=28, bold=True)
+    draw_text_safe(draw, (W - 430, 30), f"DURATION SYNC: {seq_p * dur_val:04.1f}s / {dur_val:04.1f}s", fill=(56, 189, 248, 255), font_size=20, bold=True)
+
+    num_nodes = min(3, max(2, len(clauses)))
+    node_centers = [360, 960, 1560] if num_nodes == 3 else [560, 1360]
+    rail_y = 430
+
+    # Baseline timeline axis
+    draw.line([(node_centers[0], rail_y), (node_centers[-1], rail_y)], fill=(100, 116, 139, 110), width=4)
+
+    img_a = fit_crop(frame_a or get_fallback_image(420, 240, "NODE EVIDENCE A"), 420, 230)
+    img_b = fit_crop(frame_b or frame_a or get_fallback_image(420, 240, "NODE EVIDENCE B"), 420, 230)
+    # Create a zoomed center crop for Node 3 so all 3 nodes have distinct visual framing
+    raw_c = frame_a or frame_b or get_fallback_image(600, 400, "NODE EVIDENCE C")
+    cw_c, ch_c = raw_c.size
+    crop_c = raw_c.crop((int(cw_c * 0.15), int(ch_c * 0.15), int(cw_c * 0.85), int(ch_c * 0.85)))
+    img_c = fit_crop(crop_c, 420, 230)
+    node_imgs = [img_a, img_b, img_c]
+
+    for i in range(num_nodes):
+        cx = node_centers[i]
+        w0, w1 = windows[i] if i < len(windows) else (i / num_nodes, (i + 1) / num_nodes)
+        span = max(0.08, w1 - w0)
+        local_p = ease_out_cubic(max(0.0, min(1.0, (seq_p - max(0.0, w0 - 0.03)) / span)))
+
+        # Draw progressive connecting vector from previous node
+        if i > 0 and local_p > 0.01:
+            prev_x = node_centers[i - 1]
+            cur_x = int(prev_x + (cx - prev_x) * local_p)
+            draw.line([(prev_x, rail_y), (cur_x, rail_y)], fill=VOX_CRIMSON + (245,), width=6)
+
+        if local_p <= 0.02:
+            draw.ellipse([cx - 14, rail_y - 14, cx + 14, rail_y + 14], fill=(45, 55, 72, 220), outline=(148, 163, 184, 180), width=2)
+            continue
+
+        # Top Polaroid evidence card above rail
+        card_w, card_h = 456, 286
+        card_x = cx - card_w // 2
+        card_y = int(118 + (1.0 - local_p) * 20)
+        draw.rounded_rectangle([card_x + 6, card_y + 8, card_x + card_w + 6, card_y + card_h + 8], radius=8, fill=(0, 0, 0, 140))
+        draw.rounded_rectangle([card_x, card_y, card_x + card_w, card_y + card_h], radius=8, fill=VOX_CREAM_CARD + (255,), outline=VOX_YELLOW + (220,), width=2)
+        canvas.paste(node_imgs[i % 3], (card_x + 18, card_y + 16))
+        t0_s, t1_s = round(w0 * dur_val, 1), round(w1 * dur_val, 1)
+        m_tag = metrics[i] if i < len(metrics) else f"STAGE 0{i + 1}"
+        draw_text_safe(draw, (card_x + 22, card_y + 252), f"STEP 0{i + 1} [{t0_s:.1f}s–{t1_s:.1f}s] · {m_tag}", fill=VOX_INK, font_size=17, bold=True)
+
+        # Glowing node ring on rail
+        pulse_r = int(22 + 8 * math.sin(local_p * math.pi))
+        draw.ellipse([cx - pulse_r, rail_y - pulse_r, cx + pulse_r, rail_y + pulse_r], fill=VOX_CRIMSON + (75,))
+        draw.ellipse([cx - 16, rail_y - 16, cx + 16, rail_y + 16], fill=VOX_CRIMSON + (255,), outline=(255, 255, 255, 240), width=3)
+
+        # Bottom Clause Dossier Card below rail
+        box_w, box_h = 468, 390
+        box_x = cx - box_w // 2
+        box_y = int(478 + (1.0 - local_p) * 24)
+        sheet = get_torn_paper_sheet(box_w, box_h, fill_rgb=VOX_PAPER, roughness=3.0, seed=91 + i * 7)
+        sdraw = ImageDraw.Draw(sheet, "RGBA")
+        sdraw.rectangle([28, 28, box_w - 28, 72], fill=(24, 28, 36, 240))
+        draw_text_safe(sdraw, (42, 38), f"VOICE CLAUSE #{i + 1} · 핵심 사실", fill=(250, 204, 21, 255), font_size=18, bold=True)
+
+        _l_top = split_balanced_korean(clauses[i], max_chars=20)
+        l1 = _l_top[0] if _l_top else clauses[i]
+        l2 = _l_top[1] if len(_l_top) > 1 else ""
+        _l_sub = split_balanced_korean(l2, max_chars=20) if l2 else []
+        l2a = _l_sub[0] if _l_sub else ""
+        l2b = _l_sub[1] if len(_l_sub) > 1 else ""
+        clause_lines = [ln for ln in (l1, l2a, l2b) if ln]
+        for ln_idx, ln_str in enumerate(clause_lines):
+            y_pos = 104 + ln_idx * 48
+            sdraw.rounded_rectangle([38, y_pos - 4, box_w - 38, y_pos + 36], radius=4, fill=(250, 204, 21, 115 if i == num_nodes - 1 else 75))
+            draw_text_safe(sdraw, (46, y_pos), ln_str, fill=VOX_INK, font_size=22, bold=True)
+
+        _draw_circular_official_seal(sdraw, box_w - 86, box_h - 82, dept_ko="형사과학수사", sub_ko="타임라인검증필", r=40, alpha=185)
+        canvas.paste(sheet, (box_x, box_y), sheet)
+
+    draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=False)
+    return canvas
+
+
+def render_vox_forensic_cross_section(
+    seq_p: float,
+    frame_a: Image.Image | None,
+    frame_b: Image.Image | None = None,
+    subtitle_text: str = "",
+    voice_spec: dict[str, Any] | None = None,
+) -> Image.Image:
+    """#V_FORENSIC_CROSS_SECTION: 2D Vox Case-Driven Mechanism & Structural Evidence Flow Diagram (Zero hardcoded case text)."""
+    p = ease_in_out_cubic(seq_p)
+    canvas = get_dark_investigation_desk()
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    clauses, windows, metrics, header_ko, sub_ko = _extract_voice_clauses_and_windows(
+        voice_spec,
+        [
+            "1단계 핵심 수사 단서 및 구조적 메커니즘 포착",
+            "2단계 내부 조작 경로 및 기관 간 연결 고리 추적",
+            "3단계 결정적 물증 대조를 통한 최종 진실 규명",
+        ],
+    )
+    dur_val = float((voice_spec or {}).get("duration_sec") or 6.0)
+
+    # Subtle 2D Vox blueprint grid on dark desk
+    for x in range(48, W - 48, 56):
+        draw.line([(x, 96), (x, H - 72)], fill=(238, 218, 158, 18), width=1)
+    for y in range(96, H - 72, 56):
+        draw.line([(48, y), (W - 48, y)], fill=(238, 218, 158, 18), width=1)
+
+    # Top tactile header bar
+    draw.rectangle([0, 0, W, 88], fill=(16, 20, 28, 245))
+    draw.line([(0, 88), (W, 88)], fill=VOX_YELLOW + (235,), width=3)
+    draw_text_safe(draw, (64, 24), f"VOX MECHANISM & EVIDENCE FLOW · {header_ko}", fill=(248, 250, 252, 255), font_size=26, bold=True)
+    draw_text_safe(draw, (W - 320, 28), f"STEP SYNC · {int(seq_p * 100):03d}%", fill=(250, 204, 21, 255), font_size=20, bold=True)
+
+    # Left Panel: Tactile Manila Schematic Sheet with 3 Connected Mechanism Nodes (x=64..960)
+    sheet = get_torn_paper_sheet(880, 820, fill_rgb=VOX_PAPER, roughness=3.0, seed=63)
+    sdraw = ImageDraw.Draw(sheet, "RGBA")
+    sdraw.rectangle([36, 32, 844, 84], fill=(24, 28, 36, 245))
+    draw_text_safe(sdraw, (54, 44), f"핵심 구조 및 진행 메커니즘 분석표 · {header_ko[:22]}", fill=(250, 204, 21, 255), font_size=21, bold=True)
+
+    # Vertical flow pipe connecting 3 stages inside the Manila sheet
+    pipe_x = 128
+    sdraw.line([(pipe_x, 150), (pipe_x, 690)], fill=(120, 110, 95, 160), width=6)
+    flow_y = int(150 + (690 - 150) * min(1.0, p * 1.1))
+    sdraw.line([(pipe_x, 150), (pipe_x, flow_y)], fill=VOX_CRIMSON + (245,), width=6)
+
+    for idx in range(min(3, len(clauses))):
+        w0, w1 = windows[idx] if idx < len(windows) else (idx / 3.0, (idx + 1) / 3.0)
+        local_p = ease_out_cubic(max(0.0, min(1.0, (seq_p - max(0.0, w0 - 0.05)) / max(0.08, w1 - w0))))
+        ny = 165 + idx * 235
+        m_tag = metrics[idx] if idx < len(metrics) else f"STAGE 0{idx + 1}"
+        col_node = VOX_CRIMSON if idx == min(3, len(clauses)) - 1 else (36, 92, 94)
+
+        # Node circle on vertical flow line
+        sdraw.ellipse([pipe_x - 22, ny + 26, pipe_x + 22, ny + 70], fill=col_node + (255,), outline=(255, 255, 255, 240), width=3)
+        draw_text_safe(sdraw, (pipe_x - 8, ny + 35), f"{idx + 1}", fill=(255, 255, 255, 255), font_size=20, bold=True)
+
+        # Stage box on Manila sheet
+        bx0, by0, bx1, by1 = 176, ny, 836, ny + 188
+        sdraw.rounded_rectangle([bx0, by0, bx1, by1], radius=8, fill=(246, 241, 231, 245), outline=col_node + (220,), width=3)
+        hl_w = int((bx1 - bx0 - 24) * local_p)
+        if hl_w > 8:
+            sdraw.rounded_rectangle([bx0 + 12, by0 + 12, bx0 + 12 + hl_w, by0 + 54], radius=5, fill=(250, 204, 21, 145))
+        draw_text_safe(sdraw, (bx0 + 22, by0 + 18), f"[단계 0{idx + 1}] 핵심 지표: {m_tag}", fill=VOX_INK, font_size=20, bold=True)
+
+        c_lines = split_balanced_korean(clauses[idx], max_chars=26)
+        for l_i, l_str in enumerate(c_lines[:2]):
+            draw_text_safe(sdraw, (bx0 + 22, by0 + 72 + l_i * 44), l_str, fill=VOX_INK, font_size=24, bold=True)
+
+    _draw_circular_official_seal(sdraw, 770, 735, dept_ko="특급수배록분석", sub_ko="메커니즘검증필", r=44, alpha=190)
+    canvas.paste(sheet, (56, 112), sheet)
+
+    # Right Panel: Two Large Tactile Polaroid Evidence Cutouts + Linking Red String (x=1000..1860)
+    img_top = fit_crop(frame_a or get_fallback_image(680, 360, "EVIDENCE A"), 680, 340)
+    img_bot = fit_crop(frame_b or frame_a or get_fallback_image(680, 360, "EVIDENCE B"), 680, 340)
+    cap_a = f"{metrics[0]} · 현장 기록 A" if metrics else "핵심 증거 자료 A"
+    cap_b = f"{metrics[-1]} · 대조 기록 B" if len(metrics) > 1 else "핵심 증거 자료 B"
+    paste_photo_polaroid(canvas, img_top, (1430, 325), caption=cap_a, angle_deg=-1.2, accent_badge="증거 #01")
+    paste_photo_polaroid(canvas, img_bot, (1430, 745), caption=cap_b, angle_deg=1.2, accent_badge="증거 #02")
+
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    draw.line([(920, 420), (1120, 325), (1430, 535), (1120, 745)], fill=VOX_CRIMSON + (215,), width=4)
+    _draw_pushpin(draw, 1120, 325, VOX_CRIMSON)
+    _draw_pushpin(draw, 1120, 745, VOX_YELLOW)
+
+    draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=False)
+    return canvas
+
+
+def render_vox_sat_zone_draw(
+    seq_p: float,
+    frame_a: Image.Image | None,
+    frame_b: Image.Image | None = None,
+    subtitle_text: str = "",
+    voice_spec: dict[str, Any] | None = None,
+) -> Image.Image:
+    p = ease_in_out_cubic(seq_p)
+    clauses, windows, metrics, header_ko, sub_ko = _extract_voice_clauses_and_windows(
+        voice_spec,
+        [
+            "위성 지도 기반 핵심 거점 구역 설정 및 경계선 추적",
+            "주요 사건 지점 간 이동 동선 및 관할 구역 교차 대조",
+            "확대 루페 정밀 판독으로 특정된 결정적 현장 위치",
+        ],
+    )
+    dur_val = float((voice_spec or {}).get("duration_sec") or 6.0)
+    seed = int((voice_spec or {}).get("variation_seed") or 7)
+
+    # 1. Smoothly zooming 2D real satellite map base
+    raw_map = fit_crop(frame_a or get_fallback_image(W, H, "SATELLITE MAP"), W, H)
+    zoom = 1.01 + 0.055 * p
+    zw, zh = int(W * zoom), int(H * zoom)
+    zoomed_map = raw_map.resize((zw, zh), Image.Resampling.BILINEAR)
+    x0 = max(0, (zw - W) // 2)
+    y0 = max(0, (zh - H) // 2)
+    canvas = zoomed_map.crop((x0, y0, x0 + W, y0 + H))
+    canvas = ImageEnhance.Brightness(canvas).enhance(0.84)
+    canvas = ImageEnhance.Contrast(canvas).enhance(1.12)
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    # 2D Vox map grid lines
+    for gx in range(0, W, 120):
+        draw.line([(gx, 88), (gx, H)], fill=(56, 189, 248, 24), width=1)
+    for gy in range(88, H, 120):
+        draw.line([(0, gy), (W, gy)], fill=(56, 189, 248, 24), width=1)
+
+    # 2. Animated Zone Polygon Drawing (Motion vẽ khoanh vùng bản đồ)
+    cx_zone = 580 + (seed % 3) * 45
+    cy_zone = 430 + ((seed // 3) % 3) * 30
+    zone_pts = [
+        (cx_zone - 230, cy_zone - 140),
+        (cx_zone + 160, cy_zone - 175),
+        (cx_zone + 250, cy_zone + 45),
+        (cx_zone + 70, cy_zone + 185),
+        (cx_zone - 210, cy_zone + 120),
+    ]
+    p_zone = ease_out_cubic(min(1.0, seq_p * 1.45))
+    if p_zone > 0.02:
+        fill_alpha = int(52 * p_zone)
+        draw.polygon(zone_pts, fill=(239, 68, 68, fill_alpha))
+        # Progressive perimeter stroke drawing around polygon edges
+        closed_pts = zone_pts + [zone_pts[0]]
+        total_segs = len(zone_pts)
+        seg_prog = p_zone * total_segs
+        for s_i in range(total_segs):
+            local_s = max(0.0, min(1.0, seg_prog - s_i))
+            if local_s <= 0.0:
+                continue
+            x_s, y_s = closed_pts[s_i]
+            x_e, y_e = closed_pts[s_i + 1]
+            cur_x = int(x_s + (x_e - x_s) * local_s)
+            cur_y = int(y_s + (y_e - y_s) * local_s)
+            draw.line([(x_s, y_s), (cur_x, cur_y)], fill=(239, 68, 68, 250), width=5)
+            draw.ellipse([x_s - 7, y_s - 7, x_s + 7, y_s + 7], fill=(250, 204, 21, 255), outline=(255, 255, 255, 255), width=2)
+
+    # Pulsing radar target inside highlighted zone
+    pulse_r = int(28 + 38 * ((seq_p * 2.0) % 1.0))
+    draw.ellipse([cx_zone - pulse_r, cy_zone - pulse_r, cx_zone + pulse_r, cy_zone + pulse_r], outline=(250, 204, 21, 185), width=3)
+    draw.ellipse([cx_zone - 10, cy_zone - 10, cx_zone + 10, cy_zone + 10], fill=(239, 68, 68, 255), outline=(255, 255, 255, 255), width=3)
+
+    # 3. Animated Route Vector to Secondary Target Point + Circular Magnifier Loupe
+    tx2, ty2 = 1060, 330
+    p_route = ease_in_out_cubic(max(0.0, min(1.0, (seq_p - 0.22) / 0.55)))
+    if p_route > 0.02:
+        rx = int(cx_zone + (tx2 - cx_zone) * p_route)
+        ry = int(cy_zone + (ty2 - cy_zone) * p_route)
+        draw.line([(cx_zone, cy_zone), (rx, ry)], fill=(250, 204, 21, 245), width=5)
+        draw.ellipse([rx - 9, ry - 9, rx + 9, ry + 9], fill=(56, 189, 248, 255), outline=(255, 255, 255, 255), width=2)
+
+    # Right-side Circular Magnifier Loupe + Supporting Evidence Polaroid
+    ev_src = fit_crop(frame_b or frame_a or get_fallback_image(480, 340, "TARGET DETAIL"), 460, 310)
+    paste_photo_polaroid(canvas, ev_src, (1540, 330), caption=f"{metrics[0] if metrics else '현장 포착'} · 정밀 대조", angle_deg=1.4, accent_badge="위성포착")
+
+    # Top Vox Satellite Header Bar
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    draw.rectangle([0, 0, W, 86], fill=(12, 16, 24, 240))
+    draw.line([(0, 86), (W, 86)], fill=(239, 68, 68, 230), width=3)
+    draw_text_safe(draw, (64, 24), f"SATELLITE ZONE & ROUTE TRACE · {header_ko}", fill=(248, 250, 252, 255), font_size=26, bold=True)
+    draw_text_safe(draw, (W - 340, 28), f"GIS TRACE · {int(seq_p * 100):03d}%", fill=(56, 189, 248, 255), font_size=20, bold=True)
+
+    # Bottom Tactile Vox Clause Callout Strip synced to spoken clauses
+    strip_w, strip_h = 1760, 250
+    sheet = get_torn_paper_sheet(strip_w, strip_h, fill_rgb=VOX_PAPER, roughness=3.0, seed=117 + (seed % 19))
+    mdraw = ImageDraw.Draw(sheet, "RGBA")
+    for idx, clause_str in enumerate(clauses[:3]):
+        w0, w1 = windows[idx] if idx < len(windows) else (idx / 3.0, (idx + 1) / 3.0)
+        local_p = ease_out_cubic(max(0.0, min(1.0, (seq_p - max(0.0, w0 - 0.04)) / max(0.08, w1 - w0))))
+        if local_p <= 0.01:
+            continue
+        row_y = 32 + idx * 68
+        hl_w = int(1620 * local_p)
+        mdraw.rounded_rectangle([58, row_y, 58 + hl_w, row_y + 54], radius=6, fill=(250, 204, 21, 140 if idx == len(clauses[:3]) - 1 else 80))
+        mdraw.rectangle([42, row_y, 50, row_y + 54], fill=VOX_CRIMSON + (240,))
+        m_lbl = metrics[idx] if idx < len(metrics) else f"구역 0{idx + 1}"
+        draw_text_safe(mdraw, (74, row_y + 11), f"[{m_lbl}] {clause_str[:52]}", fill=VOX_INK, font_size=23, bold=True)
+
+    _draw_circular_official_seal(mdraw, strip_w - 96, strip_h - 76, dept_ko="위성지리분석", sub_ko="구역검증필", r=42, alpha=195)
+    canvas.paste(sheet, (64, 736), sheet)
+
+    draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=False)
+    return canvas
+
+
+render_vox_blender_3d_stage = render_vox_sat_zone_draw
+
+
+def apply_voice_spec_clause_sync_overlay(
+    canvas: Image.Image,
+    seq_p: float,
+    voice_spec: dict[str, Any] | None = None,
+    arch_id: str = "",
+) -> Image.Image:
+    """Applies dynamic voice-clause synchronization & subtle variation framing onto baseline archetypes.
+
+    Ensures that when any of the 24 baseline archetypes (#M1..#M8, #D1..#D10, #P1..#P6) is rendered
+    for a specific voice beat, it dynamically displays the beat's actual Korean clauses, metrics,
+    and voice duration progression, and varies its optical framing on purposeful callbacks.
+    """
+    if not voice_spec or arch_id.startswith(chr(35) + chr(86) + chr(95)):
+        return canvas
+
+    clauses, windows, metrics, header_ko, _ = _extract_voice_clauses_and_windows(voice_spec, [])
+    if not clauses:
+        return canvas
+
+    out = canvas.copy()
+    occ = int(voice_spec.get("occurrence_index") or 1)
+    seed = int(voice_spec.get("variation_seed") or 1)
+
+    # If this archetype is recurring purposefully later in the video, apply a distinct optical pan/zoom
+    if occ > 1 or voice_spec.get("is_purposeful_callback"):
+        zoom = 1.02 + 0.035 * ease_in_out_cubic(seq_p)
+        zw, zh = int(W * zoom), int(H * zoom)
+        resized = out.resize((zw, zh), Image.Resampling.BILINEAR)
+        dx = int(((seed % 5) - 2) * 8 * seq_p)
+        dy = int((((seed // 5) % 5) - 2) * 6 * seq_p)
+        x0 = max(0, min(zw - W, (zw - W) // 2 + dx))
+        y0 = max(0, min(zh - H, (zh - H) // 2 + dy))
+        out = resized.crop((x0, y0, x0 + W, y0 + H))
+
+    # Determine the currently spoken clause based on seq_p and clause_windows
+    active_idx = 0
+    local_p = 1.0
+    for idx, (w0, w1) in enumerate(windows):
+        if seq_p >= w0:
+            active_idx = idx
+            local_p = max(0.0, min(1.0, (seq_p - w0) / max(0.08, w1 - w0)))
+
+    active_clause = clauses[min(active_idx, len(clauses) - 1)]
+    dur_val = float(voice_spec.get("duration_sec") or 6.0)
+    m_badge = " · ".join(metrics[:2]) if metrics else f"{dur_val:.1f}s"
+
+    draw = ImageDraw.Draw(out, "RGBA")
+    # Sleek top-right voice-clause telemetry badge + bottom clause highlight bar
+    bar_w, bar_h = 1280, 64
+    bx, by = 64, H - 104
+    draw.rounded_rectangle([bx, by, bx + bar_w, by + bar_h], radius=8, fill=(12, 16, 22, 232), outline=(245, 158, 11, 210), width=2)
+    hl_fill_w = int((bar_w - 16) * ease_out_cubic(local_p))
+    if hl_fill_w > 8:
+        draw.rounded_rectangle([bx + 8, by + 8, bx + 8 + hl_fill_w, by + bar_h - 8], radius=5, fill=(245, 158, 11, 52))
+    draw.rectangle([bx, by, bx + 10, by + bar_h], fill=VOX_CRIMSON + (245,))
+    clause_disp = active_clause if len(active_clause) <= 46 else active_clause[:45] + "…"
+    draw_text_safe(
+        draw,
+        (bx + 26, by + 18),
+        f"[절 0{active_idx + 1}/0{len(clauses)} · {m_badge}] {clause_disp}",
+        fill=(248, 250, 252, 255),
+        font_size=22,
+        bold=True,
+    )
+    return out
+
+# Registry of all 24 baseline archetypes + 4 unlocked bespoke voice-clause modes
+
+
+def render_vox_sat_loupe_zoom(
+    seq_p: float,
+    frame_a: Image.Image | None,
+    frame_b: Image.Image | None = None,
+    subtitle_text: str = "",
+    voice_spec: dict[str, Any] | None = None,
+) -> Image.Image:
+    """#V_SAT_LOUPE_ZOOM: 2D Vox Real Satellite Map + Animated x16 Optical Magnifier Loupe & Evidence Polaroid."""
+    p = ease_in_out_cubic(seq_p)
+    clauses, windows, metrics, header_ko, sub_ko = _extract_voice_clauses_and_windows(
+        voice_spec,
+        [
+            "위성 항공사진 기반 목표 건물 및 좌표 정밀 특정",
+            "광학 확대 루페(x16) 스캔을 통한 현장 구조 대조",
+            "현장 채증 사진과 위성 지형 데이터 최종 일치 확인",
+        ],
+    )
+    seed = int((voice_spec or {}).get("variation_seed") or 11)
+
+    raw_map = fit_crop(frame_a or get_fallback_image(W, H, "SATELLITE IMAGERY"), W, H)
+    zoom = 1.01 + 0.045 * p
+    zw, zh = int(W * zoom), int(H * zoom)
+    zoomed = raw_map.resize((zw, zh), Image.Resampling.BILINEAR)
+    x0, y0 = (zw - W) // 2, (zh - H) // 2
+    canvas = zoomed.crop((x0, y0, x0 + W, y0 + H))
+    canvas = ImageEnhance.Brightness(canvas).enhance(0.82)
+    canvas = ImageEnhance.Contrast(canvas).enhance(1.14)
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    # Coordinate grid
+    for gx in range(0, W, 120):
+        draw.line([(gx, 88), (gx, H)], fill=(56, 189, 248, 26), width=1)
+    for gy in range(88, H, 120):
+        draw.line([(0, gy), (W, gy)], fill=(56, 189, 248, 26), width=1)
+
+    # Animated Optical Loupe sweeping onto target rooftop
+    loupe_cx = int(490 + 140 * p + (seed % 3) * 30)
+    loupe_cy = int(410 - 30 * p + ((seed // 3) % 3) * 20)
+    r = 215
+    crop_r = 95
+    lx0 = max(0, min(W - crop_r * 2, loupe_cx - crop_r))
+    ly0 = max(0, min(H - crop_r * 2, loupe_cy - crop_r))
+    loupe_patch = raw_map.crop((lx0, ly0, lx0 + crop_r * 2, ly0 + crop_r * 2)).resize((r * 2, r * 2), Image.Resampling.BICUBIC)
+    loupe_patch = ImageEnhance.Contrast(loupe_patch).enhance(1.22)
+    mask = Image.new("L", (r * 2, r * 2), 0)
+    ImageDraw.Draw(mask).ellipse([0, 0, r * 2, r * 2], fill=255)
+    canvas.paste(loupe_patch, (loupe_cx - r, loupe_cy - r), mask)
+
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    draw.ellipse([loupe_cx - r - 6, loupe_cy - r - 6, loupe_cx + r + 6, loupe_cy + r + 6], outline=(250, 204, 21, 245), width=7)
+    draw.ellipse([loupe_cx - r, loupe_cy - r, loupe_cx + r, loupe_cy + r], outline=(239, 68, 68, 245), width=3)
+    draw.line([(loupe_cx - r + 24, loupe_cy), (loupe_cx + r - 24, loupe_cy)], fill=(239, 68, 68, 175), width=2)
+    draw.line([(loupe_cx, loupe_cy - r + 24), (loupe_cx, loupe_cy + r - 24)], fill=(239, 68, 68, 175), width=2)
+    draw.rounded_rectangle([loupe_cx - 88, loupe_cy - r - 44, loupe_cx + 88, loupe_cy - r - 8], radius=6, fill=(12, 16, 24, 235), outline=(250, 204, 21, 240), width=2)
+    draw_text_safe(draw, (loupe_cx - 72, loupe_cy - r - 36), "OPTICAL x16", fill=(250, 204, 21, 255), font_size=18, bold=True)
+
+    # Right-side Evidence Polaroid + Telemetry Card
+    ev_img = fit_crop(frame_b or frame_a or get_fallback_image(520, 340, "SITE EVIDENCE"), 500, 320)
+    paste_photo_polaroid(canvas, ev_img, (1480, 330), caption=f"{metrics[0] if metrics else '현장 채증'} · 위성-현장 대조", angle_deg=-1.5, accent_badge="정밀루페")
+
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    draw.line([(loupe_cx + r, loupe_cy), (1210, 330)], fill=(250, 204, 21, 230), width=4)
+
+    # Top Header
+    draw.rectangle([0, 0, W, 86], fill=(12, 16, 24, 242))
+    draw.line([(0, 86), (W, 86)], fill=(56, 189, 248, 230), width=3)
+    draw_text_safe(draw, (64, 24), f"SATELLITE OPTICAL LOUPE · {header_ko}", fill=(248, 250, 252, 255), font_size=26, bold=True)
+    draw_text_safe(draw, (W - 350, 28), f"ZOOM LOCK · {int(seq_p * 100):03d}%", fill=(250, 204, 21, 255), font_size=20, bold=True)
+
+    # Bottom Manila Clause Card
+    strip_w, strip_h = 1760, 250
+    sheet = get_torn_paper_sheet(strip_w, strip_h, fill_rgb=VOX_PAPER, roughness=3.0, seed=131 + (seed % 17))
+    mdraw = ImageDraw.Draw(sheet, "RGBA")
+    for idx, clause_str in enumerate(clauses[:3]):
+        w0, w1 = windows[idx] if idx < len(windows) else (idx / 3.0, (idx + 1) / 3.0)
+        local_p = ease_out_cubic(max(0.0, min(1.0, (seq_p - max(0.0, w0 - 0.04)) / max(0.08, w1 - w0))))
+        if local_p <= 0.01:
+            continue
+        row_y = 32 + idx * 68
+        hl_w = int(1620 * local_p)
+        mdraw.rounded_rectangle([58, row_y, 58 + hl_w, row_y + 54], radius=6, fill=(56, 189, 248, 70) if idx < 2 else (250, 204, 21, 145))
+        mdraw.rectangle([42, row_y, 50, row_y + 54], fill=(56, 189, 248, 245) if idx < 2 else VOX_CRIMSON + (245,))
+        m_lbl = metrics[idx] if idx < len(metrics) else f"단서 0{idx + 1}"
+        draw_text_safe(mdraw, (74, row_y + 11), f"[{m_lbl}] {clause_str[:52]}", fill=VOX_INK, font_size=23, bold=True)
+
+    _draw_circular_official_seal(mdraw, strip_w - 96, strip_h - 76, dept_ko="위성광학감식", sub_ko="좌표대조필", r=42, alpha=195)
+    canvas.paste(sheet, (64, 736), sheet)
+    draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=False)
+    return canvas
+
+
+def render_vox_dossier_board(
+    seq_p: float,
+    frame_a: Image.Image | None,
+    frame_b: Image.Image | None = None,
+    subtitle_text: str = "",
+    voice_spec: dict[str, Any] | None = None,
+) -> Image.Image:
+    """#V_DOSSIER_BOARD: 2D Vox Tactile Case Dossier Folder & Dual Identity / Evidence Comparison Board."""
+    p = ease_in_out_cubic(seq_p)
+    canvas = get_dark_investigation_desk()
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    clauses, windows, metrics, header_ko, sub_ko = _extract_voice_clauses_and_windows(
+        voice_spec,
+        [
+            "수사 기록철 원본 대조 및 핵심 인물 신원 프로파일링",
+            "양측 증거 자료 교차 검증을 통한 결정적 모순 포착",
+            "수사 전담반 공식 감정 결과 및 연결 고리 확정",
+        ],
+    )
+    seed = int((voice_spec or {}).get("variation_seed") or 19)
+
+    # Manila Case Folder Base
+    fx0, fy0, fx1, fy1 = 48, 62, W - 48, H - 36
+    draw.rounded_rectangle([fx0 + 8, fy0 + 10, fx1 + 8, fy1 + 10], radius=14, fill=(8, 6, 5, 165))
+    draw.rounded_rectangle([fx0, fy0, fx1, fy1], radius=14, fill=VOX_MANILA + (255,), outline=(142, 120, 88, 255), width=3)
+    draw.rounded_rectangle([84, 18, 960, 68], radius=10, fill=VOX_MANILA + (255,), outline=(142, 120, 88, 255), width=2)
+    draw_text_safe(draw, (112, 28), f"형사 수사 기록철 // {header_ko}", fill=VOX_INK + (255,), font_size=23, bold=True)
+
+    _draw_brass_fastener(draw, W // 2, 82)
+    _draw_circular_official_seal(draw, W - 150, 145, dept_ko="특별수사본부", sub_ko="기록보존필", r=48, alpha=190)
+
+    # Twin Polaroid Evidence Cutouts on Upper Half of Manila Folder
+    img_l = fit_crop(frame_a or get_fallback_image(540, 340, "DOSSIER EXHIBIT A"), 540, 320)
+    img_r = fit_crop(frame_b or frame_a or get_fallback_image(540, 340, "DOSSIER EXHIBIT B"), 540, 320)
+    m0 = metrics[0] if metrics else "기록 A"
+    m1 = metrics[1] if len(metrics) > 1 else "기록 B"
+    paste_photo_polaroid(canvas, img_l, (480, 340), caption=f"[{m0}] {clauses[0][:26]}", angle_deg=-1.8, accent_badge="증거 #01")
+    paste_photo_polaroid(canvas, img_r, (1380, 340), caption=f"[{m1}] {(clauses[1] if len(clauses) > 1 else clauses[0])[:26]}", angle_deg=1.6, accent_badge="증거 #02")
+
+    draw = ImageDraw.Draw(canvas, "RGBA")
+    # Animated crimson detective string linking Left Polaroid -> Right Polaroid
+    str_p = ease_out_cubic(min(1.0, seq_p * 1.5))
+    if str_p > 0.02:
+        sx0, sy0 = 480, 190
+        sx1, sy1 = 1380, 190
+        cur_sx = int(sx0 + (sx1 - sx0) * str_p)
+        draw.line([(sx0, sy0), (cur_sx, sy1)], fill=VOX_CRIMSON + (235,), width=5)
+    _draw_pushpin(draw, 480, 190, VOX_CRIMSON)
+    _draw_pushpin(draw, 1380, 190, VOX_YELLOW)
+
+    # Center VS / Match Badge
+    draw.rounded_rectangle([W // 2 - 115, 290, W // 2 + 115, 366], radius=10, fill=(18, 22, 30, 245), outline=VOX_CRIMSON + (240,), width=3)
+    draw_text_safe(draw, (W // 2 - 88, 314), "기록 교차 대조", fill=(250, 204, 21, 255), font_size=22, bold=True)
+
+    # Bottom Lined Case Summary Sheet with 3 Clause Rows
+    sheet_w, sheet_h = 1680, 380
+    sheet = get_torn_paper_sheet(sheet_w, sheet_h, fill_rgb=VOX_CREAM_CARD, roughness=2.8, seed=149 + (seed % 23))
+    sdraw = ImageDraw.Draw(sheet, "RGBA")
+    sdraw.rectangle([36, 26, sheet_w - 36, 74], fill=(24, 28, 36, 245))
+    draw_text_safe(sdraw, (56, 36), f"수사 기록 핵심 요지 대조표 · {header_ko}", fill=(250, 204, 21, 255), font_size=21, bold=True)
+
+    for idx, clause_str in enumerate(clauses[:3]):
+        w0, w1 = windows[idx] if idx < len(windows) else (idx / 3.0, (idx + 1) / 3.0)
+        local_p = ease_out_cubic(max(0.0, min(1.0, (seq_p - max(0.0, w0 - 0.04)) / max(0.08, w1 - w0))))
+        if local_p <= 0.01:
+            continue
+        ry = 94 + idx * 84
+        hl_w = int((sheet_w - 120) * local_p)
+        sdraw.rounded_rectangle([54, ry, 54 + hl_w, ry + 64], radius=6, fill=(250, 204, 21, 145 if idx == 2 else 85))
+        sdraw.rectangle([38, ry, 48, ry + 64], fill=VOX_CRIMSON + (245,))
+        m_tag = metrics[idx] if idx < len(metrics) else f"항목 0{idx + 1}"
+        draw_text_safe(sdraw, (72, ry + 16), f"[{m_tag}] {clause_str[:54]}", fill=VOX_INK, font_size=25, bold=True)
+
+    canvas.paste(sheet, (120, 610), sheet)
+    draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=True)
+    return canvas
+
+
+def render_vox_verdict_proclamation(
+    seq_p: float,
+    frame_a: Image.Image | None,
+    frame_b: Image.Image | None = None,
+    subtitle_text: str = "",
+    voice_spec: dict[str, Any] | None = None,
+) -> Image.Image:
+    """#V_VERDICT_PROCLAMATION: 2D Vox Archival Newspaper / Official Court Verdict Proclamation."""
+    p = ease_in_out_cubic(seq_p)
+    canvas = get_dark_investigation_desk()
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    clauses, windows, metrics, header_ko, sub_ko = _extract_voice_clauses_and_windows(
+        voice_spec,
+        [
+            "사법 당국 공식 판결문 및 언론 특종 보도 기록 공개",
+            "불법 감형 및 비호 카르텔 전면 무효화 결정 주문",
+            "법정 최고형 확정 및 사법 정의 최종 실현",
+        ],
+    )
+    seed = int((voice_spec or {}).get("variation_seed") or 29)
+
+    # Left/Center Parchment Broadsheet Document
+    sheet_w, sheet_h = 1180, 880
+    sheet = get_torn_paper_sheet(sheet_w, sheet_h, fill_rgb=(246, 240, 228), roughness=3.2, seed=173 + (seed % 19))
+    sdraw = ImageDraw.Draw(sheet, "RGBA")
+    sdraw.rectangle([28, 28, sheet_w - 28, sheet_h - 28], outline=VOX_CRIMSON + (245,), width=5)
+    sdraw.rectangle([38, 38, sheet_w - 38, sheet_h - 38], outline=VOX_INK + (160,), width=2)
+
+    sdraw.rectangle([58, 56, sheet_w - 58, 136], fill=(22, 26, 34, 248))
+    draw_text_safe(sdraw, (82, 74), f"사법 판결 및 공식 기록 공고 // {header_ko}", fill=(250, 204, 21, 255), font_size=28, bold=True)
+
+    for idx, clause_str in enumerate(clauses[:3]):
+        w0, w1 = windows[idx] if idx < len(windows) else (idx / 3.0, (idx + 1) / 3.0)
+        local_p = ease_out_cubic(max(0.0, min(1.0, (seq_p - max(0.0, w0 - 0.04)) / max(0.08, w1 - w0))))
+        if local_p <= 0.01:
+            continue
+        by = 175 + idx * 205
+        sdraw.rounded_rectangle([64, by, sheet_w - 64, by + 172], radius=8, fill=(238, 230, 214, 255), outline=(140, 125, 105, 220), width=2)
+        m_tag = metrics[idx] if idx < len(metrics) else f"주문 0{idx + 1}"
+        sdraw.rounded_rectangle([84, by + 18, 360, by + 60], radius=5, fill=VOX_CRIMSON + (240,) if idx == 2 else (30, 41, 59, 240))
+        draw_text_safe(sdraw, (100, by + 26), f"기록 요지 0{idx + 1} · {m_tag}", fill=(255, 255, 255, 255), font_size=19, bold=True)
+
+        lines = split_balanced_korean(clause_str, max_chars=28)
+        for li, lstr in enumerate(lines[:2]):
+            ly = by + 78 + li * 44
+            hl_w = int((sheet_w - 180) * local_p)
+            sdraw.rounded_rectangle([84, ly - 4, 84 + hl_w, ly + 36], radius=4, fill=(250, 204, 21, 150 if idx == 2 else 90))
+            draw_text_safe(sdraw, (92, ly), lstr, fill=VOX_CRIMSON if idx == 2 else VOX_INK, font_size=25, bold=True)
+
+    _draw_circular_official_seal(sdraw, sheet_w - 150, sheet_h - 140, dept_ko="최고인민법원", sub_ko="판결원본필", r=58, alpha=210)
+    canvas.paste(sheet, (56, 100), sheet)
+
+    # Right Panel: Two Stacked Evidence Polaroid Cutouts
+    img_top = fit_crop(frame_a or get_fallback_image(540, 340, "COURT ARCHIVE A"), 520, 320)
+    img_bot = fit_crop(frame_b or frame_a or get_fallback_image(540, 340, "COURT ARCHIVE B"), 520, 320)
+    paste_photo_polaroid(canvas, img_top, (1560, 330), caption=f"{metrics[0] if metrics else '법정 기록'} · 공판 채증", angle_deg=-1.4, accent_badge="공식기록")
+    paste_photo_polaroid(canvas, img_bot, (1560, 745), caption=f"{metrics[-1] if metrics else '최종 집행'} · 판결 확정", angle_deg=1.5, accent_badge="판결집행")
+
+    draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=False)
+    return canvas
+
+
+def render_vox_fullscreen_gis_flight(
+    seq_p: float,
+    frame_a: Image.Image | None,
+    frame_b: Image.Image | None = None,
+    subtitle_text: str = "",
+    voice_spec: dict[str, Any] | None = None,
+) -> Image.Image:
+    """#V_FULLSCREEN_GIS_FLIGHT / S3_FULLSCREEN_GIS_FLIGHT:
+    Full-Screen 1920x1080 Regional/Basin Terrain & Administrative GeoJSON Map Flight
+    with smooth A->B camera flight, progressive route drawing (0%->100%), live radar
+    beacon, sequential pin pop-ins (①->②->③), floating PiP live video card, and
+    bottom floating senior-friendly Korean voice-synced highlighter strip.
+    """
+    p = ease_in_out_cubic(seq_p)
+    clauses, windows, metrics, header_ko, sub_ko = _extract_voice_clauses_and_windows(
+        voice_spec,
+        [
+            "광역 지형 및 행정구역 경계선 기반 핵심 이동 경로 추적",
+            "출발 거점(①)에서 경유지(②)를 거쳐 최종 목적지(③)까지 동선 연결",
+            "현장 채증 영상 및 수사 기록 대조를 통한 지리적 인과관계 입증",
+        ],
+    )
+    seed = int((voice_spec or {}).get("variation_seed") or 23)
+
+    plate_img, meta = get_vox_styled_gansu_base()
+    lon_a, lat_a = 104.22, 36.62
+    lon_b, lat_b = 103.85, 36.08
+    cur_lon = lon_a + (lon_b - lon_a) * p
+    cur_lat = lat_a + (lat_b - lat_a) * p
+    canvas, cam_info = crop_map_camera(plate_img, meta, cur_lon, cur_lat, zoom_scale=1.04 + 0.14 * p)
+    draw = ImageDraw.Draw(canvas, "RGBA")
+
+    pins_screen = [
+        (260, 250, f"① {metrics[0] if metrics else '출발 거점'}"),
+        (680, 440, f"② {metrics[1] if len(metrics) > 1 else '중간 경유 거점'}"),
+        (1080, 290, f"③ {metrics[-1] if len(metrics) > 2 else '최종 도착 거점'}"),
+    ]
+    path_pts = []
+    for i in range(49):
+        t = i / 48.0
+        ctrl_x = 2.0 * pins_screen[1][0] - 0.5 * (pins_screen[0][0] + pins_screen[2][0])
+        ctrl_y = 2.0 * pins_screen[1][1] - 0.5 * (pins_screen[0][1] + pins_screen[2][1])
+        bx = ((1 - t) ** 2) * pins_screen[0][0] + 2 * (1 - t) * t * ctrl_x + (t ** 2) * pins_screen[2][0]
+        by = ((1 - t) ** 2) * pins_screen[0][1] + 2 * (1 - t) * t * ctrl_y + (t ** 2) * pins_screen[2][1]
+        path_pts.append((bx, by))
+
+    draw.line(path_pts, fill=(15, 23, 42, 120), width=8)
+    route_p = ease_out_cubic(min(1.0, max(0.02, seq_p / 0.72)))
+    n_pts = max(2, int(round(len(path_pts) * route_p)))
+    active_pts = path_pts[:n_pts]
+    draw.line(active_pts, fill=(15, 23, 42, 235), width=11)
+    draw.line(active_pts, fill=(253, 224, 71, 255), width=6)
+
+    hx, hy = active_pts[-1]
+    pulse_r = int(14 + 24 * ((seq_p * 3.0) % 1.0))
+    draw.ellipse([hx - pulse_r, hy - pulse_r, hx + pulse_r, hy + pulse_r], outline=(253, 224, 71, 195), width=3)
+    draw.ellipse([hx - 10, hy - 10, hx + 10, hy + 10], fill=VOX_CRIMSON + (255,), outline=(255, 255, 255, 255), width=2)
+
+    for idx, (sx, sy, lbl) in enumerate(pins_screen):
+        thr = [0.0, 0.36, 0.62][idx]
+        if route_p < thr:
+            continue
+        draw.ellipse([sx - 12, sy - 12, sx + 12, sy + 12], fill=VOX_CRIMSON + (255,), outline=(255, 255, 255, 255), width=2)
+        draw.rounded_rectangle([sx - 90, sy - 50, sx + 150, sy - 14], radius=5, fill=(15, 23, 42, 235), outline=(253, 224, 71, 240), width=2)
+        draw_text_safe(draw, (sx - 78, sy - 44), lbl[:20], fill=(255, 255, 255, 255), font_size=18, bold=True)
+
+    draw.rectangle([0, 0, W, 84], fill=(15, 23, 42, 242))
+    draw.line([(0, 84), (W, 84)], fill=(253, 224, 71, 240), width=3)
+    draw_text_safe(draw, (56, 24), f"전면 광역 지형·동선 추적 (FULL-SCREEN GIS FLIGHT) · {header_ko}", fill=(253, 224, 71, 255), font_size=26, bold=True)
+
+    ev_img = fit_crop(frame_b or frame_a or get_fallback_image(480, 300, "LIVE SCENE"), 480, 300)
+    paste_photo_polaroid(canvas, ev_img, (1560, 340), caption=f"{metrics[0] if metrics else '현장 영상'} · 동시 추적", angle_deg=-0.6, accent_badge="현장영상")
+
+    strip_w, strip_h = 1760, 260
+    sheet = get_torn_paper_sheet(strip_w, strip_h, fill_rgb=VOX_PAPER, roughness=2.5, seed=181 + (seed % 17))
+    mdraw = ImageDraw.Draw(sheet, "RGBA")
+    for idx, clause_str in enumerate(clauses[:3]):
+        w0, w1 = windows[idx] if idx < len(windows) else (idx / 3.0, (idx + 1) / 3.0)
+        local_p = ease_out_cubic(max(0.0, min(1.0, (seq_p - max(0.0, w0 - 0.04)) / max(0.08, w1 - w0))))
+        if local_p <= 0.01:
+            continue
+        row_y = 32 + idx * 68
+        hl_w = int(1620 * local_p)
+        mdraw.rounded_rectangle([58, row_y, 58 + hl_w, row_y + 54], radius=6, fill=(253, 224, 71, 155 if idx == len(clauses[:3]) - 1 else 95))
+        mdraw.rectangle([42, row_y, 50, row_y + 54], fill=VOX_CRIMSON + (245,))
+        m_lbl = metrics[idx] if idx < len(metrics) else f"동선 0{idx + 1}"
+        draw_text_safe(mdraw, (74, row_y + 11), f"[{m_lbl}] {clause_str[:52]}", fill=VOX_INK, font_size=24, bold=True)
+    canvas.paste(sheet, (64, 730), sheet)
+    draw_cinema_subtitle(canvas, subtitle_text, on_light_paper=False)
+    return canvas
+
+
 ARCHETYPE_RENDERERS = {
+    "#V_FULLSCREEN_GIS_FLIGHT": render_vox_fullscreen_gis_flight,
+    "#V_FULLSCREEN_SATELLITE_RECON": render_vox_sat_zone_draw,
+    "S3_FULLSCREEN_GIS_FLIGHT": render_vox_fullscreen_gis_flight,
+    "S4_FULLSCREEN_SATELLITE_RECON": render_vox_sat_zone_draw,
+    "#V_SAT_LOUPE_ZOOM": render_vox_sat_loupe_zoom,
+    "#V_DOSSIER_BOARD": render_vox_dossier_board,
+    "#V_VERDICT_PROCLAMATION": render_vox_verdict_proclamation,
+    "#V_POPOUT_HIGHLIGHT": render_vox_blur_popout_highlight,
+    "#V_CLAUSE_TIMELINE": render_vox_progressive_clause_timeline,
+    "#V_FORENSIC_CROSS_SECTION": render_vox_forensic_cross_section,
+    "#V_SAT_ZONE_DRAW": render_vox_sat_zone_draw,
     "#M1": render_archetype_m1,
     "#M2": render_archetype_m2,
     "#M3": render_archetype_m3,

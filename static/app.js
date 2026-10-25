@@ -1936,6 +1936,7 @@ const TRUE_CRIME_CN_KR_PRESET = {
   allowed_topics: "Trọng án hình sự có thật tại Trung Quốc (중국 강력범죄 실화) — Tội phạm đặc biệt nguy hiểm, kẻ sát nhân có IQ cao xóa dấu vết, vỏ bọc hai mặt lẩn trốn 10–30 năm, hiện trường bí ẩn và cuộc truy bắt/đấu trí pháp y của cảnh sát hình sự.",
   forbidden_topics: "Án kinh tế, tham nhũng quan chức, hối lộ, chính trị, hạ tầng.",
   monetization_safety_policy: "Ngôi thứ 3 theo góc nhìn Hồ sơ Điều tra viên Hình sự & Chuyên gia Tâm lý Tội phạm — Cắt bỏ 100% miêu tả máu me/thi thể trực diện, tập trung vào sự ranh ma của hung thủ, vật chứng pháp y và màn đấu trí nghẹt thở trong phòng thẩm vấn.",
+  cta_strategy: "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM LINH HOẠT THEO BIỂU ĐỒ GIỮ CHÂN (AUDIENCE RETENTION 40%–50%):\n1. NGUYÊN TẮC CỐT LÕI — MỖI VIDEO MỘT KỊCH BẢN CTA RIÊNG BIỆT (100% CONTEXT-ADAPTIVE, CẤM RẬP KHUÔN):\n   - Tuyệt đối KHÔNG dùng chung một câu mẫu copy-paste cho mọi tập.\n   - Lời dẫn CTA phải mọc trực tiếp từ tình tiết, vật chứng pháp y, mâu thuẫn lời khai hoặc câu hỏi chưa có lời giải của CHÍNH VỤ ÁN ĐÓ.\n   - Giữ nguyên giọng kể điều tra viên lạnh lùng, trầm tĩnh (그것이 알고싶다 / 꼬꼬무 style); cấm hô hào YouTuber làm đứt mạch cảm xúc.\n2. 00:00 – 02:00 (Giai đoạn lọc khán giả tự nhiên 100% -> 50%-57%): CẤM TUYỆT ĐỐI đặt bất kỳ lời kêu gọi Like/Subscribe hay intro rườm rà nào.\n3. ĐIỂM CHẠM 1 — CTA MỀM LỒNG TRONG MẠCH TRUYỆN (Mid-roll Soft CTA · Khoảng 30% thời lượng video / Phút 06:00–08:00 · Chuyển giao Hồi 2 sang Hồi 3 · Kéo dài đúng 5–7 giây):\n   - Đặt ngay sau khi tung tình tiết gây sốc đầu tiên hoặc bế tắc điều tra (nghi phạm lọt lưới, đầu mối đứt gãy, chứng cứ giả), trước khi mở ra hướng phá án mới.\n   - Cấu trúc linh hoạt 3 nhịp (5–7s): [Câu hỏi bỏ lửng bám sát tình tiết vừa kể của vụ án] -> [Lời mời nhẹ nhàng: '진실의 조각을 놓치지 않도록 구독과 좋아요를 눌러주시고, 수사팀의 다음 추적을 함께 지켜봐 주시기 바랍니다'] -> [Nối ngay lập tức vào manh mối phá án tiếp theo].\n   - Hình & Âm: Chỉ bật pop-up/badge góc dưới màn hình nhỏ gọn (mid_roll_soft_cta), giữ nguyên cảnh phim và nhạc nền căng thẳng.\n4. ĐIỂM CHẠM 2 — CTA CHỐT HẠ TRƯỚC KHI KẾT THÚC + BẮC CẦU END SCREEN (Pre-Signoff Value-Driven Hard CTA · 30–45 giây trước khi hết video · Đầu Hồi 5 NGAY SAU khi tuyên án/kết cục hung thủ, TRƯỚC câu chào tạm biệt):\n   - Bước A (8–10s · Đúc kết bài học/dư âm riêng của vụ án): Khái quát giá trị pháp y hoặc góc khuất tâm lý đặc thù của vụ án vừa khép lại.\n   - Bước B (8–10s · Kêu gọi Đăng ký & Chuông thông báo dựa trên giá trị kênh): Kêu gọi khán giả yêu thích hồ sơ điều tra thực tế nhấn Đăng ký & Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ trọng án tiếp theo.\n   - Bước C (8–10s · Bắc cầu sang Video gợi ý trên End Screen): Dựa trên mô-típ của vụ án vừa xem (ẩn danh lâu năm / mất tích bí ẩn / pháp y giải mã), dẫn dắt tự nhiên sang hồ sơ vụ án tương đồng đang hiển thị trên màn hình kết thúc (end_screen_cta_bridge) trước khi nói câu chào cuối cùng.",
   narrative_angle: "Điều tra hình sự sắc lạnh",
   writing_style: "Cold Forensic Noir",
   hook_archetype: "Con số định lượng",
@@ -1955,6 +1956,7 @@ const TRUE_CRIME_CN_KR_PRESET = {
     opening_hook: "Vào mùa đông năm 1996, một vụ án rúng động đã làm thay đổi hoàn toàn cục diện điều tra...",
     notes: "Ghi chú điều tra phá án và hồ sơ tâm lý học tội phạm.",
     custom_rules: "100% Green Monetization - Cắt bỏ yếu tố ghê rợn trực diện",
+    cta_strategy: "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM LINH HOẠT THEO BIỂU ĐỒ GIỮ CHÂN (AUDIENCE RETENTION 40%–50%):\n1. NGUYÊN TẮC CỐT LÕI — MỖI VIDEO MỘT KỊCH BẢN CTA RIÊNG BIỆT (100% CONTEXT-ADAPTIVE, CẤM RẬP KHUÔN):\n   - Tuyệt đối KHÔNG dùng chung một câu mẫu copy-paste cho mọi tập.\n   - Lời dẫn CTA phải mọc trực tiếp từ tình tiết, vật chứng pháp y, mâu thuẫn lời khai hoặc câu hỏi chưa có lời giải của CHÍNH VỤ ÁN ĐÓ.\n   - Giữ nguyên giọng kể điều tra viên lạnh lùng, trầm tĩnh (그것이 알고싶다 / 꼬꼬무 style); cấm hô hào YouTuber làm đứt mạch cảm xúc.\n2. 00:00 – 02:00 (Giai đoạn lọc khán giả tự nhiên 100% -> 50%-57%): CẤM TUYỆT ĐỐI đặt bất kỳ lời kêu gọi Like/Subscribe hay intro rườm rà nào.\n3. ĐIỂM CHẠM 1 — CTA MỀM LỒNG TRONG MẠCH TRUYỆN (Mid-roll Soft CTA · Khoảng 30% thời lượng video / Phút 06:00–08:00 · Chuyển giao Hồi 2 sang Hồi 3 · Kéo dài đúng 5–7 giây):\n   - Đặt ngay sau khi tung tình tiết gây sốc đầu tiên hoặc bế tắc điều tra (nghi phạm lọt lưới, đầu mối đứt gãy, chứng cứ giả), trước khi mở ra hướng phá án mới.\n   - Cấu trúc linh hoạt 3 nhịp (5–7s): [Câu hỏi bỏ lửng bám sát tình tiết vừa kể của vụ án] -> [Lời mời nhẹ nhàng: '진실의 조각을 놓치지 않도록 구독과 좋아요를 눌러주시고, 수사팀의 다음 추적을 함께 지켜봐 주시기 바랍니다'] -> [Nối ngay lập tức vào manh mối phá án tiếp theo].\n   - Hình & Âm: Chỉ bật pop-up/badge góc dưới màn hình nhỏ gọn (mid_roll_soft_cta), giữ nguyên cảnh phim và nhạc nền căng thẳng.\n4. ĐIỂM CHẠM 2 — CTA CHỐT HẠ TRƯỚC KHI KẾT THÚC + BẮC CẦU END SCREEN (Pre-Signoff Value-Driven Hard CTA · 30–45 giây trước khi hết video · Đầu Hồi 5 NGAY SAU khi tuyên án/kết cục hung thủ, TRƯỚC câu chào tạm biệt):\n   - Bước A (8–10s · Đúc kết bài học/dư âm riêng của vụ án): Khái quát giá trị pháp y hoặc góc khuất tâm lý đặc thù của vụ án vừa khép lại.\n   - Bước B (8–10s · Kêu gọi Đăng ký & Chuông thông báo dựa trên giá trị kênh): Kêu gọi khán giả yêu thích hồ sơ điều tra thực tế nhấn Đăng ký & Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ trọng án tiếp theo.\n   - Bước C (8–10s · Bắc cầu sang Video gợi ý trên End Screen): Dựa trên mô-típ của vụ án vừa xem (ẩn danh lâu năm / mất tích bí ẩn / pháp y giải mã), dẫn dắt tự nhiên sang hồ sơ vụ án tương đồng đang hiển thị trên màn hình kết thúc (end_screen_cta_bridge) trước khi nói câu chào cuối cùng.",
   },
   editing_dna: {
     version: 1,
@@ -1990,6 +1992,7 @@ function getProfileDnaFields(profile) {
     allowedTopics: String(profile?.allowed_topics || ed.allowed_topics || narrative.story_engine || ""),
     forbiddenTopics: String(profile?.forbidden_topics || ed.forbidden_topics || (Array.isArray(footage.avoid) ? footage.avoid[0] : "") || ""),
     monetizationSafetyPolicy: String(profile?.monetization_safety_policy || ed.monetization_safety_policy || narrative.monetization_safety_policy || ""),
+    ctaStrategy: String(profile?.cta_strategy || ed.cta_strategy || narrative.cta_strategy || profile?.default_creative_brief?.cta_strategy || ""),
   };
 }
 
@@ -2090,6 +2093,7 @@ function renderCreateProfileDnaSummary(profile) {
             ${dna.allowedTopics ? `<li><span class="dna-pill allow">Chỉ chọn</span> ${escapeHtml(dna.allowedTopics)}</li>` : ""}
             ${dna.forbiddenTopics ? `<li><span class="dna-pill forbid">Cấm tuyệt đối</span> ${escapeHtml(dna.forbiddenTopics)}</li>` : ""}
             ${dna.monetizationSafetyPolicy ? `<li><span class="dna-pill green">Ngôi kể &amp; Góc kể Xanh tiền</span> ${escapeHtml(dna.monetizationSafetyPolicy)}</li>` : ""}
+            ${dna.ctaStrategy ? `<li><span class="dna-pill allow">Chiến lược CTA 2 điểm chạm (Linh hoạt)</span> ${escapeHtml(dna.ctaStrategy)}</li>` : ""}
           </ul>
         </div>
       </div>
@@ -2141,6 +2145,7 @@ function renderCreateProfileDnaSummary(profile) {
           allowed_topics: dna.allowedTopics,
           forbidden_topics: dna.forbiddenTopics,
           monetization_safety_policy: dna.monetizationSafetyPolicy,
+          cta_strategy: dna.ctaStrategy,
         }),
       });
       await loadChannelProfiles({ selectId: saved.id, loadPlan: false });
@@ -2962,6 +2967,7 @@ function renderChannelProfileSummary(profile) {
   ${dna.allowedTopics ? `<div class="channel-profile-note"><b>✅ CHỈ CHỌN:</b> ${escapeHtml(dna.allowedTopics)}</div>` : ""}
   ${dna.forbiddenTopics ? `<div class="channel-profile-note"><b>🚫 CẤM TUYỆT ĐỐI:</b> ${escapeHtml(dna.forbiddenTopics)}</div>` : ""}
   ${dna.monetizationSafetyPolicy ? `<div class="channel-profile-note"><b>💚 NGÔI KỂ &amp; GÓC KỂ XANH TIỀN:</b> ${escapeHtml(dna.monetizationSafetyPolicy)}</div>` : ""}
+  ${dna.ctaStrategy ? `<div class="channel-profile-note"><b>🎯 CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM (LINH HOẠT THEO VỤ ÁN):</b> ${escapeHtml(dna.ctaStrategy)}</div>` : ""}
   ${!isCustomDnaProfile(profile) && validCompetitors.length ? `<div class="channel-profile-note"><b>Kênh mẫu tham khảo:</b> ${validCompetitors.length} kênh</div>` : ""}`;
   root.classList.remove("hidden");
   actions.classList.remove("hidden");
@@ -2988,6 +2994,7 @@ function resetChannelProfileForm() {
   if (form.elements.allowed_topics) form.elements.allowed_topics.value = "";
   if (form.elements.forbidden_topics) form.elements.forbidden_topics.value = "";
   if (form.elements.monetization_safety_policy) form.elements.monetization_safety_policy.value = "";
+  if (form.elements.cta_strategy) form.elements.cta_strategy.value = "";
   if (form.elements.narrative_angle) form.elements.narrative_angle.value = "";
   if (form.elements.writing_style) form.elements.writing_style.value = "";
   if (form.elements.hook_archetype) form.elements.hook_archetype.value = "";
@@ -3092,6 +3099,7 @@ function fillChannelProfileForm(profile) {
   if (form.elements.allowed_topics) form.elements.allowed_topics.value = dna.allowedTopics || "";
   if (form.elements.forbidden_topics) form.elements.forbidden_topics.value = dna.forbiddenTopics || "";
   if (form.elements.monetization_safety_policy) form.elements.monetization_safety_policy.value = dna.monetizationSafetyPolicy || "";
+  if (form.elements.cta_strategy) form.elements.cta_strategy.value = dna.ctaStrategy || "";
 
   // Creative brief and editing DNA fields
   const parsedEdDna = typeof editingDna === "string"
@@ -3535,7 +3543,8 @@ $("#channelProfileForm").addEventListener("submit", async event => {
   const allowedTopics = String(form.elements.allowed_topics?.value || "").trim();
   const forbiddenTopics = String(form.elements.forbidden_topics?.value || "").trim();
   const monetizationSafetyPolicy = String(form.elements.monetization_safety_policy?.value || "").trim();
-  const hasDnaRules = Boolean(labelVal || allowedTopics || voiceAndStructure || monetizationSafetyPolicy);
+  const ctaStrategy = String(form.elements.cta_strategy?.value || "").trim();
+  const hasDnaRules = Boolean(labelVal || allowedTopics || voiceAndStructure || monetizationSafetyPolicy || ctaStrategy);
 
   if (dnaMode !== "custom_dna_only" && !ownRef && !competitorRefs.length && !hasDnaRules) {
     return toast("Hãy nhập kênh của bạn hoặc ít nhất một kênh mẫu (hoặc chuyển sang chế độ Định danh DNA cố định).", true);
@@ -3569,6 +3578,7 @@ $("#channelProfileForm").addEventListener("submit", async event => {
     editing_archetypes: parsedArchetypes,
     opening_hook: String(form.elements.opening_hook?.value || "").trim() || null,
     notes: String(form.elements.notes?.value || "").trim() || null,
+    cta_strategy: ctaStrategy || null,
   };
 
   let editingDnaPayload = null;
@@ -3613,6 +3623,7 @@ $("#channelProfileForm").addEventListener("submit", async event => {
     allowed_topics: allowedTopics || null,
     forbidden_topics: forbiddenTopics || null,
     monetization_safety_policy: monetizationSafetyPolicy || null,
+    cta_strategy: ctaStrategy || null,
     default_creative_brief: creativeBrief,
   };
   if (editingDnaPayload) {
@@ -9080,7 +9091,8 @@ async function copySeoText(value) {
 }
 
 function bindSeoCopyButtons(root, values) {
-  root.querySelectorAll("[data-seo-copy]").forEach(button => button.addEventListener("click", async () => {
+  root.querySelectorAll("[data-seo-copy]").forEach(button => button.addEventListener("click", async (e) => {
+    e.stopPropagation();
     const key = String(button.dataset.seoCopy || "");
     const value = values[key];
     if (!value) return toast("Mục này chưa có nội dung để sao chép.", true);
@@ -9231,12 +9243,16 @@ async function renderSeoWorkspace(job) {
       <summary>Chi tiết Công thức Kênh, Prompt gốc &amp; Dữ liệu SEO</summary>
       <div class="seo-result-grid" style="margin-top:10px;">
         ${frameworkHtml}
-        ${seoCopyCard("PROMPT VẼ THUMBNAIL GỐC", "thumbnail_prompt", copyValues.thumbnail_prompt, { wide: true })}
+        ${seoCopyCard("PROMPT VẼ THUMBNAIL + TEXT", "thumbnail_prompt", copyValues.thumbnail_prompt, { wide: true })}
         ${copyValues.negative_prompt ? seoCopyCard("NEGATIVE PROMPT", "negative_prompt", copyValues.negative_prompt, { wide: true }) : ""}
       </div>
       <div class="artifact-grid two-col" style="margin-top:10px;">${codeViewer("SEO package", packageRaw)}${codeViewer("Reference context", referenceRaw)}</div>
     </details>` : `<div class="empty-state">Chưa có gói SEO. Bạn vẫn có thể thiết kế &amp; tải 4 bản Thumbnail bên trên, hoặc bấm <b>Thực hiện bước này</b> để AI tạo trọn bộ Tiêu đề, Mô tả, Tags và Hook Thumbnail.</div>`;
   const initialSubTab = localStorage.getItem("cofi-seo-subtab") || "thumb";
+  const accordionsHtml = `<div class="saas-seo-accordions-group seo-subtab-content" id="seoSubtabCopyPane" style="${initialSubTab === "copy" ? "" : "display:none;"}">
+      ${preflightHtml}${referenceSummary}${result}
+    </div>`;
+
   root.innerHTML = `${phaseStepPanelHtml(job, "seo", "qc")}
     <div class="seo-subnav-bar">
       <button type="button" class="seo-subnav-btn ${initialSubTab === "thumb" ? "active" : ""}" data-seo-subtab-btn="thumb">
@@ -9253,9 +9269,7 @@ async function renderSeoWorkspace(job) {
     <div class="seo-subtab-content" id="seoSubtabThumbPane" style="${initialSubTab === "thumb" ? "" : "display:none;"}">
       <section id="cofiThumbnailStudioHost" class="thumb-studio-host"></section>
     </div>
-    <div class="seo-subtab-content" id="seoSubtabCopyPane" style="${initialSubTab === "copy" ? "" : "display:none;"}">
-      ${preflightHtml}${referenceSummary}${result}
-    </div>`;
+    ${accordionsHtml}`;
   bindWorkspacePhaseButtons(job, root);
   if (packageRaw) bindSeoCopyButtons(root, copyValues);
 

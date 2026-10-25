@@ -186,6 +186,27 @@ def _route_for(
     return "ai_visual" if str(source_priority or "").strip().lower() == "ai_ok" else "footage"
 
 
+def _clean_ai_scene_focus(unit: str, visual: str) -> str:
+    """Strip UI/HUD/typography/caption pollution so AI image prompts focus strictly on pure scene action."""
+    text = str(visual or "").strip()
+    # Remove bracketed tags like [Forensic Noir Full-AI | Chia đôi màn hình đối chiếu | ...]
+    text = re.sub(r"\[[^\]]*\]\s*", "", text)
+    # Remove Clause focus (...) quotes and trailing typography/annotation directives
+    text = re.sub(r'(?i)\bClause\s+focus\s*\([^)]*\)\s*:\s*"[^"]*"\s*[—\-–]*\s*', "", text)
+    text = re.sub(r"(?i)Cold\s+desaturated\s+noir\s+color\s+grade[^.]*\.", "", text)
+    text = re.sub(r"(?i)authentic\s+Chinese\s+judicial/public\s+security\s+archival\s+typography[^.]*\.", "", text)
+    text = re.sub(r"(?i)anchored\s+mobile-readable\s+annotation\s+highlight[^.]*\.", "", text)
+    text = re.sub(r"(?i)\b(?:>=?\s*\d+\s*px|Pretendard|KeyMetricCallout|160%\s*Macro\s*Loupe|Split-Screen\s*A/B|scan\s*line\s*highlight|telemetry\s*label|callout\s*card)\b[^.]*\.?", "", text)
+    # Remove generic story-group comparison file headers ("... vs ... 대조 파일.") when a concrete unit exists
+    if unit.strip():
+        text = re.sub(r"[^.]*\bvs\b[^.]*대조\s*파일\.?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s+", " ", text).strip(" .,-—–")
+    clean_unit = re.sub(r"\s+", " ", str(unit or "")).strip()
+    if not text or text == clean_unit:
+        return clean_unit
+    return f"{clean_unit} ({text})"
+
+
 def _prompt_for(
     unit: str,
     metadata: dict[str, Any],
@@ -194,18 +215,22 @@ def _prompt_for(
 ) -> str:
     visual = str(metadata.get("visual_description") or "").strip()
     purpose = str(metadata.get("purpose") or "").strip()
-    framing = str(metadata.get("framing_motion_intent") or "").strip()
     base = visual or unit
-    if purpose and purpose.lower() not in base.lower():
-        base = f"{base}. {purpose}"
     if route == "footage":
+        if purpose and purpose.lower() not in base.lower():
+            base = f"{base}. {purpose}"
         return f"Authentic documentary footage matching: {base}"[:520]
+
+    scene_focus = _clean_ai_scene_focus(unit, visual)
     style = style_settings or {}
     style_mode = str(style.get("style_mode") or "auto").strip().lower()
     style_preset = str(style.get("style_preset") or "").strip()
     style_prompt = str(style.get("style_prompt") or "").strip()
     style_ref = str(style.get("style_reference_image") or "").strip()
     has_ref = bool(style_ref and Path(style_ref).is_file())
+    no_text_rule = (
+        "SCENE FOCUS RULE: Depict the physical scene, characters, environment, lighting, and action of this moment in a unified full-bleed 16:9 frame."
+    )
     if style_prompt or has_ref:
         parts: list[str] = []
         if style_mode == "preset" and style_preset and style_prompt:
@@ -216,12 +241,10 @@ def _prompt_for(
             parts.append(
                 "A visual style reference image is attached. MANDATORY CHARACTER & COLOR LOCK: Draw ALL human characters as 2D rounded chibi mascot figures strictly copying the exact character design, BRIGHT GOLDEN-YELLOW head and body skin color tone (#FFD43B warm yellow spherical head, yellow hands, and yellow feet — NEVER white skin and NEVER realistic human faces), proportions, bold clean black linework, simple black oval eyes with white specular highlights, thin curved eyebrows, minimal line mouth, and outfit style from the attached reference image."
             )
-        parts.append(f"Narration line: {unit}.")
-        parts.append(f"Visual action & environment: {base}.")
-        if framing:
-            parts.append(f"Framing: {framing}.")
+        parts.append(f"Core scene to illustrate (visual action & setting only, without any text): {scene_focus}.")
+        parts.append(no_text_rule)
         return " ".join(parts)[:2400]
-    return f"Documentary visual matching the narration: {base}"[:520]
+    return f"Documentary visual scene: {scene_focus}. {no_text_rule}"[:900]
 
 
 class VisualsCoordinator:

@@ -33,6 +33,7 @@ if str(PROJECT_ROOT) not in sys.path:
 from documentary.vox_engine.semantic_router import (
     VOX_ARCHETYPE_RULES,
     VoxSemanticRouter,
+    build_voice_spec_for_beat,
     is_vox_satellite_enabled,
 )
 
@@ -404,6 +405,54 @@ class TestVoxChannelProfileGating:
         assert len(routed) == 2
         for b in routed:
             assert "scene_archetype" not in b
+
+
+class TestUnlockedVoiceFlexibleModesAndDurationSync:
+    """Verifies unlocked bespoke Vox modes (#V_*) and full voice duration/clause synchronization."""
+
+    def test_bespoke_modes_routing(self):
+        router = VoxSemanticRouter()
+        r_cross = router.route_beat("지하 정화조 배관 단면도와 흡입차 38대 수거 과정을 정밀 추적했다")
+        assert r_cross["archetype"] == "#V_FORENSIC_CROSS_SECTION"
+
+        router.reset_history()
+        r_pop = router.route_beat("수사 보고서 구절에 형광펜 하이라이트를 치며 진술 모순을 발췌했다")
+        assert r_pop["archetype"] == "#V_POPOUT_HIGHLIGHT"
+
+        router.reset_history()
+        r_tl = router.route_beat("시간대별 분 단위 동선 추적과 17시 04분 행적 재구성을 진행했다")
+        assert r_tl["archetype"] == "#V_CLAUSE_TIMELINE"
+
+        router.reset_history()
+        r_3d = router.route_beat("입체 재구성과 다층 수사망 3D 분석으로 증거 네트워크를 검증했다")
+        assert r_3d["archetype"] == "#V_BLENDER_3D_STAGE"
+
+    def test_build_voice_spec_full_duration_and_clauses(self):
+        beat = {
+            "beat_id": "beat_042",
+            "start_sec": 120.0,
+            "end_sec": 130.8,
+            "narration_text": "엘리베이터와 아파트 입구를 비추던 6,000개의 카메라, 그러나 아내가 빠져나간 흔적은 없었고, 결국 38도 폭염 속 정화조에서 20그램의 단서가 발견되었습니다.",
+        }
+        spec = build_voice_spec_for_beat(beat, beat_index=41)
+        assert spec["duration_sec"] == 10.8
+        assert len(spec["clauses"]) >= 2
+        assert len(spec["clause_windows"]) == len(spec["clauses"])
+        assert spec["clause_windows"][0][0] == 0.0
+        assert spec["clause_windows"][-1][1] == 1.0
+        assert "6,000개" in spec["metrics"]
+        assert "38도" in spec["metrics"]
+        assert "20그램" in spec["metrics"]
+        assert "contextual_sfx" in spec
+        assert len(spec["contextual_sfx"]) == 2
+
+    def test_fullscreen_map_flight_and_contextual_sfx(self):
+        router = VoxSemanticRouter()
+        r_gis = router.route_beat("베이징 중앙 독도조가 2,100km 떨어진 운남성 쿤밍으로 전격 파견되었다")
+        assert r_gis["archetype"] == "#V_FULLSCREEN_GIS_FLIGHT"
+        router.reset_history()
+        r_sat = router.route_beat("관두구 노래방과 도심 유흥가 나이트클럽 확장 거점을 전면 위성으로 추적했다")
+        assert r_sat["archetype"] == "#V_FULLSCREEN_SATELLITE_RECON"
 
 
 if __name__ == "__main__":
