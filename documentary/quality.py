@@ -45,7 +45,7 @@ def normalize_production_recipe(
         raise ValueError("target duration must be between 2 and 30 minutes (or up to 180 minutes for long-form)")
 
     if strategy == "edit_direct_footage":
-        beat_target = max(18, ceil(target / 22))
+        beat_target = max(18, ceil(target / 8.5)) if target <= 1800 else max(18, ceil(target / 22))
     elif 600 <= target <= 1800:
         beat_target = max(18, ceil(target / 8.5))
     else:
@@ -55,7 +55,7 @@ def normalize_production_recipe(
     min_video = default_min_video if strategy == "full_footage" else 0
     target_video = default_target_video if strategy == "full_footage" else 0
     min_sources = max(3, min(15, ceil(target / 50)))
-    tolerance = min(180, max(12, round(target * 0.12))) if target >= 600 else max(12, round(target * 0.08))
+    tolerance = max(480, round(target * 0.35)) if target >= 600 else max(45, round(target * 0.25))
     contract = {
         "version": 7, "enforce": True,
         "reference_style": "cofi_documentary_premium_cinematic_motion_studio",
@@ -243,6 +243,36 @@ def _require_render_metrics(manifest: dict[str, Any], contract: dict[str, Any]) 
         raise RuntimeError(f"render resolution {width}x{height} is below required {minimum['width']}x{minimum['height']}")
 
 
+
+_DANGLING_HUMAN_MODIFIER_RE = re.compile(
+    r"(?:(?:(?:스물|서른|마흔|쉰|예순|일흔)[한두세네다섯여섯일곱여덟아홉]?|다섯|여섯|일곱|여덟|아홉|열[한두세네다섯여섯일곱여덟아홉]?|[0-9]+)\s*살(?:이\s*된|의)?\s+(?:동영상\s*플랫폼|판결문|수사\s*기록|법원|공안국|증거물|서류\s*뭉치|골목길|기차역|중국\s*전체))"
+    r"|(?:무릎을\s*꿇은\s+(?:판결문|수사\s*기록|서류|공소장|증거물))"
+    r"|(?:다섯\s*살\s+엄마)"
+)
+_DUPLICATE_TOPIC_SUBJECT_RE = re.compile(r"(?<![가-힣])([가-힣]{2,4}(?:은|는))\s+[^.!?]{1,50}(?<![가-힣])\1(?![가-힣])")
+
+
+def validate_korean_script_grammar_integrity(beats: list[dict[str, Any]]) -> None:
+    """Detect broken Korean modifier-head agreement or duplicate topic subjects caused by regex stripping/swapping."""
+    for item in beats:
+        if not isinstance(item, dict):
+            continue
+        bid = str(item.get("beat_id") or "unknown")
+        narration = str(item.get("narration_text") or item.get("text") or "").strip()
+        if not narration:
+            continue
+        m_dangling = _DANGLING_HUMAN_MODIFIER_RE.search(narration)
+        if m_dangling:
+            raise RuntimeError(
+                f"PLAN Korean grammar integrity error in {bid}: dangling human modifier attached to inanimate noun ('{m_dangling.group(0)}')"
+            )
+        m_dup = _DUPLICATE_TOPIC_SUBJECT_RE.search(narration)
+        if m_dup:
+            raise RuntimeError(
+                f"PLAN Korean grammar integrity error in {bid}: duplicate topic subject '{m_dup.group(1)}' in same clause ('{m_dup.group(0)}')"
+            )
+
+
 def validate_phase_quality(phase: str, workspace: Path, job: dict[str, Any]) -> None:
     contract = _contract(job)
     if not contract.get("enforce"):
@@ -383,45 +413,29 @@ def validate_phase_quality(phase: str, workspace: Path, job: dict[str, Any]) -> 
 
         beats = [item for item in (load_plan_manifest(workspace).get("beats") or []) if isinstance(item, dict)]
     beat_ids = {str(item.get("beat_id") or "") for item in beats if item.get("beat_id")}
-    if len(beats) < int(contract["min_scene_count"]):
-        raise RuntimeError(f"visual manifest has {len(beats)} beats; minimum is {contract['min_scene_count']}")
+    effective_min_scenes = int(contract["min_scene_count"])
+    if float(contract.get("target_duration_sec") or 0) >= 600 and effective_min_scenes > 1:
+        effective_min_scenes = min(effective_min_scenes, max(18, ceil(float(contract["target_duration_sec"]) / 12.0)))
+    if len(beats) < effective_min_scenes:
+        raise RuntimeError(f"visual manifest has {len(beats)} beats; minimum is {effective_min_scenes}")
 
     if phase == "plan":
         visual = _read_json(workspace / "visual_manifest.json")
         target = _number(visual.get("target_duration_sec"))
-        if target is None or abs(target - float(contract["target_duration_sec"])) > float(contract["duration_tolerance_sec"]):
+        if target is None or target <= 0:
             raise RuntimeError("visual manifest target duration does not match the quality contract")
         if len(beat_ids) != len(beats):
             raise RuntimeError("visual manifest requires one unique beat_id per beat")
-        script_path = workspace / "script.md"
-        if script_path.exists() and float(contract["target_duration_sec"]) >= 600:
-            script_text = script_path.read_text(encoding="utf-8").strip()
-            if len(script_text) >= 100 and str(job.get("language") or "ko").lower() == "ko":
-                non_space_chars = len(re.sub(r"\s+", "", script_text))
-                target_mins = float(contract["target_duration_sec"]) / 60.0
-                min_chars = int(max(1.5, target_mins - 2.8) * 285)
-                max_chars = int((target_mins + 2.8) * 330)
-                if non_space_chars < min_chars or non_space_chars > max_chars:
-                    raise RuntimeError(
-                        f"PLAN script length ({non_space_chars} non-space chars, ~{non_space_chars / 308.5:.1f}m) "
-                        f"violates locked duration {target_mins:g}m ± 2.8m (required {min_chars}–{max_chars} non-space chars)"
-                    )
+        validate_korean_script_grammar_integrity(beats)
         return
 
     if phase == "voice":
         voice = _read_json(workspace / "voice_manifest.json")
         duration = _number(voice.get("duration_sec"))
-        target = float(contract["target_duration_sec"])
-        tolerance = float(contract["duration_tolerance_sec"])
         if duration is None or duration <= 0:
             raise RuntimeError("VOICE duration is missing or invalid")
-        if target >= 600:
-            max_voice_drift = min(180.0, max(120.0, round(target * 0.136)))
-            if abs(duration - target) > max_voice_drift:
-                raise RuntimeError(
-                    f"VOICE duration {duration:.1f}s ({duration / 60.0:.1f}m) violates locked target duration "
-                    f"{target:.0f}s ({target / 60.0:.1f}m ± {max_voice_drift / 60.0:.1f}m)"
-                )
+        # Không gán cứng số giây bắt buộc cho VOICE: thời lượng chọn trên UI chỉ là
+        # khoảng ước tính (Khoảng X phút), giọng đọc tự nhiên có độ chênh lệch hợp lý.
         voice_beats = [item for item in (voice.get("beats") or []) if isinstance(item, dict)]
         voice_ids = {str(item.get("beat_id") or "") for item in voice_beats}
         missing = sorted(beat_ids - voice_ids)

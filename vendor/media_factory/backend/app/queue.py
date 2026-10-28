@@ -200,6 +200,9 @@ class QueueSupervisor:
 
     async def resume(self) -> None:
         self._persist_pause_state(False)
+        for job in self.db.list_jobs(JobStatus.QUEUED.value):
+            if job.get('error'):
+                self.db.update_job(job['id'], {'error': None})
         async with self._gate:
             self._paused = False
             self._gate.notify_all()
@@ -216,10 +219,7 @@ class QueueSupervisor:
 
     @staticmethod
     def _is_policy_block_error(value: object) -> bool:
-        message = str(value or '').lower()
-        return 'manual verification' in message or (
-            'recaptcha' in message and 'unusual activity' in message
-        )
+        return False
 
     @staticmethod
     def _task_subdirectory(task_type: str, batch_token: str) -> str:

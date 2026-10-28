@@ -7,7 +7,7 @@ import pytest
 
 from documentary.quality import normalize_production_recipe, validate_phase_quality
 from documentary.srt import build_srt, format_srt_time
-from documentary.voice import CofiVoiceEngine
+from documentary.voice import CofiVoiceEngine, INTER_BEAT_PAUSE_SEC, OUTRO_FADE_TAIL_SEC, wav_duration
 
 
 def _wav_bytes(duration_sec: float, sample_rate: int = 1000) -> bytes:
@@ -120,8 +120,86 @@ def test_voice_engine_keeps_natural_speed_when_estimated_target_differs(tmp_path
     engine.run(job, tmp_path)
 
     manifest = json.loads((tmp_path / "voice_manifest.json").read_text(encoding="utf-8"))
-    assert manifest["duration_sec"] == pytest.approx(100.0, abs=0.01)
+    expected_total = 100.0 + (len(beat_ids) - 1) * INTER_BEAT_PAUSE_SEC + OUTRO_FADE_TAIL_SEC
+    assert manifest["duration_sec"] == pytest.approx(expected_total, abs=0.05)
+    assert wav_duration(tmp_path / "audio" / "narration.wav") == pytest.approx(expected_total, abs=0.05)
+    last_beat = manifest["beats"][-1]
+    assert last_beat["outro_tail_sec"] == pytest.approx(OUTRO_FADE_TAIL_SEC, abs=0.01)
+    assert last_beat["end_sec"] - last_beat["speech_end_sec"] == pytest.approx(OUTRO_FADE_TAIL_SEC, abs=0.01)
+    srt_text = (tmp_path / "subtitles.srt").read_text(encoding="utf-8")
+    assert format_srt_time(last_beat["speech_end_sec"]) in srt_text
     assert manifest["speed"] == 1.0
     assert manifest["requested_speed"] == 1.0
     assert manifest["auto_fit_applied"] is False
     assert len(session.calls) == len(beat_ids)
+
+
+def test_normalize_korean_tts_text_converts_comma_numbers_and_counters():
+    from documentary.voice import normalize_korean_tts_text
+
+    raw = (
+        "5살 아이의 기억으로 2,000킬로미터 떨어진 고향에서 5,000위안과 26년 동안 "
+        "50대 후반 부부를 찾았습니다. 연 14.6% 수익과 십사점육 퍼센트, 백구십육 개, "
+        "베이징-안후이성 제1중급인민법원 1,200자루."
+    )
+    norm = normalize_korean_tts_text(raw)
+    assert "이천 킬로미터" in norm
+    assert "오천 위안" in norm
+    assert "이십육 년 동안" in norm
+    assert "오십 대 후반" in norm
+    assert norm.count("십사쩜육 퍼센트") == 2
+    assert "백구십육개" in norm
+    assert "베이징 안후이성" in norm
+    assert "제일중급인민법원" in norm
+    assert "천이백 자루" in norm
+    assert "2,000" not in norm
+    assert "5,000" not in norm
+
+
+def test_sculpt_wav_bytes_for_korean_broadcast_trims_and_compresses_long_internal_pauses():
+    import numpy as np
+    from documentary.voice import sculpt_wav_bytes_for_korean_broadcast, wav_duration
+
+    sr = 24000
+    t_voice = np.linspace(0.0, 0.5, int(sr * 0.5), endpoint=False, dtype=np.float32)
+    voiced = 0.25 * np.sin(2.0 * np.pi * 220.0 * t_voice)
+    lead_sil = np.zeros(int(sr * 0.25), dtype=np.float32)
+    mid_sil = np.zeros(int(sr * 0.85), dtype=np.float32)
+    trail_sil = np.zeros(int(sr * 0.30), dtype=np.float32)
+    full = np.concatenate([lead_sil, voiced, mid_sil, voiced, trail_sil])
+    pcm = np.clip(np.round(full * 32767.0), -32768, 32767).astype(np.int16)
+
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(sr)
+        w.writeframes(pcm.tobytes())
+    raw_bytes = buf.getvalue()
+
+    sculpted_bytes = sculpt_wav_bytes_for_korean_broadcast(raw_bytes)
+    with wave.open(io.BytesIO(sculpted_bytes), "rb") as r:
+        sculpted_dur = r.getnframes() / float(r.getframerate())
+
+    # 0.5s + 0.5s voiced + ~0.285s mid pause + 0.025s lead + 0.035s trail ≈ 1.345s (down from 1.90s)
+    assert 1.25 <= sculpted_dur <= 1.45
+
+
+def test_validate_korean_script_grammar_integrity_catches_dangling_modifiers_and_duplicate_subjects():
+    from documentary.quality import validate_korean_script_grammar_integrity
+
+    valid_beats = [
+        {"beat_id": "B001", "narration_text": "서른한 살이 된 양뉴화는 동영상 플랫폼 더우인에 영상을 올렸습니다."},
+        {"beat_id": "B002", "narration_text": "무덤 앞에 무릎을 꿇은 자매는 판결문 복사본을 불태웠습니다."},
+    ]
+    validate_korean_script_grammar_integrity(valid_beats)
+
+    with pytest.raises(RuntimeError, match="dangling human modifier"):
+        validate_korean_script_grammar_integrity([
+            {"beat_id": "B068", "narration_text": "서른한 살이 된 동영상 플랫폼 더우인에 자신의 사연을 올렸습니다."},
+        ])
+
+    with pytest.raises(RuntimeError, match="duplicate topic subject"):
+        validate_korean_script_grammar_integrity([
+            {"beat_id": "B095", "narration_text": "양뉴화는 그토록 그리워하던 양뉴화는 마침내 고향 집에 도착했습니다."},
+        ])

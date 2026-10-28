@@ -308,6 +308,14 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
     def health():
         return service.health()
 
+    @api.get("/api/system/trail-status")
+    def trail_status():
+        return service.trail_status()
+
+    @api.post("/api/system/trail-sync")
+    def trail_sync():
+        return service.trail_sync()
+
     @api.post("/api/ai-accounts/{provider}/login")
     def ai_account_login(provider: str):
         try:
@@ -582,14 +590,53 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @api.get("/api/jobs/{job_id}/media")
-    def job_media(job_id: str, path: str = Query(..., min_length=1), poster: bool = Query(default=False)):
+    def job_media(
+        job_id: str,
+        path: str = Query(..., min_length=1),
+        poster: bool = Query(default=False),
+        download: bool = Query(default=False),
+        filename: str | None = Query(default=None),
+    ):
         try:
             if poster:
                 resolved = service.resolve_poster_path(job_id, path)
                 if resolved.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp", ".gif"}:
                     return FileResponse(resolved, media_type="image/jpeg")
                 return Response(content=FALLBACK_POSTER_SVG, media_type="image/svg+xml")
-            return FileResponse(service.resolve_media_path(job_id, path))
+            resolved = service.resolve_media_path(job_id, path)
+            ext = resolved.suffix.lower()
+            mime_map = {
+                ".mp4": "video/mp4",
+                ".webm": "video/webm",
+                ".mov": "video/quicktime",
+                ".mkv": "video/x-matroska",
+                ".jpg": "image/jpeg",
+                ".jpeg": "image/jpeg",
+                ".png": "image/png",
+                ".webp": "image/webp",
+                ".gif": "image/gif",
+                ".wav": "audio/wav",
+                ".mp3": "audio/mpeg",
+                ".m4a": "audio/mp4",
+                ".srt": "application/x-subrip",
+                ".zip": "application/zip",
+            }
+            media_type = mime_map.get(ext)
+            dl_name = str(filename or "").strip()
+            if dl_name:
+                dl_name = Path(dl_name).name
+                if ext and not dl_name.lower().endswith(ext):
+                    dl_name = f"{dl_name}{ext}"
+            elif resolved.name.lower() == "video.mp4":
+                dl_name = f"video_{job_id}.mp4"
+            else:
+                dl_name = resolved.name
+            return FileResponse(
+                resolved,
+                media_type=media_type,
+                filename=dl_name,
+                content_disposition_type="attachment" if download else "inline",
+            )
         except KeyError as exc:
             if poster:
                 return Response(content=FALLBACK_POSTER_SVG, media_type="image/svg+xml")

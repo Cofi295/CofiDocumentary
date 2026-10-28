@@ -132,3 +132,30 @@ def test_maximize_applies_work_area_before_maximizing(monkeypatch) -> None:
 
     assert native.MaximizedBounds == (0, 0, 1920, 1032)
     window.maximize.assert_called_once_with()
+
+
+def test_resolve_download_dialog_spec_preserves_video_and_image_types() -> None:
+    fname, ext, flt = desktop_app.resolve_download_dialog_spec(
+        r"C:\Users\user\Downloads\media",
+        mime_type="video/mp4",
+        uri="http://127.0.0.1:8878/api/jobs/job123/media?path=release/video.mp4&download=1&filename=video_job123.mp4",
+    )
+    assert fname == "video_job123.mp4"
+    assert ext == "mp4"
+    assert flt.startswith("Video MP4 (*.mp4)|*.mp4|")
+
+    fname_img, ext_img, flt_img = desktop_app.resolve_download_dialog_spec(
+        r"C:\Users\user\Downloads\thumbnail_job123_v1.jpg",
+        mime_type="image/jpeg",
+        uri="data:image/jpeg;base64,/9j/4AAQ",
+    )
+    assert fname_img == "thumbnail_job123_v1.jpg"
+    assert ext_img == "jpg"
+    assert flt_img.startswith("Ảnh JPEG (*.jpg;*.jpeg)|*.jpg;*.jpeg|")
+
+
+def test_ensure_chosen_file_extension_restores_deleted_extension() -> None:
+    assert desktop_app.ensure_chosen_file_extension(r"C:\video_duong_nuu_hoa", "mp4") == r"C:\video_duong_nuu_hoa.mp4"
+    assert desktop_app.ensure_chosen_file_extension(r"C:\thumb_1", "jpg") == r"C:\thumb_1.jpg"
+    assert desktop_app.ensure_chosen_file_extension(r"C:\already_named.mp4", "mp4") == r"C:\already_named.mp4"
+

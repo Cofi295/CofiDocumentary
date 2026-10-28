@@ -36,9 +36,9 @@ def _sync_creative_brief_duration(brief: dict[str, Any] | None, target_minutes: 
     for field in ("writing_style", "custom_rules", "notes"):
         val = out.get(field)
         if isinstance(val, str) and val.strip():
-            val = re.sub(r"\b30\s*Phút\b", f"{mins_val} Phút", val)
-            val = re.sub(r"\b30\s*phút\b", f"{mins_val} phút", val)
-            val = re.sub(r"\b30\s*PHÚT\b", f"{mins_val} PHÚT", val)
+            val = re.sub(r"\b(?:20|25|30)\s*Phút\b", f"{mins_val} Phút", val)
+            val = re.sub(r"\b(?:20|25|30)\s*phút\b", f"{mins_val} phút", val)
+            val = re.sub(r"\b(?:20|25|30)\s*PHÚT\b", f"{mins_val} PHÚT", val)
             out[field] = val
     return out
 
@@ -149,6 +149,27 @@ class JobService:
             if not job_data.get("style_reference_image") and profile.get("default_style_reference_image"):
                 job_data["style_reference_image"] = str(profile["default_style_reference_image"])
 
+            if not job_data.get("ai_media_mode") and profile.get("default_ai_media_mode"):
+                job_data["ai_media_mode"] = str(profile["default_ai_media_mode"])
+
+            ai_vis = dict(job_data.get("ai_visual") or {})
+            if not ai_vis.get("style_mode") and profile.get("default_ai_style_mode"):
+                ai_vis["style_mode"] = str(profile["default_ai_style_mode"])
+            if not ai_vis.get("style_preset") and profile.get("default_ai_style_preset"):
+                ai_vis["style_preset"] = str(profile["default_ai_style_preset"])
+            if not ai_vis.get("custom_style") and profile.get("default_ai_custom_style"):
+                ai_vis["custom_style"] = str(profile["default_ai_custom_style"])
+            if not ai_vis.get("ai_media_mode") and job_data.get("ai_media_mode"):
+                ai_vis["ai_media_mode"] = str(job_data["ai_media_mode"])
+            if not ai_vis.get("coverage_mode"):
+                vs_val = str(job_data.get("visual_strategy") or "").strip().lower()
+                ai_vis["coverage_mode"] = (
+                    "full_ai" if vs_val == "full_ai"
+                    else ("selective_ai" if vs_val == "edit_direct_footage" else "fallback_only")
+                )
+            if ai_vis:
+                job_data["ai_visual"] = ai_vis
+
             # Snapshot
             job_data["channel_profile_snapshot"] = {
                 "id": profile.get("id") or profile_id,
@@ -159,6 +180,7 @@ class JobService:
                 "visual_strategy": job_data["visual_strategy"],
                 "default_style_reference_image": profile.get("default_style_reference_image"),
                 "default_creative_brief": copy.deepcopy(profile.get("default_creative_brief") or {}),
+                "editorial_dna": copy.deepcopy(profile.get("editorial_dna") or {}),
                 "editing_dna": copy.deepcopy(profile.get("editing_dna") or {}),
                 "seo_keyword_dna": copy.deepcopy(profile.get("seo_keyword_dna") or {}),
                 "thumbnail_dna": copy.deepcopy(profile.get("thumbnail_dna") or {}),

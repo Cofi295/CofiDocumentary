@@ -90,7 +90,7 @@
             font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
         }
         
-        #glabs-overlay.visible { opacity: 1; pointer-events: auto; }
+        #glabs-overlay.visible { opacity: 1; pointer-events: none; }
 
         #glabs-overlay-card {
             width: 320px; padding: 32px 28px 24px;

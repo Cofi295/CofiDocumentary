@@ -1,0 +1,7 @@
+workspaces/
+data/
+vendor/
+tools/
+static/vox_studio/
+graft/
+.producer/

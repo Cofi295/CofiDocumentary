@@ -48,6 +48,7 @@ from .prompts import (
 from .quality import normalize_production_recipe, validate_phase_quality
 from .radar import RadarClient
 from .render_cache import BackgroundRenderCache
+from .trail_manager import TrailCodeManager
 from .remotion import RemotionManager
 from .store import JobStore
 from .thumbnail_studio import (
@@ -220,6 +221,7 @@ class DocumentaryService:
         self.store.recover_interrupted()
 
         self.remotion_dir = Path(remotion_dir).resolve()
+        self.trail_manager = TrailCodeManager(self.root, self.remotion_dir)
         injected_codex = codex_gateway is not None or gateway is not None
         self.codex_gateway = codex_gateway or gateway or CodexGateway(self.remotion_dir, session_root=self.root)
         self.gemini_gateway = gemini_gateway or GeminiGateway()
@@ -400,6 +402,9 @@ class DocumentaryService:
             initial["topic"] = title
             if not str(initial.get("source_url") or "").strip():
                 initial["source_url"] = selected.get("evidence_url") or selected.get("video_url") or selected.get("url")
+            if selected.get("opening_hook"):
+                initial.setdefault("creative_brief", {})["opening_hook"] = str(selected.get("opening_hook")).strip()
+                initial["opening_hook"] = str(selected.get("opening_hook")).strip()
             if not str(initial.get("notes") or "").strip():
                 note_parts = [
                     selected.get("production_brief"),
@@ -435,11 +440,27 @@ class DocumentaryService:
             prof_vs = str(profile.get("default_visual_strategy") or (profile.get("editorial_dna") or {}).get("visual_strategy") or "").strip().lower()
             if prof_vs in {"semi_content", "ban_content", "edit_footage"}:
                 prof_vs = "edit_direct_footage"
-            if prof_vs in {"full_ai", "full_footage", "hybrid", "evidence_footage", "edit_direct_footage"} and not initial.get("visual_strategy"):
+            if profile_id == "channel-cn-cyber-finance-kr" and str(initial.get("visual_strategy") or "").strip().lower() in {"", "hybrid", "full_footage", "edit_direct_footage"}:
+                initial["visual_strategy"] = "full_ai"
+            elif prof_vs in {"full_ai", "full_footage", "hybrid", "evidence_footage", "edit_direct_footage"} and not initial.get("visual_strategy"):
                 initial["visual_strategy"] = prof_vs
+            if not initial.get("editing_dna") and isinstance(profile.get("editing_dna"), dict) and profile.get("editing_dna"):
+                initial["editing_dna"] = copy.deepcopy(profile["editing_dna"])
             prof_mm = str(profile.get("default_ai_media_mode") or "").strip().lower()
             if prof_mm in {"image", "video", "mixed"} and not initial.get("ai_media_mode"):
                 initial["ai_media_mode"] = prof_mm
+            prof_ai_vis = dict(initial.get("ai_visual") or {})
+            prof_style_mode = str(profile.get("default_ai_style_mode") or (profile.get("editorial_dna") or {}).get("default_ai_style_mode") or "").strip().lower()
+            prof_style_preset = str(profile.get("default_ai_style_preset") or (profile.get("editorial_dna") or {}).get("default_ai_style_preset") or "").strip()
+            prof_custom_style = str(profile.get("default_ai_custom_style") or (profile.get("editorial_dna") or {}).get("default_ai_custom_style") or "").strip()
+            if prof_style_mode in {"auto", "preset", "custom"} and not prof_ai_vis.get("style_mode"):
+                prof_ai_vis["style_mode"] = prof_style_mode
+            if prof_style_preset and not prof_ai_vis.get("style_preset"):
+                prof_ai_vis["style_preset"] = prof_style_preset
+            if prof_custom_style and not prof_ai_vis.get("custom_style"):
+                prof_ai_vis["custom_style"] = prof_custom_style
+            if prof_ai_vis:
+                initial["ai_visual"] = prof_ai_vis
             prof_brief = profile.get("default_creative_brief")
             prof_cta = str(
                 profile.get("cta_strategy")
@@ -463,15 +484,28 @@ class DocumentaryService:
                 initial["creative_brief"] = self._normalize_creative_brief(merged_brief, playbook_id=playbook_id)
             if not initial.get("seo_keyword_dna") and profile.get("seo_keyword_dna"):
                 initial["seo_keyword_dna"] = copy.deepcopy(profile["seo_keyword_dna"])
+            prof_voice_id = str(
+                profile.get("default_voice_id")
+                or (profile.get("editorial_dna") or {}).get("default_voice_id")
+                or ""
+            ).strip()
+            if prof_voice_id:
+                voice_cfg = dict(initial.get("voice") or {}) if isinstance(initial.get("voice"), dict) else {}
+                if not voice_cfg.get("voice_id"):
+                    voice_cfg["voice_id"] = prof_voice_id
+                    initial["voice"] = voice_cfg
             initial["channel_profile_snapshot"] = {
                 "id": profile.get("id"),
                 "label": profile.get("label"),
                 "market": profile.get("market"),
                 "source_mode": profile.get("source_mode"),
                 "default_duration_minutes": profile.get("default_duration_minutes"),
+                "default_voice_id": prof_voice_id or None,
                 "cta_strategy": prof_cta,
                 "editorial_dna": dict(profile.get("editorial_dna") or {}),
                 "seo_keyword_dna": copy.deepcopy(profile.get("seo_keyword_dna") or {}),
+                "viewer_feedback_guardrails": copy.deepcopy(profile.get("viewer_feedback_guardrails") or {}),
+                "pre_publish_checklist": copy.deepcopy(profile.get("pre_publish_checklist") or []),
             }
         initial["plan_engine"] = str(initial.get("plan_engine") or "codex").lower()
         if initial["plan_engine"] not in {"codex", "gemini"}:
@@ -2057,8 +2091,48 @@ class DocumentaryService:
         if future:
             future.result(timeout=timeout)
 
+    def _ensure_job_outline_blueprint(self, job: dict[str, Any], workspace: Path) -> dict[str, Any]:
+        """Ensure a structured Chapter/Act Outline Blueprint (outline.json) exists before scriptwriting."""
+        workspace.mkdir(parents=True, exist_ok=True)
+        outline_file = workspace / "outline.json"
+        existing_chapters = self._normalize_outline(job.get("outline"))
+        if outline_file.is_file():
+            try:
+                loaded = json.loads(outline_file.read_text(encoding="utf-8"))
+                parsed = self._normalize_outline(loaded)
+                if parsed:
+                    existing_chapters = parsed
+            except Exception:
+                pass
+        if not existing_chapters:
+            brief = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
+            profile_id = str(
+                job.get("channel_profile_id")
+                or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
+                or ""
+            ).strip()
+            default_ch_count = 5 if profile_id == "channel-e544a64b7c" else (5 if profile_id == "channel-cn-cyber-finance-kr" else 4)
+            try:
+                gen = self.generate_job_outline(str(job["id"]), {"chapter_count": default_ch_count})
+                existing_chapters = gen.get("chapters") or []
+                job = self.get_job(str(job["id"]))
+            except Exception:
+                pass
+        elif not outline_file.is_file():
+            brief = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
+            _write_json_atomic(
+                outline_file,
+                {
+                    "opening_hook": str(brief.get("opening_hook") or ""),
+                    "chapters": existing_chapters,
+                    "updated_at": _now(),
+                },
+            )
+        return job
+
     def _run_phase(self, job: dict[str, Any], phase: str, workspace: Path) -> StageResult:
         if phase == "plan":
+            job = self._ensure_job_outline_blueprint(job, workspace)
             selected_provider = str(self._ai_account_settings.get("chat_provider") or "auto").strip().lower()
             # Explicit selection in the chat controls every AI-backed phase.
             # Auto keeps the per-project plan preference and failover behavior.
@@ -2100,6 +2174,20 @@ class DocumentaryService:
         if phase == "edit":
             return self.edit_coordinator.run(job, workspace)
         if phase == "seo":
+            reuse_marker = workspace / ".reuse_existing_seo"
+            seo_path = workspace / "seo_package.json"
+            design_path = workspace / "thumbnail_design.json"
+            if reuse_marker.is_file() and seo_path.is_file() and design_path.is_file():
+                reuse_marker.unlink(missing_ok=True)
+                return StageResult(
+                    phase="seo",
+                    command=["reuse-existing-seo"],
+                    returncode=0,
+                    stdout="Reused pre-built verified SEO package and @특급수배록 thumbnail design.",
+                    stderr="",
+                    prompt_path=workspace / ".producer" / "seo.prompt.md",
+                    output_path=workspace / ".producer" / "seo.last.txt",
+                )
             context, image_paths = self._seo_reference_context(job, workspace)
             profile_id = str(context.get("profile_id") or "").strip()
             if profile_id and str(job.get("channel_profile_id") or "").strip() != profile_id:
@@ -2446,6 +2534,30 @@ class DocumentaryService:
                 rendered = workspace / rendered
             if not rendered.exists():
                 raise RuntimeError(f"rendered video does not exist: {rendered}")
+        if phase == "plan":
+            outline_file = workspace / "outline.json"
+            if outline_file.is_file():
+                try:
+                    loaded_ol = json.loads(outline_file.read_text(encoding="utf-8"))
+                    norm_ol = self._normalize_outline(loaded_ol)
+                    if norm_ol and job.get("id"):
+                        brief = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
+                        opening_hook = str(
+                            (loaded_ol.get("opening_hook") if isinstance(loaded_ol, dict) else "")
+                            or brief.get("opening_hook")
+                            or ""
+                        ).strip()
+                        self.store.update(
+                            str(job["id"]),
+                            {"outline": {"opening_hook": opening_hook, "chapters": norm_ol, "updated_at": _now()}},
+                        )
+                except Exception:
+                    pass
+            elif job.get("id"):
+                try:
+                    self.get_job_outline(str(job["id"]))
+                except Exception:
+                    pass
         validate_phase_quality(phase, workspace, job)
 
     def _review_phase_handoff(
@@ -6234,6 +6346,7 @@ class DocumentaryService:
                 default_ai_media_mode = "image"
 
         default_ai_style_mode = _pick_str("default_ai_style_mode") or str((existing or {}).get("default_ai_style_mode") or "custom")
+        default_ai_style_preset = _pick_str("default_ai_style_preset") or str((existing or {}).get("default_ai_style_preset") or "")
         default_ai_custom_style = _pick_str("default_ai_custom_style") or str((existing or {}).get("default_ai_custom_style") or "")
 
         editorial_payload = payload.get("editorial_dna")
@@ -6242,6 +6355,20 @@ class DocumentaryService:
             if isinstance(editorial_payload, dict) and editorial_payload
             else dict((existing or {}).get("editorial_dna") or {})
         )
+        script_workflow = dict(
+            payload.get("script_workflow")
+            if isinstance(payload.get("script_workflow"), dict) and payload.get("script_workflow")
+            else ((existing or {}).get("script_workflow") or editorial_dna.get("script_workflow") or {})
+        )
+        korean_prose_and_grammar_rules = dict(
+            payload.get("korean_prose_and_grammar_rules")
+            if isinstance(payload.get("korean_prose_and_grammar_rules"), dict) and payload.get("korean_prose_and_grammar_rules")
+            else ((existing or {}).get("korean_prose_and_grammar_rules") or editorial_dna.get("korean_prose_and_grammar_rules") or {})
+        )
+        if script_workflow:
+            editorial_dna["script_workflow"] = script_workflow
+        if korean_prose_and_grammar_rules:
+            editorial_dna["korean_prose_and_grammar_rules"] = korean_prose_and_grammar_rules
         has_custom_dna_fields = bool(
             allowed_topics
             or forbidden_topics
@@ -6400,6 +6527,7 @@ class DocumentaryService:
             "default_visual_strategy": default_visual_strategy,
             "default_ai_media_mode": default_ai_media_mode,
             "default_ai_style_mode": default_ai_style_mode,
+            "default_ai_style_preset": default_ai_style_preset,
             "default_ai_custom_style": default_ai_custom_style,
             "dna_mode": dna_mode,
             "voice_and_structure": voice_and_structure,
@@ -6408,6 +6536,8 @@ class DocumentaryService:
             "monetization_safety_policy": monetization_safety_policy,
             "reference_image_policy": reference_image_policy,
             "cta_strategy": cta_strategy,
+            "script_workflow": script_workflow,
+            "korean_prose_and_grammar_rules": korean_prose_and_grammar_rules,
             "default_creative_brief": default_creative_brief,
             "editorial_dna": editorial_dna,
             "seo_keyword_dna": seo_keyword_dna,
@@ -7665,9 +7795,157 @@ class DocumentaryService:
             },
         ]
 
+    @staticmethod
+    def _default_chinese_cyber_finance_candidates() -> list[dict[str, Any]]:
+        return [
+            {
+                "id": "cyber_cn_01",
+                "title": "[중국 사기 실화] 12만 명의 노후 자금 8조 원을 USB 하나에 담아 사라진 여인 | 6만 비트코인 세탁 사건 ([Vụ Lừa Đảo Có Thật ở Trung Quốc] Người phụ nữ gom 8.000 tỷ Won tiền dưỡng già của 120.000 người vào 1 chiếc USB rồi biến mất | Đại án rửa tiền 60.000 Bitcoin)",
+                "topic_anchor": "[중국 사기 실화] 12만 명의 노후 자금 8조 원을 USB 하나에 담아 사라진 여인 | 6만 비트코인 세탁 사건",
+                "winner_cluster": "Đại Án Lừa Đảo Dưỡng Già & Rửa Tiền Bitcoin Xuyên Quốc Gia (첸즈민 · 란톈거루이 6만 1천 비트코인 사건)",
+                "codex_score": 99,
+                "profile_score": 99,
+                "codex_angle": "Hồ Sơ Thật 100%: Đại Án Tiền Chí Mẫn (Qian Zhimin / 첸즈민) — Công Ty Lam Thiên Cách Nhuệ Thiên Tân & Cuộc Truy Vết 61.000 Bitcoin Tại Biệt Thự Hampstead London",
+                "codex_reasons": [
+                    "Đại án có thật 100%: Tiền Chí Mẫn (Qian Zhimin / 첸즈민, tức Trương Nhã Địch) và trợ lý Giản Văn (Jian Wen / 젠원) — Công ty Lam Thiên Cách Nhuệ (란톈거루이, Thiên Tân, 2014–2017) lừa 43 tỷ NDT (~8.000 tỷ Won) của 128.000 người cao tuổi rồi mua 61.000 Bitcoin trốn sang Anh",
+                    "Chi tiết điều tra vật lý thật 100%: Giản Văn từ nhân viên quán đồ ăn nhanh ở Leeds bỗng thuê biệt thự Hampstead 17.000 bảng/tháng và định mua dinhự 23,5 triệu bảng tại London nhưng bị chặn vì không giải trình được nguồn gốc Bitcoin; Cảnh sát Đô thành London đột kích thu giữ 61.000 BTC và Tòa án Southwark Crown xét xử năm 2024",
+                    "100% Xanh tiền YouTube: góc nhìn Đội Điều Tra Tài Chính & Cảnh Sát Quốc Tế"
+                ],
+                "opening_hook": "매달 꼬박꼬박 통장에 찍히던 높은 배당금, 그리고 효도 관광과 사은품까지. 중국 전역의 은퇴자 십이만 팔천 명은 자신들의 노후가 완벽히 보장되었다고 믿었습니다. 하지만 2017년 여름 회사의 모든 문이 닫혔을 때, 피해자들의 평생 노후 자금 8조 원은 이미 비트코인 6만 1천 개로 바뀌어 런던행 비행기에 실려 사라진 뒤였습니다.",
+                "note": "Hồ sơ đại án có thật 100% Tiền Chí Mẫn (Qian Zhimin / 첸즈민) & Giản Văn (Jian Wen / 젠원) — Công ty Lam Thiên Cách Nhuệ (란톈거루이, Thiên Tân, 2014–2017): Lừa đảo 43 tỷ NDT (~8.000 tỷ Won) của 128.000 người lớn tuổi, chuyển thành 61.000 Bitcoin và chiến dịch thu giữ tiền ảo lớn nhất lịch sử của Cảnh sát Đô thành London (Tòa án Southwark Crown 2024).",
+            },
+            {
+                "id": "cyber_cn_05",
+                "title": "[중국 사기 실화] 연 24% 이자에 평생 모은 퇴직금을 넣자 벌어진 일… 땅속 6미터에 묻힌 1,200자루의 비밀 장부 | 이주바오 9조 원 금융 사기 추적 ([Vụ Lừa Đảo Có Thật ở Trung Quốc] Gửi toàn bộ tiền hưu trí vào lãi suất 24%/năm… 1.200 bao tải sổ cái chôn sâu 6 mét dưới đất | Chuyên án Ezubao 9.000 tỷ Won)",
+                "topic_anchor": "[중국 사기 실화] 연 24% 이자에 평생 모은 퇴직금을 넣자 벌어진 일… 땅속 6미터에 묻힌 1,200자루의 비밀 장부 | 이주바오 9조 원 금융 사기 추적",
+                "winner_cluster": "Đại Án Ponzi Tài Chính Công Nghệ & Khai Quật 1.200 Bao Tải Sổ Cái Ngầm (이주바오 · 딩닝 500억 위안 금융 사기 실화)",
+                "codex_score": 99,
+                "profile_score": 99,
+                "codex_angle": "Hồ Sơ Thật 100%: Đại Án Ezubao (e租宝 / 이주바오 — Đinh Ninh 딩닝 & Trương Mẫn 장민) — 95.6% Dự Án Ma Trên Ứng Dụng Tài Chính & Cuộc Khai Quật 20 Giờ Đào 1.200 Bao Tải Sổ Cái Chôn Sâu 6 Mét Ở An Huy",
+                "codex_reasons": [
+                    "Đại án có thật 100% chấn động Trung Quốc: Nền tảng tài chính trực tuyến Ezubao (이주바오 / e租宝 — Tập đoàn Dục Thành 위청그룹) do Đinh Ninh (딩닝, sinh năm 1982), Trương Mẫn (장민) và Đinh Điện (딩뎬) cầm đầu (7/2014 – 12/2015), thu hút hơn 900.000 nhà đầu tư (phần lớn là người nghỉ hưu) với tổng số tiền hơn 50 tỷ NDT (~9.000 tỷ Won)",
+                    "Cơ chế kiểm toán thật 100%: Trong 207 doanh nghiệp vay vốn trên ứng dụng Ezubao, có tới 196 công ty (95.6%) là công ty vỏ bọc giả mạo do Đinh Ninh bỏ 500–1.000 NDT/hồ sơ mua thông tin để lập hợp đồng khống; tiền thật bị rút ruột mua biệt thự, nhẫn kim cương hồng 12 triệu NDT và chuyển lậu qua biên giới Vân Nam sang vùng Wa (와방, Bắc Myanmar)",
+                    "Bước ngoặt điều tra vật lý kinh điển thật 100%: Ngày 8/12/2015, trước khi công an ập vào trụ sở tại Hợp Phì (tỉnh An Huy 안후이성 허페이), nhóm kế toán mật đã cho 80 ổ cứng máy chủ và 1.200 bao tải sổ cái mật vào túi hút chân không, dùng 2 máy xúc đào hố sâu 6 mét dưới đất ở ngoại ô Hợp Phì để chôn sống; Công an Bắc Kinh & An Huy phải điều 2 máy xúc đào liên tục suốt 20 giờ đồng hồ mới khôi phục được toàn bộ sổ cái dòng tiền. Ngày 12/9/2017, Tòa án Trung cấp số 1 Bắc Kinh tuyên Đinh Ninh và Đinh Điện án tù chung thân (무기징역), Trương Mẫn 15 năm tù (징역 십오 년)"
+                ],
+                "opening_hook": "스마트폰 앱에 퇴직금을 넣어두면 연 14퍼센트에서 최대 24퍼센트의 확정 수익을 준다는 온라인 금융 플랫폼 이주바오. 불과 일 년 반 만에 중국 전역의 은퇴자 구십만 명이 평생 모은 노후 자금 오백억 위안, 우리 돈 구조 원을 맡겼습니다. 하지만 2015년 12월 공안이 본사를 급습했을 때 서버실은 텅 비어 있었고, 핵심 장부 천이백 자루는 안후이성 외곽 야산 땅속 육 미터 깊이에 파묻혀 있었습니다.",
+                "note": "Hồ sơ đại án có thật 100% Ezubao (e租宝 / 이주바오 — Tập đoàn Dục Thành 위청그룹, 7/2014 – 12/2015): Chủ mưu Đinh Ninh (딩닝), Trương Mẫn (장민), Đinh Điện (딩뎬) dùng 196/207 công ty vỏ bọc giả (95.6% dự án ma) trên ứng dụng tài chính để lừa 50 tỷ NDT (~9.000 tỷ Won) của hơn 900.000 người, chôn 80 ổ cứng và 1.200 bao tải sổ cái sâu 6 mét dưới đất tại Hợp Phì (An Huy), chiến dịch 20 giờ dùng 2 máy xúc khai quật chứng cứ của Công an Bắc Kinh & An Huy, và phán quyết tù chung thân ngày 12/9/2017 của Tòa án Nhân dân Trung cấp số 1 Bắc Kinh (đợt hoàn trả đầu tiên tháng 1/2020 chỉ thu hồi được khoảng 35%).",
+            },
+            {
+                "id": "cyber_cn_06",
+                "title": "[중국 사기 실화] 은행 금고 속 금괴 83톤이 전부 구리였다… 금융권을 뒤흔든 3조 8천억 가짜 황금 담보 사기 | 우한 진황주얼리 사건 ([Vụ Lừa Đảo Có Thật ở Trung Quốc] 83 tấn vàng thỏi trong két ngân hàng toàn là đồng… Cú lừa thế chấp vàng giả 3.800 tỷ Won làm rúng động giới tài chính | Đại án Kim Hoàng Vũ Hán)",
+                "topic_anchor": "[중국 사기 실화] 은행 금고 속 금괴 83톤이 전부 구리였다… 금융권을 뒤흔든 3조 8천억 가짜 황금 담보 사기 | 우한 진황주얼리 사건",
+                "winner_cluster": "Đại Án Gian Lận Tài Chính & Đánh Tráo Két Sắt Ngân Hàng (우한 진황주얼리 · 자즈훙 83톤 가짜 금괴 사건)",
+                "codex_score": 98,
+                "profile_score": 98,
+                "codex_angle": "Hồ Sơ Thật 100%: Đại Án Vũ Hán Kim Hoàng (武汉金凰珠宝 / 우한 진황주얼리 — Giả Chí Hồng 자즈훙) — 83 Tấn Đồng Mạ Vàng Qua Mặt 14 Định Chế Tài Chính Rút Ruột 20 Tỷ NDT",
+                "codex_reasons": [
+                    "Vụ lừa đảo vàng giả lớn nhất lịch sử hiện đại Trung Quốc (Kingold Jewelry / 우한 진황주얼리 — Chủ tịch Giả Chí Hồng 자즈훙, 2015–2020): 83 tấn đồng đỏ mạ vàng nằm trong két sắt của 14 ngân hàng và công ty tín thác (민성신탁, 둥관신탁, 창안신탁, 헝펑은행...)",
+                    "Tháng 2/2020, khi công ty tín thác Dongguan Trust đưa vàng thế chấp vào lò nung phát mại thì phát hiện bên trong lớp mạ mỏng toàn bộ là đồng đỏ; tháng 5/2024 Tòa án Trung cấp Vũ Hán tuyên phạt Giả Chí Hồng án tù chung thân (무기징역)",
+                    "100% Xanh tiền YouTube, cực kỳ lôi cuốn khán giả trung niên và cao tuổi Hàn Quốc"
+                ],
+                "opening_hook": "국유 신탁회사와 은행 열네 곳의 삼엄한 지하 금고 안. 이백억 위안, 우리 돈 삼조 팔천억 원어치의 대출 담보로 보관되어 있던 순금 팔십삼 톤이 봉인된 상자 속에 잠들어 있었습니다. 하지만 2020년 2월, 대출 만기를 넘긴 금괴를 용광로에 넣는 순간 모두가 얼어붙었습니다. 겉면의 얇은 금빛 도금이 벗겨지며 시뻘건 구리 덩어리가 모습을 드러냈기 때문입니다.",
+                "note": "Hồ sơ đại án có thật 100% Kingold Jewelry (Kim Hoàng Chu Bảo — 우한 진황주얼리, Chủ tịch Giả Chí Hồng 자즈훙, 2015–2020, tuyên án tù chung thân tháng 5/2024 tại Tòa án Trung cấp Vũ Hán): Giải mã cách 83 tấn đồng mạ vàng qua mặt các khâu giám định và bảo hiểm để rút ruột 20 tỷ NDT (~3.800 tỷ Won) từ 14 tổ chức tài chính.",
+            },
+            {
+                "id": "cyber_cn_07",
+                "title": "[중국 사기 실화] 무료 건강검진 받으러 갔다가 노후 아파트까지 날렸다… 10만 은퇴자를 울린 2조 원 양로 사기 | 난징 아이푸자 사건 ([Vụ Lừa Đảo Có Thật ở Trung Quốc] Đi khám sức khỏe miễn phí rồi mất trắng cả căn hộ dưỡng già… Bẫy đầu tư dưỡng lão 2.000 tỷ Won làm 100.000 người về hưu trắng tay | Chuyên án Ái Phúc Gia Nam Kinh)",
+                "topic_anchor": "[중국 사기 실화] 무료 건강검진 받으러 갔다가 노후 아파트까지 날렸다… 10만 은퇴자를 울린 2조 원 양로 사기 | 난징 아이푸자 사건",
+                "winner_cluster": "Bẫy Đầu Tư Dưỡng Lão & Tẩu Tán Tài Sản Người Cao Tuổi (난징 아이푸자 · 차오빈 106억 위안 양로 사기 사건)",
+                "codex_score": 97,
+                "profile_score": 97,
+                "codex_angle": "Hồ Sơ Thật 100%: Đại Án Ái Phúc Gia (爱福家 / 아이푸자 — Tào Bân 차오빈) — Kịch Bản 'Chăm Sóc Hơn Con Ruột' & Truy Vết 10,6 Tỷ NDT Tiền Dưỡng Già Của 100.000 Người Cao Tuổi",
+                "codex_reasons": [
+                    "Đại án có thật 100% Ái Phúc Gia (Aifujia / 아이푸자 — Chủ tịch Tào Bân 차오빈, 2014 – 5/2019): Lập hơn 200 chi nhánh tại Nam Kinh, Thượng Hải, Bắc Kinh, Hàng Châu lừa hơn 100.000 người nghỉ hưu với tổng số tiền 10,6 tỷ NDT (~2.000 tỷ Won)",
+                    "Giải phẫu quy trình thao túng tâm lý 5 bước từ quà tặng trứng gà, khám sức khỏe miễn phí đến hợp đồng dự án bất động sản dưỡng lão khống lãi suất 18%/năm, đêm 10/5/2019 đồng loạt đóng cửa bỏ trốn và bản án tù chung thân (무기징역) của Tòa án Trung cấp Nam Kinh",
+                    "Kết hợp bảng kiểm toán dòng tiền và truy vết tài sản bị tẩu tán"
+                ],
+                "opening_hook": "친자식보다 더 살갑게 매일 안부 전화를 걸어오고, 무료 건강검진과 사은품을 챙겨주던 청년들. 그들이 내민 것은 고급 실버타운 입주권과 연 십팔 퍼센트 확정 수익을 보장한다는 아이푸자 효도 계약서였습니다. 하지만 십만 명의 은퇴자들이 퇴직금과 집 문서까지 맡긴 2019년 5월의 어느 날, 전국 이백여 개 지점은 하룻밤 사이에 텅 빈 껍데기만 남긴 채 사라졌습니다.",
+                "note": "Hồ sơ đại án có thật 100% Ái Phúc Gia (Aifujia / 아이푸자 — Chủ tịch Tào Bân 차오빈, 2014–2019, tuyên án tù chung thân tại Tòa án Trung cấp Nam Kinh): Lừa 10,6 tỷ NDT (~2.000 tỷ Won) của hơn 100.000 người cao tuổi tại Nam Kinh, Thượng Hải, Bắc Kinh.",
+            },
+            {
+                "id": "cyber_cn_04",
+                "title": "[중국 사기 실화] 영상통화 속 얼굴도 목소리도 가짜였다… 10분 만에 증발한 8억 원 | 바오터우 AI 딥페이크 금융 사기 사건 ([Vụ Lừa Đảo Có Thật ở Trung Quốc] Khuôn mặt và giọng nói trong cuộc gọi video đều là giả… 800 triệu Won bốc hơi sau 10 phút | Vụ án lừa đảo tài chính AI Deepfake Bao Đầu)",
+                "topic_anchor": "[중국 사기 실화] 영상통화 속 얼굴도 목소리도 가짜였다… 10분 만에 증발한 8억 원 | 바오터우 AI 딥페이크 금융 사기 사건",
+                "winner_cluster": "Tội Phạm AI Deepfake Công Nghệ Cao & Cuộc Chạy Đua Phong Tỏa Tài Khoản (바오터우 430만 위안 AI 딥페이크 사건)",
+                "codex_score": 96,
+                "profile_score": 96,
+                "codex_angle": "Hồ Sơ Thật 100%: Vụ Án AI Deepfake 4,3 Triệu NDT Tại Bao Đầu & Phúc Châu (20/4/2023 — Nạn Nhân Quách Tiên Sinh 궈 씨)",
+                "codex_reasons": [
+                    "Vụ án có thật 100% công bố bởi Công an thành phố Bao Đầu (Nội Mông 네이멍구 바오터우시) & Phúc Châu (Phúc Kiến 푸젠성 푸저우시) ngày 20/4/2023: ông Quách (궈 씨) bị lừa chuyển 4,3 triệu NDT (~800 triệu Won) chỉ sau 10 phút gọi video WeChat với khuôn mặt và giọng nói AI Deepfake của bạn thân",
+                    "Cuộc chạy đua nghẹt thở trong 20 phút của cảnh sát và ngân hàng để phong tỏa khẩn cấp 3,368 triệu NDT và truy vết 932.000 NDT bị chia nhỏ qua các tài khoản rửa tiền"
+                ],
+                "opening_hook": "목소리만 들으면 보이스피싱일 수 있으니 반드시 영상통화로 얼굴을 확인하라는 말은 우리가 믿어왔던 안전 수칙이었습니다. 그런데 2023년 4월 20일, 영상통화 화면 너머에서 눈을 맞추며 웃던 오랜 친구의 얼굴과 목소리가 사실은 인공지능이 실시간으로 합성해 낸 가짜 인간이었습니다. 단 십 분간의 영상통화 끝에 사백삼십만 위안, 우리 돈 팔억 원이 감쪽같이 빠져나갔습니다.",
+                "note": "Hồ sơ vụ án có thật 100% AI Deepfake ngày 20/4/2023 tại Phúc Châu & Bao Đầu (Nội Mông): Ông Quách (궈 씨) bị lừa 4,3 triệu NDT (~800 triệu Won) sau cuộc gọi video 10 phút và chiến dịch phong tỏa khẩn cấp 3,368 triệu NDT của Công an Bao Đầu.",
+            },
+            {
+                "id": "cyber_cn_02",
+                "title": "[중국 사기 실화] 10만 명의 노후 자금 3조 6천억 원이 하룻밤 새 증발했다… 창사 38층 금융 타워의 비밀과 국경 추격전 | 성다진시 사건 ([Vụ Lừa Đảo Có Thật ở Trung Quốc] 3.600 tỷ Won tiền dưỡng già của 100.000 người bốc hơi sau một đêm… Bí mật tòa tháp 38 tầng Trường Sa và cuộc truy bắt biên giới | Đại án Thịnh Đại Kim Hi)",
+                "topic_anchor": "[중국 사기 실화] 10만 명의 노후 자금 3조 6천억 원이 하룻밤 새 증발했다… 창사 38층 금융 타워의 비밀과 국경 추격전 | 성다진시 사건",
+                "winner_cluster": "Đại Án Tài Chính Hồ Nam & Cuộc Truy Bắt Vượt Biên Vân Nam (창사 성다진시 · 판허쥔 194억 위안 사건)",
+                "codex_score": 96,
+                "profile_score": 96,
+                "codex_angle": "Hồ Sơ Thật 100%: Đại Án Thịnh Đại Kim Hi Tại Trường Sa, Hồ Nam (长沙盛大金禧 / 창사 성다진시 — Bàn Hòa Tuấn 판허쥔)",
+                "codex_reasons": [
+                    "Đại án có thật 100% tại thành phố Trường Sa, tỉnh Hồ Nam (후난성 창사시): Tập đoàn Thịnh Đại Kim Hi (성다진시) của chủ tịch Bàn Hòa Tuấn (판허쥔) dùng mồi lãi suất 14%–18%/năm lừa hơn 104.000 người dân & người nghỉ hưu tổng số tiền 19,4 tỷ NDT (~3.600 tỷ Won) suốt 11 năm (2011–2022)",
+                    "Đêm 19/11/2022 toàn bộ trụ sở 38 tầng tại Trường Sa trống rỗng, Bàn Hòa Tuấn tìm cách vượt biên tại biên giới Vân Nam ngày 21/11/2022 nhưng bị Công an Trường Sa tóm gọn cùng hơn 60 đồng phạm"
+                ],
+                "opening_hook": "후난성 창사시 한복판에 우뚝 솟은 삼십팔 층짜리 금빛 빌딩. 박사 학위를 가진 기업가 판허쥔은 연 십사 퍼센트가 넘는 확정 수익을 약속하며 십만 명이 넘는 퇴직자들의 노후 자금을 끌어모았습니다. 하지만 2022년 11월 19일 밤, 화려하던 사무실은 하룻밤 사이에 텅 비어 버렸고 삼조 육천억 원의 자금과 함께 회장은 국경으로 사라졌습니다.",
+                "note": "Hồ sơ đại án có thật 100% Thịnh Đại Kim Hi tại Trường Sa, Hồ Nam (창사 성다진시 — Chủ tịch Bàn Hòa Tuấn 판허쥔, 2011–2022): Lừa 19,4 tỷ NDT (~3.600 tỷ Won) của hơn 104.000 người và cuộc truy bắt ở biên giới Vân Nam tháng 11/2022.",
+            },
+            {
+                "id": "cyber_cn_03",
+                "title": "[중국 사기 실화] 화면 없는 휴대폰 기판 20개가 한 상자에… 중국 전역을 속인 '마더보드 폰' 공장의 실체 | 윈투오크지·샹팡과기 사건 ([Vụ Lừa Đảo Có Thật ở Trung Quốc] 20 bo mạch điện thoại không màn hình trong 1 chiếc hộp… Sự thật nhà máy 'Motherboard Phone' lừa đảo khắp Trung Quốc | Chuyên án Vân Đẩu & Tường Phương)",
+                "topic_anchor": "[중국 사기 실화] 화면 없는 휴대폰 기판 20개가 한 상자에… 중국 전역을 속인 '마더보드 폰' 공장의 실체 | 윈투오크지·샹팡과기 사건",
+                "winner_cluster": "Chuyên Án Nhà Máy Bo Mạch Điện Thoại Ma CCTV 3·15 (후난 윈투오크지 · 선전 샹팡과기 주반지 사건)",
+                "codex_score": 95,
+                "profile_score": 95,
+                "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án CCTV 3·15 Ngày 15/3/2024 — Công Ty Vân Đẩu (Sâm Châu, Hồ Nam) & Công Ty Tường Phương (Bảo An, Thâm Quyến)",
+                "codex_reasons": [
+                    "Vụ án có thật 100% bị CCTV 3·15 Gala phanh phui ngày 15/3/2024 và Công an Sâm Châu (Hồ Nam 후난성 천저우시) cùng Công an Bảo An (Thâm Quyến 선전시 바오안구) đột kích: Công ty Vân Đẩu (윈투오크지, giám đốc Viên Mỗ 위안 씨) và Công ty Tường Phương (샹팡과기, giám đốc Thái Mỗ 차이 씨) lắp 20 bo mạch điện thoại cũ vào 1 hộp sắt (주반지) để thao túng phòng chat, giả mạo IP và phát tán lừa đảo"
+                ],
+                "opening_hook": "액정도 배터리도 없이 초록색 회로 기판 스무 개가 철제 상자 하나에 빽빽이 꽂혀 있습니다. 2024년 3월 15일 밤, 중국 후난성 천저우시와 선전시 바오안구의 비밀 작업장을 급습한 공안은 눈앞의 광경에 말을 잃었습니다. 컴퓨터 한 대로 수천 대의 휴대폰 기판을 동시에 조종하며 전국 단톡방의 여론과 투자 사기를 조작하던 마더보드 폰 공장의 실체가 드러난 순간이었습니다.",
+                "note": "Hồ sơ chuyên án có thật 100% ngày 15/3/2024 (CCTV 3·15 & Công an Sâm Châu Hồ Nam / Bảo An Thâm Quyến): Triệt phá Công ty Vân Đẩu (윈투오크지 — Viên Mỗ 위안 씨) và Công ty Tường Phương (샹팡과기 — Thái Mỗ 차이 씨) sản xuất và vận hành hộp bo mạch điện thoại không màn hình (주반지 / Motherboard Box).",
+            },
+            {
+                "id": "cyber_cn_08",
+                "title": "[중국 사기 실화] 단 한 줄 '도망쳤다' 남기고 증발한 노후 자금 30조 원… 200만 명 울린 유령 지갑의 실체 | 플러스토큰 추적 ([Vụ Lừa Đảo Có Thật ở Trung Quốc] Để lại đúng một dòng 'Chúng tôi đã chạy trốn' rồi bốc hơi 30.000 tỷ Won tiền dưỡng già… Sự thật về ví tiền ảo làm 2 triệu người khóc ròng | Truy vết PlusToken)",
+                "topic_anchor": "[중국 사기 실화] 단 한 줄 '도망쳤다' 남기고 증발한 노후 자금 30조 원… 200만 명 울린 유령 지갑의 실체 | 플러스토큰 추적",
+                "winner_cluster": "Đại Án Ponzi Tiền Ảo Xuyên Quốc Gia & Chiến Dịch Truy Bắt Toàn Cầu (플러스토큰 30조 원 다단계)",
+                "codex_score": 97,
+                "profile_score": 97,
+                "codex_angle": "Giải Phẫu Mô Hình Ponzi Đa Cấp Tiền Ảo & Truy Vết Dòng Tiền Qua 28.000 Ví Trộn (Trần Ba 천보 & Đinh Tán Thanh 딩잔칭)",
+                "codex_reasons": [
+                    "Vụ Ponzi tiền ảo lớn nhất lịch sử châu Á (hơn 2 triệu nạn nhân, quy mô 200 tỷ NDT ~ 30 nghìn tỷ Won), từng vươn vòi sang cả Hàn Quốc",
+                    "Màn rút ruột kinh điển ngày 27/6/2019 kèm dòng chữ thách thức 'Sorry, we have run' trên blockchain và chiến dịch bắt giữ tại đảo quốc Vanuatu, xét xử tại Tòa án Trung cấp Diêm Thành (Giang Tô) tháng 11/2020"
+                ],
+                "opening_hook": "스마트폰 지갑에 돈을 넣어두기만 해도 인공지능 로봇이 알아서 차익 거래를 해 매달 10%에서 30%의 이자를 준다는 달콤한 약속. 무려 200만 명이 넘는 사람들이 이 기적의 지갑에 평생 모은 돈을 쏟아부었습니다. 하지만 2019년 6월 27일 밤, 출금 버튼이 일제히 멈추고 블록체인 원장 위에는 단 한 줄의 영문 메시지만 남았습니다. '미안하다, 우리는 이미 도망쳤다.'",
+                "note": "Hồ sơ đại án có thật 100% PlusToken (Trần Ba 천보, Đinh Tán Thanh 딩잔칭, 2018–2020): 2 triệu nạn nhân, 30 nghìn tỷ Won, 28.000 lần trộn tiền trên blockchain, bắt giữ tại đảo quốc Vanuatu và bản án của Tòa án Trung cấp Diêm Thành (Giang Tô).",
+            },
+        ]
+
+    @classmethod
+    def _is_cyber_finance_profile(cls, profile: dict[str, Any]) -> bool:
+        pid = str(profile.get("id") or "")
+        if pid == "channel-cn-cyber-finance-kr":
+            return True
+        if pid in {"channel-e544a64b7c", "channel-1e24de3ab5", "channel-aa913eb90d", "channel-f6ec4dfff3"}:
+            return False
+        blob = " ".join([
+            str(profile.get("label") or ""),
+            str(profile.get("allowed_topics") or ""),
+            str((profile.get("seo_keyword_dna") or {}).get("primary_title_keyword") or ""),
+        ]).lower()
+        cyber_markers = [
+            "tội phạm công nghệ cao", "điều tra dòng tiền", "tiền ảo", "lừa đảo tài chính",
+            "중국 사기 실화", "금융 범죄", "사이버 수사대", "대포통장", "환치기", "노후 자금 사기",
+        ]
+        return any(m in blob for m in cyber_markers)
+
     @classmethod
     def _is_true_crime_profile(cls, profile: dict[str, Any]) -> bool:
         pid = str(profile.get("id") or "")
+        if cls._is_cyber_finance_profile(profile):
+            return False
         if pid == "channel-e544a64b7c":
             return True
         if pid in {"channel-1e24de3ab5", "channel-aa913eb90d", "channel-f6ec4dfff3"}:
@@ -7688,6 +7966,8 @@ class DocumentaryService:
     def _default_candidates_for_profile(cls, profile: dict[str, Any]) -> list[dict[str, Any]]:
         pid = str(profile.get("id") or "")
         market = str(profile.get("market") or "KR").upper()
+        if cls._is_cyber_finance_profile(profile):
+            return cls._default_chinese_cyber_finance_candidates()
         if cls._is_true_crime_profile(profile):
             return cls._default_chinese_true_crime_candidates()
         if pid == "channel-1e24de3ab5" or market == "KR":
@@ -7702,7 +7982,17 @@ class DocumentaryService:
         if not haystack:
             return False
         if profile is not None:
-            if cls._is_true_crime_profile(profile):
+            if cls._is_cyber_finance_profile(profile):
+                # Cyber-Finance profile strictly forbids violent homicide/murder/corpse True Crime cases and heavy infrastructure cases
+                cyber_forbidden = [
+                    "사형수", "쑨샤오궈", "정화조", "살인", "시신", "주커화", "유영표", "밀실 실종",
+                    "연쇄살인", "총살", "성폭행", "삼협댐", "싼샤댐", "남수북조",
+                    "tôn tiểu quả", "hầm tự hoại", "chu khắc hoa", "lưu vĩnh bưu", "sát hại",
+                    "thi thể", "án mạng", "tử tù", "đập tam hiệp", "nam thủy bắc điều",
+                ]
+                if any(token in haystack for token in cyber_forbidden):
+                    return True
+            elif cls._is_true_crime_profile(profile):
                 # True Crime profile strictly forbids infrastructure, economic & corruption topics
                 crime_forbidden = [
                     "뇌물", "부패", "탐관오리", "횡령", "공무원", "4,400억", "4400억", "양유린",
@@ -7859,7 +8149,7 @@ class DocumentaryService:
                 f"- CẤM TUYỆT ĐỐI (FORBIDDEN TOPICS): {forbidden_topics}\n"
                 f"- NGÔI KỂ & GÓC KỂ XANH TIỀN (100% GREEN MONETIZATION): {monetization_policy}\n"
                 f"- BỘ NHỚ CÁC ĐỀ TÀI & VỤ ÁN ĐÃ SẢN XUẤT TRÊN HỒ SƠ KÊNH NÀY (TUYỆT ĐỐI CẤM LẶP LẠI VỤ ÁN HOẶC NHÂN VẬT ĐÃ LÀM): {json.dumps(all_produced_titles[:40], ensure_ascii=False)}\n\n"
-                "Hãy đề xuất 6 đề tài phim tài liệu CÓ THẬT hoàn toàn mới, đa dạng cụm chủ đề, khớp 100% với mục CHỈ CHỌN của kênh này và TUYỆT ĐỐI KHÔNG trùng lặp với bất kỳ vụ án/nhân vật nào trong BỘ NHỚ ĐÃ SẢN XUẤT hay dính mục CẤM TUYỆT ĐỐI.\n"
+                "Hãy đề xuất 12 đề tài phim tài liệu CÓ THẬT hoàn toàn mới, đa dạng cụm chủ đề, khớp 100% với mục CHỈ CHỌN của kênh này và TUYỆT ĐỐI KHÔNG trùng lặp với bất kỳ vụ án/nhân vật nào trong BỘ NHỚ ĐÃ SẢN XUẤT hay dính mục CẤM TUYỆT ĐỐI.\n"
                 "Trả DUY NHẤT JSON dạng:\n"
                 '{"candidates":[{"id":"dna_ai_1","title":"Tiêu đề bản ngữ chuẩn phong cách kênh (Kèm dịch nghĩa tiếng Việt trong ngoặc nếu là tiếng Hàn/Anh)","topic_anchor":"Tiêu đề gốc","winner_cluster":"Cụm chủ đề thắng của kênh","codex_score":97,"codex_angle":"Góc kể chuẩn DNA kênh","codex_reasons":["Lý do 1","Lý do 2"],"opening_hook":"Lời dẫn Hook mở màn 30s bằng ngôn ngữ của kênh","note":"Tóm tắt hồ sơ thực tế và cấu trúc triển khai 100% Xanh tiền"}]}'
             )
@@ -7933,7 +8223,7 @@ class DocumentaryService:
             curated.append(enriched)
 
         # Replenish from default_pool if needed
-        if len(curated) < 6:
+        if len(curated) < 15:
             for fallback_item in default_pool:
                 if not isinstance(fallback_item, dict):
                     continue
@@ -7978,7 +8268,7 @@ class DocumentaryService:
             item["title_vi"] = t_vi
             item["seo_keyword_dna"] = copy.deepcopy(seo_dna)
 
-        final_candidates = curated[:6]
+        final_candidates = curated[:15]
         result = {
             "today": final_candidates,
             "candidates": final_candidates,
@@ -8021,7 +8311,7 @@ class DocumentaryService:
                 target["updated_at"] = _now()
                 if not (
                     os.environ.get("PYTEST_CURRENT_TEST")
-                    and self.channel_profiles_path.resolve() == (self.root / "data" / "channel_profiles.json").resolve()
+                    and self._channel_profiles_path.resolve() == (Path(__file__).resolve().parents[1] / "data" / "channel_profiles.json").resolve()
                 ):
                     self._save_channel_profiles()
         self._set_channel_profile_activity(
@@ -8417,7 +8707,7 @@ class DocumentaryService:
                 target["updated_at"] = _now()
                 if not (
                     os.environ.get("PYTEST_CURRENT_TEST")
-                    and self.channel_profiles_path.resolve() == (self.root / "data" / "channel_profiles.json").resolve()
+                    and self._channel_profiles_path.resolve() == (Path(__file__).resolve().parents[1] / "data" / "channel_profiles.json").resolve()
                 ):
                     self._save_channel_profiles()
         items = self._decorate_plan_items(self.radar_client.plan_items(int(plan_id)))
@@ -8457,7 +8747,7 @@ class DocumentaryService:
                 target["updated_at"] = _now()
                 if not (
                     os.environ.get("PYTEST_CURRENT_TEST")
-                    and self.channel_profiles_path.resolve() == (self.root / "data" / "channel_profiles.json").resolve()
+                    and self._channel_profiles_path.resolve() == (Path(__file__).resolve().parents[1] / "data" / "channel_profiles.json").resolve()
                 ):
                     self._save_channel_profiles()
         items = self._apply_codex_plan_review(items, review)
@@ -8619,6 +8909,12 @@ class DocumentaryService:
 
         raise ValueError("Provider phải là codex hoặc gemini")
 
+    def trail_status(self) -> dict[str, Any]:
+        return self.trail_manager.status()
+
+    def trail_sync(self) -> dict[str, Any]:
+        return self.trail_manager.setup_or_sync(install_if_missing=True)
+
     def health(self) -> dict[str, Any]:
         codex = executable_status(str(getattr(self.codex_gateway, "executable", "codex")))
         gemini = executable_status(str(getattr(self.gemini_gateway, "executable", "gemini")))
@@ -8685,6 +8981,7 @@ class DocumentaryService:
                 "action": gemini.get("action") or "",
             },
             "router": ai_router,
+            "trail": self.trail_manager.status(),
         }
         return {
             "ok": bool(remotion.get("ok")),
@@ -8707,6 +9004,7 @@ class DocumentaryService:
             "cofi_voice": voice,
             "cofi_studio": cofi_studio,
             "cofi_remotion": remotion,
+            "trail_code": ai_accounts.get("trail"),
             "active_job_id": self._active_job_id,
             "pipeline": list(PHASES),
         }
@@ -9166,16 +9464,22 @@ class DocumentaryService:
                 est_min = float(item.get("estimated_minutes") or item.get("duration_minutes") or 3)
             except (TypeError, ValueError):
                 est_min = 3.0
-            normalized.append({
+            entry: dict[str, Any] = {
                 "chapter": int(item.get("chapter") or idx),
-                "chapter_id": str(item.get("chapter_id") or f"CH{idx:02d}"),
+                "chapter_id": str(item.get("chapter_id") or f"ACT{idx:02d}"),
                 "title": title,
                 "estimated_minutes": est_min,
                 "summary": summary,
                 "evidence_anchor": str(item.get("evidence_anchor") or item.get("evidence") or "").strip(),
                 "visual_note": str(item.get("visual_note") or item.get("visual_direction") or item.get("visual_grammar") or "").strip(),
                 "ai_suggestion": str(item.get("ai_suggestion") or "").strip(),
-            })
+            }
+            if item.get("target_non_space_chars") is not None:
+                try:
+                    entry["target_non_space_chars"] = int(item["target_non_space_chars"])
+                except (TypeError, ValueError):
+                    pass
+            normalized.append(entry)
         return normalized
 
     def update_creative_brief(self, job_id: str, payload: dict[str, Any]) -> dict[str, Any]:
@@ -9294,7 +9598,17 @@ class DocumentaryService:
         brief = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
         title = str(job.get("title") or job.get("topic") or "Dự án tài liệu").strip()
         notes = str(data.get("instruction") or data.get("notes") or job.get("notes") or "").strip()
-        chapter_count = int(data.get("chapter_count") or 4)
+        profile_id = str(
+            job.get("channel_profile_id")
+            or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
+            or ""
+        ).strip()
+        default_chapters = 5 if profile_id == "channel-e544a64b7c" else (5 if profile_id == "channel-cn-cyber-finance-kr" else 4)
+        chapter_count = int(data.get("chapter_count") or default_chapters)
+        try:
+            target_mins = float(job.get("target_duration_minutes") or 15.0)
+        except (TypeError, ValueError):
+            target_mins = 15.0
         angle_id = str(brief.get("narrative_angle") or "forensic_investigative").strip()
         style_id = str(brief.get("writing_style") or "cold_analytical").strip()
         hook_id = str(brief.get("hook_archetype") or "shocking_paradox").strip()
@@ -9311,6 +9625,8 @@ class DocumentaryService:
             hook_label=hook_label,
             opening_hook=str(brief.get("opening_hook") or "").strip(),
             chapter_count=chapter_count,
+            profile_id=profile_id,
+            target_duration_minutes=target_mins,
         )
         updated = self.update_job_outline(job_id, chapters)
         return {
@@ -9350,12 +9666,150 @@ class DocumentaryService:
         hook_label: str,
         opening_hook: str = "",
         chapter_count: int = 4,
+        profile_id: str = "",
+        target_duration_minutes: float = 15.0,
     ) -> list[dict[str, Any]]:
         clean_title = title.strip() or "Chủ đề trọng tâm"
         note_hint = f" ({notes[:120]})" if notes else ""
         hook_summary = opening_hook or (
             f"Mở màn theo cấu trúc [{hook_label}]: Đặt ngay nghịch lý lớn nhất của «{clean_title}» trong 30 giây đầu tiên để giữ chân người xem."
         )
+        total_chars = max(600, round(float(target_duration_minutes or 15.0) * 308))
+        is_cyber_finance = (
+            profile_id == "channel-cn-cyber-finance-kr"
+            or "중국 사기 실화" in clean_title
+            or "금융·사이버" in angle_id
+            or "Tội Phạm Công Nghệ Cao" in angle_id
+        )
+        is_true_crime_kr = (
+            profile_id == "channel-e544a64b7c"
+            or "중국 실화 사건" in clean_title
+            or "특급수배록" in notes
+        )
+        if is_cyber_finance and chapter_count >= 5:
+            weights = [0.13, 0.23, 0.26, 0.22, 0.16]
+            mins = [round(target_duration_minutes * w, 1) for w in weights]
+            chars = [round(total_chars * w) for w in weights]
+            base = [
+                {
+                    "chapter": 1,
+                    "chapter_id": "ACT01",
+                    "title": f"Hồi 1 (ACT01): Hiện Trường Tài Chính & Nghịch Lý Mở Màn — {clean_title}",
+                    "estimated_minutes": mins[0],
+                    "target_non_space_chars": chars[0],
+                    "summary": f"{hook_summary} Bám sát 100% hồ sơ đại án có thật: đi từ bối cảnh thực tế của nạn nhân và mồi nhử ban đầu đến cú sập tài chính gây chấn động. (CẤM đặt CTA trong 2 phút đầu, CẤM dùng họ người Hàn 김 씨/박 씨 cho người Trung Quốc).",
+                    "evidence_anchor": "Hồ sơ vụ án thật, ngày giờ, địa điểm, tên thật các đối tượng và con số thiệt hại xác thực theo cáo trạng.",
+                    "visual_note": "Footage thật hiện trường/nạn nhân vụ án (max_uses=1) + Ảnh AI 4D Người vô diện 1-to-1 ({bid}_ai_keyframe.jpg) + Vox Bảng đối chiếu tài chính thiết kế độc bản khớp 100% câu voice.",
+                    "ai_suggestion": "Bám sát 100% vụ án có thật (cấm ghép vụ án hay bịa số liệu), viết tiếng Hàn tự nhiên, kiểm soát đuôi ~죠 tối đa 6-8 lần toàn bài.",
+                },
+                {
+                    "chapter": 2,
+                    "chapter_id": "ACT02",
+                    "title": "Hồi 2 (ACT02): Giải Phẫu Cơ Chế Lừa Đảo Công Nghệ Cao & Ngõ Cụt Điều Tra Đầu Tiên",
+                    "estimated_minutes": mins[1],
+                    "target_non_space_chars": chars[1],
+                    "summary": f"Giải phẫu đúng thủ đoạn kỹ thuật và tâm lý có thật của chính đại án này{note_hint}. Cuối Hồi 2 đặt [Điểm chạm 1: Mid-roll Soft CTA 5–7s] móc nối trực tiếp từ tình tiết vụ án.",
+                    "evidence_anchor": "Bằng chứng kỹ thuật, cấu trúc tổ chức tội phạm và dữ liệu kiểm toán thực tế từ hồ sơ công an.",
+                    "visual_note": "Footage thật thiết bị/hiện trường thu giữ của vụ án (max_uses=1) + Vox thiết kế độc bản cho đúng câu voice + Ảnh AI 4D khớp 1-to-1.",
+                    "ai_suggestion": "Dùng đúng 100% con số thật của vụ án (cấm chia số đối xứng AI, cấm bê số liệu mẫu từ vụ khác sang).",
+                },
+                {
+                    "chapter": 3,
+                    "chapter_id": "ACT03",
+                    "title": "Hồi 3 (ACT03): Đường Đi Của Dòng Tiền Đen Xuyên Quốc Gia",
+                    "estimated_minutes": mins[2],
+                    "target_non_space_chars": chars[2],
+                    "summary": "Truy vết 4 chặng quy đổi ngoại tệ và tiền ảo xuyên biên giới: từ tài khoản ngân hàng nội địa chia nhỏ qua hàng vạn tài khoản rác (대포통장), gom thành USDT/Bitcoin trong ví lạnh USB và bay sang nước ngoài.",
+                    "evidence_anchor": "Sơ đồ kiểm toán dòng tiền, số lượng tài khoản trung gian, số lượng Bitcoin/ngoại tệ và lộ trình trốn chạy quốc tế.",
+                    "visual_note": "Bản đồ Địa Tài Chính Full 1920x1080 bay qua đúng các mốc địa lý ①->②->③ trong câu voice + Vox Bảng Cân đối Quy đổi dòng tiền thiết kế độc bản + Footage thật của vụ án.",
+                    "ai_suggestion": "Đan xen đuôi câu tiếng Hàn tự nhiên (~했습니다, ~었죠, ~입니다), tuyệt đối không lặp ~했습니다 4–5 câu liền.",
+                },
+                {
+                    "chapter": 4,
+                    "chapter_id": "ACT04",
+                    "title": "Hồi 4 (ACT04): Manh Mối Vật Lý Đời Thực Đánh Sập Thế Giới Ảo",
+                    "estimated_minutes": mins[3],
+                    "target_non_space_chars": chars[3],
+                    "summary": "Khi dấu vết IP bị xóa sạch trên mạng, cảnh sát mạng và kiểm toán viên lần ra kẻ chủ mưu nhờ sơ hở vật lý đời thực: hóa đơn tiền điện tăng đột biến, đơn giao đồ ăn đêm hoặc giao dịch mua siêu biệt thự tiền mặt.",
+                    "evidence_anchor": "Báo cáo trinh sát thực địa, hóa đơn điện năng/giao dịch bất động sản, biên bản giám định chữ viết tay/tài liệu thu giữ.",
+                    "visual_note": "Footage thật cảnh sát điều tra/biệt thự/hiện trường vụ án (max_uses=1) + Vox Hồ sơ trinh sát & Biểu đồ bất thường vật lý thiết kế độc bản theo câu voice + Ảnh AI 4D khớp 1-to-1.",
+                    "ai_suggestion": "Đặt chi tiết đời thường cạnh con số kiểm toán lạnh lùng để tạo sức nặng tự nhiên, cấm viết hoa mỹ hay kịch tính hóa quá đà.",
+                },
+                {
+                    "chapter": 5,
+                    "chapter_id": "ACT05",
+                    "title": "Hồi 5 (ACT05): Chiến Dịch Đột Kích, Bảng Đại Cân Đối Thu Hồi Tài Sản & Bài Học Cảnh Giác",
+                    "estimated_minutes": mins[4],
+                    "target_non_space_chars": chars[4],
+                    "summary": "Đột kích thu giữ ví lạnh, công bố Bảng Danh Mục Tài Sản Phong Tỏa và bản án tòa án. Ngay sau bản án (30–45s trước khi hết) triển khai [Điểm chạm 2: Bài học bảo vệ tiền dưỡng già + Hard CTA Đăng ký/Bật chuông + Bridge sang hồ sơ vụ án trên End Screen] rồi mới chào kết.",
+                    "evidence_anchor": "Số lượng Bitcoin/tài sản bị tịch thu chính thức, phán quyết của tòa án và quy trình bồi thường cho nạn nhân.",
+                    "visual_note": "Footage thật tòa án/cảnh sát công bố tang vật của vụ án (max_uses=1) + Vox Bảng Danh mục Tài sản Phong tỏa thiết kế độc bản theo câu voice + Thẻ End Screen CTA Bridge.",
+                    "ai_suggestion": "Đảm bảo Điểm chạm 2 đặt NGAY SAU bản án và TRƯỚC câu chào cảm ơn ('시청해 주셔서 감사합니다').",
+                },
+            ]
+            return base[:max(1, min(chapter_count, 8))]
+        if is_true_crime_kr and chapter_count >= 5:
+            weights = [0.13, 0.23, 0.26, 0.22, 0.16]
+            mins = [round(target_duration_minutes * w, 1) for w in weights]
+            chars = [round(total_chars * w) for w in weights]
+            base = [
+                {
+                    "chapter": 1,
+                    "chapter_id": "ACT01",
+                    "title": f"Hồi 1 (ACT01): Hiện Trường Khóa Kín & Nghịch Lý Mở Màn — {clean_title}",
+                    "estimated_minutes": mins[0],
+                    "target_non_space_chars": chars[0],
+                    "summary": f"{hook_summary} Đi thẳng vào hiện trường vụ án với nghịch lý không tưởng khiến cuộc điều tra rơi vào bế tắc. (CẤM đặt CTA trong 2 phút đầu).",
+                    "evidence_anchor": "Ngày giờ, địa điểm hiện trường xác thực và vật chứng đầu tiên gây chấn động.",
+                    "visual_note": "Footage thật hiện trường vụ án + Ảnh AI 4D khớp 1-to-1 + Vox bản đồ/hồ sơ độc bản theo câu voice.",
+                    "ai_suggestion": "Giọng kể điều tra điềm tĩnh, chuẩn ngữ pháp Hàn tự nhiên, loại bỏ hoàn toàn văn phong AI dịch máy.",
+                },
+                {
+                    "chapter": 2,
+                    "chapter_id": "ACT02",
+                    "title": "Hồi 2 (ACT02): Cuộc Rà Soát Khổng Lồ & Ngõ Cụ Đen Tối",
+                    "estimated_minutes": mins[1],
+                    "target_non_space_chars": chars[1],
+                    "summary": f"Hàng nghìn giờ trích xuất camera/khám nghiệm hiện trường nhưng hung thủ như bốc hơi{note_hint}. Cuối Hồi 2 đặt [Điểm chạm 1: Mid-roll Soft CTA 5–7s] móc nối mượt từ tình tiết vụ án.",
+                    "evidence_anchor": "Số liệu rà soát thực tế của cảnh sát, mâu thuẫn trong lời khai hoặc điểm mù camera.",
+                    "visual_note": "Footage thật cảnh sát rà soát + Vox #V_CLAUSE_TIMELINE / #M7 độc bản khớp câu voice + Ảnh AI 4D.",
+                    "ai_suggestion": "Không dùng tính từ hoa mỹ quá đà; dùng con số giờ làm việc và kích thước vật chứng để tạo sức nặng.",
+                },
+                {
+                    "chapter": 3,
+                    "chapter_id": "ACT03",
+                    "title": "Hồi 3 (ACT03): Giải Phẫu Vỏ Bọc Hai Mặt & Lộ Trình Ẩn Nấp",
+                    "estimated_minutes": mins[2],
+                    "target_non_space_chars": chars[2],
+                    "summary": "Lần theo mối quan hệ ngầm, cuộc sống hai mặt hoặc lộ trình trốn chạy qua nhiều tỉnh thành của nghi phạm.",
+                    "evidence_anchor": "Hồ sơ nhân thân, lịch sử di chuyển, biên bản đối chiếu lời khai.",
+                    "visual_note": "Bản đồ vệ tinh Full 1920x1080 #V_FULLSCREEN_GIS_FLIGHT + Hồ sơ đối chiếu #D2 độc bản + Footage thật.",
+                    "ai_suggestion": "Giữ mạch nhân quả chặt chẽ giữa các đoạn, câu văn gọn 1 hơi thở (35–52 ký tự).",
+                },
+                {
+                    "chapter": 4,
+                    "chapter_id": "ACT04",
+                    "title": "Hồi 4 (ACT04): Đột Phá Pháp Y Từ Chi Tiết Không Ngờ Tới",
+                    "estimated_minutes": mins[3],
+                    "target_non_space_chars": chars[3],
+                    "summary": "Một mẫu vật siêu nhỏ, hóa đơn nước/điện hoặc giám định ADN/vân tay lật ngược toàn bộ lời nói dối.",
+                    "evidence_anchor": "Kết quả giám định pháp y, thực nghiệm hiện trường và bằng chứng vật lý không thể chối cãi.",
+                    "visual_note": "Footage thật phòng giám định/vật chứng vụ án + Vox #V_FORENSIC_CROSS_SECTION / #D4 độc bản + Ảnh AI 4D.",
+                    "ai_suggestion": "Trình bày bước ngoặt pháp y rõ ràng, khách quan, tránh văn phong tiểu thuyết sướt mướt.",
+                },
+                {
+                    "chapter": 5,
+                    "chapter_id": "ACT05",
+                    "title": "Hồi 5 (ACT05): Phòng Thẩm Vấn, Bản Án Cuối Cùng & Dư Âm Cảnh Tỉnh",
+                    "estimated_minutes": mins[4],
+                    "target_non_space_chars": chars[4],
+                    "summary": "Giây phút thú tội trong phòng thẩm vấn và bản án nghiêm khắc của tòa án. Ngay sau bản án (30–45s trước khi hết) đặt [Điểm chạm 2: Hard CTA + Bridge sang hồ sơ vụ án trên End Screen] trước câu chào kết.",
+                    "evidence_anchor": "Biên bản thú tội, phán quyết chính thức của tòa án.",
+                    "visual_note": "Footage thật tòa án/thẩm vấn vụ án + Vox #V_VERDICT_PROCLAMATION độc bản + End Screen Bridge.",
+                    "ai_suggestion": "Đặt Điểm chạm 2 ngay sau bản án và trước câu chào tạm biệt.",
+                },
+            ]
+            return base[:max(1, min(chapter_count, 8))]
         if angle_id in {"engineering_explainer", "systemic_breakdown"}:
             base = [
                 {

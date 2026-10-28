@@ -235,6 +235,13 @@ class SelfLearningService:
         what_to_stop_doing = [
             "Tiêu đề dài dòng mơ hồ",
             "Mô tả bạo lực trực diện vi phạm YPP",
+            "Cấm bỏ quên nhân vật mở màn (vi phạm nguyên tắc Chiếc súng của Chekhov — nhắc thương nhân họ Ngụy ở đầu nhưng bỏ bẵng kết cục)",
+            "Cấm gọi người 58–62 tuổi (50–65 tuổi) là 'ông bà già / cụ già' (노부부 / 노인) gây gượng gạo văn hóa Hàn Quốc",
+            "Cấm cắt ngang câu kết màn (closing narration) giữa chừng hoặc kết thúc cụt ngủn không có nhạc nền fade-out",
+            "Cấm dùng tông giọng TTS quá căng/gắt gây mệt tai ('목소리 톤이 넘 강팔라 피곤해'), đọc sai số đếm ('19년' đọc thành '열아홉 년'), hoặc để TTS cắt đôi số có dấu phẩy ('2,000') và kéo dài khoảng nghỉ giữa câu >0.5s làm nhịp đọc bị chậm",
+            "Cấm tuyệt đối dùng Regex / Find-and-Replace xóa hoặc thay chủ ngữ hàng loạt trong kịch bản tiếng Hàn gây lỗi định ngữ gắn nhầm vào đồ vật ('서른한 살이 된 동영상 플랫폼', '무릎을 꿇은 판결문 복사본') hoặc đánh tráo chủ thể hung thủ - nạn nhân",
+            "Cấm dùng giao diện Cyber-Finance HUD tối màu cho kênh True Crime Hình Sự ('특급수배록') hoặc đặt sai bố cục 2 ảnh phụ Polaroid góc trái trên của Thumbnail DNA",
+            "Cấm viết chuỗi số phiên âm Hangul dài ngoằng ('천구백팔십이년생', '오백팔십일억 칠천오백만 위안', '백구십육 개', '십사점육 퍼센트', '구조 원') trực tiếp vào script.md và phụ đề gây khó đọc và làm TTS ngắt sai ('백구... 십육 개')",
         ]
         if any(u.get("cause") == "title_too_long_low_ctr" for u in underperformers):
             what_to_stop_doing.append("Tiêu đề quá 15 từ làm giảm tỷ lệ click trên thiết bị di động")
@@ -244,6 +251,9 @@ class SelfLearningService:
         what_to_double_down_on = [
             "Cấu trúc 5 hồi kịch tính",
             "Bản đồ 2.5D vệ tinh đối chiếu hiện trường",
+            "Nguyên tắc Chiếc súng của Chekhov: Mọi nhân vật/manh mối mở màn đều có kết cục rõ ràng (hoặc 1–2 câu tóm lược nhẹ nhàng nếu nhạy cảm)",
+            "Tông giọng trầm ấm, đầm, đều đặn chuẩn kể chuyện đêm khuya (K1 - Trầm Sâu Đêm Khuya SBS Style / K1 - Điềm Tĩnh) + chuẩn hóa số đếm Hán-Hàn (십구 년, 오십대)",
+            "Hoàn tất trọn vẹn 100% câu chào kết màn + để dư 3.5–5 giây (3.8s) nhạc nền hạ màn (fade-out) tự nhiên",
         ]
         winner_terms = own_dna.get("winner_terms") or []
         if winner_terms:
@@ -256,6 +266,11 @@ class SelfLearningService:
             "Khóa chặt góc nhìn điều tra khách quan",
             "Mở đầu bằng số liệu chênh lệch",
             "Tăng mật độ HUD 2.5D",
+            "[Checklist Kịch bản] Mọi nhân vật xuất hiện ở phần đầu đã có kết cục rõ ràng (Chekhov's Gun) + xưng hô trung tính chuẩn văn hóa Hàn ('여관 주인 부부', '50대 후반 부부')",
+            "[Checklist Giọng đọc] Tông giọng trầm ấm êm tai chuẩn đêm khuya + rà soát số đếm/năm tháng/danh từ riêng (19년=십구 년) không đọc vấp",
+            "[Checklist Phần kết] Câu thoại cuối cùng hoàn tất trọn vẹn 100% + có 3–5 giây (3.8s) nhạc nền hạ màn fade-out",
+            "[Checklist Ngữ pháp Hàn] Cấm dùng Regex xóa/thay chủ ngữ; kiểm tra 100% sự tương hợp Định ngữ - Danh từ trung tâm và phân biệt chuẩn chủ thể Nạn nhân vs Hung thủ",
+            "[Checklist Nhịp độ Voice] Chuẩn hóa số có dấu phẩy sang Hangul (2,000킬로미터 -> 이천 킬로미터) trước TTS + gọt khoảng nghỉ giữa câu (0.285s/0.185s) đạt chuẩn 255–270 SPM đài SBS",
         ]
 
         # Idempotent deduplication preserving order

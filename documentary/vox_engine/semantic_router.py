@@ -251,51 +251,98 @@ _CALLBACK_RE = re.compile(
 )
 
 _METRIC_RE = re.compile(
-    r"(\d{1,2}시\s*\d{1,2}분|\d{1,2}:\d{2}|\d{4}년\s*\d{1,2}월\s*\d{1,2}일|\d{4}년|\d+(?:,\d+)*(?:\.\d+)?\s*(?:개|대|명|톤|그램|g|kg|도|℃|시간|일|년|층|호|동|만\s*위안|위안|m|km|%))"
+    r"(\d{1,2}시\s*\d{1,2}분|\d{1,2}:\d{2}|\d{4}년\s*\d{1,2}월\s*\d{1,2}일|\d{4}년|\d+(?:,\d+)*(?:\.\d+)?\s*(?:조\s*\d+(?:,\d+)*억\s*원|조\s*원|억\s*위안|만\s*위안|위안|억\s*원|만\s*원|원|억\s*파운드|만\s*파운드|파운드|달러|BTC|비트코인|만\s*명|천\s*명|명|만\s*개|천\s*개|개|만\s*대|대|건|회|곳|배|단계|개국|톤|그램|g|kg|도|℃|시간|분|초|개월|일|년|층|호|동|m|km|%))"
 )
 
 
-def split_narration_into_clauses(narration_text: str, max_clauses: int = 3) -> list[str]:
-    """Splits a spoken narration sentence into 2-3 natural broadcast clauses for progressive reveal."""
+def split_narration_into_clauses(narration_text: str, max_clauses: int = 5) -> list[str]:
+    """Splits a spoken narration sentence into 1..N (up to max_clauses) natural broadcast clauses for flexible progressive reveal."""
     text = str(narration_text or "").strip()
     if not text:
-        return ["수사 기록 정밀 분석 진행 중", "핵심 물증 교차 대조 및 검증"]
+        return ["수사 기록 정밀 분석 진행 중"]
 
-    # Split on sentence punctuation, em-dashes, commas, or Korean connective endings
-    raw_parts = re.split(r"(?<=[.?!,])\s+|\s+—\s+|\s+(?=(?:하지만|그러나|그런데|결국|즉시|이때|그리고)\s)", text)
-    parts = [p.strip() for p in raw_parts if p and len(p.strip()) >= 4]
+    # Step 1: Split on sentence punctuation, em-dashes, commas, or Korean connective transitions
+    raw_parts = re.split(
+        r"(?<=[.?!,])\s+|\s+—\s+|\s+·\s+|\s+(?=(?:하지만|그러나|그런데|결국|즉시|이때|그리고|반면|게다가|더구나|이후|이어)\s)",
+        text,
+    )
+    parts = [p.strip() for p in raw_parts if p and len(p.strip()) >= 2]
 
-    if len(parts) <= 1:
-        # Split long single clause on Korean connective particles (fixed-width lookbehinds)
-        sub_parts = re.split(r"(?<=[고며자때])\s+|(?<=지만)\s+|(?<=는데)\s+", text)
-        parts = [p.strip() for p in sub_parts if p and len(p.strip()) >= 5]
+    # Step 2: Further split any long segment (>= 32 chars) on natural Korean clause connectives
+    refined: list[str] = []
+    for seg in parts:
+        if len(seg) >= 32:
+            sub = re.split(
+                r"(?<=[고며자때면뒤])\s+|(?<=지만)\s+|(?<=는데)\s+|(?<=더니)\s+|(?<=면서)\s+|(?<=던)\s+|(?<=으니)\s+",
+                seg,
+            )
+            sub_clean = [s.strip() for s in sub if s and s.strip()]
+            if len(sub_clean) > 1:
+                refined.extend(sub_clean)
+                continue
+        refined.append(seg)
+    parts = refined if refined else [text]
 
-    if len(parts) <= 1:
-        mid = max(1, len(text) // 2)
-        space_idx = text.find(" ", mid)
-        if space_idx != -1:
-            parts = [text[:space_idx].strip(), text[space_idx + 1:].strip()]
+    # Step 3: Merge any tiny orphan fragment (< 9 chars, e.g. '있었습니다.', '씨 부부') into its neighbor
+    i = 0
+    while i < len(parts) and len(parts) > 1:
+        if len(parts[i]) < 9:
+            if i > 0:
+                parts[i - 1] = f"{parts[i - 1]} {parts[i]}".strip()
+                parts.pop(i)
+                continue
+            elif i + 1 < len(parts):
+                parts[i + 1] = f"{parts[i]} {parts[i + 1]}".strip()
+                parts.pop(i)
+                continue
+        i += 1
+
+    # Step 4: If still 1 clause and very long (>= 44 chars), split at a natural particle/space near midpoint
+    if len(parts) == 1 and len(text) >= 44:
+        mid = len(text) // 2
+        best_split = -1
+        for m in re.finditer(r"(?<=[은는이가을를에의도만])\s+", text):
+            pos = m.end()
+            if 12 <= pos <= len(text) - 12:
+                if best_split == -1 or abs(pos - mid) < abs(best_split - mid):
+                    best_split = pos
+        if best_split != -1:
+            parts = [text[:best_split].strip(), text[best_split:].strip()]
         else:
-            parts = [text]
+            space_idx = text.find(" ", mid)
+            if space_idx != -1 and 10 <= space_idx <= len(text) - 10:
+                parts = [text[:space_idx].strip(), text[space_idx + 1:].strip()]
 
-    # Merge if more than max_clauses
+    # Step 5: Merge if more than max_clauses
     while len(parts) > max_clauses:
-        # Merge the two shortest adjacent segments
         min_len = 999999
         merge_idx = 0
-        for i in range(len(parts) - 1):
-            combined_len = len(parts[i]) + len(parts[i + 1])
+        for idx_m in range(len(parts) - 1):
+            combined_len = len(parts[idx_m]) + len(parts[idx_m + 1])
             if combined_len < min_len:
                 min_len = combined_len
-                merge_idx = i
+                merge_idx = idx_m
         parts[merge_idx] = f"{parts[merge_idx]} {parts[merge_idx + 1]}".strip()
         parts.pop(merge_idx + 1)
 
     return parts
 
 
+def _extract_clause_focus_tag(clause_text: str, idx: int) -> str:
+    """Extracts the primary spoken metric or concise 2-word focus phrase from a single clause."""
+    m_hits = _METRIC_RE.findall(clause_text)
+    if m_hits:
+        return m_hits[0].strip()
+    words = [w.strip(".,?!\"'()[]") for w in clause_text.split() if len(w.strip(".,?!\"'()[]")) >= 2]
+    if len(words) >= 2:
+        return f"{words[0]} {words[1]}"[:16]
+    if words:
+        return words[0][:16]
+    return f"핵심 요지 0{idx + 1}"
+
+
 def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict[str, Any]:
-    """Extracts full voice-duration timing, progressive clause windows, and spoken metrics from a beat.
+    """Extracts full voice-duration timing, flexible 1..N progressive clause windows, and spoken metrics from a beat.
 
     Matches the full spoken sentence duration (`end_sec - start_sec`) and progressive clause windows.
     """
@@ -319,7 +366,7 @@ def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict
         # Estimate naturally from character count (approx 7.2 Korean chars/sec)
         dur = max(4.0, min(14.5, round(max(12, len(narration)) / 7.2, 2)))
 
-    clauses = split_narration_into_clauses(narration, max_clauses=3)
+    clauses = split_narration_into_clauses(narration, max_clauses=5)
     char_lengths = [max(4, len(c)) for c in clauses]
     total_chars = float(sum(char_lengths))
 
@@ -334,13 +381,19 @@ def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict
         clause_timestamps_sec.append((round(w_start * dur, 2), round(w_end * dur, 2)))
         cursor += span
 
+    clause_focus_tags = [_extract_clause_focus_tag(c, i) for i, c in enumerate(clauses)]
+
     metrics = []
     for m in _METRIC_RE.findall(narration):
         m_clean = m.strip()
         if m_clean and m_clean not in metrics:
             metrics.append(m_clean)
+    for c_tag in clause_focus_tags:
+        if c_tag and c_tag not in metrics:
+            metrics.append(c_tag)
     if not metrics:
-        metrics = [f"BEAT #{beat_index + 1:03d}", f"{dur:.1f}s"]
+        words = [w.strip(".,?!\"'") for w in narration.split() if len(w.strip(".,?!\"'")) >= 2]
+        metrics = words[:4] if words else ["수사 단서", "정밀 분석", "증거 대조"]
 
     beat_id = str(beat.get("beat_id") or beat.get("id") or f"B{beat_index + 1:03d}").strip()
     act_label = str(beat.get("act") or beat.get("chapter") or f"ACT {(beat_index // 65) + 1}").strip()
@@ -360,7 +413,8 @@ def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict
         "clauses": clauses,
         "clause_windows": clause_windows,
         "clause_timestamps_sec": clause_timestamps_sec,
-        "metrics": metrics[:4],
+        "clause_focus_tags": clause_focus_tags,
+        "metrics": metrics[:6],
         "act_label": act_label,
         "location_label": location_label,
         "header_ko": header_ko,
@@ -384,12 +438,12 @@ def is_vox_satellite_enabled(job: dict[str, Any], profile: dict[str, Any] | None
         or ""
     ).strip()
 
-    # Strict whitelist for True Crime channel
+    # Strict whitelist for True Crime & Chinese High-Tech/Financial Crime channels
     if profile_id == "channel-e544a64b7c":
         return True
 
     # Strict blacklist for known non-crime channels
-    if profile_id in {"channel-1e24de3ab5", "channel-aa913eb90d", "channel-f6ec4dfff3"}:
+    if profile_id in {"channel-1e24de3ab5", "channel-aa913eb90d", "channel-f6ec4dfff3", "channel-cn-cyber-finance-kr"}:
         return False
 
     # Check editing preset and visual strategy
@@ -462,6 +516,11 @@ class VoxSemanticRouter:
         for arch_id, rule in VOX_ARCHETYPE_RULES.items():
             if arch_id == "cinema_full":
                 continue
+            if arch_id.startswith("#FIN"):
+                _meta_prof = str((metadata or {}).get("channel_profile_id") or "").strip()
+                _meta_preset = str((metadata or {}).get("preset_id") or "").strip()
+                if _meta_prof != "channel-cn-cyber-finance-kr" and _meta_preset != "financial_forensic_vox":
+                    continue
 
             match_ko = bool(re.search(rule["regex_ko"], text, re.IGNORECASE))
             match_vi = bool(re.search(rule["regex_vi"], text, re.IGNORECASE))
@@ -475,8 +534,10 @@ class VoxSemanticRouter:
             if match_vi:
                 base_score += 25.0
 
-            # Recency penalty calculation (sliding window)
+            # Strict Zero-Repetition (max_uses = 1 across video) + Recency penalty
             penalty = 0.0
+            if self.archetype_usage_counts.get(arch_id, 0) >= 1:
+                penalty += 250.0
             if history:
                 if history[-1] == arch_id:
                     penalty += 180.0
@@ -528,14 +589,14 @@ class VoxSemanticRouter:
         job: dict[str, Any],
         profile: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
-        """Tags all beats in a project timeline with their resolved scene archetypes and `voice_spec`.
+        """Tags all beats in a project timeline with their resolved scene archetypes, `dna_visual_slot`, and `voice_spec`.
 
         Enforces:
         1. Universal 4-Tier Semantic Visual Priority Rule (Real Video -> Real Photo -> Blender Vox -> AI Image).
-        2. Anti-Repetition & Anti-Density Pacing Guard: spaces out Vox beats (`min_vox_gap = 3` in full
-           documentaries unless score >= 124 and gap >= 2) so Vox graphics never feel overly dense or boring.
+        2. Locked Channel DNA Visual Mix (50% Real Footage + 30% Vox Motion + 10% AI Visual + 10% Flexible Reserve)
+           in full documentaries (`len(beats) > 15`), spacing out Vox beats (`min_vox_gap >= 2`) so Vox never exceeds 30%.
         3. Full Voice Duration & Clause Sync: attaches `voice_spec` (`duration_sec`, `clauses`,
-           `clause_windows`, `metrics`, `variation_seed`) to every beat.
+           `clause_windows`, `clause_focus_tags`, `metrics`, `variation_seed`) to every beat.
         """
         if not is_vox_satellite_enabled(job, profile):
             return beats
@@ -543,42 +604,295 @@ class VoxSemanticRouter:
         self.reset_history()
         routed_beats: list[dict[str, Any]] = []
         used_archetypes: dict[str, int] = {}
-        is_full_documentary = len(beats) > 15
-        last_vox_idx = -99
+        total_beats = len(beats)
+        is_full_documentary = total_beats > 15
+        vox_quota = max(1, round(total_beats * 0.30)) if is_full_documentary else total_beats
 
-        for idx, beat in enumerate(beats):
-            text = str(beat.get("narration_text") or beat.get("text") or "").strip()
-            voice_spec = build_voice_spec_for_beat(beat, beat_index=idx)
-            decision = self.route_beat(text, metadata={**beat, "is_purposeful_callback": voice_spec["is_purposeful_callback"]})
-            arch = decision["archetype"]
-            label = decision["label"]
-            cluster = decision["cluster"]
-            score = float(decision.get("score") or 0.0)
+        _prof_id = str(
+            job.get("channel_profile_id")
+            or (profile or {}).get("id")
+            or (job.get("channel_profile_snapshot") or {}).get("id")
+            or ""
+        ).strip()
+        _preset_id = str(
+            (job.get("editing_dna") or {}).get("preset_id")
+            or ((profile or {}).get("editing_dna") or {}).get("preset_id")
+            or ""
+        ).strip().lower()
 
-            if score <= 0.0:
-                arch = "cinema_full"
-                label = VOX_ARCHETYPE_RULES["cinema_full"]["label"]
-                cluster = "cinema"
-            elif is_full_documentary and arch != "cinema_full":
-                gap = idx - last_vox_idx
-                min_gap = 2 if score >= 124.0 else 3
-                if gap < min_gap:
+        if not is_full_documentary:
+            for idx, beat in enumerate(beats):
+                text = str(beat.get("narration_text") or beat.get("text") or "").strip()
+                voice_spec = build_voice_spec_for_beat(beat, beat_index=idx)
+                decision = self.route_beat(
+                    text,
+                    metadata={
+                        **beat,
+                        "is_purposeful_callback": voice_spec["is_purposeful_callback"],
+                        "channel_profile_id": _prof_id,
+                        "preset_id": _preset_id,
+                    },
+                )
+                arch = decision["archetype"]
+                label = decision["label"]
+                cluster = decision["cluster"]
+                score = float(decision.get("score") or 0.0)
+                if score <= 0.0:
                     arch = "cinema_full"
                     label = VOX_ARCHETYPE_RULES["cinema_full"]["label"]
                     cluster = "cinema"
                 else:
                     used_archetypes[arch] = used_archetypes.get(arch, 0) + 1
-                    last_vox_idx = idx
+                voice_spec["occurrence_index"] = used_archetypes.get(arch, 1)
+                voice_spec["contextual_sfx"] = select_contextual_sfx_for_beat(text, arch, beat_index=idx)
+                routed_beats.append(
+                    {
+                        **beat,
+                        "scene_archetype": arch,
+                        "archetype_label": label,
+                        "archetype_cluster": cluster,
+                        "dna_visual_slot": "vox_motion" if arch != "cinema_full" else "real_footage",
+                        "dna_mix_target": dict(DNA_VISUAL_MIX_50_30_10_10),
+                        "voice_spec": voice_spec,
+                    }
+                )
+            return routed_beats
+
+        # Full-documentary pass: score all beats first, then pick strictly 30% Vox beats spaced across timeline
+        pre_scores: list[tuple[float, int]] = []
+        voice_specs: list[dict[str, Any]] = []
+        for idx, beat in enumerate(beats):
+            text = str(beat.get("narration_text") or beat.get("text") or "").strip()
+            v_spec = build_voice_spec_for_beat(beat, beat_index=idx)
+            voice_specs.append(v_spec)
+            self.reset_history()
+            probe = self.route_beat(
+                text,
+                metadata={
+                    **beat,
+                    "is_purposeful_callback": v_spec["is_purposeful_callback"],
+                    "channel_profile_id": _prof_id,
+                    "preset_id": _preset_id,
+                },
+            )
+            p_score = float(probe.get("score") or 0.0) if probe.get("archetype") != "cinema_full" else 0.0
+            if re.search(r"\d", text):
+                p_score += 4.0
+            pre_scores.append((p_score, idx))
+
+        selected_vox_indices: set[int] = set()
+        sorted_candidates = sorted(pre_scores, key=lambda x: (-x[0], x[1]))
+        for min_gap in (2, 1):
+            for sc, idx in sorted_candidates:
+                if len(selected_vox_indices) >= vox_quota:
+                    break
+                if idx in selected_vox_indices:
+                    continue
+                if min_gap == 2 and sc <= 0.0:
+                    continue
+                if all(abs(idx - chosen) >= min_gap for chosen in selected_vox_indices):
+                    selected_vox_indices.add(idx)
+            if len(selected_vox_indices) >= vox_quota:
+                break
+
+        self.reset_history()
+        for idx, beat in enumerate(beats):
+            text = str(beat.get("narration_text") or beat.get("text") or "").strip()
+            voice_spec = voice_specs[idx]
+            if idx in selected_vox_indices:
+                decision = self.route_beat(
+                    text,
+                    metadata={
+                        **beat,
+                        "is_purposeful_callback": voice_spec["is_purposeful_callback"],
+                        "channel_profile_id": _prof_id,
+                        "preset_id": _preset_id,
+                    },
+                )
+                arch = decision["archetype"]
+                if arch == "cinema_full":
+                    arch = "#D1"
+                label = VOX_ARCHETYPE_RULES.get(arch, VOX_ARCHETYPE_RULES["#D1"])["label"]
+                cluster = VOX_ARCHETYPE_RULES.get(arch, VOX_ARCHETYPE_RULES["#D1"])["cluster"]
+                used_archetypes[arch] = used_archetypes.get(arch, 0) + 1
+                dna_slot = "vox_motion"
+            else:
+                arch = "cinema_full"
+                label = VOX_ARCHETYPE_RULES["cinema_full"]["label"]
+                cluster = "cinema"
+                dna_slot = "real_footage"
 
             voice_spec["occurrence_index"] = used_archetypes.get(arch, 1)
             voice_spec["contextual_sfx"] = select_contextual_sfx_for_beat(text, arch, beat_index=idx)
-            updated_beat = {
-                **beat,
-                "scene_archetype": arch,
-                "archetype_label": label,
-                "archetype_cluster": cluster,
-                "voice_spec": voice_spec,
-            }
-            routed_beats.append(updated_beat)
+            motion_treatment, render_vox_board = (
+                resolve_scene_motion_treatment(text, arch, cluster, voice_spec.get("clauses") or [text], idx)
+                if dna_slot == "vox_motion"
+                else ("optical_camera_drift", False)
+            )
+            routed_beats.append(
+                {
+                    **beat,
+                    "scene_archetype": arch,
+                    "archetype_label": label,
+                    "archetype_cluster": cluster,
+                    "dna_visual_slot": dna_slot,
+                    "motion_treatment": motion_treatment,
+                    "render_vox_board": render_vox_board,
+                    "dna_mix_target": dict(DNA_VISUAL_MIX_50_30_10_10),
+                    "voice_spec": voice_spec,
+                }
+            )
 
+        assign_non_vox_dna_slots(routed_beats, total_beats)
         return routed_beats
+
+
+_GEO_SATELLITE_MAP_NEEDED_RE = re.compile(
+    r"(톈진|미얀마|두바이|런던|운남|쿤밍|베이징|바이인|국경|위성|지도|경로|루트|도주|이동|해외|캄보디아|필리핀|동남아|대륙\s*횡단|"
+    r"Thiên\s*Tân|Myanmar|Dubai|London|Vân\s*Nam|Bắc\s*Kinh|biên\s*giới|vệ\s*tinh|bản\s*đồ|lộ\s*trình|đường\s*trốn|xuyên\s*quốc\s*gia)",
+    re.IGNORECASE,
+)
+
+
+def resolve_scene_motion_treatment(
+    narration_text: str,
+    arch_id: str,
+    cluster: str,
+    clauses: list[str],
+    beat_index: int = 0,
+) -> tuple[str, bool]:
+    """Resolves the 30% Motion + Map slot under Option B:
+    - Drops static/newspaper/table Vox boards (`render_vox_board = False`) and uses direct scene motion
+      on Real Footage / AI Keyframes (`kinetic_metric_overlay`, `split_screen_ab`, `forensic_macro_loupe`,
+      `multi_cut_clause_montage`, `optical_depth_push`).
+    - Enables `render_vox_board = True` (`satellite_gis_map_flight`) ONLY when a geographic/satellite map
+      is genuinely needed by the spoken narration.
+    """
+    text = str(narration_text or "").strip()
+    is_map_arch = (
+        cluster in {"gis_map", "satellite", "map"}
+        or arch_id.startswith("#M")
+        or "GIS" in arch_id
+        or "SATELLITE" in arch_id
+    )
+    if is_map_arch and _GEO_SATELLITE_MAP_NEEDED_RE.search(text):
+        return ("satellite_gis_map_flight", True)
+    if _GEO_SATELLITE_MAP_NEEDED_RE.search(text) and re.search(r"(지도|위성|루트|경로|횡단|bản\s*đồ|vệ\s*tinh|lộ\s*trình)", text, re.IGNORECASE):
+        return ("satellite_gis_map_flight", True)
+
+    if re.search(r"(출금\s*정지|마비|멈춰|증발|폭락|붕괴|돌려막기|러그풀|rug\s*pull|đóng\s*băng|sập\s*sàn)", text, re.IGNORECASE):
+        return ("exchange_candlestick_crash", False)
+    if re.search(r"(믹서|텀블러|차명\s*계좌|세탁|분산|쪼개|페이퍼컴퍼니|익명\s*지갑|mixer|tumbler|rửa\s*tiền)", text, re.IGNORECASE):
+        return ("crypto_tumbler_splitter", False)
+    if re.search(r"(블록체인|온체인|원장|해시|스마트\s*컨트랙트|콜드월렛|비트코인|이더리움|테더|BTC|ETH|USDT|0\.3초|on-chain|blockchain|ví\s*lạnh)", text, re.IGNORECASE):
+        return ("crypto_onchain_ledger_trace", False)
+    if re.search(r"(95\.6%|207개|196개|비율|비중|유령\s*회사|유령\s*법인|전수\s*실사|tỷ\s*lệ|công\s*ty\s*ma)", text, re.IGNORECASE):
+        return ("donut_matrix_audit_chart", False)
+    if re.search(r"(환수|적자|결손|차이|비교|대비|총\s*모집|thâm\s*hụt|thu\s*hồi)", text, re.IGNORECASE):
+        return ("waterfall_bar_chart", False)
+    if re.search(r"(수익률|이율|이자|연\s*\d+%|금리|배당|격차|괴리|lãi\s*suất|phân\s*kỳ)", text, re.IGNORECASE):
+        return ("dual_spline_divergence_chart", False)
+    if re.search(r"(달리|반면|대조|겉으로는|실제로는|양면|VS|ngược\s*lại|đối\s*chiếu)", text, re.IGNORECASE):
+        return ("split_screen_ab", False)
+    if re.search(r"(화면|장부|통장|단서|포착|확대|수첩|영수증|지문|CCTV|근접|cận\s*cảnh|phóng\s*đại|vật\s*chứng)", text, re.IGNORECASE):
+        return ("forensic_macro_loupe", False)
+    if re.search(r"(\d[\d,\.]*\s*(조|억|만|천|백|원|위안|달러|%|개|명|배|초|분|시간))", text, re.IGNORECASE):
+        return ("kinetic_metric_overlay", False)
+    if len(clauses) >= 3:
+        return ("multi_cut_clause_montage", False)
+    fallbacks = (
+        "dual_spline_divergence_chart",
+        "waterfall_bar_chart",
+        "donut_matrix_audit_chart",
+        "exchange_candlestick_crash",
+        "crypto_tumbler_splitter",
+        "crypto_onchain_ledger_trace",
+        "kinetic_metric_overlay",
+        "forensic_macro_loupe",
+    )
+    return (fallbacks[beat_index % len(fallbacks)], False)
+
+
+DNA_VISUAL_MIX_50_30_10_10: dict[str, float] = {
+    "footage": 0.50,
+    "vox": 0.30,
+    "ai": 0.10,
+    "flexible": 0.10,
+}
+
+_AI_RECONSTRUCTION_SLOT_RE = re.compile(
+    r"(심리|내면|비밀|암호|기억|상상|재구성|독백|방\s*안|어둠|공포|불안|환각|악몽|"
+    r"tâm\s*lý|bí\s*mật|ẩn\s*náu|tái\s*hiện|độc\s*thoại|bóng\s*tối|nỗi\s*sợ)",
+    re.IGNORECASE,
+)
+
+_FLEXIBLE_RESERVE_SLOT_RE = re.compile(
+    r"(다시|앞서|반면|그러나|전환|연결|비교|대조|요약|결국|한편|"
+    r"nhắc\s*lại|trước\s*đó|ngược\s*lại|tuy\s*nhiên|đối\s*chiếu|tóm\s*lại|chuyển\s*sang)",
+    re.IGNORECASE,
+)
+
+
+def assign_non_vox_dna_slots(routed_beats: list[dict[str, Any]], total_beats: int | None = None) -> None:
+    """Partitions all non-Vox (`cinema_full`) beats into the locked DNA slots:
+    50% `real_footage`, 10% `ai_visual`, and 10% `flexible_reserve` ( alongside 30% `vox_motion`).
+    Modifies `routed_beats` in-place.
+    """
+    n = total_beats if total_beats is not None else len(routed_beats)
+    if n <= 0:
+        return
+
+    non_vox_indices = [
+        i
+        for i, b in enumerate(routed_beats)
+        if str(b.get("scene_archetype") or "cinema_full") == "cinema_full"
+    ]
+    m = len(non_vox_indices)
+    if m == 0:
+        return
+
+    ai_quota = min(m, max(1 if m >= 3 else 0, round(n * 0.10)))
+    flex_quota = min(max(0, m - ai_quota), max(1 if m >= 4 else 0, round(n * 0.10)))
+
+    for idx in non_vox_indices:
+        routed_beats[idx]["dna_visual_slot"] = "real_footage"
+        routed_beats[idx]["dna_mix_target"] = dict(DNA_VISUAL_MIX_50_30_10_10)
+
+    # Pick `ai_quota` evenly spaced buckets among non_vox_indices with highest AI reconstruction affinity
+    chosen_ai: set[int] = set()
+    if ai_quota > 0:
+        for b_idx in range(ai_quota):
+            start_pos = int(round(b_idx * m / ai_quota))
+            end_pos = int(round((b_idx + 1) * m / ai_quota))
+            bucket = non_vox_indices[max(0, start_pos):max(start_pos + 1, end_pos)]
+            if not bucket:
+                continue
+            best_i = max(
+                bucket,
+                key=lambda i: (
+                    1 if _AI_RECONSTRUCTION_SLOT_RE.search(str(routed_beats[i].get("narration_text") or routed_beats[i].get("text") or "")) else 0,
+                    1 if str(routed_beats[i].get("visual_route") or "") == "ai_visual" else 0,
+                    -abs(i - bucket[len(bucket) // 2]),
+                ),
+            )
+            chosen_ai.add(best_i)
+            routed_beats[best_i]["dna_visual_slot"] = "ai_visual"
+
+    remaining_indices = [i for i in non_vox_indices if i not in chosen_ai]
+    r_len = len(remaining_indices)
+    if flex_quota > 0 and r_len > 0:
+        for b_idx in range(min(flex_quota, r_len)):
+            start_pos = int(round(b_idx * r_len / flex_quota))
+            end_pos = int(round((b_idx + 1) * r_len / flex_quota))
+            bucket = remaining_indices[max(0, start_pos):max(start_pos + 1, end_pos)]
+            if not bucket:
+                continue
+            best_i = max(
+                bucket,
+                key=lambda i: (
+                    1 if _FLEXIBLE_RESERVE_SLOT_RE.search(str(routed_beats[i].get("narration_text") or routed_beats[i].get("text") or "")) else 0,
+                    1 if (routed_beats[i].get("voice_spec") or {}).get("is_purposeful_callback") else 0,
+                    -abs(i - bucket[len(bucket) // 2]),
+                ),
+            )
+            routed_beats[best_i]["dna_visual_slot"] = "flexible_reserve"

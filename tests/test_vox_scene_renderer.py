@@ -288,5 +288,46 @@ class TestTypographyZeroGlyphLoss:
         assert m_zh.size[0] > 0 and m_zh.size[1] > 0
 
 
+# ==============================================================================
+# 4. Flexible Clause-Adaptive Progression (1..5 Clauses + Progressive Reveal)
+# ==============================================================================
+
+class TestFinancialVoxFlexibleClauses:
+    """Verifies that #FIN01..#FIN24 dynamically adapt to 1..5 clauses and evolve progressively."""
+
+    def test_flexible_clause_splitting_1_to_5(self):
+        from documentary.vox_engine.semantic_router import build_voice_spec_for_beat
+
+        s1 = build_voice_spec_for_beat({"narration_text": "잔고는 0원으로 추락했습니다."})
+        s2 = build_voice_spec_for_beat({"narration_text": "정상 금리는 4%였지만, 이들은 800% 수익을 미끼로 던졌습니다."})
+        s4 = build_voice_spec_for_beat({
+            "narration_text": "피해금 43조 원은 대포통장 120개로 분산된 뒤, 장외 환치기를 거쳐, 페이퍼컴퍼니 196곳을 통과해, 결국 비트코인 6만 개로 은닉되었습니다."
+        })
+        assert len(s1["clauses"]) == 1
+        assert len(s2["clauses"]) == 2
+        assert len(s4["clauses"]) >= 4
+        assert len(s4["clause_focus_tags"]) == len(s4["clauses"])
+
+    def test_all_24_fin_archetypes_progressive_multi_clause_rendering(self):
+        from documentary.financial_vox_engine import CANONICAL_24_FIN_ARCHETYPES
+        from documentary.vox_engine.semantic_router import build_voice_spec_for_beat
+
+        renderer = VoxSceneRenderer()
+        multi_clause_sentence = (
+            "초기 5만 위안 미끼 입금 직후, 207개 유령 법인으로 분산 이체되었고, "
+            "미얀마 국경을 넘어 환치기된 뒤, 최종 43조 원 전액이 동결되었습니다."
+        )
+        vs = build_voice_spec_for_beat({"narration_text": multi_clause_sentence})
+        assert len(vs["clauses"]) == 4
+
+        for arch_id in CANONICAL_24_FIN_ARCHETYPES:
+            f_early = renderer.render_frame(arch_id, progress=0.15, subtitle_text=multi_clause_sentence, voice_spec=vs)
+            f_late = renderer.render_frame(arch_id, progress=0.92, subtitle_text=multi_clause_sentence, voice_spec=vs)
+            assert f_early.size == (1920, 1080)
+            assert f_late.size == (1920, 1080)
+            diff = np.abs(np.array(f_early, dtype=np.int16) - np.array(f_late, dtype=np.int16))
+            assert np.sum(diff > 10) > 5000, f"Archetype {arch_id} did not progressively animate across clauses"
+
+
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

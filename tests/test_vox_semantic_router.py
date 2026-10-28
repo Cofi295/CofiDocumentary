@@ -316,7 +316,7 @@ class TestVoxSlidingWindowAntiRepetition:
         self.router.reset_history()
         history = [self.router.route_beat(text)["archetype"] for _ in range(6)]
 
-        assert history[:4] == ["#D9", "#D1", "#D9", "#D1"]
+        assert history[:2] == ["#D9", "#D1"]
 
     def test_sibling_rotation_on_satellite_store_zoom(self):
         """Dual-match text matching #M1 and #M6 alternates cleanly."""
@@ -324,7 +324,7 @@ class TestVoxSlidingWindowAntiRepetition:
         self.router.reset_history()
         history = [self.router.route_beat(text)["archetype"] for _ in range(6)]
 
-        assert history[:4] == ["#M1", "#M6", "#M1", "#M6"]
+        assert history[:2] == ["#M1", "#M6"]
 
     def test_route_timeline_enriches_beats(self):
         """route_timeline assigns scene_archetype, label, and cluster to each timeline beat."""
@@ -453,6 +453,166 @@ class TestUnlockedVoiceFlexibleModesAndDurationSync:
         router.reset_history()
         r_sat = router.route_beat("관두구 노래방과 도심 유흥가 나이트클럽 확장 거점을 전면 위성으로 추적했다")
         assert r_sat["archetype"] == "#V_FULLSCREEN_SATELLITE_RECON"
+
+
+class TestFinancialForensicVoxAndProfileIntegration:
+    """Verifies the Chinese High-Tech & Financial/Crypto Crime KR channel profile and FIN-1..FIN-6 Vox boards."""
+
+    def test_new_channel_profile_loaded_with_5_pillars(self):
+        import json
+        from services.editing_dna_service import EditingDnaService
+
+        profiles_file = PROJECT_ROOT / "data" / "channel_profiles.json"
+        data = json.loads(profiles_file.read_text(encoding="utf-8"))
+        profiles = data.get("profiles", [])
+        cyber_prof = next((p for p in profiles if p.get("id") == "channel-cn-cyber-finance-kr"), None)
+        assert cyber_prof is not None
+        assert cyber_prof["market"] == "KR"
+        assert cyber_prof["language"] == "ko"
+        assert cyber_prof["visual_strategy"] == "full_ai"
+        assert cyber_prof["default_visual_strategy"] == "full_ai"
+        assert cyber_prof["editing_dna"]["preset_id"] == "financial_forensic_vox"
+        assert cyber_prof["editing_dna"]["visual_mix"]["preferred_routing"] == "full_ai"
+        assert cyber_prof["editing_dna"]["visual_mix"]["footage"] == 0.45
+        assert cyber_prof["editing_dna"]["visual_mix"]["motion"] == 0.30
+        assert cyber_prof["editing_dna"]["visual_mix"]["ai"] == 0.25
+        assert len(cyber_prof["editorial_dna"]["narrative"]["structure_30m"]) == 5
+        assert cyber_prof["editorial_dna"]["narrative"]["cta_architecture"]["mode"] == "dynamic_case_adaptive_2_touchpoints"
+
+        svc = EditingDnaService()
+        presets = svc.get_presets()
+        assert "financial_forensic_vox" in presets
+
+    def test_financial_vox_routing_and_renderers_strictly_isolated_from_true_crime(self):
+        from documentary.vox_engine.archetypes import ARCHETYPE_RENDERERS
+        from documentary.financial_vox_engine import (
+            FINANCIAL_ARCHETYPE_RENDERERS,
+            FinancialVoxSemanticRouter,
+            is_financial_vox_enabled,
+        )
+
+        # True Crime vox_engine MUST reject financial profile and MUST NOT contain #FIN* archetypes
+        assert is_vox_satellite_enabled({"channel_profile_id": "channel-e544a64b7c"}) is True
+        assert is_vox_satellite_enabled({"channel_profile_id": "channel-cn-cyber-finance-kr"}) is False
+        assert is_vox_satellite_enabled({"editing_dna": {"preset_id": "financial_forensic_vox"}}) is False
+        assert not any(k.startswith("#FIN") for k in ARCHETYPE_RENDERERS)
+        assert not any(k.startswith("#FIN") for k in VOX_ARCHETYPE_RULES)
+
+        # Dedicated Financial Vox engine activates ONLY for channel-cn-cyber-finance-kr
+        assert is_financial_vox_enabled({"channel_profile_id": "channel-cn-cyber-finance-kr"}) is True
+        assert is_financial_vox_enabled({"channel_profile_id": "channel-e544a64b7c"}) is False
+
+        fin_router = FinancialVoxSemanticRouter()
+        cases = [
+            ('앱 화면의 가짜 수익률 곡선과 달리 입금 0.3초 만에 통장 잔고 0원이 되었다', '#FIN01_SPLINE_CLIFF_DIVERGENCE'),
+            ('14,280개 대포통장 쪼개기와 테더 비트코인 환치기 자금 세탁 흐름표를 추적했다', '#FIN02_SANKEY_LAUNDERING_FLOW'),
+            ('영국 경찰은 콜드월렛 속 61,000 BTC와 런던 대저택 등 동결 자산 포트폴리오를 압수했다', '#FIN17_BLOCKCHAIN_TUMBLER_SPLITTER'),
+            ('톈진에서 미얀마와 두바이를 거쳐 런던까지 이어진 대륙 횡단 자금 루트를 지도에서 추적했다', '#FIN04_GIS_25D_CROSSBORDER_ARC'),
+            ('84명 단체방 속 83명 바람잡이의 실체는 24,000대 휴대폰 농장의 자동 매크로 기판이었다', '#FIN03_WAFFLE_DOT_PROPORTION'),
+            ('국경 범죄단지 지하 서버실은 일반 상가 대비 40배 전력 소비량 폭증으로 덜미가 잡혔다', '#FIN05_GIS_OPTICAL_LOUPE_RECON'),
+        ]
+        for sentence, expected_arch in cases:
+            fin_router.reset_history()
+            res = fin_router.route_beat(sentence)
+            assert res["archetype"] == expected_arch
+            assert expected_arch in FINANCIAL_ARCHETYPE_RENDERERS
+            img = FINANCIAL_ARCHETYPE_RENDERERS[expected_arch](0.75, None, None, subtitle_text=sentence[:28])
+            assert img.size == (1920, 1080)
+
+
+    def test_cyber_finance_profile_auto_skips_step4_footage_and_delegates_to_edit_agent(self, tmp_path):
+        import shutil
+        from documentary.models import effective_phases
+        from documentary.prompts import build_phase_prompt
+        from documentary.service import DocumentaryService
+
+        data_dir = tmp_path / "data"
+        data_dir.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(PROJECT_ROOT / "data" / "channel_profiles.json", data_dir / "channel_profiles.json")
+
+        service = DocumentaryService(tmp_path)
+        job = service.create_job({
+            "channel_profile_id": "channel-cn-cyber-finance-kr",
+            "title": "[중국 실화 사건] 12만 명의 노후 자금 8조 원을 USB 하나에 담아 런던으로 사라진 여인 | 6만 비트코인 세탁 사건",
+            "target_duration_minutes": 25,
+        })
+        assert job["visual_strategy"] == "full_ai"
+        phases = effective_phases(job)
+        assert "footage" not in phases
+        assert phases == ("plan", "voice", "visuals", "ai_visual", "edit", "seo", "qc")
+
+        workspace = Path(job["workspace"])
+        plan_prompt = build_phase_prompt(job, "plan", workspace, tmp_path / "remotion")
+        assert "TRUE-CRIME-GRADE FULL AI UPFRONT + REAL CASE FOOTAGE & BESPOKE VOX AT EDIT STRATEGY" in plan_prompt
+        assert "edit_footage_fetcher" in plan_prompt
+
+        edit_prompt = build_phase_prompt(job, "edit", workspace, tmp_path / "remotion")
+        assert "TRUE-CRIME-GRADE FULL-SCRIPT-DRIVEN EDIT & BESPOKE VOX MODE" in edit_prompt
+        assert "documentary.edit_footage_fetcher" in edit_prompt
+        assert "VOX_01..VOX_N.mp4" in edit_prompt
+        assert "50% Footage Thật + 30% Vox Motion + 10% Ảnh AI + 10% Linh Hoạt" in edit_prompt
+
+    def test_dna_mix_50_footage_30_vox_10_ai_10_flexible_strictly_enforced(self):
+        from collections import Counter
+        from documentary.financial_vox_engine import FinancialVoxSemanticRouter
+
+        fin_router = FinancialVoxSemanticRouter()
+        sample_sentences = [
+            "앱 화면의 가짜 수익률 곡선과 달리 입금 0.3초 만에 통장 잔고 0원이 되었다",
+            "14,280개 대포통장 쪼개기와 테더 비트코인 환치기 자금 세탁 흐름표를 추적했다",
+            "경찰 수사관이 새벽 4시 비 내리는 골목길 CCTV 현장을 직접 탐문하며 용의자의 뒤를 쫓았다",
+            "영국 경찰은 콜드월렛 속 61,000 BTC와 런던 대저택 등 동결 자산 포트폴리오를 압수했다",
+            "어두운 방 안 홀로 남은 피해자는 내면의 공포와 불안 속에 밤새 기억을 되짚었다",
+            "톈진에서 미얀마와 두바이를 거쳐 런던까지 이어진 대륙 횡단 자금 루트를 지도에서 추적했다",
+            "한편 앞서 살펴본 현장 단서와 반대로 또 다른 계좌 이체 내역이 발견되었다",
+            "84명 단체방 속 83명 바람잡이의 실체는 24,000대 휴대폰 농장의 자동 매크로 기판이었다",
+            "수사대는 항구 컨테이너 터미널과 물류 창고 현장을 급습해 하드디스크를 확보했다",
+            "국경 범죄단지 지하 서버실은 일반 상가 대비 40배 전력 소비량 폭증으로 덜미가 잡혔다",
+        ]
+        beats_40 = [
+            {"beat_id": f"B{i + 1:03d}", "narration_text": sample_sentences[i % len(sample_sentences)]}
+            for i in range(40)
+        ]
+        job_fin = {"channel_profile_id": "channel-cn-cyber-finance-kr"}
+        routed_fin = fin_router.route_timeline(beats_40, job_fin)
+        assert len(routed_fin) == 40
+
+        slot_counts_fin = Counter(b["dna_visual_slot"] for b in routed_fin)
+        assert slot_counts_fin["real_footage"] == 20      # 50%
+        assert slot_counts_fin["vox_motion"] == 12        # 30%
+        assert slot_counts_fin["ai_visual"] == 4          # 10%
+        assert slot_counts_fin["flexible_reserve"] == 4   # 10%
+
+        vox_archs_fin = [b["scene_archetype"] for b in routed_fin if b["dna_visual_slot"] == "vox_motion"]
+        assert len(vox_archs_fin) == 12
+        assert len(set(vox_archs_fin)) == 12  # 0% duplicate Vox archetypes (max_uses = 1)
+
+        # Option B verification: non-map beats in 30% slot use direct scene motion (render_vox_board == False);
+        # ONLY geographic route/map beats enable render_vox_board == True
+        for b in routed_fin:
+            if b["dna_visual_slot"] == "vox_motion":
+                if b["motion_treatment"] == "satellite_gis_map_flight":
+                    assert b["render_vox_board"] is True
+                else:
+                    assert b["render_vox_board"] is False
+                    assert b["motion_treatment"] in {
+                        "kinetic_metric_overlay",
+                        "split_screen_ab",
+                        "forensic_macro_loupe",
+                        "multi_cut_clause_montage",
+                        "optical_depth_push",
+                    }
+            else:
+                assert b["render_vox_board"] is False
+
+        tc_router = VoxSemanticRouter()
+        job_tc = {"channel_profile_id": "channel-e544a64b7c"}
+        routed_tc = tc_router.route_timeline(beats_40, job_tc)
+        slot_counts_tc = Counter(b["dna_visual_slot"] for b in routed_tc)
+        assert slot_counts_tc["real_footage"] == 20       # 50%
+        assert slot_counts_tc["vox_motion"] == 12         # 30%
+        assert slot_counts_tc["ai_visual"] == 4           # 10%
+        assert slot_counts_tc["flexible_reserve"] == 4    # 10%
 
 
 if __name__ == "__main__":

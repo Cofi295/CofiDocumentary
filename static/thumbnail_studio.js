@@ -2,6 +2,9 @@
  * COFI THUMBNAIL STUDIO v2 — Multi-Card A/B/C/D Test Gallery + Lightbox Final Preview + 1-Click Download & Clean Editor
  */
 (function () {
+  if (typeof window !== "undefined") {
+    window.COFI_THUMB_STUDIO_VERSION = "20261027-smart-save-v2";
+  }
   const CW = 1280;
   const CH = 720;
 
@@ -608,6 +611,24 @@
       showCircle: true,
       showInset: false,
     },
+    {
+      id: "cyber_financial_forensic_duality",
+      label: "💳 Tội phạm CNC & Lừa đảo Tài chính (중국 사기 실화 · 4D Vô diện + PiP)",
+      shortLabel: "💳 Tội phạm CNC & Tài chính",
+      desc: "Kế thừa khung xương CTR True Crime nhưng thiết kế riêng cho Tài chính/CNC: Chủ thể 4D Vô diện bên phải + Khung bằng chứng Sổ tiết kiệm/0원 bên trái + Tag xanh lá [중국 사기 실화] + Mũi tên đỏ + Chữ 2 dòng Vàng/Trắng & Đỏ cực đại",
+      archetype: "split_duality",
+      fontId: "gmarket_bold",
+      badgeFill: "#39ff14",
+      badgeBg: "#06121e",
+      line1Fill: "#ffffff",
+      line2Fill: "#ff2424",
+      highlightFill: "#ffe600",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.88,
+      showArrow: true,
+      showCircle: true,
+      showInset: true,
+    },
   ];
 
   const ARROW_LIBRARY = [
@@ -1128,14 +1149,67 @@
     return s.includes("thumbnail_v1") || s.includes("thumbnail_v2") || s.includes("thumbnail_v3") || s.includes("thumbnail_v4") || s.endsWith("thumbnail.jpg");
   }
 
+  const REAL_PIP_VI_LABELS = {
+    "01_cctv_nanjing_walk": "CCTV dáng đi Nam Kinh",
+    "02_cctv_red_circle_scene": "CCTV khoanh đỏ hiện trường",
+    "03_nanjing_police_cordon": "Cảnh sát phong tỏa Nam Kinh",
+    "04_cctv_gait_shoulder": "CCTV dáng đi lệch vai",
+    "05_cctv_buying_buns": "CCTV mua bánh bao",
+    "06_cctv_bank_recon": "CCTV trinh sát ngân hàng",
+    "07_cctv_street_circle": "CCTV đi bộ trên phố",
+    "08_cctv_sidewalk_track": "CCTV theo dõi vỉa hè",
+    "09_night_graveyard_search": "Lục soát nghĩa địa ban đêm",
+    "10_internet_cafe_hideout": "Quán Internet nơi ẩn náu",
+    "11_police_dog_tracking": "Chó nghiệp vụ truy vết",
+    "12_suspect_mugshot_pair": "Ảnh thẻ trại giam 2 góc",
+    "13_wanted_photo_hand": "Ảnh truy nã rà soát",
+    "14_cave_sleeping_gear": "Túi ngủ & đồ trong hang đá",
+    "15_dna_water_bottles": "Vật chứng vỏ chai nước DNA",
+    "16_cave_food_leftovers": "Thức ăn thừa trong hang",
+    "17_forensic_dna_lab": "Xét nghiệm mẫu DNA pháp y",
+    "18_bullet_hole_ground": "Vết đạn găm hiện trường",
+    "19_wanted_dossier_card": "Hồ sơ truy nã Chu Khắc Hoa",
+    "20_armed_checkpoint_blockade": "Trạm cảnh sát vũ trang",
+    "21_geleshan_mountain_search": "Vây ráp núi Ca Lạc Sơn",
+    "22_railway_escape_tracks": "Đường ray xe lửa Sa Bình Bá",
+    "23_cctv_mall_escalator": "CCTV thang cuốn TT thương mại",
+    "24_tongjiaqiao_cordon_tape": "Dải phong tỏa ngõ Đồng Gia Kiều",
+    "25_tongjiaqiao_alley_body": "Hiện trường hẻm Đồng Gia Kiều",
+    "26_tongjiaqiao_ground_evidence": "Tang vật thu giữ tại hẻm",
+  };
+
   function getCleanCandidates() {
     const raw = studioState.data?.candidate_images || [];
-    return raw.filter((c) => {
-      const p = String(c?.rel_path || c?.url || "").toLowerCase();
-      if (isExportedCompositeThumb(p)) return false;
-      if (p.includes("cutout_") || p.includes("debug_") || p.includes("check_pip_")) return false;
-      return true;
-    });
+    return raw
+      .filter((c) => {
+        const p = String(c?.rel_path || c?.url || "").toLowerCase();
+        if (isExportedCompositeThumb(p)) return false;
+        if (p.includes("cutout_") || p.includes("debug_") || p.includes("check_pip_")) return false;
+        return true;
+      })
+      .map((c) => {
+        const p = String(c?.rel_path || c?.url || "").toLowerCase();
+        const m = p.match(/thumb_inset_real_([a-z0-9_]+)\.(?:jpg|jpeg|png|webp)/i);
+        if (m) {
+          const key = m[1].toLowerCase();
+          const numM = key.match(/^(\d+)_/);
+          const numTag = numM ? `#${numM[1]} ` : "";
+          const descVi = REAL_PIP_VI_LABELS[key] || key.replace(/_/g, " ");
+          return {
+            ...c,
+            category: "thumbnail_inset",
+            label: `📸 Tư liệu thật ${numTag}· ${descVi}`,
+            realOrder: numM ? Number(numM[1]) : 99,
+          };
+        }
+        return c;
+      })
+      .sort((a, b) => {
+        if (a.realOrder !== undefined && b.realOrder !== undefined) {
+          return a.realOrder - b.realOrder;
+        }
+        return 0;
+      });
   }
 
   function getVariantBgUrl(variant) {
@@ -2549,6 +2623,52 @@
     showToast(`🔤 Đã thêm «${newLayer.name}» — bạn có thể sửa chữ và chỉnh màu ngay!`);
   }
 
+  function addNewPipLayer(frameStyle = "vintage_paper") {
+    const v = getActiveVariant();
+    if (!v) return;
+    if (!Array.isArray(v.layers)) v.layers = [];
+    pushUndoSnapshot();
+    const existingPips = v.layers.filter((l) => l && l.type === "inset_image");
+    const cands = getCleanCandidates();
+    const realInCands = cands.filter((c) => c.category === "thumbnail_inset");
+    const pool = realInCands.length ? realInCands : cands;
+    const defaultUrl = pool[existingPips.length % Math.max(1, pool.length)]?.url || v.inset_image_url || "";
+    const newIdx = existingPips.length + 1;
+    const newId = newIdx === 1 && !getLayer("inset_photo", v)
+      ? "inset_photo"
+      : newIdx === 2 && !getLayer("inset_photo_2", v)
+      ? "inset_photo_2"
+      : `inset_photo_${Date.now().toString(36).slice(-4)}`;
+    const isSecond = newIdx >= 2;
+    const newPip = {
+      id: newId,
+      type: "inset_image",
+      name: `Ảnh phụ PiP #${newIdx}`,
+      src: defaultUrl,
+      frameStyle: isSecond ? "torn_newspaper" : frameStyle,
+      left: isSecond ? 386 : 44,
+      top: isSecond ? 196 : 112,
+      width: isSecond ? 314 : 356,
+      height: isSecond ? 226 : 244,
+      borderColor: "#f4ebd9",
+      borderWidth: 14,
+      angle: isSecond ? 3.5 : -2.8,
+      visible: true,
+    };
+    const l1Idx = v.layers.findIndex((l) => l && l.id === "line_1");
+    if (l1Idx > 0) {
+      v.layers.splice(l1Idx, 0, newPip);
+    } else {
+      v.layers.push(newPip);
+    }
+    if (defaultUrl) loadCachedImage(defaultUrl);
+    studioState.selectedLayerId = newPip.id;
+    renderAllCanvases();
+    refreshContextualPanels();
+    scheduleSaveDesign();
+    showToast(`🖼 Đã thêm «${newPip.name}» chuẩn DNA — chọn ngay ảnh tư liệu thật ở cột phải!`);
+  }
+
   function renderLibraryMiniPreviews() {
     const activeVariant = getActiveVariant();
     const curArrow = getActiveArrowLayer(activeVariant) || {};
@@ -2640,13 +2760,84 @@
     return dataUrl;
   }
 
-  function triggerBrowserDownload(dataUrl, filename) {
+  function dataUrlToBlob(dataUrl) {
+    const parts = String(dataUrl || "").split(",");
+    if (parts.length < 2) return null;
+    const mimeMatch = parts[0].match(/:(.*?);/);
+    const mime = mimeMatch ? mimeMatch[1] : "image/jpeg";
+    const binary = atob(parts[1]);
+    const len = binary.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) {
+      bytes[i] = binary.charCodeAt(i);
+    }
+    return new Blob([bytes], { type: mime });
+  }
+
+  function getFilePickerTypesForFilename(filename) {
+    const lower = String(filename || "").toLowerCase();
+    if (lower.endsWith(".png")) {
+      return [{ description: "Ảnh PNG (*.png)", accept: { "image/png": [".png"] } }];
+    }
+    if (lower.endsWith(".webp")) {
+      return [{ description: "Ảnh WebP (*.webp)", accept: { "image/webp": [".webp"] } }];
+    }
+    if (lower.endsWith(".zip")) {
+      return [{ description: "File nén ZIP (*.zip)", accept: { "application/zip": [".zip"] } }];
+    }
+    if (lower.endsWith(".mp4")) {
+      return [{ description: "Video MP4 (*.mp4)", accept: { "video/mp4": [".mp4"] } }];
+    }
+    return [{ description: "Ảnh JPEG (*.jpg)", accept: { "image/jpeg": [".jpg", ".jpeg"] } }];
+  }
+
+  async function triggerBrowserDownload(dataUrl, filename, { usePicker = true } = {}) {
+    const safeFilename = String(filename || "thumbnail.jpg").trim();
+    if (usePicker && typeof window !== "undefined" && typeof window.showSaveFilePicker === "function") {
+      try {
+        const handle = await window.showSaveFilePicker({
+          suggestedName: safeFilename,
+          types: getFilePickerTypesForFilename(safeFilename),
+        });
+        let blob = null;
+        if (String(dataUrl || "").startsWith("data:")) {
+          blob = dataUrlToBlob(dataUrl);
+        } else {
+          const resp = await fetch(dataUrl);
+          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          blob = await resp.blob();
+        }
+        if (blob) {
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          return { saved: true, cancelled: false, fileName: handle.name || safeFilename };
+        }
+      } catch (err) {
+        if (err && err.name === "AbortError") {
+          return { saved: false, cancelled: true, fileName: safeFilename };
+        }
+      }
+    }
+    let href = dataUrl;
+    let revokeUrl = null;
+    if (String(dataUrl || "").startsWith("data:")) {
+      const blob = dataUrlToBlob(dataUrl);
+      if (blob && typeof URL !== "undefined" && typeof URL.createObjectURL === "function") {
+        href = URL.createObjectURL(blob);
+        revokeUrl = href;
+      }
+    }
     const link = document.createElement("a");
-    link.href = dataUrl;
-    link.download = filename;
+    link.href = href;
+    link.download = safeFilename;
     document.body.appendChild(link);
     link.click();
     link.remove();
+    if (revokeUrl) {
+      setTimeout(() => URL.revokeObjectURL(revokeUrl), 15000);
+    }
+    return { saved: true, cancelled: false, fileName: safeFilename };
   }
 
   function scheduleSaveDesign() {
@@ -2671,7 +2862,8 @@
       .replace(/\s+/g, "_")
       .replace(/[^a-zA-Z0-9_-]/g, "");
     const fileName = `thumbnail_${studioState.jobId}_${shortName || variant.id}.jpg`;
-    triggerBrowserDownload(dataUrl, fileName);
+    const dlResult = await triggerBrowserDownload(dataUrl, fileName, { usePicker: true });
+    if (dlResult?.cancelled) return;
 
     try {
       const resp = await fetch(`/api/jobs/${encodeURIComponent(studioState.jobId)}/thumbnail-studio/export`, {
@@ -2688,10 +2880,11 @@
       if (resp.ok && json.ok) {
         studioState.data.thumbnail_exists = true;
         studioState.data.thumbnail_url = json.thumbnail_url;
+        const finalName = dlResult?.fileName || fileName;
         showToast(
           setPrimary
-            ? `Đã chọn ${variant.short_label || variant.id} làm Thumbnail chính & tải ảnh về máy!`
-            : `Đã tải xuống ${variant.short_label || variant.id} (${fileName})!`
+            ? `Đã chọn ${variant.short_label || variant.id} làm Thumbnail chính & tải ảnh (${finalName})!`
+            : `Đã tải xuống ${variant.short_label || variant.id} (${finalName})!`
         );
       }
     } catch (_) {}
@@ -2704,6 +2897,15 @@
     renderStudioDom();
     try {
       const activeId = studioState.data?.design?.active_variant_id || "v1";
+      let dirHandle = null;
+      if (typeof window !== "undefined" && typeof window.showDirectoryPicker === "function") {
+        try {
+          dirHandle = await window.showDirectoryPicker({ mode: "readwrite" });
+        } catch (err) {
+          if (err && err.name === "AbortError") return;
+          dirHandle = null;
+        }
+      }
       const items = [];
       for (let i = 0; i < variants.length; i++) {
         const v = variants[i];
@@ -2714,8 +2916,19 @@
           is_primary: v.id === activeId,
         });
         const labelSlug = `Ban_${String.fromCharCode(65 + i)}`;
-        triggerBrowserDownload(dataUrl, `thumbnail_${studioState.jobId}_${labelSlug}.jpg`);
-        await new Promise((r) => setTimeout(r, 220));
+        const outFileName = `thumbnail_${studioState.jobId}_${labelSlug}.jpg`;
+        if (dirHandle) {
+          const blob = dataUrlToBlob(dataUrl);
+          if (blob) {
+            const fileHandle = await dirHandle.getFileHandle(outFileName, { create: true });
+            const writable = await fileHandle.createWritable();
+            await writable.write(blob);
+            await writable.close();
+          }
+        } else {
+          await triggerBrowserDownload(dataUrl, outFileName, { usePicker: false });
+          await new Promise((r) => setTimeout(r, 220));
+        }
       }
       const resp = await fetch(`/api/jobs/${encodeURIComponent(studioState.jobId)}/thumbnail-studio/export`, {
         method: "POST",
@@ -2770,12 +2983,9 @@
       }
       showToast("Đã kết xuất thành công A/B Test Pack! Đang tải file ZIP về máy...");
       if (data.zip_url) {
-        const a = document.createElement("a");
-        a.href = data.zip_url;
-        a.download = `ab_test_pack_${studioState.jobId}.zip`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const zipFileName = `ab_test_pack_${studioState.jobId}.zip`;
+        const zipDownloadUrl = `${data.zip_url}${data.zip_url.includes("?") ? "&" : "?"}download=1&filename=${encodeURIComponent(zipFileName)}`;
+        await triggerBrowserDownload(zipDownloadUrl, zipFileName, { usePicker: true });
       }
     } catch (err) {
       showToast(`Lỗi xuất A/B Pack: ${err.message}`, true);
@@ -3322,7 +3532,7 @@
       .map((l) => ({
         id: l.id,
         label: l.name || l.id,
-        icon: l.type === "arrow" ? "↗" : l.type === "circle" ? "⭕" : l.type === "textbox" ? "🔤" : "✨",
+        icon: l.type === "arrow" ? "↗" : l.type === "circle" ? "⭕" : l.type === "inset_image" ? "🖼" : l.type === "textbox" ? "🔤" : "✨",
       }));
     return [...baseQuickDefs, ...extraQuickDefs];
   }
@@ -3357,6 +3567,7 @@
       </button>
       ${pills}
       <span style="margin-left:auto;display:inline-flex;gap:4px;flex-wrap:wrap;">
+        <button type="button" class="ghost compact" id="quickBarAddPipBtn" style="font-size:11px;padding:3px 8px;border-color:rgba(74,222,128,0.45);color:#86efac;">+ 🖼 Khung PiP</button>
         <button type="button" class="ghost compact" id="quickBarAddTextBtn" style="font-size:11px;padding:3px 8px;border-color:rgba(56,189,248,0.45);color:#7dd3fc;">+ 🔤 Chữ</button>
         <button type="button" class="ghost compact" id="quickBarAddArrowBtn" style="font-size:11px;padding:3px 8px;border-color:rgba(239,68,68,0.45);color:#fca5a5;">+ ↗ Mũi tên</button>
         <button type="button" class="ghost compact" id="quickBarAddCircleBtn" style="font-size:11px;padding:3px 8px;border-color:rgba(250,204,21,0.45);color:#fde047;">+ ⭕ Vòng tròn</button>
@@ -3519,7 +3730,7 @@
         </div>
 
         <div class="canva-side-section">
-          <div class="canva-side-title">🖼 KHO ẢNH DỰ ÁN (${candidates.length} ẢNH)</div>
+          <div class="canva-side-title">🖼 KHO ẢNH TƯ LIỆU &amp; NỀN (${candidates.length} ẢNH)</div>
           <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
             <button type="button" class="ghost compact" id="thumbGenSingleFlowBtn" style="flex:1;font-size:11px;" ${studioState.busyVariants.has(activeVariant.id) ? "disabled" : ""}>${studioState.busyVariants.has(activeVariant.id) ? "⏳ Đang vẽ…" : "🎨 Vẽ nền Flow"}</button>
             <label class="ghost compact thumb-upload-btn" style="flex:1;font-size:11px;text-align:center;">
@@ -3527,13 +3738,14 @@
               <input type="file" id="thumbUploadBgInput" accept="image/png,image/jpeg,image/webp" hidden />
             </label>
           </div>
-          <div class="canva-candidates-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;max-height:168px;overflow-y:auto;">
+          <div class="canva-candidates-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:320px;overflow-y:auto;">
             ${
               candidates.length
                 ? candidates
                     .map(
                       (c) => `<div class="canva-cand-card ${getVariantBgUrl(activeVariant) === c.url ? "selected" : ""}">
-                        <img src="${esc(c.url)}" alt="${esc(c.label)}" loading="lazy" style="width:100%;height:48px;max-height:48px;object-fit:cover;display:block;" style="width:100%;height:48px;max-height:48px;object-fit:cover;display:block;" data-pick-bg="${esc(c.url)}" data-pick-path="${esc(c.rel_path || "")}" />
+                        <img src="${esc(c.url)}" alt="${esc(c.label)}" title="${esc(c.label)}" loading="lazy" style="width:100%;height:56px;max-height:56px;object-fit:cover;display:block;" data-pick-bg="${esc(c.url)}" data-pick-path="${esc(c.rel_path || "")}" />
+                        <div style="font-size:10px;color:#cbd5e1;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(c.label)}">${esc(c.label)}</div>
                         <div class="canva-cand-actions">
                           <button type="button" data-pick-bg="${esc(c.url)}" data-pick-path="${esc(c.rel_path || "")}">Làm Nền</button>
                           <button type="button" data-pick-inset="${esc(c.url)}">Ảnh PiP</button>
@@ -3911,22 +4123,24 @@
           ${commonTransformHtml}
 
           <div class="canva-context-card">
-            <div class="canva-side-title">2. ĐỔI ẢNH CHO [${esc(selected.name || selected.id)}]</div>
-            <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;">
+            <div class="canva-side-title">2. KHO ẢNH TƯ LIỆU THẬT &amp; HIỆN TRƯỜNG CHO [${esc(selected.name || selected.id)}] (${candidates.length} ẢNH)</div>
+            <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
               <label class="ghost compact thumb-upload-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:1;padding:6px 10px;font-size:11.5px;cursor:pointer;border-color:rgba(56,189,248,0.45);color:#7dd3fc;background:rgba(56,189,248,0.08);">
-                📁 Tải ảnh từ máy tính (thay cho PiP này)
+                📁 Tải ảnh từ máy
                 <input type="file" id="ctxUploadPipFileInput" accept="image/png,image/jpeg,image/webp" hidden />
               </label>
+              <button type="button" class="ghost compact" id="ctxAddSecondPipBtn" style="flex:1;padding:6px 10px;font-size:11.5px;border-color:rgba(74,222,128,0.5);color:#86efac;background:rgba(34,197,94,0.1);">+ 🖼 Thêm Khung PiP Đè Chéo</button>
             </div>
-            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">Hoặc chọn từ ảnh dự án bên dưới (hoặc dán Ctrl+V):</div>
-            <div class="canva-candidates-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;max-height:168px;overflow-y:auto;">
-              ${candidates
-                .slice(0, 8)
+            <div style="font-size:11px;color:#94a3b8;margin-bottom:6px;">Ấn vào bất kỳ ảnh tư liệu thật hiện trường / CCTV bên dưới để thay ngay vào khung PiP đang chọn:</div>
+            <div class="canva-candidates-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:360px;overflow-y:auto;">
+              ${[...candidates]
+                .sort((a, b) => (a.category === "thumbnail_inset" ? 0 : 1) - (b.category === "thumbnail_inset" ? 0 : 1))
                 .map(
                   (c) => `<div class="canva-cand-card ${selected.src === c.url ? "selected" : ""}">
-                    <img src="${esc(c.url)}" alt="${esc(c.label)}" loading="lazy" style="width:100%;height:48px;max-height:48px;object-fit:cover;display:block;" data-pick-inset="${esc(c.url)}" />
+                    <img src="${esc(c.url)}" alt="${esc(c.label)}" title="${esc(c.label)}" loading="lazy" style="width:100%;height:64px;max-height:64px;object-fit:cover;display:block;" data-pick-inset="${esc(c.url)}" />
+                    <div style="font-size:10px;color:#e2e8f0;padding:3px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:700;" title="${esc(c.label)}">${esc(c.label)}</div>
                     <div class="canva-cand-actions">
-                      <button type="button" data-pick-inset="${esc(c.url)}">Dùng làm PiP</button>
+                      <button type="button" data-pick-inset="${esc(c.url)}">Chọn làm PiP này</button>
                     </div>
                   </div>`
                 )
@@ -3985,7 +4199,7 @@
         </div>
 
         <div class="canva-context-card">
-          <div class="canva-side-title">3. ĐỔI ẢNH NỀN SẠCH (${candidates.length} ẢNH)</div>
+          <div class="canva-side-title">3. KHO ẢNH NỀN &amp; TƯ LIỆU THẬT (${candidates.length} ẢNH)</div>
           <div style="display:flex;gap:6px;margin-bottom:8px;">
             <button type="button" class="ghost compact" id="thumbGenSingleFlowBtn" style="flex:1;" ${studioState.busyVariants.has(activeVariant.id) ? "disabled" : ""}>🎨 Vẽ nền Flow</button>
             <label class="ghost compact thumb-upload-btn" style="flex:1;text-align:center;">
@@ -3993,12 +4207,12 @@
               <input type="file" id="thumbUploadBgInput" accept="image/png,image/jpeg,image/webp" hidden />
             </label>
           </div>
-          <div class="canva-candidates-grid" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px;max-height:168px;overflow-y:auto;">
+          <div class="canva-candidates-grid" style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;max-height:320px;overflow-y:auto;">
             ${candidates
-              .slice(0, 8)
               .map(
                 (c) => `<div class="canva-cand-card ${getVariantBgUrl(activeVariant) === c.url ? "selected" : ""}">
-                  <img src="${esc(c.url)}" alt="${esc(c.label)}" loading="lazy" style="width:100%;height:48px;max-height:48px;object-fit:cover;display:block;" style="width:100%;height:48px;max-height:48px;object-fit:cover;display:block;" data-pick-bg="${esc(c.url)}" data-pick-path="${esc(c.rel_path || "")}" />
+                  <img src="${esc(c.url)}" alt="${esc(c.label)}" title="${esc(c.label)}" loading="lazy" style="width:100%;height:56px;max-height:56px;object-fit:cover;display:block;" data-pick-bg="${esc(c.url)}" data-pick-path="${esc(c.rel_path || "")}" />
+                  <div style="font-size:10px;color:#cbd5e1;padding:2px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${esc(c.label)}">${esc(c.label)}</div>
                   <div class="canva-cand-actions">
                     <button type="button" data-pick-bg="${esc(c.url)}" data-pick-path="${esc(c.rel_path || "")}">Làm Nền</button>
                     <button type="button" data-pick-inset="${esc(c.url)}">Ảnh PiP</button>
@@ -4433,7 +4647,12 @@
       });
     });
 
-    // 4. Add new Text / Arrow / Circle buttons
+    // 4. Add new PiP / Text / Arrow / Circle buttons
+    host.querySelectorAll("#quickBarAddPipBtn, #ctxAddSecondPipBtn").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => addNewPipLayer("vintage_paper"));
+    });
     host.querySelectorAll("#quickBarAddTextBtn, #addCustomTextLayerBtn").forEach((btn) => {
       if (btn.dataset.bound === "1") return;
       btn.dataset.bound = "1";

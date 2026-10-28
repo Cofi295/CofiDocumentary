@@ -304,8 +304,13 @@ class PreflightService:
                 matched_patterns.append("winner_dna_term_match")
                 details["matched_winner_terms"] = matched_winner_terms
 
-            # Weak terms check
-            weak_terms = own_dna.get("weak_terms") or []
+            # Weak terms check (exclude terms that are part of primary SEO keyword or winner_terms)
+            seo_kw_lower = str((profile.get("seo_keyword_dna") or {}).get("primary_title_keyword") or "").lower()
+            winner_set = {str(w).lower() for w in winner_terms}
+            weak_terms = [
+                wt for wt in (own_dna.get("weak_terms") or [])
+                if str(wt).lower() not in winner_set and str(wt).lower() not in seo_kw_lower
+            ]
             flagged_weak_terms = [wt for wt in weak_terms if str(wt).lower() in title or str(wt).lower() in topic]
             if flagged_weak_terms:
                 recommendations.append(f"Cảnh báo: Tiêu đề chứa từ khóa kém hiệu quả: {', '.join(flagged_weak_terms)}")

@@ -40,3 +40,5 @@ tools/*.exe
 tools/*.dll
 benchmarks/*.mp4
 static/vox_studio/vox_5min_studio_master.mp4
+
+graft/

@@ -310,7 +310,19 @@ class VisualsCoordinator:
         if ai_media_mode not in {"image", "video", "mixed"}:
             ai_media_mode = "image" if strategy == "edit_direct_footage" else "mixed"
 
-        max_selective_ai_beats = max(4, min(20, max(1, len(voice_beats) // 7))) if strategy == "edit_direct_footage" else 0
+        profile_id = str(
+            job.get("channel_profile_id")
+            or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
+            or ""
+        ).strip()
+        if profile_id == "channel-e544a64b7c" or profile_id == "channel-cn-cyber-finance-kr":
+            # Vẽ FULL 100% ảnh AI từ đầu giống True Crime (mỗi beat có sẵn 1 ảnh AI 4D khớp 100% cảnh đó), đồng thời vẫn auto skip Step 4
+            strategy = "full_ai"
+            ai_media_mode = "image"
+        if strategy == "edit_direct_footage":
+            max_selective_ai_beats = max(4, min(20, max(1, len(voice_beats) // 7)))
+        else:
+            max_selective_ai_beats = 0
         selective_ai_count = 0
 
         refined: list[dict[str, Any]] = []
@@ -318,7 +330,7 @@ class VisualsCoordinator:
         for parent_index, voice_beat in enumerate(voice_beats, 1):
             parent_id = str(voice_beat.get("beat_id") or f"B{parent_index:03d}").strip()
             text = str(voice_beat.get("text") or "").strip()
-            units = split_visual_text(text, self.max_chars)
+            units = [text] if ((profile_id == "channel-e544a64b7c" or profile_id == "channel-cn-cyber-finance-kr") and len(text) <= 180) else split_visual_text(text, self.max_chars)
             if not units:
                 continue
             metadata = dict(plan_by_id.get(parent_id) or {})
@@ -375,15 +387,24 @@ class VisualsCoordinator:
                 cursor = unit_end
 
         from .vox_engine import VoxSemanticRouter, is_vox_satellite_enabled
-        if is_vox_satellite_enabled(job):
+        from .financial_vox_engine import FinancialVoxSemanticRouter, is_financial_vox_enabled
+        vox_enabled = is_vox_satellite_enabled(job)
+        fin_vox_enabled = is_financial_vox_enabled(job)
+        if vox_enabled:
             router = VoxSemanticRouter()
             refined = router.route_timeline(refined, job)
+        elif fin_vox_enabled:
+            fin_router = FinancialVoxSemanticRouter()
+            refined = fin_router.route_timeline(refined, job)
+        if vox_enabled or fin_vox_enabled:
             for row in prompt_rows:
                 bid = row.get("beat_id")
                 matching = next((b for b in refined if b.get("beat_id") == bid), None)
                 if matching and matching.get("scene_archetype"):
                     row["scene_archetype"] = matching["scene_archetype"]
                     row["archetype_label"] = matching.get("archetype_label")
+                    if matching.get("dna_visual_slot"):
+                        row["dna_visual_slot"] = matching["dna_visual_slot"]
 
         if _compact("".join(item["narration_text"] for item in refined)) != _compact(script):
             raise RuntimeError("Visuals/STP did not preserve 100% of script.md")

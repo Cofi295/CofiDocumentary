@@ -634,7 +634,7 @@ class BackgroundRenderCache:
         nearest_frames = round(raw_frames)
         total_frames = max(1, int(nearest_frames if abs(raw_frames - nearest_frames) <= 0.25 else math.ceil(raw_frames)))
         comp_frames = self._resolve_composition_total_frames(str(job.get("id") or ""))
-        if comp_frames and abs(comp_frames - total_frames) <= 5:
+        if comp_frames and comp_frames > total_frames and (comp_frames - total_frames) <= 150:
             total_frames = comp_frames
         frames_per_chunk = max(1, self.chunk_seconds * fps)
         cache_root = workspace / ".render_cache"

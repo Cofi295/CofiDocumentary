@@ -216,3 +216,56 @@ def test_live_draft_sync_and_open_ended_creative_workflow(tmp_path: Path) -> Non
     assert len(job["outline"]["chapters"]) == 1
 
 
+def test_cyber_finance_outline_first_and_korean_natural_prose_prompt(tmp_path: Path) -> None:
+    import shutil
+    repo_profiles = Path(__file__).resolve().parents[1] / "data" / "channel_profiles.json"
+    target_profiles = tmp_path / "data" / "data" / "channel_profiles.json"
+    target_profiles.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(repo_profiles, target_profiles)
+
+    client = _make_client(tmp_path)
+    create_res = client.post(
+        "/api/jobs",
+        json={
+            "title": "[중국 사기 실화] 12만 명의 노후 자금 8조 원을 USB 하나에 담아 사라진 여인",
+            "market": "KR",
+            "language": "ko",
+            "channel_profile_id": "channel-cn-cyber-finance-kr",
+            "target_duration_minutes": 10,
+            "start_plan": False,
+        },
+    )
+    assert create_res.status_code == 200
+    job = create_res.json()
+    job_id = job["id"]
+
+    gen_res = client.post(f"/api/jobs/{job_id}/outline/generate", json={})
+    assert gen_res.status_code == 200
+    chapters = gen_res.json()["chapters"]
+    assert len(chapters) == 5
+    assert [c["chapter_id"] for c in chapters] == ["ACT01", "ACT02", "ACT03", "ACT04", "ACT05"]
+    assert all(c.get("target_non_space_chars", 0) > 0 for c in chapters)
+
+    updated_job = client.get(f"/api/jobs/{job_id}").json()
+    plan_prompt = build_phase_prompt(updated_job, "plan", updated_job["workspace"], tmp_path)
+    assert "MANDATORY OUTLINE-FIRST SCRIPT ARCHITECTURE & NATIVE KOREAN BROADCAST PROSE RULES" in plan_prompt
+    assert "BẮT BUỘC PHÁC THẢO KỊCH BẢN TRƯỚC" in plan_prompt
+    assert "AI 번역투 · 기계적 문체 완전 제거" in plan_prompt
+    assert "미사여구 · 과장된 수식어 · 신파조 절대 금지" in plan_prompt
+
+    edit_prompt = build_phase_prompt(updated_job, "edit", updated_job["workspace"], tmp_path)
+    assert "BƯỚC 6.1 — ĐỌC FULL SCRIPT & TỔNG HỢP KẾ HOẠCH" in edit_prompt
+    assert "BƯỚC 6.2 —" in edit_prompt
+    for forbidden in (
+        "Bước 5 tạo ~20% ảnh AI",
+        "xoay vòng 6 mẫu",
+        "#FIN1",
+        "24 mẫu",
+        "100% Full AI xuyên suốt",
+        "VISUAL TYPE POLICY — VIDEO FIRST",
+    ):
+        assert forbidden not in plan_prompt
+        assert forbidden not in edit_prompt
+
+
+

@@ -43,7 +43,8 @@ def test_ai_visual_settings_exposes_copied_style_presets_and_defaults(tmp_path: 
     settings = AIVisualCoordinator(tool_runner=CaptureRunner()).settings(tmp_path, {})
 
     names = {item["name"] for item in settings["style_presets"]}
-    assert len(names) == 15
+    assert len(names) == 16
+    assert "Siêu thực 4D Người vô diện (4D Faceless Forensic)" in names
     assert "Người que (Stickman)" in names
     assert "Sơn dầu (Oil painting)" in names
     assert "Video 2D (US Animation)" in names
@@ -77,8 +78,24 @@ def test_ai_visual_preset_prompt_is_applied_to_generated_scene(tmp_path: Path):
 
     assert len(runner.calls) == 1
     prompt = runner.calls[0]["prompt"]
-    assert "Hand-drawn doodle documentary / stick-figure explainer cartoon" in prompt
+    assert "Hand-drawn doodle documentary /" in prompt
     assert "A scientist studies the brain." in prompt
+
+    ws2 = tmp_path / "ws2"
+    write_workspace(
+        ws2,
+        [{"beat_id": "B001", "narration_text": "An elderly retiree checks a bank passbook."}],
+        fallback=["B001"],
+    )
+    runner_4d = CaptureRunner()
+    AIVisualCoordinator(tool_runner=runner_4d).run({
+        "ai_visual": {
+            "style_mode": "preset",
+            "style_preset": "Siêu thực 4D Người vô diện (4D Faceless Forensic)",
+        }
+    }, ws2)
+    assert len(runner_4d.calls) == 1
+    assert "Hyper-realistic 4D forensic documentary reconstruction" in runner_4d.calls[0]["prompt"]
 
 
 def test_ai_visual_style_reference_is_forwarded_to_every_image_scene(tmp_path: Path):

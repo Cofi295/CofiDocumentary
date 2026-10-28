@@ -101,7 +101,35 @@ def discover_job_candidate_images(job_id: str, workspace: Path, job: dict[str, A
             "mtime": resolved.stat().st_mtime,
         })
 
-    # 1. Dedicated thumbnail background images (exclude exported composite thumbnail_*.jpg files!)
+    # 1. Dedicated thumbnail background & real archival PiP images (exclude exported composite thumbnail_*.jpg files!)
+    real_pip_labels = {
+        "01_cctv_nanjing_walk": "CCTV dáng đi Nam Kinh",
+        "02_cctv_red_circle_scene": "CCTV khoanh đỏ hiện trường",
+        "03_nanjing_police_cordon": "Cảnh sát phong tỏa Nam Kinh",
+        "04_cctv_gait_shoulder": "CCTV dáng đi lệch vai",
+        "05_cctv_buying_buns": "CCTV mua bánh bao",
+        "06_cctv_bank_recon": "CCTV trinh sát ngân hàng",
+        "07_cctv_street_circle": "CCTV đi bộ trên phố",
+        "08_cctv_sidewalk_track": "CCTV theo dõi vỉa hè",
+        "09_night_graveyard_search": "Lục soát nghĩa địa ban đêm",
+        "10_internet_cafe_hideout": "Quán Internet nơi ẩn náu",
+        "11_police_dog_tracking": "Chó nghiệp vụ truy vết",
+        "12_suspect_mugshot_pair": "Ảnh thẻ trại giam 2 góc",
+        "13_wanted_photo_hand": "Ảnh truy nã rà soát",
+        "14_cave_sleeping_gear": "Túi ngủ & đồ trong hang đá",
+        "15_dna_water_bottles": "Vật chứng vỏ chai nước DNA",
+        "16_cave_food_leftovers": "Thức ăn thừa trong hang",
+        "17_forensic_dna_lab": "Xét nghiệm mẫu DNA pháp y",
+        "18_bullet_hole_ground": "Vết đạn găm hiện trường",
+        "19_wanted_dossier_card": "Hồ sơ truy nã Chu Khắc Hoa",
+        "20_armed_checkpoint_blockade": "Trạm cảnh sát vũ trang",
+        "21_geleshan_mountain_search": "Vây ráp núi Ca Lạc Sơn",
+        "22_railway_escape_tracks": "Đường ray xe lửa Sa Bình Bá",
+        "23_cctv_mall_escalator": "CCTV thang cuốn TT thương mại",
+        "24_tongjiaqiao_cordon_tape": "Dải phong tỏa ngõ Đồng Gia Kiều",
+        "25_tongjiaqiao_alley_body": "Hiện trường hẻm Đồng Gia Kiều",
+        "26_tongjiaqiao_ground_evidence": "Tang vật thu giữ tại hẻm",
+    }
     if (workspace / "media" / "thumbnail").is_dir():
         for bg_file in sorted(
             (workspace / "media" / "thumbnail").glob("*"),
@@ -110,12 +138,20 @@ def discover_job_candidate_images(job_id: str, workspace: Path, job: dict[str, A
             stem_lower = bg_file.stem.lower()
             if stem_lower == "thumbnail" or stem_lower.startswith("thumbnail_"):
                 continue
-            if stem_lower.startswith("thumb_inset"):
-                add_candidate(bg_file, f"Ảnh phụ PiP ({bg_file.name})", "thumbnail_inset", priority=96)
+            if stem_lower.startswith("thumb_inset_real_"):
+                suffix_key = stem_lower.replace("thumb_inset_real_", "")
+                num_m = re.match(r"^(\d+)_", suffix_key)
+                num_tag = f"#{num_m.group(1)} " if num_m else ""
+                desc_vi = real_pip_labels.get(suffix_key, suffix_key.replace("_", " "))
+                add_candidate(bg_file, f"📸 Tư liệu thật {num_tag}· {desc_vi}", "thumbnail_inset", priority=98)
+            elif stem_lower.startswith("thumb_inset"):
+                add_candidate(bg_file, f"📸 Ảnh phụ PiP ({bg_file.name})", "thumbnail_inset", priority=96)
+            elif stem_lower.startswith(("zhou_", "raw_portrait_", "mugshot_", "evidence_")):
+                add_candidate(bg_file, f"📸 Hồ sơ nhân vật ({bg_file.name})", "thumbnail_inset", priority=95)
             else:
                 v_match = re.search(r"thumb_bg_v(\d+)", stem_lower)
                 prio = 105 - int(v_match.group(1)) if v_match else 100
-                add_candidate(bg_file, f"Ảnh nền sạch ({bg_file.name})", "thumbnail_bg", priority=prio)
+                add_candidate(bg_file, f"🖼 Ảnh nền sạch ({bg_file.name})", "thumbnail_bg", priority=prio)
 
     for root_bg in ("thumbnail_bg.jpg", "thumbnail_bg.png", "thumbnail_bg.webp"):
         if (workspace / root_bg).is_file():
@@ -1504,8 +1540,10 @@ def _extract_overlay_options(seo_pack: dict[str, Any], job: dict[str, Any]) -> l
     ]
 
     raw_options = thumb.get("overlay_text_options") if isinstance(thumb.get("overlay_text_options"), list) else []
-    if not raw_options and isinstance(seo_pack.get("thumbnail_variants"), list):
-        raw_options = seo_pack.get("thumbnail_variants") or []
+    if isinstance(seo_pack.get("thumbnail_variants"), list) and seo_pack["thumbnail_variants"]:
+        tv_list = seo_pack["thumbnail_variants"]
+        if not raw_options or any(str(x.get("badge") or "").startswith(("“", "\"")) for x in raw_options if isinstance(x, dict)):
+            raw_options = tv_list
     titles_list = seo_pack.get("title_options") if isinstance(seo_pack.get("title_options"), list) else []
     titles_vi_list = seo_pack.get("title_options_vi") if isinstance(seo_pack.get("title_options_vi"), list) else []
     rec_title = str(seo_pack.get("recommended_title") or job.get("title") or job.get("topic") or "").strip()
@@ -1515,7 +1553,7 @@ def _extract_overlay_options(seo_pack: dict[str, Any], job: dict[str, Any]) -> l
     for idx, item in enumerate(raw_options):
         if not isinstance(item, dict):
             continue
-        b, _ = sanitize_youtube_policy_text(str(item.get("badge") or default_badge).strip())
+        b, _ = sanitize_youtube_policy_text(str(item.get("badge_text") or item.get("badge") or default_badge).strip())
         l1, _ = sanitize_youtube_policy_text(str(item.get("line_1") or "").strip())
         l2, _ = sanitize_youtube_policy_text(str(item.get("line_2") or "").strip())
         mv = str(item.get("meaning_vi") or "").strip()
@@ -1739,6 +1777,12 @@ def sync_thumbnail_design_with_seo_pack(
             v["badge_text"] = new_badge
             v["line_1"] = new_l1
             v["line_2"] = new_l2
+            if opt.get("badge_vi"):
+                v["badge_vi"] = opt["badge_vi"]
+            if opt.get("line_1_vi"):
+                v["line_1_vi"] = opt["line_1_vi"]
+            if opt.get("line_2_vi"):
+                v["line_2_vi"] = opt["line_2_vi"]
             v["meaning_vi"] = opt.get("meaning_vi") or v.get("meaning_vi") or ""
             v["paired_title"] = opt.get("paired_title") or v.get("paired_title") or ""
             v["paired_title_vi"] = opt.get("paired_title_vi") or v.get("paired_title_vi") or ""
@@ -1753,8 +1797,10 @@ def sync_thumbnail_design_with_seo_pack(
                     layer["width"] = max(340, min(680, int(len(new_badge) * 34 + 68)))
                 elif lid == "line_1":
                     layer["text"] = new_l1
+                    layer["width"] = max(float(layer.get("width") or 0), 920)
                 elif lid == "line_2":
                     layer["text"] = new_l2
+                    layer["width"] = max(float(layer.get("width") or 0), 920)
             changed = True
         else:
             # Ensure paired_title / synergy_vi metadata are populated from seo_pack if missing
@@ -1892,12 +1938,19 @@ def build_default_thumbnail_design(
         "Dramatic photorealistic on-site catastrophe shot in the upper two-thirds with towering fire/water impact, dark shadowy negative space across the bottom 35%.",
         "Photorealistic split/confrontation engineering view showing extreme physical forces hitting the structure, dark bottom third for two-line yellow/red impact text.",
         "Macro photorealistic forensic engineering close-up on the corroded/damaged structural foundation on the right/upper frame, deep dark shadows below.",
-    ] if is_bottom_cinematic_dna else [
-        "Close-up dramatic portrait of the main subject on the right third of the frame, dark negative space on the left 60%.",
-        "Wide cinematic crime-scene / investigative atmosphere in the upper two-thirds, dark shadowy negative space across the bottom 35%.",
-        "High-tension forensic confrontation shot on the left/center with cold rim lighting and dark atmospheric background.",
-        "Macro spotlight on key forensic clue / dossier evidence on the right side, deep dark shadows on the left side.",
-    ]
+    ] if is_bottom_cinematic_dna else (
+        [
+            "Hyper-realistic 4D Cinema 4D Octane forensic reconstruction: smooth matte obsidian-charcoal FACELESS figure in a bespoke dark suit on the right third holding a silver metal USB cold wallet, dark navy financial audit background on the left 60% and dark bottom 35% for giant two-line Korean impact typography.",
+            "Hyper-realistic 4D forensic reconstruction: warm ivory-alabaster FACELESS elderly figure in a knitted cardigan holding an open red paper bank passbook on the right third, glowing smartphone and dark negative space on the left and bottom third.",
+            "Hyper-realistic 4D forensic reconstruction: towering metal racks of 24,000 glowing smartphone motherboards with dark-slate FACELESS operators and a silver-grey FACELESS cyber-police investigator, dark shadowy bottom 35% for two-line yellow/red impact text.",
+            "Macro 4D forensic spotlight on a metallic hardware crypto cold wallet USB and burgundy passports on a dark marble desk, deep navy-black negative space on the left and bottom.",
+        ] if dna_preset == "cyber_financial_forensic_duality" else [
+            "Close-up dramatic portrait of the main subject on the right third of the frame, dark negative space on the left 60%.",
+            "Wide cinematic crime-scene / investigative atmosphere in the upper two-thirds, dark shadowy negative space across the bottom 35%.",
+            "High-tension forensic confrontation shot on the left/center with cold rim lighting and dark atmospheric background.",
+            "Macro spotlight on key forensic clue / dossier evidence on the right side, deep dark shadows on the left side.",
+        ]
+    )
 
     variants: list[dict[str, Any]] = []
     for idx, opt in enumerate(options[:4]):
@@ -1949,6 +2002,80 @@ def build_default_thumbnail_design(
                     lyr["visible"] = True
                     lyr["borderColor"] = "#ffffff"
                     lyr["borderWidth"] = 6
+        elif dna_preset == "teukgeup_archival_polaroid" or str(job.get("channel_profile_id") or "") == "channel-e544a64b7c":
+            cand_inset2 = (
+                inset_cands[(idx + 1) % len(inset_cands)]
+                if len(inset_cands) > 1
+                else (contextual_cands[(idx + 2) % len(contextual_cands)] if len(contextual_cands) > 2 else cand_inset)
+            )
+            v_inset2_url = str(cand_inset2.get("url") or "") if cand_inset2 else v_inset_url
+            for lyr in layers:
+                if not isinstance(lyr, dict):
+                    continue
+                lid = lyr.get("id")
+                if lid == "inset_photo":
+                    lyr.update({
+                        "visible": True,
+                        "left": 42,
+                        "top": 44,
+                        "width": 320,
+                        "height": 226,
+                        "angle": -2,
+                        "frameStyle": "vintage_paper",
+                        "borderColor": "#f4ebd9",
+                        "borderWidth": 14,
+                    })
+                elif lid == "forensic_arrow":
+                    lyr.update({
+                        "visible": True,
+                        "left": 382,
+                        "top": 215,
+                        "width": 120,
+                        "height": 64,
+                        "stroke": "#ff1f1f",
+                        "strokeWidth": 9,
+                        "angle": 8,
+                    })
+                elif lid == "badge_bg":
+                    lyr.update({"left": 72, "top": 536})
+                elif lid == "badge_text":
+                    lyr.update({"left": 98, "top": 546})
+                elif lid == "line_1":
+                    lyr.update({
+                        "left": 70,
+                        "top": 616,
+                        "fontSize": 108,
+                        "fill": "#ffffff" if idx in (0, 2) else "#ffe600",
+                    })
+                elif lid == "line_2":
+                    lyr.update({
+                        "left": 70,
+                        "top": 760,
+                        "fontSize": 126,
+                        "fill": "#ffe800" if idx in (0, 2) else "#ff2424",
+                    })
+            if not any(isinstance(l, dict) and l.get("id") == "inset_photo_2" for l in layers):
+                layers.insert(
+                    2,
+                    {
+                        "id": "inset_photo_2",
+                        "type": "inset_image",
+                        "name": "Ảnh Phụ Polaroid #2 (Trái-Dưới)",
+                        "src": v_inset2_url,
+                        "left": 52,
+                        "top": 292,
+                        "width": 310,
+                        "height": 218,
+                        "angle": 2,
+                        "frameStyle": "vintage_paper",
+                        "borderColor": "#f4ebd9",
+                        "borderWidth": 14,
+                        "cornerRadius": 6,
+                        "shadowColor": "rgba(0,0,0,0.88)",
+                        "shadowBlur": 22,
+                        "visible": True,
+                    },
+                )
         variant_dict: dict[str, Any] = {
             "id": vid,
             "short_label": short_labels[idx % len(short_labels)],

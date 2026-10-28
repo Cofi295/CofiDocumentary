@@ -279,10 +279,17 @@ class EditCoordinator:
             raise RuntimeError("visual_manifest.json không có beat hợp lệ để dựng")
 
         from .vox_engine import VoxBlenderBridge, VoxSemanticRouter, is_vox_satellite_enabled
+        from .financial_vox_engine import FinancialVoxSemanticRouter, is_financial_vox_enabled
         vox_enabled = is_vox_satellite_enabled(job)
-        if vox_enabled and any(not b.get("scene_archetype") for b in beats):
+        fin_vox_enabled = is_financial_vox_enabled(job)
+        if vox_enabled and any(not b.get("scene_archetype") or not b.get("dna_visual_slot") for b in beats):
             router = VoxSemanticRouter()
             beats = router.route_timeline(beats, job)
+            visual["beats"] = beats
+            _write_json_atomic(visual_path, visual)
+        elif fin_vox_enabled and any(not b.get("scene_archetype") or not b.get("dna_visual_slot") for b in beats):
+            fin_router = FinancialVoxSemanticRouter()
+            beats = fin_router.route_timeline(beats, job)
             visual["beats"] = beats
             _write_json_atomic(visual_path, visual)
 
@@ -291,8 +298,14 @@ class EditCoordinator:
             or (job.get("production_recipe") or {}).get("visual_strategy")
             or ""
         ).strip().lower()
+        profile_id = str(
+            job.get("channel_profile_id")
+            or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
+            or ""
+        ).strip()
         if (
             strategy in {"edit_direct_footage", "semi_content", "ban_content", "edit_footage"}
+            and profile_id != "channel-cn-cyber-finance-kr"
             and os.getenv("COFI_EDIT_AUTO_FETCH_FOOTAGE", "1") != "0"
             and (self.remotion_dir / "package.json").exists()
         ):
@@ -302,7 +315,7 @@ class EditCoordinator:
                     remotion_dir=self.remotion_dir,
                     job_id=str(job.get("id") or workspace.name),
                 )
-                fetcher.auto_fetch_missing_beats(max_unique_clips=48)
+                fetcher.auto_fetch_missing_beats(job, max_unique_clips=48)
             except Exception:
                 pass
 
@@ -310,7 +323,9 @@ class EditCoordinator:
         if callable(prepare_media):
             prepare_media(job, workspace)
 
-        if vox_enabled:
+        # Strict profile isolation: True Crime (channel-e544a64b7c) uses its finalized True Crime CofiBlenderStudio Vox & Satellite Engine;
+        # never merge or share editing/Vox style across different channel profiles.
+        if vox_enabled or fin_vox_enabled:
             job_id = str(job.get("id") or workspace.name).strip()
             bridge = VoxBlenderBridge()
             vox_context = bridge.materialize_job_vox_assets(

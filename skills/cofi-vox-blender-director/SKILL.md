@@ -1,75 +1,88 @@
 ---
 name: cofi-vox-blender-director
-description: Specialist skill for directing True Crime & Investigative Documentary edits for 45–70+ mature Korean audiences using the Flexible Script-Driven Visual Mix (~50% Real Footage + ~30% Senior-Friendly Voice-Synced Editorial Newspaper, Court Dossier, Split-Map & Full-Screen Map Vox Motion + ~20% Scene-Locked AI Keyframes) and Dynamic Context-Matched Real Foley SFX & Multi-Mood BGM.
+description: Specialist skill for directing True Crime (`channel-e544a64b7c` · 특급수배록) & Cyber-Financial Investigative (`channel-cn-cyber-finance-kr`) Documentary edits for 45–70+ mature Korean audiences using Full-Script-Driven Visual Direction, strictly separating Approved True Crime Tactile Paper-Craft/Forensic Dossier/Newspaper/Satellite GIS Vox (`#D1..#D10`, `#M1..#M8`, `#P1..#P6`, `N1..N4 / E1..E6 / S1..S4`) from Cyber-Finance Vox.
 ---
 
-# COFI Senior-Friendly Editorial Vox, Real Satellite GIS & Documentary Director Skill
+# COFI Full-Script-Driven Documentary, Approved True Crime Tactile Forensic/Newspaper/Satellite Vox & Cyber-Finance Vox Director Skill
 
-Use this skill when planning, routing, editing, or rendering **Documentary / True Crime / Investigative** visuals and timelines in **COFI DOCUMENTARY** (`b:\ALL_TOOLS\CofiDocumentary`) or **COFI REMOTION** (`b:\ALL_TOOLS\CofiRemotion`).
-
----
-
-## 0. Mandatory Core Principle: Lore & DNA Is a Flexible Foundation — NEVER Be Lazy or Repetitive
-
-1. **Lore / Editing DNA Is a Creative Foundation, NOT a Rigid Cookie-Cutter Mold**:
-   - Never lazily repeat 1–2 Vox templates across a video or copy-paste a static formula across future episodes.
-   - The channel's Editing DNA defines our **quality bar, senior-friendly readability (`45–70+` mature Korean viewers), and voice-sync discipline**, while the actual Vox layouts, map presentations (`Full-Screen 1920x1080 Map Flight` vs. `Split Editorial Map Card`), motion choreography, Foley SFX, and BGM must be **flexibly adapted to each episode's unique subject matter and each beat's spoken voiceover**.
-   - Before rendering any episode, analyze the script's specific geography, historical eras, legal/scientific mechanisms, and emotional chapters, and dynamically design/extend the Vox layouts, GIS plates, and audio library (`documentary/audio_library_manager.py`) to fit that story 100%.
+Use this skill when planning, routing, editing, or rendering **Documentary / True Crime / Cyber-Financial Investigative** visuals and timelines in **COFI DOCUMENTARY** (`b:\ALL_TOOLS\CofiDocumentary`), **COFI BLENDER STUDIO** (`b:\ALL_TOOLS\CofiBlenderStudio`), or **COFI REMOTION** (`b:\ALL_TOOLS\CofiRemotion`).
 
 ---
 
-## 1. Script-Driven Visual Mix & Semantic Routing
+## 0. Mandatory Core Architecture: Read Full Script First & Strict Profile Separation
 
-1. **Voice-Driven Semantic Routing**:
-   - Route each beat according to the meaning of its spoken voiceover (`narration_text`), maintaining an organic episode balance of **~50% Real Footage + ~30% Voice-Synced Editorial Newspaper, Court Dossier & Satellite/GIS Map Vox Motion + ~20% Scene-Locked AI Keyframes** (with `~10%` flexible adaptation to the script):
-     - **~50% Real Footage (`footage/S_F*.mp4` + authentic archival stills `archival/S_A*.jpg`)**: Used when the voiceover describes real events, arrests, courtrooms, nightclubs, prisons, investigations, or historical locations. Slice clean B-roll video into brisk `3–6s` cuts with edge-cropping, muted source audio (`-an`), unified color grading, and smooth optical camera movement (`1.005 -> 1.065`). Each real footage clip has `max_uses = 1` in standard full-screen view, and purposeful narrative callbacks use transformative framing (`Split-Screen Comparison A/B`, `Forensic PiP Window`, or `160% Macro Loupe`).
-     - **~30% Voice-Synced Editorial Newspaper, Court Dossier & Real Satellite/GIS Map Vox Motion (`vox/VOX_*.mp4`)**: Used when the voiceover discusses newspaper reports, court verdicts, legal documents, patents, chronological timelines, suspect networks, or geographic locations/routes.
-     - **~20% Scene-Locked AI Keyframe Illustrations (`<beat_id>_ai_keyframe.jpg`)**: Used when the voiceover describes unwitnessed historical reconstructions, private interactions, or psychological moments.
-       * **1-to-1 Scene Lock**: Each `<beat_id>_ai_keyframe.jpg` belongs exclusively to its own `<beat_id>`.
-       * **Pure Scene Focus**: AI image prompts describe the physical scene, characters, environment, lighting, and action in a full-bleed 16:9 frame.
+1. **Upfront 1-to-1 Full AI Keyframe Generation (Step 5)**:
+   - Every beat in `visual_manifest.json` receives its own dedicated 1-to-1 AI keyframe (`<beat_id>_ai_keyframe.jpg`, **4D Faceless Forensic**) generated upfront at Step 5 (`ai_visual`), while Step 4 (`footage`) is automatically skipped so all visual assembly happens holistically at Step 6 (`edit`).
+   - Because each AI image is generated specifically for its own beat from the start, **never copy an AI image from one beat onto another beat** (`max_uses = 1`).
 
----
-
-## 2. Flexible Senior-Friendly (45–70yo) Voice-Synced Editorial & Map Vox (`vox/VOX_*.mp4`)
-
-1. **Calm, High-Contrast, Voice-Synced Newspaper, Dossier & Map Choreography (30fps `.mp4`)**:
-   - Design every Vox clip specifically for **mature viewers aged 45–70+**, prioritizing visual clarity, effortless readability, calm motion, and 100% synchronization with the spoken Korean voiceover:
-     - **100% Beat-Specific Voice-Synced Korean Typography**: Display the exact clauses of that beat's voice narration in large, bold, high-contrast Korean typography (`32–42px`) on warm editorial newsprint or court dossier cards, accompanied by a 2-sentence context window (`prev_text` in muted ink above, `narration_text` with progressive yellow highlight `0% -> 100%` in the center, and `next_text` below).
-     - **Chronological Era & Entity Lock**: Every Vox clip's masthead year, timeline node, document exhibit, and live video inset (`S_F*.mp4`) must strictly match the exact historical year and institution spoken in that beat (never leak future verdicts or later-era evidence into earlier chronological chapters).
-     - **Clean, Soft-Torn Live Moving Video & Archival Photo Frames**: Embed live 30fps video footage (`S_F*.mp4`) and authentic court/archival documents inside clean rectangular photo frames with gentle soft-torn paper borders (`roughness <= 2.5`) and soft drop shadows.
-     - **Calm 30fps Documentary Camera Glide**: Use gentle, smooth 30fps camera pans and slow pushes (`1.00 -> 1.022`) across **14+ flexible layouts** (`N1..N4` Newspaper Editions, `E1..E6` Court Verdicts, Dossiers, Patents, Networks & Timelines, `S1..S2` Split Satellite/GIS Route Cards, and `S3..S4` Full-Screen `1920x1080` GIS/Satellite Map Flights) with zero flash/flicker transitions.
-
-2. **Flexible Map Presentation: Full-Screen `1920x1080` Map Flight vs. Split Editorial Map Card**:
-   - Never force every map into a small card if the narrative calls for a sweeping geographical view. Dynamically choose between **Full-Screen Map Mode** and **Split Editorial Map Mode** based on the beat's content:
-     - **Full-Screen `1920x1080` Map Flight & Recon (`S3_FULLSCREEN_GIS_FLIGHT` / `#V_FULLSCREEN_GIS_FLIGHT` & `S4_FULLSCREEN_SATELLITE_RECON` / `#V_FULLSCREEN_SATELLITE_RECON`)**:
-       * Use when the voiceover emphasizes macro national/provincial dispatches (e.g., Beijing ↔ Yunnan), inter-prison transfers, or city-wide urban satellite reconnaissance.
-       * Renders a full-bleed `1920x1080` regional terrain/GeoJSON map or high-resolution urban satellite map (`z15–z16`) with a top telemetry masthead, a floating Picture-in-Picture live video window (`vid_a`) in the top-right, and a floating bottom Korean voice-synced highlighter bar.
-     - **Split Editorial Map Card (`S1_KUNMING_SATELLITE_MAP`, `S2_DUAL_SATELLITE_ROUTE`)**:
-       * Use when the voiceover cross-examines a geographic movement directly against a court ruling, prison evaluation record, or newspaper exposé.
-   - **Mandatory Voice-Synced Map Motion (Zero Static Maps)**:
-     - **Smooth `A → B` Camera Flight**: Continuously pan and zoom the map camera from Origin Point A toward Destination Point B across the beat's duration (`seq_p: 0.0 -> 1.0`).
-     - **Progressive Route Drawing & Moving Radar Beacon**: Draw the route line or flight arc progressively from `0% -> 100%` (`route_p`) with a live moving leading-edge beacon (`head_xy`) and expanding radar pulse ring.
-     - **Sequential Pin Pop-In & Non-Overlapping Labels**: Pop in numbered location pins (`① 출발 거점` at `t=0.0`, `② 경유/심사 거점` at `t=0.36`, `③ 도착/현장 거점` at `t=0.60`) sequentially as the route reaches each point, alternating pill placement (`①` above, `②` below, `③` above) with expanding radar ripple rings so labels never collide or clip.
-   - Encode every `VOX_*.mp4` clip with hardware-friendly fast-decode H.264 (`-c:v libx264 -preset fast -crf 21 -maxrate 6M -bufsize 12M -g 30 -bf 0 -pix_fmt yuv420p -movflags +faststart`) for rock-solid 30fps playback in Remotion Studio via `@remotion/media`.
+2. **Step 6.1 — Read Full Script & Synthesize Master Plan (`Read Full Script First`)**:
+   - Read the entire `script.md`, `voice_manifest.json`, and `visual_manifest.json` from start to finish first.
+   - Classify every beat across the full episode into 3 harmonious layers:
+     - **Priority 1 — Authentic Case Footage + Reasonable Illustrative B-Roll (`footage/S_F*.mp4` + `archival/S_A*.jpg`, ~50% — STRICT 3–6s CUTS, 100% LOGO/CHINESE-TEXT CROPPING, ZERO PRESENTERS/HOSTS)**:
+       1. **3–6 Seconds Per Footage Cut (`3–6s/cut`)**: Slice every footage clip strictly to **3–6 seconds** (`scdet=threshold=14`). When a voice beat lasts 7–12 seconds, pair **2 distinct 3–6s footage cuts (`Part A + Part B`)** so no single footage shot holds longer than 6 seconds.
+       2. **Mandatory Logo & Chinese/Foreign Text Removal / Aggressive Safe-Crop**: Aggressively crop (`crop` + `scale=1920:1080`) or clean 100% of third-party TV station logos (`CCTV`, `CTI 中天新聞`, `必PO`, `SBS`, `KBS`, YouTube channel watermarks), top news banners, side graphic panels, and bottom burned-in Chinese/foreign subtitles/tickers.
+       3. **Zero News Anchors / Zero Channel Hosts**: Strictly reject any shot showing a TV news anchor, studio presenter, commentator, or another channel's host (including split-screen presenter boxes). Every video clip is used once (`max_uses = 1`, `-an`).
+     - **Priority 2 — Scene-Locked 1-to-1 AI Keyframes (`<beat_id>_ai_keyframe.jpg`, ~20%)**: Where real case footage is unavailable or the spoken sentence reconstructs unwitnessed actions/psychology, use that beat's pre-generated `<beat_id>_ai_keyframe.jpg` (`max_uses = 1`).
+     - **Priority 3 — Profile-Locked Vox & Map Motion (`vox/VOX_01..VOX_N.mp4`, ~30%)**: Route and render Vox strictly according to the active channel profile (`channel-e544a64b7c` True Crime vs `channel-cn-cyber-finance-kr` Cyber-Finance). **NEVER mix Cyber-Finance dark-HUD rules into True Crime (`channel-e544a64b7c`)!**
 
 ---
 
-## 3. Dynamic Context-Matched 28+ Real Foley SFX & Multi-Mood BGM (`documentary/audio_library_manager.py`)
+## 1A. APPROVED TRUE CRIME VOX SYSTEM (`channel-e544a64b7c` · 특급수배록 — `forensic_noir`)
+
+For **True Crime Hình Sự Trung Quốc (`channel-e544a64b7c` · 특급수배록)**, you MUST use the user's **Approved True Crime Tactile Paper-Craft, Manila Forensic Dossier, Archival Newspaper Highlighter & Real Esri Satellite GIS Vox System** built in `b:\ALL_TOOLS\CofiBlenderStudio` (`vox_editorial_artist.py`, `vox_archetype_expansion.py`, `vox_papercraft_artist.py`) and `documentary/vox_engine` (`archetypes.py`, `semantic_router.py`, `renderer.py`):
+
+### Group 1: Tactile Manila Forensic Dossiers, Biometrics & Evidence Boards (`#D1..#D10` & `E1..E6`)
+- **`#D1` — Case Dossier Folder & Verification Matrix (`render_vox_scene_01_fingerprint_paradox`)**:
+  Open tactile Manila case folder on a dark walnut desk with torn-edge evidence photos pinned by red pushpins, fingerprint/CCTV/trace verification matrix (`확보된 현장 지문 vs 230,000장 전수 대조` / `신분증·은행·숙박 0건`), official circular red Public Security seal (`공안국`), and paperclipped investigator memo.
+- **`#D2` — Dual Identity / Suspect-Victim Case Profile Dossier (`render_vox_scene_03_duality_collage` / `E2_DUAL_COMPARE_BOARD`)**:
+  Two-column profile comparison dossier (`민간 신상 카드 [A]` vs `극비 수사 기록 [B]`) with brass fasteners, archival newspaper clipping, and red official stamp.
+- **`#D3` — Three Physical Clues & Kodak Film Strip Evidence Envelopes (`render_vox_scene_05_three_clues_dossier`)**:
+  Three kraft evidence envelopes (`물증 봉투 #01 · #02 · #03`) with 35mm Kodak film strip borders, red forensic seals, and investigator summary box.
+- **`#D4` — Forensic Genetics Y-STR DNA Lightbox & Pedigree (`render_archetype_d4_ydna_lightbox`)**:
+  Illuminated electrophoresis DNA band comparator + paternal clan pedigree tree (`99.9999% 일치`).
+- **`#D5` — Aluminum Clipboard Interrogation Q&A + REC Voiceprint (`render_archetype_d5_clipboard_interrogation` / `E5_INTERROGATION_DOSSIER`)**:
+  Brushed aluminum clipboard holding typed Q&A interrogation transcript (`피의자 심문조서 녹취록 발췌`) with live red audio waveform (`REC · 심문실 음성 녹취 파형`).
+- **`#D6` — Class-A Red Wanted Warrant & Police Sketch Comparator (`render_archetype_d6_wanted_warrant_sketch`)**:
+  Official Ministry of Public Security Class-A Red Wanted Warrant (`중화인민공화국 공안부 A급 특별수배령 · 현상금`) with red seal, witness sketch vs arrest/CCTV photo comparison, and physical traits dossier.
+- **`#D7` / `#D9` — Optical Comparator Microscope: Ballistics Striations & 14-Point Fingerprint Minutiae (`render_archetype_d9_microscope_minutiae`)**:
+  Split-field optical microscope comparing shell-casing striations (`탄피 강선 흔적`) or 14 fingerprint minutiae points (`14/14 일치`) alongside tactile forensic lab notes.
+- **`#D8` / `#D10` / `E1..E6`**:
+  Medical examiner autopsy dossier (`#D8`), cold-case archive vault box (`#D10`), official court verdict scroll with red seal (`E1_COURT_VERDICT_SCROLL`), document/blueprint inspector (`E3_PATENT_DOCUMENT_INSPECTOR`), progressive chronological timeline (`E4_TIMELINE_PROGRESSION`), and red-string network board (`E6_OFFICIAL_NETWORK_BOARD`).
+
+### Group 2: Real Esri Satellite & GIS Maps (`#M1..#M8` & `S1..S4`)
+- **`#M1` — High-Res Real Esri Satellite + Zoom ×16/×18 Circular Magnifying Loupe (`render_vox_scene_02_school_store_map`)**:
+  Real Esri World Imagery satellite plate with animated circular magnifying loupe (`ZOOM ×16`), GPS coordinate crosshair, and pinned crime-scene photos.
+- **`#M2` — Regional Satellite Corridor & Torn Newspaper Clipping (`render_vox_scene_04_gansu_baiyin_gis`)**:
+  Regional satellite/terrain corridor (`Z6/Z9/Z14`) with progressive perimeter drawing and torn archival newspaper card.
+- **`#M3` — Administrative Boundary & Surveillance Blindspot GIS (`render_vox_scene_06_hukou_blindspot_gis`)**:
+  Jurisdiction/Hukou blindspot or CCTV perimeter ring comparison on real satellite imagery.
+- **`#M4` — Detective Cork Pinboard & Red-String Crime Cluster Map (`render_vox_scene_08_1998_four_cases_map`)**:
+  Multi-incident satellite map with numbered pins (`① -> ② -> ③ -> ④`), red string connections, and pinned case log.
+- **`#M5` — 2.5D Tilted Satellite Geo-Profiling Slab (`render_archetype_m5_25d_tilted_satellite`)**.
+- **`#M6` — Split Dual Satellite Macro vs Micro (`render_archetype_m6_split_dual_satellite`)**.
+- **`#M7` — Night-Ops Infrared Satellite Perimeter (`render_archetype_m7_night_ops_satellite`)**.
+- **`#M8` — Topographic Elevation Profile & Escape Corridor**.
+- **`S1_KUNMING_SATELLITE_MAP` / `S2_DUAL_SATELLITE_ROUTE` / `S3_FULLSCREEN_GIS_FLIGHT` / `S4_FULLSCREEN_SATELLITE_RECON`**:
+  Smooth `A -> B` camera flight across real satellite/terrain plates, progressive yellow route drawing (`0% -> 100%`) with moving radar beacon, sequential pin pop-in (`① -> ② -> ③`), live video PiP in torn paper frame, and bottom clause-synced highlighter card.
+
+### Group 3: Tactile Archival Newspaper & Broadcast Press (`#P1..#P6` & `N1..N4`)
+- **`#P1` / `#P2` / `N1_FRONT_PAGE_SPECIAL` / `N2_INVESTIGATIVE_SPREAD` / `N3_EDITORIAL_CHRONICLE` / `N4_BROADCAST_PRESS_ARCHIVE`**:
+  Warm, senior-friendly (45–70yo) aged newsprint backdrop (`NEWSPRINT_LIGHT #F5EFE2`) with Korean masthead, torn-edge live video/archival photo cards (`paste_soft_torn_photo_card`), and **voice-synced yellow felt-pen highlighter sweep (`HIGHLIGHT_YELLOW #FDE047`)** across each spoken clause + window gobo shadow (`apply_window_gobo_and_vignette`).
+- **`#P3` — 1990s/2020s TV Broadcast Monitor & Behavioral Analysis (`render_archetype_p3_90s_tv_broadcast`)**.
+
+> **CRITICAL BAN FOR TRUE CRIME (`channel-e544a64b7c`)**: NEVER use dark-navy neon Cyber-Finance HUD boxes (`#090e1c` cards) for True Crime! Always use the tactile paper-craft, Manila forensic dossier, archival newspaper, and real Esri satellite GIS styles above.
+
+---
+
+## 1B. CYBER-FINANCE VOX SYSTEM (`channel-cn-cyber-finance-kr` — `financial_forensic_vox` ONLY)
+
+For **Tội phạm Công nghệ cao & Tài chính Trung Quốc (`channel-cn-cyber-finance-kr`) ONLY**, design bespoke financial ledgers, crypto wallet graphs, Ponzi flow diagrams, and cross-border money trail maps matched 1-to-1 to each spoken financial sentence.
+
+---
+
+## 2. Dynamic Context-Matched 28+ Real Foley SFX & Multi-Mood BGM (`documentary/audio_library_manager.py`)
 
 1. **Context-Driven, Non-Repetitive Foley SFX Selection (`presets/audio_library/sfx/` & `public/audio_library/sfx/`)**:
-   - Never repeat the same 1–2 SFX mechanically across a video. Every beat must select context-accurate real Foley SFX matched to the exact physical action, environment, and emotional tone of that beat (`select_contextual_sfx_for_beat()` in `documentary/audio_library_manager.py`):
-     - **Judicial, Verdict & Execution**: Courtroom wooden gavel strike (`sfx_gavel_hit.mp3`), official ink stamp (`sfx_dossier_stamp.mp3`), heavy institutional seal thud (`sfx_official_seal_thud.mp3`), solemn bronze bell toll (`sfx_court_bell_toll.mp3`).
-     - **Prison, Custody & Secret Transfer**: Heavy prison iron gate (`sfx_cell_door.mp3`), metallic lock latch / handcuff click (`sfx_iron_lock_latch.mp3`), stone corridor footsteps (`sfx_footsteps_corridor.mp3`).
-     - **Press, Newspaper & Archival Dossier**: Broadsheet newspaper unfold (`sfx_newspaper_unfold.mp3`), crisp archival page turn (`sfx_paper_turn.mp3`), felt-pen marker highlighter swipe (`sfx_highlighter_swipe.mp3`), case folder open (`sfx_folder_open.mp3`).
-     - **Satellite, GIS Map & Trajectory Flight**: Tactical radar/sonar ping (`sfx_radar_ping_sonar.mp3`), cartographic camera route sweep (`sfx_map_route_sweep.mp3`), orbital pin lock beep (`sfx_satellite_lock_beep.mp3`), telemetry counter tick (`sfx_telemetry_tick.mp3`).
-     - **Forensics, Biometrics & Police Taskforce**: Biometric fingerprint/DNA match chime (`sfx_biometric_match_chime.mp3`), optical document scanner hum (`sfx_document_scanner_hum.mp3`), police radio dispatch chirp (`sfx_police_radio_chirp.mp3`), evidence camera shutter (`sfx_camera_shutter.mp3`), mechanical investigation log typing (`sfx_typing_log.mp3`), analytical node ping (`sfx_data_ping.mp3`).
-     - **Chronology & Emotional Transitions**: Tense analog clock ticking (`sfx_clock_tick_tense.mp3`), warm somber chime (`sfx_somber_chime.mp3`), gentle card whoosh (`sfx_soft_whoosh.mp3`), chapter transition hit (`sfx_chapter_hit.mp3`).
-
-2. **Multi-Mood Chapter BGM Switching & Dynamic Online Audio Stocking**:
-   - Never loop a single static BGM track for an entire documentary. Schedule 5+ distinct mood-matched BGM beds across the episode's narrative acts (`select_chapter_bgm_schedule()`):
-     - **Act I (Mystery Hook & Paradox)**: `bgm_emerging_mysteries.mp3`
-     - **Act II (Dark Crime, Victims & Fear)**: `bgm_gathering_darkness.mp3`
-     - **Act III (Institutional Collusion, Bribery & Paper Trails)**: `bgm_investigative_bed.mp3`
-     - **Act IV (Forensic Pursuit, Biometric Match & Central Taskforce)**: `bgm_forensic_pulse.mp3`
-     - **Act V (Supreme Court Reckoning, Execution & Epilogue)**: `bgm_dark_ambient_drone.mp3`
-   - When a future documentary episode introduces a new setting or emotional atmosphere that requires additional specialized SFX or BGM, automatically invoke `fetch_missing_audio_asset(query, target_filename, category)` in `documentary/audio_library_manager.py` to download, normalize, and stock new CC0/open-licensed audio into `presets/audio_library/` and `public/audio_library/`.
+   - Every beat selects context-accurate real Foley SFX matched to the exact physical action, environment, and emotional tone of that beat (`select_contextual_sfx_for_beat()` in `documentary/audio_library_manager.py`).
+2. **Multi-Mood Chapter BGM Switching & 3.8s Outro Tail**:
+   - Schedule 5+ distinct mood-matched BGM beds across the episode's 5 narrative acts (`ACT01..ACT05`) and preserve a 3.5–4.0s BGM fade-out after the final spoken sentence.

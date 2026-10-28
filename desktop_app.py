@@ -155,6 +155,208 @@ class WindowControls:
         self._window.destroy()
 
 
+_EXT_FILTER_MAP: dict[str, tuple[str, str, str]] = {
+    ".mp4": ("Video MP4 (*.mp4)", "*.mp4", "mp4"),
+    ".webm": ("Video WebM (*.webm)", "*.webm", "webm"),
+    ".mov": ("Video QuickTime (*.mov)", "*.mov", "mov"),
+    ".mkv": ("Video MKV (*.mkv)", "*.mkv", "mkv"),
+    ".jpg": ("Ảnh JPEG (*.jpg;*.jpeg)", "*.jpg;*.jpeg", "jpg"),
+    ".jpeg": ("Ảnh JPEG (*.jpg;*.jpeg)", "*.jpg;*.jpeg", "jpg"),
+    ".png": ("Ảnh PNG (*.png)", "*.png", "png"),
+    ".webp": ("Ảnh WebP (*.webp)", "*.webp", "webp"),
+    ".gif": ("Ảnh GIF (*.gif)", "*.gif", "gif"),
+    ".zip": ("File nén ZIP (*.zip)", "*.zip", "zip"),
+    ".wav": ("Âm thanh WAV (*.wav)", "*.wav", "wav"),
+    ".mp3": ("Âm thanh MP3 (*.mp3)", "*.mp3", "mp3"),
+    ".m4a": ("Âm thanh M4A (*.m4a)", "*.m4a", "m4a"),
+    ".srt": ("Phụ đề SRT (*.srt)", "*.srt", "srt"),
+    ".vtt": ("Phụ đề WebVTT (*.vtt)", "*.vtt", "vtt"),
+    ".json": ("Dữ liệu JSON (*.json)", "*.json", "json"),
+    ".md": ("Tài liệu Markdown (*.md)", "*.md", "md"),
+    ".txt": ("Tệp văn bản (*.txt)", "*.txt", "txt"),
+}
+
+_MIME_TO_EXT: dict[str, str] = {
+    "video/mp4": ".mp4",
+    "video/webm": ".webm",
+    "video/quicktime": ".mov",
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+    "image/gif": ".gif",
+    "application/zip": ".zip",
+    "application/x-zip-compressed": ".zip",
+    "audio/wav": ".wav",
+    "audio/x-wav": ".wav",
+    "audio/wave": ".wav",
+    "audio/mpeg": ".mp3",
+    "audio/mp3": ".mp3",
+    "application/x-subrip": ".srt",
+    "text/srt": ".srt",
+    "application/json": ".json",
+    "text/markdown": ".md",
+    "text/plain": ".txt",
+}
+
+
+def resolve_download_dialog_spec(
+    result_file_path: str,
+    mime_type: str = "",
+    uri: str = "",
+    content_disposition: str = "",
+    all_files_label: str = "Tất cả tệp",
+) -> tuple[str, str, str]:
+    """Return ``(suggested_filename, default_ext, filter_string)`` for SaveFileDialog."""
+    import re
+    import urllib.parse
+
+    candidate_name = ""
+    if content_disposition:
+        m_utf8 = re.search(r"filename\*=UTF-8''([^;\r\n]+)", content_disposition, re.IGNORECASE)
+        if m_utf8:
+            candidate_name = urllib.parse.unquote(m_utf8.group(1).strip().strip('"'))
+        else:
+            m_std = re.search(r'filename="?([^";\r\n]+)"?', content_disposition, re.IGNORECASE)
+            if m_std:
+                candidate_name = m_std.group(1).strip()
+
+    if not candidate_name and result_file_path:
+        candidate_name = os.path.basename(str(result_file_path).strip())
+
+    uri_str = str(uri or "").strip()
+    uri_path_param = ""
+    uri_filename_param = ""
+    if uri_str and not uri_str.startswith("data:"):
+        try:
+            parsed = urllib.parse.urlsplit(uri_str)
+            qs = urllib.parse.parse_qs(parsed.query)
+            if qs.get("filename"):
+                uri_filename_param = str(qs["filename"][0] or "").strip()
+            if qs.get("path"):
+                uri_path_param = os.path.basename(str(qs["path"][0] or "").replace("\\", "/").strip())
+        except Exception:
+            pass
+
+    if uri_filename_param:
+        candidate_name = uri_filename_param
+    elif (not candidate_name or candidate_name.lower() in {"media", "download", "file", "blob"}) and uri_path_param:
+        candidate_name = uri_path_param
+
+    mime_clean = str(mime_type or "").split(";", 1)[0].strip().lower()
+    if not mime_clean and uri_str.startswith("data:"):
+        m_data = re.match(r"^data:([^;,]+)", uri_str, re.IGNORECASE)
+        if m_data:
+            mime_clean = m_data.group(1).strip().lower()
+
+    _, raw_ext = os.path.splitext(candidate_name)
+    ext = raw_ext.lower()
+    if ext not in _EXT_FILTER_MAP:
+        _, path_ext = os.path.splitext(uri_path_param)
+        if path_ext.lower() in _EXT_FILTER_MAP:
+            ext = path_ext.lower()
+        elif mime_clean in _MIME_TO_EXT:
+            ext = _MIME_TO_EXT[mime_clean]
+
+    stem = os.path.splitext(candidate_name)[0].strip() if candidate_name else ""
+    if not stem or stem.lower() in {"media", "download", "blob"}:
+        if uri_path_param:
+            stem = os.path.splitext(uri_path_param)[0].strip() or "download"
+        elif ext == ".mp4":
+            stem = "video"
+        elif ext in {".jpg", ".jpeg", ".png", ".webp"}:
+            stem = "thumbnail"
+        else:
+            stem = "download"
+
+    stem = re.sub(r'[<>:"/\\|?*\x00-\x1f]+', "_", stem).strip(" ._") or "download"
+    if ext in _EXT_FILTER_MAP:
+        label, pattern, default_ext = _EXT_FILTER_MAP[ext]
+        suggested_filename = f"{stem}.{default_ext}" if ext == ".jpeg" else f"{stem}{ext}"
+        filter_string = f"{label}|{pattern}|{all_files_label} (*.*)|*.*"
+        return suggested_filename, default_ext, filter_string
+
+    suggested_filename = f"{stem}{ext}" if ext else stem
+    default_ext = ext.lstrip(".")
+    filter_string = f"{all_files_label} (*.*)|*.*"
+    return suggested_filename, default_ext, filter_string
+
+
+def ensure_chosen_file_extension(chosen_path: str, default_ext: str) -> str:
+    """Append ``default_ext`` when the user renames a file in SaveFileDialog and omits the extension."""
+    cleaned = str(chosen_path or "").strip()
+    ext_clean = str(default_ext or "").strip().lstrip(".")
+    if not cleaned or not ext_clean:
+        return cleaned
+    _, current_ext = os.path.splitext(cleaned)
+    if not current_ext:
+        return f"{cleaned}.{ext_clean}"
+    return cleaned
+
+
+def install_smart_webview_download_handler() -> None:
+    """Upgrade pywebview EdgeChrome download dialog so file format/extension is always preserved."""
+    try:
+        import winreg
+        import webview.platforms.edgechromium as ec
+        from webview import settings as webview_settings
+
+        def _smart_on_download_starting(self: Any, sender: Any, args: Any) -> None:
+            if not webview_settings.get("ALLOW_DOWNLOADS"):
+                args.Cancel = True
+                return
+
+            dialog = ec.WinForms.SaveFileDialog()
+            try:
+                with winreg.OpenKey(
+                    winreg.HKEY_CURRENT_USER,
+                    r"Software\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders",
+                ) as windows_key:
+                    dialog.InitialDirectory = winreg.QueryValueEx(
+                        windows_key, "{374DE290-123F-4565-9164-39C4925E467B}"
+                    )[0]
+            except Exception:
+                pass
+
+            op = getattr(args, "DownloadOperation", None)
+            mime_type = str(getattr(op, "MimeType", "") or "")
+            uri = str(getattr(op, "Uri", "") or "")
+            content_disposition = str(getattr(op, "ContentDisposition", "") or "")
+            all_files_label = "Tất cả tệp"
+            try:
+                all_files_label = self.pywebview_window.localization.get(
+                    "windows.fileFilter.allFiles", "Tất cả tệp"
+                )
+            except Exception:
+                pass
+
+            suggested_filename, default_ext, filter_string = resolve_download_dialog_spec(
+                str(getattr(args, "ResultFilePath", "") or ""),
+                mime_type=mime_type,
+                uri=uri,
+                content_disposition=content_disposition,
+                all_files_label=all_files_label,
+            )
+
+            dialog.Filter = filter_string
+            dialog.FilterIndex = 1
+            dialog.RestoreDirectory = True
+            dialog.AddExtension = True
+            if default_ext:
+                dialog.DefaultExt = default_ext
+            dialog.FileName = suggested_filename
+
+            result = dialog.ShowDialog(self.form)
+            if result == ec.WinForms.DialogResult.OK:
+                args.ResultFilePath = ensure_chosen_file_extension(dialog.FileName, default_ext)
+            else:
+                args.Cancel = True
+
+        ec.EdgeChrome.on_download_starting = _smart_on_download_starting
+    except Exception:
+        pass
+
+
 def main() -> None:
     import webview
 
@@ -164,6 +366,7 @@ def main() -> None:
     try:
         backend.wait_until_ready()
         webview.settings["ALLOW_DOWNLOADS"] = True
+        install_smart_webview_download_handler()
         controls = WindowControls()
         window = webview.create_window(
             "COFI DOCUMENTARY",

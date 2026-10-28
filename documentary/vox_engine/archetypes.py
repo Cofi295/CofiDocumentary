@@ -2041,6 +2041,8 @@ def render_vox_fullscreen_gis_flight(
     return canvas
 
 
+
+
 ARCHETYPE_RENDERERS = {
     "#V_FULLSCREEN_GIS_FLIGHT": render_vox_fullscreen_gis_flight,
     "#V_FULLSCREEN_SATELLITE_RECON": render_vox_sat_zone_draw,

@@ -514,7 +514,10 @@ def select_contextual_sfx_for_beat(
     scored.sort(key=lambda x: (-x[0], x[1]))
 
     # Archetype-guided primary + secondary defaults when text has multiple nuances
-    if "FULLSCREEN_GIS" in arch or "FULLSCREEN_SATELLITE" in arch:
+    if "FIN1" in arch or "LEDGER" in arch or "FIN2" in arch or "CURRENCY" in arch or "FIN3" in arch or "PORTFOLIO" in arch:
+        primary_pool = ["sfx_telemetry_tick.mp3", "sfx_data_ping.mp3", "sfx_document_scanner_hum.mp3"]
+        secondary_pool = ["sfx_dossier_stamp.mp3", "sfx_official_seal_thud.mp3", "sfx_highlighter_swipe.mp3"]
+    elif "FIN4" in arch or "EURASIA" in arch or "FULLSCREEN_GIS" in arch or "FULLSCREEN_SATELLITE" in arch:
         primary_pool = ["sfx_map_route_sweep.mp3", "sfx_radar_ping_sonar.mp3", "sfx_satellite_lock_beep.mp3"]
         secondary_pool = ["sfx_radar_ping_sonar.mp3", "sfx_satellite_lock_beep.mp3", "sfx_telemetry_tick.mp3"]
     elif "SATELLITE" in arch or "MAP" in arch or "ROUTE" in arch:

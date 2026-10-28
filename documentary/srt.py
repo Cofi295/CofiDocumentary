@@ -18,6 +18,6 @@ def build_srt(beats: Iterable[dict]) -> str:
         if not text:
             continue
         start = format_srt_time(float(beat.get("start_sec") or 0.0))
-        end = format_srt_time(float(beat.get("end_sec") or beat.get("start_sec") or 0.0))
+        end = format_srt_time(float(beat.get("speech_end_sec") or beat.get("end_sec") or beat.get("start_sec") or 0.0))
         blocks.append(f"{index}\n{start} --> {end}\n{text}")
     return "\n\n".join(blocks) + ("\n" if blocks else "")

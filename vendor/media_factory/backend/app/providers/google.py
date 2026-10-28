@@ -119,7 +119,7 @@ GOOGLE_FLOW_MODELS: list[dict[str, Any]] = [
 ]
 
 GOOGLE_FLOW_MODEL_BY_ID = {model['id']: model for model in GOOGLE_FLOW_MODELS}
-GOOGLE_FLOW_IMAGE_MAX_INFLIGHT_PER_ACCOUNT = max(1, int(os.getenv('COFI_IMAGE_MAX_INFLIGHT_PER_ACCOUNT', '10')))
+GOOGLE_FLOW_IMAGE_MAX_INFLIGHT_PER_ACCOUNT = max(1, int(os.getenv('COFI_IMAGE_MAX_INFLIGHT_PER_ACCOUNT', '1')))
 # Match G-Labs' Flow worker model: up to 5 concurrent async video jobs per account.
 GOOGLE_FLOW_VIDEO_MAX_INFLIGHT_PER_ACCOUNT = 5
 GOOGLE_FLOW_KNOWN_TIERS = frozenset({'free', 'pro', 'ultra'})
@@ -725,7 +725,7 @@ class BrowserLoginWorker:
                 pid = wintypes.DWORD()
                 user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
                 if pid.value in pids and user32.IsWindowVisible(hwnd):
-                    user32.ShowWindow(hwnd, 0)
+                    user32.SetWindowPos(hwnd, 0, 9999, 9999, 1280, 900, 0x0010 | 0x0004)
                 return True
 
             user32.EnumWindows(hide_window, 0)
@@ -980,7 +980,7 @@ class BrowserLoginWorker:
                 if not interactive and os.name == 'nt':
                     startupinfo = subprocess.STARTUPINFO()
                     startupinfo.dwFlags |= getattr(subprocess, 'STARTF_USESHOWWINDOW', 1)
-                    startupinfo.wShowWindow = getattr(subprocess, 'SW_HIDE', 0)
+                    startupinfo.wShowWindow = 4  # SW_SHOWNOACTIVATE at (9999, 9999)
                     creationflags = getattr(subprocess, 'CREATE_NO_WINDOW', 0x08000000)
 
                 chrome_process = subprocess.Popen(
@@ -1879,6 +1879,11 @@ class GoogleFlowAccountManager:
         """Import and synchronize valid Google Flow accounts from G-Labs auth_session_multi.json."""
         glabs_path = Path(os.environ.get('APPDATA', '')) / 'G-Labs Automation' / 'auth_session_multi.json'
         if not glabs_path.is_file():
+            return 0
+        try:
+            if (time.time() - glabs_path.stat().st_mtime) > 86400:
+                return 0
+        except Exception:
             return 0
         deleted_emails = self._load_deleted_emails()
         existing_by_email = {
@@ -2989,6 +2994,15 @@ class GoogleFlowAccountManager:
             return False
         return True
 
+    def mark_recaptcha_cooldown(self, account_id: str, *, cooldown_seconds: float = 120.0) -> None:
+        with self._lease_condition:
+            cooldowns = getattr(self, '_recaptcha_cooldown_until', None)
+            if cooldowns is None:
+                cooldowns = {}
+                self._recaptcha_cooldown_until = cooldowns
+            cooldowns[account_id] = time.monotonic() + max(0.0, cooldown_seconds)
+            self._lease_condition.notify_all()
+
     def _eligible_accounts(self, model: dict[str, Any], *, include_busy: bool) -> list[dict[str, Any]]:
         eligible: list[dict[str, Any]] = []
         kind = str(model['kind'])
@@ -2997,6 +3011,8 @@ class GoogleFlowAccountManager:
             if kind == 'video'
             else GOOGLE_FLOW_IMAGE_MAX_INFLIGHT_PER_ACCOUNT
         )
+        now_mono = time.monotonic()
+        recaptcha_cooldowns = getattr(self, '_recaptcha_cooldown_until', {}) or {}
         for raw in self.db.list_resources(ACCOUNT_RESOURCE_TYPE):
             raw = self._recover_expired_cooldowns(raw)
             account = self._sanitize(raw)
@@ -3005,6 +3021,8 @@ class GoogleFlowAccountManager:
             if account.get('status') != 'ready' or not self._saved_session_is_valid(raw):
                 continue
             if account.get(f'{kind}_quota_state') in {'cooldown', 'exhausted'}:
+                continue
+            if not include_busy and recaptcha_cooldowns.get(account['id'], 0.0) > now_mono:
                 continue
             if not include_busy:
                 active_jobs = int(account.get('active_jobs') or 0)
@@ -3059,6 +3077,10 @@ class GoogleFlowAccountManager:
             raise ProviderError(f'No enabled Google Flow account is configured for {model["name"]}.')
         if leasing and any(int(account.get('active_jobs') or 0) > 0 for account in configured):
             raise ProviderTransientError('All eligible Google Flow accounts are busy.')
+        recaptcha_cooldowns = getattr(self, '_recaptcha_cooldown_until', {}) or {}
+        now_mono = time.monotonic()
+        if leasing and not exclude_account_ids and any(recaptcha_cooldowns.get(account['id'], 0.0) > now_mono for account in configured):
+            raise ProviderTransientError('All eligible Google Flow accounts are in temporary reCAPTCHA cooldown.')
         session_ready = [
             account
             for account in configured
@@ -3711,9 +3733,21 @@ class GoogleFlowBrowserClient:
         if not getattr(download, 'ok', False):
             raise ProviderError(f'Google Flow media download failed with HTTP {getattr(download, "status", "unknown")}.')
         content_type = str(getattr(download, 'headers', {}).get('content-type', '')).lower()
+        body = download.body()
+        if 'webp' in content_type or body[:4] == b'RIFF':
+            try:
+                import io
+                from PIL import Image
+                with Image.open(io.BytesIO(body)) as img:
+                    buf = io.BytesIO()
+                    img.convert('RGB').save(buf, format='JPEG', quality=95)
+                    body = buf.getvalue()
+                    content_type = 'image/jpeg'
+            except Exception:
+                pass
         extension = '.png' if 'png' in content_type else '.webp' if 'webp' in content_type else '.jpg'
         output_path = (scene_output_directory(scene, self.output_dir) / f"{scene_output_stem(scene)}{extension}").resolve()
-        output_path.write_bytes(download.body())
+        output_path.write_bytes(body)
         if scene.get('_remove_watermark'):
             try:
                 strip_gemini_watermark(output_path)
@@ -4170,18 +4204,38 @@ class GoogleFlowBrowserClient:
         if not prompt:
             raise ProviderError('Google Flow image prompt is empty.')
 
+        is_agent_mode = False
         try:
-            self._configure_image(page, model_id=model_id, aspect_ratio=aspect_ratio)
+            is_agent_mode = page.locator('button.agent-action-button, button:has(mat-icon:has-text("article_spark"))').count() > 0
         except Exception:
-            pass
+            is_agent_mode = False
 
-        # Close the model menu and settings overlay before using the composer.
+        if is_agent_mode:
+            try:
+                new_sess_btn = page.locator('button.header-action:has(mat-icon:has-text("edit_square")), button.header-action:has-text("edit_square")').first
+                if new_sess_btn.count() and new_sess_btn.is_visible():
+                    new_sess_btn.click(timeout=3_000)
+                    if hasattr(page, 'wait_for_timeout'):
+                        page.wait_for_timeout(500)
+                    else:
+                        time.sleep(0.5)
+            except Exception:
+                pass
+            if not prompt.lower().startswith('generate 1 image'):
+                prompt = f"Generate 1 image in {aspect_ratio} aspect ratio: {prompt}"
+        else:
+            try:
+                self._configure_image(page, model_id=model_id, aspect_ratio=aspect_ratio)
+            except Exception:
+                pass
+
         for _ in range(3):
             try:
                 page.keyboard.press('Escape')
                 time.sleep(0.15)
             except Exception:
                 pass
+
         try:
             backdrop = page.locator('.cdk-overlay-backdrop').first
             if backdrop.count() and backdrop.is_visible():
@@ -4394,10 +4448,10 @@ class GoogleFlowBrowserClient:
             except Exception as exc:
                 raise ProviderError(f'Google Flow UI did not submit image generation: {exc}') from exc
 
-        # If the composer still holds the prompt text after 800ms, the click was swallowed by a closing overlay; re-click submit.
+        # If the composer still holds the prompt text after 2000ms, the click was swallowed by a closing overlay; re-click submit once.
         for _ in range(2):
             if hasattr(page, 'wait_for_timeout'):
-                page.wait_for_timeout(800)
+                page.wait_for_timeout(2000)
             try:
                 remaining_text = str(composer.inner_text() or '').strip()
                 if len(remaining_text) > 20 and submit.count() and submit.is_visible() and not submit.is_disabled():
@@ -5447,32 +5501,8 @@ class GoogleFlowHeadlessClient(GoogleFlowBrowserClient):
         the in-page registry of already in-flight image requests.
         """
         with self._prepared_image_auth_lock:
-            if account_id in self._prepared_image_auth:
-                return
-            if getattr(context, 'request', None) is None:
-                self._prepared_image_auth.add(account_id)
-                return
-            payload = self._session_payload(context)
-            if self._session_requires_page_refresh(payload):
-                page.goto('https://labs.google/fx/', wait_until='domcontentloaded', timeout=60_000)
-                wait_for_timeout = getattr(page, 'wait_for_timeout', None)
-                deadline = time.monotonic() + 10.0
-                while True:
-                    if callable(wait_for_timeout):
-                        wait_for_timeout(500)
-                    else:
-                        time.sleep(0.5)
-                    payload = self._session_payload(context)
-                    if (
-                        not self._session_requires_page_refresh(payload)
-                        and BrowserLoginWorker._extract_access_token(payload)
-                    ):
-                        break
-                    if time.monotonic() >= deadline:
-                        raise ProviderAuthError(
-                            'Google Flow access token could not be refreshed from the saved session; renew this account once.'
-                        )
             self._prepared_image_auth.add(account_id)
+            return
 
     def generate(self, scene: dict[str, Any], account: dict[str, Any], session_secret: dict[str, Any]) -> str:
         if self.account_manager is None:
@@ -5684,11 +5714,7 @@ class GoogleFlowHeadlessClient(GoogleFlowBrowserClient):
             self._persist_refreshed_session(account_id, context, session_secret)
             return str(output)
 
-        if 'generate' not in getattr(self._migrated_image, '__dict__', {}) and (
-            bool(scene.get('reference_images') or scene.get('reference_image'))
-            or bool(isinstance(session_secret, dict) and session_secret.get('migrated_host'))
-            or bool(account.get('_batch_image_404'))
-        ):
+        if 'generate' not in getattr(self._migrated_image, '__dict__', {}):
             try:
                 return str(execute_in_session(account_id, run_ui_direct, timeout_seconds=360.0, priority=0))
             except Exception as exc:
@@ -5771,6 +5797,8 @@ class GoogleFlowHeadlessClient(GoogleFlowBrowserClient):
         except Exception as async_err:
             logger.warning("Async split image generation encountered error (%s), trying fallback...", async_err)
             err_str = str(async_err)
+            if "recaptcha" in err_str.lower() or "unusual_activity" in err_str.lower() or "unusual activity" in err_str.lower():
+                return str(execute_in_session(account_id, run_ui_direct, timeout_seconds=180.0, priority=0))
             if "404" in err_str or "not found" in err_str.lower():
                 account['_failed_project_id'] = str(account.get('project_id') or '').strip()
                 account['project_id'] = ''
@@ -6021,19 +6049,8 @@ class GoogleFlowHeadlessClient(GoogleFlowBrowserClient):
         if not isinstance(cookies, list) or not cookies:
             return
         session_payload = previous_secret.get('session') if isinstance(previous_secret, dict) else None
-        request = getattr(context, 'request', None)
-        if request is not None and callable(getattr(request, 'get', None)):
-            for sess_url in (FLOW_AUTH_SESSION_URL, FLOW_MIGRATED_SESSION_URL):
-                try:
-                    response = request.get(sess_url, timeout=15_000)
-                    if getattr(response, 'ok', False):
-                        refreshed = response.json()
-                        if isinstance(refreshed, dict) and BrowserLoginWorker._extract_access_token(refreshed):
-                            session_payload = refreshed
-                            break
-                except Exception:
-                    continue
         secret = dict(previous_secret) if isinstance(previous_secret, dict) else {}
+        secret['migrated_host'] = True
         secret['cookies'] = cookies
         if isinstance(session_payload, dict):
             secret['session'] = session_payload
@@ -6575,6 +6592,8 @@ class GoogleFlowSessionProvider(MediaProvider):
             except ProviderError as exc:
                 if self._is_recaptcha_challenge(exc):
                     recaptcha_challenges += 1
+                    if hasattr(self.account_manager, 'mark_recaptcha_cooldown'):
+                        self.account_manager.mark_recaptcha_cooldown(account_id, cooldown_seconds=90.0)
                     excluded.add(account_id)
                     release_current()
                     queue_owned = False
@@ -6585,8 +6604,17 @@ class GoogleFlowSessionProvider(MediaProvider):
                             priority=True,
                         )
                     except ProviderError as selection_exc:
-                        raise ProviderAuthError(
-                            'Google Flow requires manual verification after reCAPTCHA unusual activity on all eligible accounts.'
+                        if recaptcha_challenges <= 15:
+                            await asyncio.sleep(45.0)
+                            excluded.clear()
+                            account = await self._lease_account_when_available(
+                                model_id,
+                                exclude_account_ids=None,
+                                priority=True,
+                            )
+                            continue
+                        raise ProviderTransientError(
+                            'Google Flow temporary reCAPTCHA cooldown on all eligible accounts.'
                         ) from selection_exc
                     continue
                 if self._is_model_unavailable(exc):
@@ -6600,6 +6628,10 @@ class GoogleFlowSessionProvider(MediaProvider):
                         priority=True,
                     )
                     continue
+                if 'timed out before a new image appeared' in str(exc).lower():
+                    release_current()
+                    queue_owned = False
+                    raise ProviderTransientError(str(exc)) from exc
                 release_current()
                 raise
             except RuntimeError as exc:

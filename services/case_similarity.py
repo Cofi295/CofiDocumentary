@@ -12,6 +12,8 @@ from typing import Any
 def _normalize_text(text: str) -> str:
     if not text:
         return ""
+    for pat in (r'\[중국\s*실화\s*사건\]', r'\[중국\s*사기\s*실화\]', r'\[중국\s*인프라의\s*이면\]', r'\[중국\]', r'\[하나님의\s*말씀\]', r'\[vụ\s*án\s*có\s*thật\s*ở\s*trung\s*quốc\]', r'\[vụ\s*lừa\s*đảo\s*có\s*thật\s*ở\s*trung\s*quốc\]', r'\[mặt\s*tối\s*hạ\s*tầng\s*trung\s*quốc\]', r'\[lời\s*chúa\s*mỗi\s*ngày\]', r'\[declassified\s*us\s*intelligence\s*files\]', r'\[presidential\s*records\s*&\s*executive\s*forensics\]'):
+        text = re.sub(pat, ' ', text, flags=re.IGNORECASE)
     cleaned = text.lower()
     # Normalize punctuation and brackets
     cleaned = re.sub(r"[\(\)\[\]\{\}\<\>\"\'`«»\—\–\-·|:/\\,.?!;~@#$%^&*+=_\n\r\t]+", " ", cleaned)
@@ -127,6 +129,20 @@ CASE_CLUSTERS: list[dict[str, Any]] = [
         "scenario_a": ["3조 2천억", "3,000m", "3000m"],
         "scenario_b": ["고원 철도", "단층대", "터널"],
     },
+    {
+        "key": "case_qian_zhimin_60k_btc",
+        "name": "Đại án Tiền Chí Mẫn / Lam Thiên Cách Nhuệ (61.000 Bitcoin / 8.000 tỷ Won trong USB)",
+        "markers": ["tiền chí mẫn", "qian zhimin", "첸즈민", "람천격예", "lam thiên cách nhuệ", "6만 비트코인", "61,000 btc", "61000 btc"],
+        "scenario_a": ["8조 원", "12만 명", "6만 개"],
+        "scenario_b": ["usb", "런던", "영국 경찰", "비트코인 세탁"],
+    },
+    {
+        "key": "case_plustoken_30t",
+        "name": "Đại án PlusToken 30.000 tỷ Won (Sorry, we have run / Vanuatu)",
+        "markers": ["plustoken", "plus token", "플러스토큰", "딩잔칭", "천보", "바누아투", "vanuatu"],
+        "scenario_a": ["30조 원", "200만 명", "194,775"],
+        "scenario_b": ["도망쳤다", "we have run", "유령 지갑", "28,000"],
+    },
 ]
 
 
@@ -176,6 +192,8 @@ def extract_case_anchors_and_entities(
         "trung quốc", "vụ án", "vụ án có thật", "kỳ án", "đại án", "chuyên án", "hồ sơ",
         "tội phạm", "truy nã", "cảnh sát", "hình sự", "pháp y", "sự thật", "bí ẩn", "toàn cảnh",
         "nghi phạm", "hung thủ", "nhà văn", "triệu phú", "tử tù", "xanh tiền", "màn kịch",
+        "lừa đảo", "ừa đảo", "công nghệ cao", "tài chính", "tiền ảo", "dòng tiền", "truy vết",
+        "하나에", "증발한", "남기고", "도망쳤다", "지갑의", "다단계", "사기", "금융", "첨단", "실체", "추적",
     }
     hangul_entities = re.findall(r"([가-힣]{3,}(?:시|성|사건|공정|수배범)?)", combined)
     for he in hangul_entities:
@@ -243,6 +261,8 @@ def check_case_similarity(
         "trung quốc", "vụ án", "vụ án có thật", "kỳ án", "đại án", "chuyên án", "hồ sơ",
         "tội phạm", "truy nã", "cảnh sát", "hình sự", "pháp y", "sự thật", "bí ẩn", "toàn cảnh",
         "nghi phạm", "hung thủ", "nhà văn", "triệu phú", "tử tù", "xanh tiền", "màn kịch",
+        "lừa đảo", "ừa đảo", "công nghệ cao", "tài chính", "tiền ảo", "dòng tiền", "truy vết",
+        "하나에", "증발한", "남기고", "도망쳤다", "지갑의", "다단계", "사기", "금융", "첨단", "실체", "추적",
     }
     t_entities = [
         e.lower() for e in (target_entities or [])
@@ -253,17 +273,35 @@ def check_case_similarity(
         if k and len(k) >= 2 and k.lower().strip() not in generic_stopwords
     ]
 
-    matched_entity_count = sum(1 for e in t_entities if e in cand_norm)
-    matched_keyword_count = sum(1 for k in t_keywords if k in cand_norm)
+    extra_generic = {
+        "vụ lừa đảo có", "vụ án có", "thật ở trung quốc", "mặt tối hạ tầng", "lời chúa mỗi ngày",
+        "평생", "모은", "퇴직금을", "퇴직금", "넣자", "벌어진", "노후", "자금", "이자에", "땅속",
+        "묻힌", "비밀", "장부", "범인은", "바로", "동네", "모범", "시민이었다", "우등생은",
+        "도주했나", "프로파일링", "무너지게", "한마디", "수사", "기록의", "알리바이를", "설계한",
+    }
+    t_entities = [
+        e for e in t_entities
+        if e not in extra_generic
+        and not re.fullmatch(r"\d+[\.,]?\d*\s*(?:년간|년|năm|km|킬로미터|억|조|만|미터|일|개월|시간|%|자루의|그램의)?", e)
+        and "vụ án" not in e and "vụ lừa đảo" not in e and "trung quốc" not in e
+    ]
+    t_keywords = [
+        k for k in t_keywords
+        if k not in extra_generic
+        and not re.fullmatch(r"\d+[\.,]?\d*\s*(?:년간|년|năm|km|킬로미터|억|조|만|미터|일|개월|시간|%|자루의|그램의)?", k)
+        and "vụ án" not in k and "vụ lừa đảo" not in k and "trung quốc" not in k
+    ]
+    matched_entities = [e for e in t_entities if len(e) >= 3 and e in cand_norm]
+    matched_keywords = [k for k in t_keywords if len(k) >= 3 and k in cand_norm and k not in matched_entities]
 
-    if matched_entity_count >= 1 and matched_keyword_count >= 1:
+    if len(matched_entities) >= 2 and len(matched_keywords) >= 1:
         return (
             True,
-            f"Trùng khớp thực thể cốt lõi ({matched_entity_count} entities) & từ khóa vụ án ({matched_keyword_count} keywords)",
+            f"Trùng khớp thực thể cốt lõi ({len(matched_entities)} entities) & từ khóa vụ án ({len(matched_keywords)} keywords)",
             0.90,
         )
-    if matched_entity_count >= 2:
-        return True, f"Trùng khớp 2 thực thể định danh chính của đề tài", 0.88
+    if len(matched_entities) >= 3:
+        return True, f"Trùng khớp 3 thực thể định danh chính của đề tài", 0.88
 
     # 4. Token bi-gram / n-gram Jaccard overlap
     words_cand = [w for w in cand_norm.split() if len(w) >= 2]

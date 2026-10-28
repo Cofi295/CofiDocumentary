@@ -11,7 +11,7 @@
       code: "MASTER 5M",
       badgeColor: "#facc15",
       title: "🎬 Phim Master 5 Phút (24 Kiểu Vox Duyệt + Bản Đồ Vệ Tinh Thật + 80 Clips + 34 SFX)",
-      subtitle: "Ưu tiên 1: Video Footage -> 2: Ảnh Footage -> 3: Vox (chỉ khi khớp câu voice, 30fps mượt) -> 4: Ảnh AI",
+      subtitle: "Role Edit: Ưu tiên 1 Footage thật 3–6s/cut (xóa/crop sạch 100% logo & text Trung của bên khác, cấm mặt người dẫn/chủ kênh khác, chỉ lấy đúng cảnh cần) -> 2 Ảnh AI 1-to-1 -> 3 Mỗi cảnh Vox độc nhất 100% theo câu voice",
       videoUrl: "/static/vox_studio/vox_5min_studio_master.mp4",
       thumbUrl: "/static/vox_studio/preview_02_school_store_map.jpg",
       durationLabel: "05:03 · 1080p 30fps Smooth",
@@ -428,11 +428,14 @@
     const catalogCardsHtml = filteredCatalog
       .map((item) => {
         const clusterBadge =
-          item.cluster === "map"
+          item.cluster === "crypto"
+            ? "⛓️ Công nghệ cao & Crypto"
+            : item.cluster === "map"
             ? "🛰️ Vệ tinh thật"
             : item.cluster === "dossier"
             ? "🗂️ Hồ sơ Pháp y"
             : "📰 Báo chí & CRT";
+        const targetVideoId = item.videoId || "vox_5min_master";
         return `<article class="vox-arch-card">
           <div class="vox-arch-card-thumb" data-vox-lightbox-img="${esc(item.img)}" data-vox-lightbox-title="${esc(item.id)} · ${esc(item.name)}" data-vox-lightbox-sub="${esc(item.viDesc)}">
             <img src="${esc(item.img)}" alt="${esc(item.name)}" loading="lazy" />
@@ -446,7 +449,7 @@
               <button type="button" class="ghost compact" data-vox-lightbox-img="${esc(item.img)}" data-vox-lightbox-title="${esc(item.id)} · ${esc(item.name)}" data-vox-lightbox-sub="${esc(item.viDesc)}" style="flex:1;height:26px;min-height:26px;font-size:11px;">🔍 Phóng to 1080p</button>
               ${
                 typeof item.jumpSec === "number"
-                  ? `<button type="button" class="primary compact" data-jump-master-sec="${item.jumpSec}" style="flex:1;height:26px;min-height:26px;font-size:11px;">▶ Xem Motion</button>`
+                  ? `<button type="button" class="primary compact" data-jump-master-sec="${item.jumpSec}" data-jump-video-id="${esc(targetVideoId)}" style="flex:1;height:26px;min-height:26px;font-size:11px;">▶ Xem Motion</button>`
                   : ""
               }
             </div>
@@ -478,8 +481,8 @@
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
           <span style="background:#facc15;color:#090d16;font-weight:900;font-size:11px;padding:3px 8px;border-radius:4px;letter-spacing:0.04em;">BLENDER 4.2 + VOX GIS</span>
           <div>
-            <strong style="font-size:13.5px;color:#f8fafc;">Hệ Thống Dựng True Crime: Blender 3D EEVEE + Bản Đồ Vệ Tinh Thật Esri &amp; 24 Archetypes</strong>
-            <div style="font-size:11.5px;color:#94a3b8;">Tự động phân cảnh theo giọng đọc (Voice-Driven Semantic Router) · Chống lặp bố cục · Kết hợp 100% với Remotion Timeline</div>
+            <strong style="font-size:13.5px;color:#f8fafc;">Hệ Thống Dựng Role Edit: Footage Sạch 3–6s + Ảnh AI 4D 1-to-1 + Vox &amp; Bản Đồ Vệ Tinh Độc Bản 100%</strong>
+            <div style="font-size:11.5px;color:#94a3b8;">✂️ Role Edit: Footage lấy 3–6s/cut · Bắt buộc xóa/crop sạch 100% logo &amp; chữ Trung bên khác · Không lấy video có mặt người dẫn (MC) hoặc chủ kênh khác (chỉ lấy đúng footage cần) · Mỗi cảnh Vox độc nhất 100%</div>
           </div>
         </div>
         <div class="vox-mode-tabs">
@@ -546,7 +549,7 @@
         <!-- THƯ VIỆN 24 ARCHETYPES TRỰC QUAN (8 BẢN ĐỒ VỆ TINH THẬT + 10 HỒ SƠ PHÁP Y + 6 BÁO CHÍ/CRT) -->
         <details style="margin-top:14px;background:#111827;border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:10px 12px;" open>
           <summary style="cursor:pointer;font-size:13px;font-weight:800;color:#f8fafc;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;list-style:none;">
-            <span>🛰️🗂️📰 THƯ VIỆN 24 ARCHETYPES ĐÃ TÍCH HỢP (8 BẢN ĐỒ VỆ TINH THẬT · 10 HỒ SƠ PHÁP Y &amp; LAB · 6 BÁO CHÍ &amp; CRT 90S)</span>
+            <span>🛰️🗂️📰 THƯ VIỆN 24 ARCHETYPES TRUE CRIME ĐÃ TÍCH HỢP (8 BẢN ĐỒ VỆ TINH · 10 HỒ SƠ PHÁP Y · 6 BÁO CHÍ)</span>
             <div style="display:inline-flex;gap:5px;flex-wrap:wrap;" onclick="event.stopPropagation();">
               <button type="button" class="ghost compact ${state.activeFilter === "all" ? "primary" : ""}" data-vox-filter="all" style="height:26px;min-height:26px;font-size:11px;">Tất cả (24)</button>
               <button type="button" class="ghost compact ${state.activeFilter === "map" ? "primary" : ""}" data-vox-filter="map" style="height:26px;min-height:26px;font-size:11px;">🛰️ 8 Bản đồ Vệ tinh (#M1-#M8)</button>
@@ -598,7 +601,8 @@
     hostContainer.querySelectorAll("[data-jump-master-sec]").forEach((btn) => {
       btn.addEventListener("click", () => {
         const sec = Number(btn.dataset.jumpMasterSec || 0);
-        state.activeVideoId = "vox_5min_master";
+        const vidId = btn.dataset.jumpVideoId || "vox_crypto_2min_sample";
+        state.activeVideoId = vidId;
         renderDom(hostContainer);
         const vidEl = hostContainer.querySelector("#cofiVoxBlenderVideoPlayer");
         if (vidEl) {

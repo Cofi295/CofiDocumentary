@@ -65,15 +65,21 @@ class VoxSceneRenderer:
         """Renders one 1920x1080 frame for the specified archetype and voice_spec."""
         arch = str(archetype_id or "").strip()
         renderer_fn = ARCHETYPE_RENDERERS.get(arch)
+        if not renderer_fn and arch.startswith("#FIN"):
+            from documentary.financial_vox_engine import FINANCIAL_ARCHETYPE_RENDERERS
+            renderer_fn = FINANCIAL_ARCHETYPE_RENDERERS.get(arch)
         if not renderer_fn:
             renderer_fn = ARCHETYPE_RENDERERS["cinema_full"]
 
         inputs = dict(media_inputs or {})
         effective_voice_spec = voice_spec or inputs.get("voice_spec")
 
-        if arch in {"#V_POPOUT_HIGHLIGHT", "#V_CLAUSE_TIMELINE", "#V_FORENSIC_CROSS_SECTION", "#V_SAT_ZONE_DRAW", "#V_BLENDER_3D_STAGE", "#V_SAT_LOUPE_ZOOM", "#V_DOSSIER_BOARD", "#V_VERDICT_PROCLAMATION"}:
+        if arch.startswith("#FIN") or arch in {"#V_POPOUT_HIGHLIGHT", "#V_CLAUSE_TIMELINE", "#V_FORENSIC_CROSS_SECTION", "#V_SAT_ZONE_DRAW", "#V_BLENDER_3D_STAGE", "#V_SAT_LOUPE_ZOOM", "#V_DOSSIER_BOARD", "#V_VERDICT_PROCLAMATION", "#V_FULLSCREEN_GIS_FLIGHT", "#V_FULLSCREEN_SATELLITE_RECON", "S3_FULLSCREEN_GIS_FLIGHT", "S4_FULLSCREEN_SATELLITE_RECON"}:
             fa = self._resolve_image(inputs.get("frame_a") or inputs.get("frame_main") or inputs.get("frame_left"), "EVIDENCE A")
             fb = self._resolve_image(inputs.get("frame_b") or inputs.get("frame_right") or inputs.get("frame_a"), "EVIDENCE B")
+            if arch.startswith("#FIN") and inputs.get("frame_c"):
+                effective_voice_spec = dict(effective_voice_spec or {})
+                effective_voice_spec["_frame_c"] = self._resolve_image(inputs.get("frame_c"), "EVIDENCE C")
             canvas = renderer_fn(progress, fa, fb, subtitle_text=subtitle_text, voice_spec=effective_voice_spec)
 
         elif arch == "#M1":
@@ -112,7 +118,7 @@ class VoxSceneRenderer:
             sub_lt = kwargs.get("lower_third_sub") or inputs.get("lower_third_sub", "")
             canvas = renderer_fn(progress, f_cinema, subtitle_text=subtitle_text, lower_third_title=title_lt, lower_third_sub=sub_lt)
 
-        if effective_voice_spec and arch not in {"cinema_full", "#V_POPOUT_HIGHLIGHT", "#V_CLAUSE_TIMELINE", "#V_FORENSIC_CROSS_SECTION", "#V_SAT_ZONE_DRAW", "#V_BLENDER_3D_STAGE", "#V_SAT_LOUPE_ZOOM", "#V_DOSSIER_BOARD", "#V_VERDICT_PROCLAMATION"}:
+        if effective_voice_spec and not arch.startswith("#FIN") and arch not in {"cinema_full", "#V_POPOUT_HIGHLIGHT", "#V_CLAUSE_TIMELINE", "#V_FORENSIC_CROSS_SECTION", "#V_SAT_ZONE_DRAW", "#V_BLENDER_3D_STAGE", "#V_SAT_LOUPE_ZOOM", "#V_DOSSIER_BOARD", "#V_VERDICT_PROCLAMATION", "#V_FULLSCREEN_GIS_FLIGHT", "#V_FULLSCREEN_SATELLITE_RECON", "S3_FULLSCREEN_GIS_FLIGHT", "S4_FULLSCREEN_SATELLITE_RECON"}:
             canvas = apply_voice_spec_clause_sync_overlay(canvas, progress, voice_spec=effective_voice_spec, arch_id=arch)
 
         if out_path:

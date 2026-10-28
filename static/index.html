@@ -106,6 +106,7 @@
         <article class="engine-card"><div class="engine-icon">G</div><div><span>GEMINI CLI</span><strong id="healthGemini">Đang kiểm tra</strong><small id="healthGeminiNote">Antigravity · tài khoản Ultra</small></div></article>
         <article class="engine-card"><div class="engine-icon">V</div><div><span>COFI VOICE</span><strong id="healthVoice">Đang kiểm tra</strong><small>Giọng đọc · SRT</small></div></article>
         <article class="engine-card" style="border-color:rgba(56,189,248,0.45);background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(14,116,144,0.18));cursor:pointer;" data-open-tab="edit" title="Mở Blender 4.2 3D EEVEE &amp; Vox 24-Archetype Studio"><div class="engine-icon" style="background:linear-gradient(135deg,#38bdf8,#0284c7);color:#090d16;font-weight:900;">3D</div><div><span>BLENDER 4.2 &amp; VOX GIS</span><strong id="healthBlenderVox" style="color:#4ade80;">Sẵn sàng · 3D EEVEE + 24 Mẫu</strong><small>8 Vệ tinh thật · 10 Pháp y · 6 Báo chí</small></div></article><article class="engine-card"><div class="engine-icon">M</div><div><span>COFI REMOTION</span><strong id="healthRemotion">Đang kiểm tra</strong><small>Dựng · Xem trước</small></div></article>
+        <article class="engine-card" style="border-color:rgba(16,185,129,0.45);background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(5,150,105,0.18));cursor:pointer;" data-open-tab="accounts" title="Mở cấu hình Trail-Code Context Graph &amp; Learnings"><div class="engine-icon" style="background:linear-gradient(135deg,#34d399,#059669);color:#090d16;font-weight:900;">T</div><div><span>TRAIL-CODE GRAPH</span><strong id="healthTrail" style="color:#4ade80;">Đang kiểm tra</strong><small id="healthTrailSub">Tiết kiệm ~42% Token · Code Map + Learnings</small></div></article>
       </section>
 
       <section class="overview-command-deck workspace-pane active" id="overviewCommandDeck" data-app-pane="overview">
@@ -153,6 +154,18 @@
               <div><dt>Lần chuyển gần nhất</dt><dd id="aiRouterSwitch">Chưa có</dd></div>
             </dl>
             <p class="ai-account-action-note">Khi engine hiện tại lỗi hoặc mất đăng nhập, app chuyển sang engine còn lại và gửi kèm handoff để tiếp tục đúng workspace/checkpoint đang dở.</p>
+          </article>
+
+          <article class="ai-account-card" id="aiTrailCard" style="border-color:rgba(16,185,129,0.4);">
+            <div class="ai-account-card-head"><div class="engine-icon" style="background:linear-gradient(135deg,#34d399,#059669);color:#090d16;font-weight:900;">T</div><div><span>TRAIL-CODE · TIẾT KIỆM TOKEN</span><strong id="aiTrailStatus">Đang kiểm tra</strong></div></div>
+            <dl class="ai-account-meta">
+              <div><dt>Bản đồ Code (Graft)</dt><dd id="aiTrailGraph">—</dd></div>
+              <div><dt>Bộ nhớ Learnings</dt><dd id="aiTrailLearnings">—</dd></div>
+              <div><dt>Agents đã gắn</dt><dd id="aiTrailAgents">—</dd></div>
+              <div><dt>Ước tính tiết kiệm</dt><dd id="aiTrailSavings" style="color:#4ade80;font-weight:700;">~42% Input Token (Edit / SEO / Chat)</dd></div>
+            </dl>
+            <p class="ai-account-action-note" id="aiTrailAction">Tự động lập chỉ mục cấu trúc hàm &amp; ghim quy tắc chuẩn vào .trail/learnings/ giúp AI Agent không phải đọc mò lại mã nguồn hệ thống.</p>
+            <button class="primary compact" type="button" id="aiTrailSyncBtn">⚡ Đồng bộ / Cài đặt 1-Click cho máy này</button>
           </article>
         </div>
       </section>
@@ -354,6 +367,8 @@
                     <label>Phong cách Thumbnail (Style Preset)
                       <select name="thumbnail_style_preset" id="channelThumbnailStylePreset">
                         <option value="cold_forensic_noir" selected>Cold Forensic Noir (Điều tra sắc lạnh)</option>
+                        <option value="teukgeup_archival_polaroid">True Crime Polaroid Đối Chứng (특급수배록 DNA)</option>
+                        <option value="cyber_financial_forensic_duality">Tội phạm CNC &amp; Lừa đảo Tài chính (중국 사기 실화 · 4D Faceless + PiP)</option>
                         <option value="infra_25d_technical">2.5D Technical HUD &amp; Infrastructure</option>
                         <option value="archival_vault_us">Archival Historical Vault &amp; Dossier</option>
                         <option value="custom">Tùy chỉnh (Custom)</option>
@@ -711,7 +726,7 @@
               <div class="create-ai-config-grid">
                 <div class="wide create-ai-media-modes"><span>Kiểu media</span><div class="choice-grid visual-strategy-grid"><label class="choice"><input type="radio" name="ai_media_mode" value="image" /><span><b>Chỉ ảnh</b><small>Tạo ảnh cho visual AI</small></span></label><label class="choice"><input type="radio" name="ai_media_mode" value="video" /><span><b>Chỉ video</b><small>Tạo clip AI cho visual</small></span></label><label class="choice"><input type="radio" name="ai_media_mode" value="mixed" checked /><span><b>Ảnh + video</b><small>AI chọn loại phù hợp từng đoạn</small></span></label></div></div>
                 <label><span>Phong cách</span><select name="ai_style_mode" id="createAiStyleMode"><option value="auto">AI tự chọn theo nội dung</option><option value="preset">Preset có sẵn</option><option value="custom">Phong cách tự nhập</option></select></label>
-                <label><span>Preset nét vẽ</span><select name="ai_style_preset" id="createAiStylePreset"><option value="" disabled>Chọn preset…</option><option value="Người que (Stickman)">Người que (Stickman)</option><option value="Sơn dầu (Oil painting)">Sơn dầu (Oil painting)</option><option value="Video 2D (US Animation)">Video 2D (US Animation)</option><option value="3D Hoạt hình (Pixar/Disney)">3D Hoạt hình (Pixar/Disney)</option><option value="Anime Nhật Bản">Anime Nhật Bản</option><option value="Hiện thực điện ảnh (Cinematic Realism)">Hiện thực điện ảnh (Cinematic Realism)</option><option value="Dark Fantasy (Ma mị/Kinh dị)">Dark Fantasy (Ma mị/Kinh dị)</option><option value="Màu nước (Watercolor)">Màu nước (Watercolor)</option><option value="Cyberpunk (Viễn tưởng)">Cyberpunk (Viễn tưởng)</option><option value="Thủy mặc (Cổ trang/Kiếm hiệp)">Thủy mặc (Cổ trang/Kiếm hiệp)</option><option value="Chibi Cute (Dễ thương)">Chibi Cute (Dễ thương)</option><option value="cinematic 2D editorial cartoon / American comic explainer illustration">cinematic 2D editorial cartoon / American comic explainer illustration</option><option value="Người que mỹ">Người que mỹ</option><option value="Người Que Mỹ 2">Người Que Mỹ 2</option><option value="Người Que US">Người Que US</option></select><small id="createAiStylePresetStatus">Đang tải đầy đủ preset từ SRT-To-Prompt…</small></label>
+                <label><span>Preset nét vẽ</span><select name="ai_style_preset" id="createAiStylePreset"><option value="" disabled>Chọn preset…</option><option value="Siêu thực 4D Người vô diện (4D Faceless Forensic)">Siêu thực 4D Người vô diện (4D Faceless Forensic)</option><option value="Người que (Stickman)">Người que (Stickman)</option><option value="Sơn dầu (Oil painting)">Sơn dầu (Oil painting)</option><option value="Video 2D (US Animation)">Video 2D (US Animation)</option><option value="3D Hoạt hình (Pixar/Disney)">3D Hoạt hình (Pixar/Disney)</option><option value="Anime Nhật Bản">Anime Nhật Bản</option><option value="Hiện thực điện ảnh (Cinematic Realism)">Hiện thực điện ảnh (Cinematic Realism)</option><option value="Dark Fantasy (Ma mị/Kinh dị)">Dark Fantasy (Ma mị/Kinh dị)</option><option value="Màu nước (Watercolor)">Màu nước (Watercolor)</option><option value="Cyberpunk (Viễn tưởng)">Cyberpunk (Viễn tưởng)</option><option value="Thủy mặc (Cổ trang/Kiếm hiệp)">Thủy mặc (Cổ trang/Kiếm hiệp)</option><option value="Chibi Cute (Dễ thương)">Chibi Cute (Dễ thương)</option><option value="cinematic 2D editorial cartoon / American comic explainer illustration">cinematic 2D editorial cartoon / American comic explainer illustration</option><option value="Người que mỹ">Người que mỹ</option><option value="Người Que Mỹ 2">Người Que Mỹ 2</option><option value="Người Que US">Người Que US</option></select><small id="createAiStylePresetStatus">Đang tải đầy đủ preset từ SRT-To-Prompt…</small></label>
                 <label class="wide"><span>Phong cách mong muốn</span><textarea name="ai_custom_style" id="createAiCustomStyle" rows="3" placeholder="Ví dụ: tranh minh họa editorial 2D, nét mực rõ, ánh sáng điện ảnh, bảng màu trầm…"></textarea></label>
                 <label class="wide create-style-reference">
                   <span>Ảnh tham chiếu phong cách</span>
@@ -772,7 +787,7 @@
       </section>
 
       <section class="panel workspace-pane edit-workspace" data-app-pane="edit">
-        <div class="section-head edit-head"><div><p class="eyebrow">PHASE 06 · EDIT &amp; TIMELINE PREVIEW</p><h2>Dựng Phim &amp; Xem Trước Thời Gian Thực · Remotion Studio</h2><p>Trình dựng video trực tiếp, kiểm duyệt nhịp cắt, phụ đề, âm thanh và đồng bộ Voice/SRT chuẩn YouTube kiếm tiền xanh.</p></div><div class="workspace-project" id="editProjectLabel">Chưa chọn dự án</div></div>
+        <div class="section-head edit-head"><div><p class="eyebrow">PHASE 06 · EDIT &amp; TIMELINE PREVIEW</p><h2>Dựng Phim &amp; Xem Trước Thời Gian Thực · Remotion Studio</h2><p>✂️ <b>Role Edit đã khóa cứng:</b> Footage lấy từ <b>3–6s/cut</b> · <b>Bắt buộc xóa/crop sạch 100% logo và text Trung của bên khác</b> (cần thiết thì crop hết hình ảnh có nguồn bên khác) · <b>Không lấy video dẫn chương trình có mặt người dẫn (MC) hoặc chủ kênh khác</b>, chỉ lấy đúng footage cần thiết · <b>Mỗi cảnh Vox độc nhất 100%</b> theo từng câu voice.</p></div><div class="workspace-project" id="editProjectLabel">Chưa chọn dự án</div></div>
         <div class="edit-persistent-host" id="editWorkspace"><div class="empty-state">Chọn một dự án để mở editor.</div></div>
       </section>
 
@@ -955,7 +970,7 @@
       <div class="chat-lightbox-head">
         <span id="chatLightboxTitle">Ảnh đính kèm</span>
         <div class="chat-lightbox-actions">
-          <a id="chatLightboxDownload" href="" target="_blank" rel="noopener">Mở ảnh gốc ↗</a>
+          <a id="chatLightboxDownload" href="" download="anh_dinh_kem.png">⬇ Tải ảnh về máy</a>
           <button type="button" id="closeChatLightbox" aria-label="Đóng (Esc)">×</button>
         </div>
       </div>
@@ -992,8 +1007,8 @@
   </dialog>
 
   <div id="toast" class="toast" data-ui-version="chat-agent-experience-v3"></div>
-  <script src="/static/thumbnail_studio.js?v=20261025-studio-unified-v1"></script>
-  <script src="/static/app.js?v=20261024-clean-v6"></script>
-  <script src="/static/desktop_chrome.js?v=20261024-clean-v6"></script>
+  <script src="/static/thumbnail_studio.js?v=20261027-smart-save-v2"></script>
+  <script src="/static/app.js?v=20261027-smart-save-v2"></script>
+  <script src="/static/desktop_chrome.js?v=20261027-smart-save-v2"></script>
 </body>
 </html>

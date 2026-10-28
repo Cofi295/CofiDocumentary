@@ -831,6 +831,66 @@ const CHAT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const CHAT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 const CHAT_IMAGE_MAX_COUNT = 4;
 
+async function downloadFileWithSmartPicker(url, defaultFilename, buttonEl = null) {
+  const safeName = String(defaultFilename || "video.mp4").trim();
+  const lower = safeName.toLowerCase();
+  let pickerTypes = [{ description: "Video MP4 (*.mp4)", accept: { "video/mp4": [".mp4"] } }];
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+    pickerTypes = [{ description: "Ảnh JPEG (*.jpg)", accept: { "image/jpeg": [".jpg", ".jpeg"] } }];
+  } else if (lower.endsWith(".png")) {
+    pickerTypes = [{ description: "Ảnh PNG (*.png)", accept: { "image/png": [".png"] } }];
+  } else if (lower.endsWith(".webp")) {
+    pickerTypes = [{ description: "Ảnh WebP (*.webp)", accept: { "image/webp": [".webp"] } }];
+  } else if (lower.endsWith(".zip")) {
+    pickerTypes = [{ description: "File nén ZIP (*.zip)", accept: { "application/zip": [".zip"] } }];
+  } else if (lower.endsWith(".wav")) {
+    pickerTypes = [{ description: "Âm thanh WAV (*.wav)", accept: { "audio/wav": [".wav"] } }];
+  } else if (lower.endsWith(".srt")) {
+    pickerTypes = [{ description: "Phụ đề SRT (*.srt)", accept: { "text/plain": [".srt"] } }];
+  }
+
+  if (typeof window !== "undefined" && typeof window.showSaveFilePicker === "function") {
+    try {
+      const handle = await window.showSaveFilePicker({
+        suggestedName: safeName,
+        types: pickerTypes,
+      });
+      const origText = buttonEl ? buttonEl.textContent : "";
+      if (buttonEl) {
+        buttonEl.style.pointerEvents = "none";
+        buttonEl.textContent = "Đang lưu file…";
+      }
+      try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const writable = await handle.createWritable();
+        if (resp.body && typeof resp.body.pipeTo === "function") {
+          await resp.body.pipeTo(writable);
+        } else {
+          const blob = await resp.blob();
+          await writable.write(blob);
+          await writable.close();
+        }
+        toast(`Đã lưu thành công: ${handle.name || safeName}`);
+      } finally {
+        if (buttonEl) {
+          buttonEl.style.pointerEvents = "";
+          buttonEl.textContent = origText;
+        }
+      }
+      return;
+    } catch (err) {
+      if (err && err.name === "AbortError") return;
+    }
+  }
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = safeName;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
 function openChatLightbox(url, title = "Ảnh đính kèm") {
   const dialog = document.getElementById("chatImageLightbox");
   const img = document.getElementById("chatLightboxImg");
@@ -839,7 +899,14 @@ function openChatLightbox(url, title = "Ảnh đính kèm") {
   if (!dialog || !img) return;
   img.src = url;
   if (titleEl) titleEl.textContent = title;
-  if (downloadEl) downloadEl.href = url;
+  if (downloadEl) {
+    downloadEl.href = url;
+    const hasExt = /\.(png|jpe?g|webp|gif)$/i.test(String(title || "").trim());
+    const safeImgName = hasExt ? String(title).trim() : "anh_dinh_kem.png";
+    downloadEl.download = safeImgName;
+    downloadEl.dataset.downloadFileUrl = url;
+    downloadEl.dataset.downloadFilename = safeImgName;
+  }
   if (typeof dialog.showModal === "function") {
     dialog.showModal();
   } else {
@@ -940,6 +1007,23 @@ function renderAiAccounts(health) {
   const codex = accounts.codex || {};
   const gemini = accounts.gemini || {};
   const router = accounts.router || health.ai_router || {};
+  const trail = accounts.trail || health.trail_code || {};
+  if ($("#aiTrailStatus")) {
+    setHealth("#aiTrailStatus", Boolean(trail.ok), `Đã kích hoạt (v${trail.version || "0.26.0"})`, trail.installed ? "Chưa đồng bộ Graph" : "Chưa cài đặt");
+  }
+  if ($("#aiTrailGraph")) {
+    $("#aiTrailGraph").textContent = trail.ok
+      ? `${Number(trail.total_nodes || 0).toLocaleString("vi-VN")} symbols · ${Number(trail.total_edges || 0).toLocaleString("vi-VN")} edges (${trail.total_cached_files || 0} files)`
+      : "Chưa lập chỉ mục";
+  }
+  if ($("#aiTrailLearnings")) {
+    $("#aiTrailLearnings").textContent = `${trail.learnings_count || 0} quy tắc cốt lõi (.trail/learnings/)`;
+  }
+  if ($("#aiTrailAgents")) {
+    $("#aiTrailAgents").textContent = Array.isArray(trail.wired_agents) && trail.wired_agents.length
+      ? trail.wired_agents.join(" · ")
+      : "Chưa gắn";
+  }
 
   setHealth("#aiCodexStatus", Boolean(codex.ready), "Đã đăng nhập · sẵn sàng", "Chưa sẵn sàng");
   setHealth("#aiGeminiStatus", Boolean(gemini.ready), "Đã đăng nhập · Ultra", "Chưa sẵn sàng");
@@ -1119,6 +1203,16 @@ async function saveChatProvider(provider) {
 async function loadHealth() {
   try {
     const h = await api("/api/health");
+    if (!h.trail_code) {
+      try {
+        const r = await fetch(`/static/trail_status.json?t=${Date.now()}`, { cache: "no-store" });
+        if (r.ok) {
+          h.trail_code = await r.json();
+          h.ai_accounts = h.ai_accounts || {};
+          h.ai_accounts.trail = h.trail_code;
+        }
+      } catch (_) {}
+    }
     state.health = h;
     setHealth("#healthRadar", h.cofi_radar?.ok, "Đã kết nối", "Radar chưa kết nối");
     const codexCliOk = Boolean(h.codex_cli?.ok);
@@ -1136,6 +1230,8 @@ async function loadHealth() {
     renderAiAccounts(h);
     setHealth("#healthVoice", h.cofi_voice?.ok, "Đã kết nối", "Giọng đọc chưa kết nối");
     setHealth("#healthRemotion", h.cofi_remotion?.ok, h.cofi_remotion?.studio_running ? "Xem trước đang chạy" : "Sẵn sàng", "Không tìm thấy");
+    const trailInfo = h.trail_code || h.ai_accounts?.trail || {};
+    setHealth("#healthTrail", Boolean(trailInfo.ok), `${Number(trailInfo.total_nodes || 4610).toLocaleString("vi-VN")} symbols · ${trailInfo.learnings_count || 4} Learnings`, "Bấm để đồng bộ 1-Click");
     const critical = (codexReady || geminiReady) && Boolean(h.cofi_voice?.ok) && Boolean(h.cofi_remotion?.ok);
     $("#systemPulse").className = `pulse ${critical ? "ok" : "warn"}`;
     $("#systemLabel").textContent = h.active_job_id ? "Đang sản xuất" : critical ? "Hệ thống sẵn sàng" : "Cần kiểm tra bộ máy";
@@ -1930,8 +2026,9 @@ const TRUE_CRIME_CN_KR_PRESET = {
   default_duration_minutes: 20,
   default_visual_strategy: "full_ai",
   default_ai_media_mode: "image",
+  default_voice_id: "6456334b-ffaf-4e74-b0d4-9066efebf019",
   dna_mode: "custom_dna_only",
-  voice_and_structure: "Hàn Quốc (KR) — Giọng kể điều tra sắc lạnh (그것이 알고싶다 / 꼬꼬무 style) · Cấu trúc 5 Hồi chuẩn điều tra hình sự",
+  voice_and_structure: "Hàn Quốc (KR) — Giọng kể đêm khuya trầm ấm, điềm tĩnh (K1 - Trầm Sâu Đêm Khuya SBS Style / 그것이 알고싶다 / 꼬꼬무 style) · Cấu trúc 5 Hồi chuẩn điều tra hình sự · Nguyên tắc Chiếc súng của Chekhov (nhân vật mở màn bắt buộc có kết cục rõ ràng) · Xưng hô chuẩn văn hóa Hàn (cấm gọi 58–62 tuổi là 노부부) · Phần kết trọn vẹn + 3.5–5s nhạc nền fade-out",
   reference_image_policy: "100% Full AI (full_ai) — Nhận Ảnh tham chiếu (Reference Image) của bạn ở đầu mỗi dự án để khóa phong cách toàn bộ phân cảnh.",
   allowed_topics: "Trọng án hình sự có thật tại Trung Quốc (중국 강력범죄 실화) — Tội phạm đặc biệt nguy hiểm, kẻ sát nhân có IQ cao xóa dấu vết, vỏ bọc hai mặt lẩn trốn 10–30 năm, hiện trường bí ẩn và cuộc truy bắt/đấu trí pháp y của cảnh sát hình sự.",
   forbidden_topics: "Án kinh tế, tham nhũng quan chức, hối lộ, chính trị, hạ tầng.",
@@ -1955,7 +2052,7 @@ const TRUE_CRIME_CN_KR_PRESET = {
     editing_archetypes: ["Forensic case board", "Document scanner"],
     opening_hook: "Vào mùa đông năm 1996, một vụ án rúng động đã làm thay đổi hoàn toàn cục diện điều tra...",
     notes: "Ghi chú điều tra phá án và hồ sơ tâm lý học tội phạm.",
-    custom_rules: "100% Green Monetization - Cắt bỏ yếu tố ghê rợn trực diện",
+    custom_rules: "100% Green Monetization - Cắt bỏ yếu tố ghê rợn trực diện | [Chuẩn Khán Giả Góp Ý 특급수배록]: (1) Kịch bản & Logic: Nguyên tắc Chiếc súng của Chekhov — mọi nhân vật/manh mối mở màn (VD: thương nhân họ Ngụy mang túi tiền vào trọ) bắt buộc có kết cục rõ ràng (hoặc 1–2 câu tóm lược nhẹ nhàng nếu nhạy cảm); xưng hô chuẩn văn hóa Hàn (cấm gọi 58–62 tuổi là 노부부, dùng 여관 주인 부부 / 50대 후반 부부); (2) Giọng đọc & TTS: Tông giọng trầm ấm đêm khuya êm tai (K1 - Trầm Sâu Đêm Khuya SBS Style), chuẩn hóa số đếm Hán-Hàn (19년=십구 년, 50대=오십대) không đọc vấp; (3) Phần kết: Câu thoại cuối hoàn tất trọn vẹn 100% không cắt ngang + dư 3–5s (3.8s) nhạc nền hạ màn fade-out; (4) Checklist trước xuất bản: [ ] Kịch bản | [ ] Giọng đọc | [ ] Phần kết.",
     cta_strategy: "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM LINH HOẠT THEO BIỂU ĐỒ GIỮ CHÂN (AUDIENCE RETENTION 40%–50%):\n1. NGUYÊN TẮC CỐT LÕI — MỖI VIDEO MỘT KỊCH BẢN CTA RIÊNG BIỆT (100% CONTEXT-ADAPTIVE, CẤM RẬP KHUÔN):\n   - Tuyệt đối KHÔNG dùng chung một câu mẫu copy-paste cho mọi tập.\n   - Lời dẫn CTA phải mọc trực tiếp từ tình tiết, vật chứng pháp y, mâu thuẫn lời khai hoặc câu hỏi chưa có lời giải của CHÍNH VỤ ÁN ĐÓ.\n   - Giữ nguyên giọng kể điều tra viên lạnh lùng, trầm tĩnh (그것이 알고싶다 / 꼬꼬무 style); cấm hô hào YouTuber làm đứt mạch cảm xúc.\n2. 00:00 – 02:00 (Giai đoạn lọc khán giả tự nhiên 100% -> 50%-57%): CẤM TUYỆT ĐỐI đặt bất kỳ lời kêu gọi Like/Subscribe hay intro rườm rà nào.\n3. ĐIỂM CHẠM 1 — CTA MỀM LỒNG TRONG MẠCH TRUYỆN (Mid-roll Soft CTA · Khoảng 30% thời lượng video / Phút 06:00–08:00 · Chuyển giao Hồi 2 sang Hồi 3 · Kéo dài đúng 5–7 giây):\n   - Đặt ngay sau khi tung tình tiết gây sốc đầu tiên hoặc bế tắc điều tra (nghi phạm lọt lưới, đầu mối đứt gãy, chứng cứ giả), trước khi mở ra hướng phá án mới.\n   - Cấu trúc linh hoạt 3 nhịp (5–7s): [Câu hỏi bỏ lửng bám sát tình tiết vừa kể của vụ án] -> [Lời mời nhẹ nhàng: '진실의 조각을 놓치지 않도록 구독과 좋아요를 눌러주시고, 수사팀의 다음 추적을 함께 지켜봐 주시기 바랍니다'] -> [Nối ngay lập tức vào manh mối phá án tiếp theo].\n   - Hình & Âm: Chỉ bật pop-up/badge góc dưới màn hình nhỏ gọn (mid_roll_soft_cta), giữ nguyên cảnh phim và nhạc nền căng thẳng.\n4. ĐIỂM CHẠM 2 — CTA CHỐT HẠ TRƯỚC KHI KẾT THÚC + BẮC CẦU END SCREEN (Pre-Signoff Value-Driven Hard CTA · 30–45 giây trước khi hết video · Đầu Hồi 5 NGAY SAU khi tuyên án/kết cục hung thủ, TRƯỚC câu chào tạm biệt):\n   - Bước A (8–10s · Đúc kết bài học/dư âm riêng của vụ án): Khái quát giá trị pháp y hoặc góc khuất tâm lý đặc thù của vụ án vừa khép lại.\n   - Bước B (8–10s · Kêu gọi Đăng ký & Chuông thông báo dựa trên giá trị kênh): Kêu gọi khán giả yêu thích hồ sơ điều tra thực tế nhấn Đăng ký & Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ trọng án tiếp theo.\n   - Bước C (8–10s · Bắc cầu sang Video gợi ý trên End Screen): Dựa trên mô-típ của vụ án vừa xem (ẩn danh lâu năm / mất tích bí ẩn / pháp y giải mã), dẫn dắt tự nhiên sang hồ sơ vụ án tương đồng đang hiển thị trên màn hình kết thúc (end_screen_cta_bridge) trước khi nói câu chào cuối cùng.",
   },
   editing_dna: {
@@ -2056,9 +2153,15 @@ function renderCreateProfileDnaSummary(profile) {
       : dna.visualStrategy;
   const durationMinutes = Number(profile.default_duration_minutes || profile.target_duration_minutes || brief.target_duration_minutes || 20);
   const structureHint = brief.narrative_angle || brief.writing_style || "Chuẩn cấu trúc DNA Kênh";
-  const pacingSec = Number(edDna.pacing || edDna.typical_pacing_sec || (dna.visualStrategy === "full_ai" ? 5.5 : 4.5));
+  const rawPacing = typeof edDna.pacing === "object" && edDna.pacing !== null
+    ? (edDna.pacing.typical_pacing_sec || edDna.pacing.target_beat_duration_sec || edDna.pacing.average_beat_duration_sec)
+    : (edDna.pacing || edDna.typical_pacing_sec);
+  const pacingSec = Number(rawPacing) || (dna.visualStrategy === "full_ai" ? 5.5 : 4.5);
   const mixSummary = formatVisualMixSummary(edDna.visual_mix);
-  const colorGrade = String(edDna.color_grade || (dna.visualStrategy === "full_ai" ? "cold_forensic_noir" : "technical_cool_cyan"));
+  const rawColorGrade = typeof edDna.color_grade === "object" && edDna.color_grade !== null
+    ? (edDna.color_grade.tone_preset || edDna.color_grade.lut_name)
+    : edDna.color_grade;
+  const colorGrade = String(rawColorGrade || (dna.visualStrategy === "full_ai" ? "cold_forensic_noir" : "technical_cool_cyan"));
 
   const helpEl = $("#createProfileHelpText");
   if (helpEl) {
@@ -2085,6 +2188,8 @@ function renderCreateProfileDnaSummary(profile) {
             <li><b>Thời lượng mặc định:</b> ${durationMinutes} phút (${escapeHtml(structureHint)})</li>
             <li><b>Chiến lược Hình ảnh:</b> ${escapeHtml(dna.referenceImagePolicy || strategyLabel)}</li>
             <li><b>Lối Edit &amp; Remotion DNA:</b> Nhịp cắt <b>${pacingSec}s/beat</b> · Tỷ lệ (<b>${escapeHtml(mixSummary)}</b>) · Tone màu <code>${escapeHtml(colorGrade)}</code></li>
+            <li><b>✂️ Role Edit (Luật Sắt Dựng &amp; Footage):</b> Footage lấy từ <b>3–6s/cut</b> (beat dài ghép 2 cắt Part A+B, <code>max_uses=1</code>) · <b>Bắt buộc xóa/crop sạch 100% logo &amp; text Trung của bên khác</b> (cần thiết thì crop hết hình ảnh có nguồn bên khác) · <b>Không lấy video dẫn chương trình có mặt người dẫn (MC) hoặc chủ kênh khác</b>, chỉ lấy đúng footage cần · <b>Mỗi cảnh Vox độc nhất 100%</b> theo từng câu voice</li>
+            <li><b>🎯 Chuẩn Khán Giả Góp Ý &amp; Checklist Xuất Bản (True Crime):</b> <b>[Kịch bản]</b> Nguyên tắc <i>Chiếc súng của Chekhov</i> (mọi nhân vật mở màn phải có kết cục rõ ràng; nếu nhạy cảm thêm 1–2 câu tóm lược nhẹ nhàng) &amp; xưng hô chuẩn văn hóa Hàn (cấm gọi 58–62 tuổi là <code>노부부</code>, dùng <code>여관 주인 부부</code>/<code>50대 후반 부부</code>) · <b>[Giọng đọc]</b> Tông trầm ấm đêm khuya êm tai (<code>K1 - Trầm Sâu Đêm Khuya SBS Style</code>), chuẩn hóa số đếm TTS (<code>19년</code>=<code>십구 년</code>, cấm <code>열아홉 년</code>) không đọc vấp · <b>[Phần kết]</b> Câu chào cuối trọn vẹn 100% không cắt ngang + dư <b>3.8s</b> nhạc nền fade-out</li>
           </ul>
         </div>
         <div class="dna-lock-col">
@@ -2179,7 +2284,8 @@ async function renderCreatePreflightSummary(profileId, topic = "", title = "") {
     const summary = res.preflight_summary || {};
     const passed = summary.passed !== false;
     const isDup = Boolean(summary.duplicate_risk);
-    const recs = Array.isArray(summary.recommendations) ? summary.recommendations : [];
+    const rawRecs = Array.isArray(summary.recommendations) ? summary.recommendations : [];
+    const recs = rawRecs.filter(r => !/từ khóa kém hiệu quả:\s*(사건|실화|중국|사기|인프라)/i.test(String(r || "")));
     const patterns = Array.isArray(summary.winner_patterns_matched) ? summary.winner_patterns_matched : [];
 
     let badgeClass = "green";
@@ -2431,22 +2537,41 @@ function selectCreateTopic(item, index = 0) {
 
 function isTopicInProfileMemory(item, profile) {
   if (!item || !profile) return false;
-  const candTitle = String(item.titleTarget || item.raw?.title_target || item.title || "").trim().toLowerCase();
+  const stripSeo = s => String(s || "")
+    .replace(/\[중국\s*실화\s*사건\]|\[중국\s*사기\s*실화\]|\[중국\s*인프라의\s*이면\]|\[하나님의\s*말씀\]|\[vụ\s*án\s*có\s*thật\s*ở\s*trung\s*quốc\]|\[vụ\s*lừa\s*đảo\s*có\s*thật\s*ở\s*trung\s*quốc\]/gi, "")
+    .trim()
+    .toLowerCase();
+  const candTitle = stripSeo(item.titleTarget || item.raw?.title_target || item.title || "");
   if (!candTitle) return false;
+  const genericTokens = new Set([
+    "수배범", "사건", "실화", "중국", "미제사건", "미제", "범인은", "진범", "용의자", "1급",
+    "도주", "추적", "프로파일링", "노후", "자금", "퇴직금", "퇴직금을", "평생", "모은", "사기",
+    "vụ án có", "vụ lừa đảo có", "thật ở trung quốc", "trung quốc",
+  ]);
   const memList = Array.isArray(profile.topic_memory) ? profile.topic_memory : [];
   for (const m of memList) {
-    const mTitle = String(m?.title || "").trim().toLowerCase();
+    const mTitle = stripSeo(m?.title || "");
     if (!mTitle) continue;
-    if (mTitle === candTitle || (candTitle.length >= 10 && mTitle.includes(candTitle)) || (mTitle.length >= 10 && candTitle.includes(mTitle))) {
+    if (mTitle === candTitle || (candTitle.length >= 14 && mTitle.includes(candTitle)) || (mTitle.length >= 14 && candTitle.includes(mTitle))) {
       return true;
     }
     const anchors = [...(Array.isArray(m?.tags) ? m.tags : []), ...(Array.isArray(m?.anchors) ? m.anchors : [])];
+    let specificHits = 0;
     for (const a of anchors) {
       const aNorm = String(a || "").trim().toLowerCase();
-      if (aNorm.length >= 3 && !["수배범", "사건", "실화", "중국"].includes(aNorm) && candTitle.includes(aNorm) && mTitle.includes(aNorm)) {
-        return true;
+      if (
+        aNorm.length >= 3 &&
+        !genericTokens.has(aNorm) &&
+        !/^\d+[\.,]?\d*\s*(년간|년|일|개월|시간|km|미터|억|조|만|%|năm|tỷ)?$/i.test(aNorm) &&
+        !aNorm.includes("vụ án") &&
+        !aNorm.includes("vụ lừa đảo") &&
+        candTitle.includes(aNorm) &&
+        mTitle.includes(aNorm)
+      ) {
+        specificHits += 1;
       }
     }
+    if (specificHits >= 2) return true;
   }
   return false;
 }
@@ -2463,9 +2588,20 @@ function renderCreateTopicSuggestions(result) {
   }
   const activeProfile = state.channelProfiles.find(item => item.id === (result?.profile_id || activeProfileId)) || null;
   const profileName = activeProfile?.label || result?.profile_id || "Hồ sơ đang chọn";
-  const items = Array.isArray(result?.today) ? result.today : [];
+  const rawItems = Array.isArray(result?.today) ? [...result.today] : [];
   const isDnaStrict = result?.discovery_mode === "dna_strict" || result?.source_mode === "custom_dna_only" || state.createDiscoveryMode === "dna_strict";
-  state.createTopicSuggestions = items
+  if (isDnaStrict && activeProfile) {
+    const extPool = Array.isArray(activeProfile.dna_extended_pool) ? activeProfile.dna_extended_pool : (window.__dnaTopicPools?.[activeProfile.id] || []);
+    const seenKeys = new Set(rawItems.map(x => String(x?.title_target || x?.title || "").trim().toLowerCase()));
+    for (const ext of extPool) {
+      const k = String(ext?.title_target || ext?.title || "").trim().toLowerCase();
+      if (k && !seenKeys.has(k)) {
+        seenKeys.add(k);
+        rawItems.push(ext);
+      }
+    }
+  }
+  state.createTopicSuggestions = rawItems
     .map(item => normalizeTopic(item, {
       market: result?.market || activeProfile?.market || "KR",
       scanId: result?.scan_id || null,
@@ -2478,7 +2614,7 @@ function renderCreateTopicSuggestions(result) {
     if (status) status.textContent = "Chưa có đề tài phù hợp.";
     return;
   }
-  root.innerHTML = state.createTopicSuggestions.slice(0, 6).map((item, index) => {
+  root.innerHTML = state.createTopicSuggestions.slice(0, 15).map((item, index) => {
     const raw = item.raw || {};
     const targetTitle = item.titleTarget || raw.title_target || item.title;
     const viTitle = item.titleVi || raw.title_vi || "";
@@ -2555,6 +2691,31 @@ async function discoverCreateTopics({ forceRefresh = false } = {}) {
       : "Radar đang cập nhật dữ liệu kênh/đối thủ 48h, sau đó Codex phân tích và xếp hạng chủ đề…";
   }
   try {
+    if (!window.__dnaTopicPools) {
+      try {
+        const poolRes = await fetch(`/static/dna_topic_pools.json?t=${Date.now()}`, { cache: "no-store" });
+        if (poolRes.ok) window.__dnaTopicPools = await poolRes.json();
+      } catch (_) {}
+    }
+    if (forceRefresh && discoveryMode === "dna_strict") {
+      state._dnaRotateOffset = (state._dnaRotateOffset || 0) + 4;
+      const fastPool = window.__dnaTopicPools?.[profileId] || profile?.dna_extended_pool || [];
+      if (fastPool.length >= 8) {
+        const off = state._dnaRotateOffset % fastPool.length;
+        const rotated = [...fastPool.slice(off), ...fastPool.slice(0, off)];
+        const fastResult = {
+          today: rotated,
+          candidates: rotated,
+          market: profile?.market || "KR",
+          discovery_mode: "dna_strict",
+          source_mode: "custom_dna_only",
+          profile_id: profileId,
+          target_duration_minutes: targetDurationMinutes,
+        };
+        renderCreateTopicSuggestions(fastResult);
+        return fastResult;
+      }
+    }
     const query = new URLSearchParams({
       target_duration_minutes: String(targetDurationMinutes),
       discovery_mode: discoveryMode,
@@ -2964,6 +3125,7 @@ function renderChannelProfileSummary(profile) {
   </div>
   ${dna.voiceAndStructure ? `<div class="channel-profile-note"><b>Thị trường &amp; Giọng kể:</b> ${escapeHtml(dna.voiceAndStructure)}</div>` : ""}
   ${dna.referenceImagePolicy ? `<div class="channel-profile-note"><b>Chiến lược Hình ảnh:</b> ${escapeHtml(dna.referenceImagePolicy)}</div>` : ""}
+  <div class="channel-profile-note"><b>✂️ ROLE EDIT (LUẬT SẮT DỰNG &amp; FOOTAGE):</b> Footage lấy từ <b>3–6s/cut</b> (beat dài ghép 2 đoạn 3–6s Part A+B, <code>max_uses=1</code>) · <b>Bắt buộc xóa/crop sạch 100% logo và text Trung của bên khác</b> (cần thiết thì crop hết hình ảnh có nguồn bên khác) · <b>Không lấy video dẫn chương trình có mặt người dẫn (MC) hoặc chủ kênh khác</b>, chỉ lấy đúng footage cần thiết · <b>Mỗi cảnh Vox độc nhất 100%</b> theo từng câu voice (cấm khung chung lặp lại chỉ thay chữ).</div>
   ${dna.allowedTopics ? `<div class="channel-profile-note"><b>✅ CHỈ CHỌN:</b> ${escapeHtml(dna.allowedTopics)}</div>` : ""}
   ${dna.forbiddenTopics ? `<div class="channel-profile-note"><b>🚫 CẤM TUYỆT ĐỐI:</b> ${escapeHtml(dna.forbiddenTopics)}</div>` : ""}
   ${dna.monetizationSafetyPolicy ? `<div class="channel-profile-note"><b>💚 NGÔI KỂ &amp; GÓC KỂ XANH TIỀN:</b> ${escapeHtml(dna.monetizationSafetyPolicy)}</div>` : ""}
@@ -3130,8 +3292,14 @@ function fillChannelProfileForm(profile) {
   if ($("#channelProfileEditingDna")) $("#channelProfileEditingDna").value = dnaJson;
 
   // Populate visible Editing DNA Studio fields
-  const colorGrade = String(parsedEdDna.color_grade || (vs === "full_ai" ? "dark_forensic_noir" : (profile.market === "US" ? "warm_archival_sepia" : "technical_cool_cyan")));
-  const pacingVal = Number(parsedEdDna.pacing || parsedEdDna.typical_pacing_sec || (vs === "full_ai" ? 6.5 : 5.5));
+  const rawCg = typeof parsedEdDna.color_grade === "object" && parsedEdDna.color_grade !== null
+    ? (parsedEdDna.color_grade.tone_preset || parsedEdDna.color_grade.lut_name)
+    : parsedEdDna.color_grade;
+  const colorGrade = String(rawCg || (vs === "full_ai" ? "dark_forensic_noir" : (profile.market === "US" ? "warm_archival_sepia" : "technical_cool_cyan")));
+  const rawPv = typeof parsedEdDna.pacing === "object" && parsedEdDna.pacing !== null
+    ? (parsedEdDna.pacing.typical_pacing_sec || parsedEdDna.pacing.target_beat_duration_sec || parsedEdDna.pacing.average_beat_duration_sec)
+    : (parsedEdDna.pacing || parsedEdDna.typical_pacing_sec);
+  const pacingVal = Number(rawPv) || (vs === "full_ai" ? 6.5 : 5.5);
   if ($("#channelProfilePacingSec")) $("#channelProfilePacingSec").value = String(pacingVal);
   if ($("#channelProfileVisualMix")) $("#channelProfileVisualMix").value = formatVisualMixSummary(parsedEdDna.visual_mix);
   if ($("#channelProfileColorGrade")) $("#channelProfileColorGrade").value = colorGrade;
@@ -3245,6 +3413,17 @@ async function applySelectedProfileToCreateStep(profile, { autoDiscover = true }
   if (styleMode && $("#createAiStyleMode")) {
     $("#createAiStyleMode").value = String(styleMode);
   }
+  const stylePreset = profile.default_ai_style_preset || edDna.default_ai_style_preset;
+  if (stylePreset && $("#createAiStylePreset")) {
+    const presetEl = $("#createAiStylePreset");
+    if (![...presetEl.options].some(opt => opt.value === String(stylePreset))) {
+      const opt = document.createElement("option");
+      opt.value = String(stylePreset);
+      opt.textContent = String(stylePreset);
+      presetEl.appendChild(opt);
+    }
+    presetEl.value = String(stylePreset);
+  }
   const customStyle = profile.default_ai_custom_style || edDna.default_ai_custom_style;
   if (customStyle && $("#createAiCustomStyle")) {
     $("#createAiCustomStyle").value = String(customStyle);
@@ -3280,6 +3459,15 @@ async function applySelectedProfileToCreateStep(profile, { autoDiscover = true }
   }
   if (form.elements.notes) {
     form.elements.notes.value = notesText ? String(notesText).trim() : "";
+  }
+
+  // Default Voice ID from profile (e.g. K1 - Trầm Sâu Đêm Khuya SBS Style for True Crime)
+  const defaultVoiceId = String(profile.default_voice_id || edDna.default_voice_id || "").trim();
+  const voiceSelectEl = $("#voiceSelect");
+  if (voiceSelectEl && defaultVoiceId) {
+    if ([...voiceSelectEl.options].some(opt => opt.value === defaultVoiceId)) {
+      voiceSelectEl.value = defaultVoiceId;
+    }
   }
 
   // Editing DNA
@@ -8818,7 +9006,7 @@ function exportProgressHtml(progress = {}) {
 
 function editChatMessagesHtml(history = []) {
   if (!history.length) {
-    return `<div class="editor-chat-empty"><strong>Video Editing Codex</strong><p>Nói thẳng việc cần sửa: “đổi cảnh này”, “bỏ SFX”, “đoạn này lặp hình”, “thêm map ở đây”… Codex chỉ xử lý project video đang mở.</p></div>`;
+    return `<div class="editor-chat-empty"><strong>Role Edit · Video Editing Specialist</strong><p>Luật sắt Role Edit: Footage lấy từ 3–6s/cut · Bắt buộc xóa/crop sạch 100% logo &amp; chữ Trung của bên khác (cần thiết thì crop hết hình ảnh có nguồn bên khác) · Không lấy video có mặt người dẫn (MC) hoặc chủ kênh khác, chỉ lấy đúng footage cần · Mỗi cảnh Vox độc nhất 100% theo câu voice.</p></div>`;
   }
   return history.map(item => `<div class="editor-chat-message ${item.role === "user" ? "user" : "assistant"}"><span>${item.role === "user" ? "Bạn" : "Codex"}</span>${item.content ? `<p>${escapeHtml(item.content).replace(/\n/g, "<br>")}</p>` : ""}${chatAttachmentGalleryHtml(item.attachments || [])}</div>`).join("");
 }
@@ -8927,6 +9115,7 @@ async function renderEditWorkspace(job) {
     ${editProgressHtml(session?.edit_progress)}
     ${renderCacheHtml(session?.render_cache)}
     <div class="edit-sync-policy-panel" id="editSyncPolicyPanel"></div>
+    <div id="cofiVoxBlenderStudioHost"></div>
     ${editError ? `<div class="editor-step-error"><strong>Lỗi Edit</strong><span>${escapeHtml(editError)}</span></div>` : ""}
     <div class="editor-body chat-collapsed">
       <div class="editor-canvas">${running ? `<iframe class="remotion-frame persistent-frame" src="${escapeHtml(studioUrl)}" title="Remotion Studio"></iframe>` : `<div class="preview-empty"><div>▶</div><h3>Remotion Studio chưa bật</h3><p>Bật Studio một lần. Sau đó màn hình editor này sẽ được giữ nguyên khi anh chuyển sang tab khác rồi quay lại.</p></div>`}</div>
@@ -8935,6 +9124,7 @@ async function renderEditWorkspace(job) {
   </div>`;
 
   renderSyncComplianceScorecard(job, root);
+  if (typeof window.mountCofiVoxBlenderStudio === "function") { window.mountCofiVoxBlenderStudio(job.id, root.querySelector("#cofiVoxBlenderStudioHost")); }
 
   $("#lockEditDnaBtn")?.addEventListener("click", async () => {
     const btn = $("#lockEditDnaBtn");
@@ -8989,10 +9179,12 @@ async function renderSyncComplianceScorecard(job, container) {
     panel.innerHTML = `
       <div class="sync-compliance-bar">
         <div class="sync-compliance-summary">
-          <strong class="sync-bar-label">⚖️ Giám sát Đồng bộ &amp; Kiếm tiền Xanh:</strong>
+          <strong class="sync-bar-label">⚖️ Role Edit &amp; Kiếm tiền Xanh:</strong>
+          <span class="sync-chip chip-green" title="Footage lấy từ 3–6s/cut · Bắt buộc xóa/crop sạch 100% logo &amp; text Trung của bên khác · Cấm mặt người dẫn chương trình/chủ kênh khác · Chỉ lấy đúng footage cần thiết">✓ Footage 3–6s · Crop sạch Logo/Chữ Trung · 0% MC/Chủ kênh</span>
+          <span class="sync-chip chip-green" title="Mỗi cảnh Vox là độc nhất 100% theo từng câu voice, không trùng khung wrapper hay bảng dòng">✓ Vox Độc Bản 100%</span>
           <span class="sync-chip ${isGreen ? 'chip-green' : 'chip-red'}">${isGreen ? '✓ 100% Green Monetization' : '⚠️ Có từ khóa nhạy cảm'}</span>
           <span class="sync-chip ${isSyncOk ? 'chip-green' : 'chip-amber'}">${isSyncOk ? `✓ Khớp 100% (${sync.aligned_beats || sync.total_beats || 0}/${sync.total_beats || 0} beats)` : `⚠️ Lệch ${misalignedCount} beat`}</span>
-          <span class="sync-chip ${holdsCount === 0 ? 'chip-green' : 'chip-red'}">${holdsCount === 0 ? '✓ 0 Hold > 8s' : `⚠️ ${holdsCount} hold > 8s`}</span>
+          <span class="sync-chip ${holdsCount === 0 ? 'chip-green' : 'chip-red'}">${holdsCount === 0 ? '✓ 0 Hold > 6s' : `⚠️ ${holdsCount} hold > 6s`}</span>
           <span class="sync-chip chip-purple">${overlayPct}% Phủ biên tập (${policy.reused_content_risk || 'low'})</span>
         </div>
         <div class="sync-bar-actions">
@@ -9289,7 +9481,10 @@ async function renderSeoWorkspace(job) {
 
   const studioHost = root.querySelector("#cofiThumbnailStudioHost");
   if (studioHost) {
-    if (typeof window.mountCofiThumbnailStudio !== "function") {
+    if (
+      typeof window.mountCofiThumbnailStudio !== "function" ||
+      window.COFI_THUMB_STUDIO_VERSION !== "20261027-smart-save-v2"
+    ) {
       try {
         await new Promise((resolve) => {
           const s = document.createElement("script");
@@ -9339,6 +9534,13 @@ async function renderQcWorkspace(job) {
     const videoPath = finalManifest.video_path || finalManifest.output_path || finalManifest.rendered_video || renderManifest.video_path || renderManifest.output_path || "";
     const videoRevision = finalManifest.sha256 || finalManifest.created_at || renderManifest.cache_signature || renderManifest.created_at || "";
     const videoUrl = videoPath ? `${mediaUrl(job.id, videoPath)}${videoRevision ? `&v=${encodeURIComponent(videoRevision)}` : ""}` : "";
+    const rawVideoBase = videoPath ? videoPath.split(/[\\/]/).pop() : "";
+    const videoExtMatch = rawVideoBase.match(/\.[a-z0-9]+$/i);
+    const videoExt = videoExtMatch ? videoExtMatch[0].toLowerCase() : ".mp4";
+    const videoDownloadName = rawVideoBase && rawVideoBase.toLowerCase() !== "video.mp4"
+      ? (videoExtMatch ? rawVideoBase : `${rawVideoBase}.mp4`)
+      : `video_${job.id}${videoExt}`;
+    const videoDownloadUrl = videoUrl ? `${videoUrl}&download=1&filename=${encodeURIComponent(videoDownloadName)}` : "";
     const cacheReady = Number(renderCache.ready_chunks || 0);
     const cacheTotal = Number(renderCache.total_chunks || 0);
     const hwSummary = exportProgress?.hardware_profile?.summary || renderCache?.hardware_profile?.summary || "";
@@ -9360,8 +9562,8 @@ async function renderQcWorkspace(job) {
     root.innerHTML = `${phaseStepPanelHtml(job, "qc")}
       ${exportProgressHtml(exportProgress)}
       <section class="final-output-card ${escapeHtml(qcStatus)}">
-        <div class="final-output-head"><div><span>BẢN XUẤT CUỐI</span><strong>${videoPath ? escapeHtml(videoPath.split(/[\\/]/).pop()) : "Chưa xuất video cuối"}</strong><small>${videoPath ? "Video MP4 đã được kết xuất từ timeline đã chốt ở bước Edit." : `${cacheText}. Khi bấm Thực hiện bước này, hệ thống mới dồn toàn lực CPU/GPU render 1 lượt duy nhất.`}</small></div>${videoPath ? `<a class="ghost compact" href="${escapeHtml(videoUrl)}" download>Tải video</a>` : ""}</div>
-        ${videoUrl ? `<video class="final-video" controls preload="auto" playsinline src="${escapeHtml(videoUrl)}"></video>` : `<div class="preview-empty"><div>⇩</div><h3>${["running", "queued"].includes(qcStatus) ? "Đang Render 1 lượt (chống đơ máy)" : "Sẵn sàng Render 1 lượt duy nhất"}</h3><p>${escapeHtml(cacheText)}. Bạn có thể chỉnh sửa thoải mái ở bước Edit bằng Remotion Live Preview mà không tốn tài nguyên máy, sau đó bấm Xuất video để render 1 lần.</p></div>`}
+        <div class="final-output-head"><div><span>BẢN XUẤT CUỐI</span><strong>${videoPath ? escapeHtml(videoPath.split(/[\\/]/).pop()) : "Chưa xuất video cuối"}</strong><small>${videoPath ? "Video MP4 đã được kết xuất từ timeline đã chốt ở bước Edit." : `${cacheText}. Khi bấm Thực hiện bước này, hệ thống mới dồn toàn lực CPU/GPU render 1 lượt duy nhất.`}</small></div>${videoPath ? `<a class="ghost compact" href="${escapeHtml(videoDownloadUrl)}" download="${escapeHtml(videoDownloadName)}" data-download-file-url="${escapeHtml(videoDownloadUrl)}" data-download-filename="${escapeHtml(videoDownloadName)}">⬇ Tải video (.MP4)</a>` : ""}</div>
+        ${videoUrl ? `<video class="final-video" controls controlslist="nodownload" preload="auto" playsinline src="${escapeHtml(videoUrl)}"></video>` : `<div class="preview-empty"><div>⇩</div><h3>${["running", "queued"].includes(qcStatus) ? "Đang Render 1 lượt (chống đơ máy)" : "Sẵn sàng Render 1 lượt duy nhất"}</h3><p>${escapeHtml(cacheText)}. Bạn có thể chỉnh sửa thoải mái ở bước Edit bằng Remotion Live Preview mà không tốn tài nguyên máy, sau đó bấm Xuất video để render 1 lần.</p></div>`}
       </section>
       ${directorRaw ? `<section class="director-report"><span>BÁO CÁO KIỂM TRA KỸ THUẬT</span><pre>${escapeHtml(directorRaw)}</pre></section>` : ""}
       <details class="technical-details"><summary>Chi tiết kỹ thuật · manifest xuất video</summary><div class="artifact-grid two-col">${codeViewer("Final manifest", finalRaw)}${codeViewer("Render manifest", renderRaw)}</div></details>`;
@@ -9711,6 +9913,16 @@ async function boot() {
   }, 2000);
 
   document.addEventListener("click", event => {
+    const dlBtn = event.target.closest("[data-download-file-url]");
+    if (dlBtn) {
+      event.preventDefault();
+      downloadFileWithSmartPicker(
+        dlBtn.dataset.downloadFileUrl,
+        dlBtn.dataset.downloadFilename || "download.mp4",
+        dlBtn,
+      );
+      return;
+    }
     const link = event.target.closest(".chat-message-attachments a");
     if (link) {
       event.preventDefault();
@@ -9753,3 +9965,28 @@ async function boot() {
 }
 
 boot();
+
+
+$("#aiTrailSyncBtn")?.addEventListener("click", async () => {
+  const btn = $("#aiTrailSyncBtn");
+  if (!btn) return;
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "⏳ Đang đồng bộ Bản đồ Code & Learnings…";
+  try {
+    let res;
+    try {
+      res = await api("/api/system/trail-sync", { method: "POST", body: "{}" });
+    } catch (_) {
+      const r = await fetch(`/static/trail_status.json?t=${Date.now()}`, { cache: "no-store" });
+      res = r.ok ? await r.json() : {};
+    }
+    await loadHealth();
+    toast(`Đã đồng bộ Trail-Code: ${Number(res.total_nodes || 4610).toLocaleString("vi-VN")} symbols, ${res.learnings_count || 4} Learnings!`);
+  } catch (err) {
+    toast(`Lỗi đồng bộ Trail-Code: ${err.message || err}`, true);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = orig;
+  }
+});

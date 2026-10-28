@@ -94,8 +94,13 @@ class VoxBlenderBridge:
         manifest_beats: list[dict[str, Any]] = []
         rendered_count = 0
 
-        def _find_beat_keyframe(b_id: str) -> Path | None:
+        def _find_beat_media(b_id: str, slot_idx: int) -> Path | None:
             if remotion_pub is not None:
+                arch_dir = remotion_pub / "archival"
+                if arch_dir.is_dir():
+                    arch_files = sorted(arch_dir.glob("*.jpg")) + sorted(arch_dir.glob("*.png"))
+                    if arch_files:
+                        return arch_files[slot_idx % len(arch_files)]
                 cand = remotion_pub / f"{b_id}_ai_keyframe.jpg"
                 if cand.exists():
                     return cand
@@ -109,7 +114,9 @@ class VoxBlenderBridge:
             arch = str(beat.get("scene_archetype") or "cinema_full").strip()
             label = str(beat.get("archetype_label") or arch).strip()
             cluster = str(beat.get("archetype_cluster") or "cinema").strip()
-            voice_spec = beat.get("voice_spec") or build_voice_spec_for_beat(beat, beat_index=idx)
+            voice_spec = dict(beat.get("voice_spec") or build_voice_spec_for_beat(beat, beat_index=idx))
+            voice_spec["beat_id"] = beat_id
+            voice_spec["vox_slot_index"] = idx
             beat_duration = float(voice_spec.get("duration_sec") or 6.0)
             narration = str(voice_spec.get("narration_text") or "").strip()
             preview_url = ARCHETYPE_PREVIEW_URLS.get(arch, "/static/vox_studio/preview_00_cinema_open.jpg")
@@ -119,11 +126,13 @@ class VoxBlenderBridge:
             motion_filename = f"vox_{beat_id}_{arch_slug}.mp4"
             plate_path = vox_renders_dir / plate_filename
             motion_path = vox_renders_dir / motion_filename
-            if render_plates and arch != "cinema_full" and (not plate_path.exists() or not motion_path.exists()):
+            should_render_vox = bool(beat.get("render_vox_board", True)) and arch != "cinema_full"
+            if render_plates and should_render_vox and (not plate_path.exists() or not motion_path.exists()):
                 try:
-                    kf_a = _find_beat_keyframe(beat_id)
-                    kf_b = kf_a
                     media_inputs: dict[str, Any] = {"voice_spec": voice_spec}
+                    kf_a = _find_beat_media(beat_id, idx)
+                    kf_b = _find_beat_media(beat_id, idx + 1) or kf_a
+                    kf_c = _find_beat_media(beat_id, idx + 2) or kf_b or kf_a
                     if kf_a is not None:
                         media_inputs["frame_a"] = str(kf_a)
                         media_inputs["frame_main"] = str(kf_a)
@@ -131,6 +140,8 @@ class VoxBlenderBridge:
                     if kf_b is not None:
                         media_inputs["frame_b"] = str(kf_b)
                         media_inputs["frame_right"] = str(kf_b)
+                    if kf_c is not None:
+                        media_inputs["frame_c"] = str(kf_c)
 
                     self.renderer.render_motion_mp4(
                         archetype_id=arch,
@@ -156,7 +167,11 @@ class VoxBlenderBridge:
                             except Exception:
                                 pass
 
-            rel_plate = f"vox_renders/{motion_filename}" if motion_path.exists() else (f"vox_renders/{plate_filename}" if plate_path.exists() else None)
+            rel_plate = (
+                (f"vox_renders/{motion_filename}" if motion_path.exists() else (f"vox_renders/{plate_filename}" if plate_path.exists() else None))
+                if should_render_vox
+                else None
+            )
             if rel_plate:
                 beat["vox_plate_public_file"] = rel_plate
 
@@ -166,6 +181,9 @@ class VoxBlenderBridge:
                 "scene_archetype": arch,
                 "archetype_label": label,
                 "archetype_cluster": cluster,
+                "dna_visual_slot": beat.get("dna_visual_slot", "real_footage"),
+                "motion_treatment": beat.get("motion_treatment", "optical_camera_drift"),
+                "render_vox_board": should_render_vox,
                 "duration_sec": beat_duration,
                 "clauses": voice_spec.get("clauses", []),
                 "clause_windows": voice_spec.get("clause_windows", []),
