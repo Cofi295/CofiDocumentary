@@ -1,4 +1,4 @@
-﻿# Python & Environments
+# Python & Environments
 __pycache__/
 *.py[cod]
 *.class
@@ -42,3 +42,7 @@ benchmarks/*.mp4
 static/vox_studio/vox_5min_studio_master.mp4
 
 graft/
+
+# Generated multi-tool specialist exports (edit agents/<division>/<id>.md instead)
+.codex/agents/
+.agents/skills/cofi-agency-*/

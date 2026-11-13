@@ -7,13 +7,14 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+KR:wght@400;500;700;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="preload" href="/static/fonts/SCoreDream-9Black.woff" as="font" type="font/woff" crossorigin /><link rel="preload" href="/static/fonts/Paperlogy-9Black.woff2" as="font" type="font/woff2" crossorigin /><link rel="stylesheet" href="/static/styles.css?v=20261025-studio-unified-v1" />
+  <link rel="preload" href="/static/fonts/SCoreDream-9Black.woff" as="font" type="font/woff" crossorigin /><link rel="preload" href="/static/fonts/Paperlogy-9Black.woff2" as="font" type="font/woff2" crossorigin /><link rel="stylesheet" href="/static/styles.css?v=20261110-bilingual-card-v1" /><link rel="stylesheet" href="/static/agent_office.css?v=20261110-bilingual-card-v1" /><link rel="stylesheet" href="/static/studio_office_ui.css?v=20261110-bilingual-card-v1" />
   <!-- 20260913-chat-text-select -->
 </head>
 <body>
   <div class="desktop-titlebar" id="desktopTitlebar" aria-label="Điều khiển cửa sổ">
     <div class="desktop-titlebar-drag pywebview-drag-region"><span class="desktop-titlebar-mark">CD</span><span>COFI DOCUMENTARY</span></div>
     <div class="desktop-titlebar-actions">
+      <button type="button" id="desktopAgentOfficeBtn" data-open-agent-office="true" aria-label="15 Phòng Ban Chuyên Môn" title="🏛️ 15 Phòng Ban Chuyên Môn (15 Tổ trưởng · 15 Tổ phó · 62 Chuyên viên Mini-Agents) (Ctrl+Shift+O)">🏛️</button>
       <button type="button" id="desktopChatToggleBtn" aria-label="Bật/tắt AI Chat" title="Bật/tắt AI Chat (Ctrl+Shift+C)">💬</button>
       <button type="button" id="desktopReloadBtn" aria-label="Làm mới trang" title="Làm mới giao diện (F5)">↻</button>
       <button type="button" id="desktopMinimizeBtn" aria-label="Thu nhỏ cửa sổ" title="Thu nhỏ">−</button>
@@ -22,37 +23,37 @@
     </div>
   </div>
   <div class="app-shell channel-studio-shell">
-    <aside class="sidebar channel-studio-sidebar">
+    <aside class="sidebar channel-studio-sidebar" id="studioSidebar">
       <div class="brand">
-        <div class="brand-mark">CD</div>
-        <div><strong>COFI DOCUMENTARY</strong><span>XƯỞNG VIDEO TƯ LIỆU</span></div>
+        <div class="brand-mark" title="COFI DOCUMENTARY">CD</div>
+        <div class="brand-copy"><strong>COFI DOCUMENTARY</strong><span>XƯỞNG VIDEO TƯ LIỆU</span></div>
+        <button type="button" class="sidebar-collapse-btn" id="sidebarCollapseBtn" title="Thu gọn / Mở rộng thanh điều hướng (Ctrl+B)" aria-label="Thu gọn hoặc mở rộng menu trái">«</button>
       </div>
 
       <nav class="side-nav">
         <div class="nav-group-label">ĐIỀU KHIỂN</div>
-        <button class="nav-item active" data-app-tab="overview"><span>⌂</span>Tổng quan</button>
-        <button class="nav-item" data-app-tab="radar"><span>⌕</span>Radar chủ đề</button>
-        <button class="nav-item" data-app-tab="create"><span>＋</span>Tạo dự án</button>
+        <button class="nav-item active" data-app-tab="overview" title="Tổng quan"><span>⌂</span><em class="nav-item-text">Tổng quan</em></button>
+        <button class="nav-item" data-app-tab="radar" title="Radar chủ đề"><span>⌕</span><em class="nav-item-text">Radar chủ đề</em></button>
+        <button class="nav-item" data-app-tab="create" title="Tạo dự án"><span>＋</span><em class="nav-item-text">Tạo dự án</em></button>
         <div class="nav-group-label">DÂY CHUYỀN SẢN XUẤT</div>
-        <button class="nav-item" data-app-tab="script"><span>01</span>Kịch bản</button>
-        <button class="nav-item" data-app-tab="voice"><span>02</span>Voice & SRT</button>
-        <button class="nav-item" data-app-tab="visuals"><span>03</span>Visuals / Prompt</button>
-        <button class="nav-item" data-app-tab="footage"><span>04</span>Tư liệu</button>
-        <button class="nav-item" data-app-tab="ai_visual"><span>05</span>AI bổ sung</button>
-        <button class="nav-item" data-app-tab="edit"><span>06</span>Edit · Blender 3D</button>
-        <button class="nav-item" data-app-tab="seo"><span>07</span>SEO + Thumbnail</button>
-        <button class="nav-item" data-app-tab="qc"><span>08</span>Xuất video</button>
+        <button class="nav-item" data-app-tab="script" title="01 · Kịch bản"><span>01</span><em class="nav-item-text">Kịch bản</em></button>
+        <button class="nav-item" data-app-tab="voice" title="02 · Voice &amp; SRT"><span>02</span><em class="nav-item-text">Voice & SRT</em></button>
+        <button class="nav-item" data-app-tab="visuals" title="03 · Visuals / Prompt"><span>03</span><em class="nav-item-text">Visuals / Prompt</em></button>
+        <button class="nav-item" data-app-tab="ai_visual" title="04 · AI bổ sung"><span>04</span><em class="nav-item-text">AI bổ sung</em></button>
+        <button class="nav-item" data-app-tab="edit" title="05 · Edit · Blender 3D"><span>05</span><em class="nav-item-text">Edit · Blender 3D</em></button>
+        <button class="nav-item" data-app-tab="seo" title="06 · SEO + Thumbnail"><span>06</span><em class="nav-item-text">SEO + Thumbnail</em></button>
+        <button class="nav-item" data-app-tab="qc" title="07 · Xuất video"><span>07</span><em class="nav-item-text">Xuất video</em></button>
         <div class="nav-group-label">QUẢN LÝ</div>
-        <button class="nav-item" data-app-tab="accounts"><span>◈</span>Tài khoản AI</button>
-        <button class="nav-item" data-app-tab="projects"><span>▤</span>Dự án</button>
+        <button class="nav-item" data-app-tab="accounts" title="Tài khoản AI"><span>◈</span><em class="nav-item-text">Tài khoản AI</em></button>
+        <button class="nav-item" data-app-tab="projects" title="Dự án"><span>▤</span><em class="nav-item-text">Dự án</em></button>
       </nav>
 
-      <button class="sidebar-agent-button" type="button" id="sidebarChatToggleBtn" data-toggle-global-chat="true">
-        <span>◆</span><div><strong>AI Agent</strong><small>Điều khiển toàn bộ app</small></div>
+      <button class="sidebar-agent-button" type="button" id="sidebarChatToggleBtn" data-toggle-global-chat="true" title="Hộp Chat Điều Phối Thuần Khiết (@orchestrator → 15 Phòng Ban Chuyên Môn)">
+        <span>◆</span><div class="sidebar-agent-copy"><strong>Điều Phối 15 Phòng Ban</strong><small>@orchestrator · 92 Nhân sự</small></div>
       </button>
-      <div class="sidebar-status">
+      <div class="sidebar-status" title="Trạng thái hệ thống">
         <div class="pulse" id="systemPulse"></div>
-        <div><strong id="systemLabel">Đang kiểm tra hệ thống…</strong><small id="systemSub">COFI DOCUMENTARY</small></div>
+        <div class="sidebar-status-copy"><strong id="systemLabel">Đang kiểm tra hệ thống…</strong><small id="systemSub">COFI DOCUMENTARY</small></div>
       </div>
     </aside>
 
@@ -71,8 +72,13 @@
             </select>
           </label>
           <div class="studio-engine-chip"><span>AI ENGINE</span><strong>Codex + Gemini</strong></div>
+          <button class="studio-action agent-office-trigger-btn" type="button" id="openAgentOfficeBtn" data-open-agent-office="true" title="🏛️ 15 Phòng Ban Chuyên Môn (15 Tổ trưởng · 15 Tổ phó · 62 Chuyên viên Mini-Agents) (Ctrl+Shift+O)">
+            <span class="ao-trigger-dot"></span>
+            <span>🏛️ 15 Phòng Ban Chuyên Môn</span>
+            <span class="ao-trigger-badge" id="aoTriggerBadge">15 Phòng · 92 NS</span>
+          </button>
           <button class="studio-action" type="button" data-open-tab="accounts">◈ Tài khoản</button>
-          <button class="studio-action" type="button" data-toggle-global-chat="true">◆ AI Agent</button>
+          <button class="studio-action" type="button" data-toggle-global-chat="true" title="Hộp Chat Điều Phối Thuần Khiết (@orchestrator → 15 Phòng Ban Chuyên Môn)">◆ Chat Điều Phối</button>
           <button class="studio-primary-action" type="button" data-open-tab="create">＋ Video mới</button>
         </div>
       </header>
@@ -107,6 +113,7 @@
         <article class="engine-card"><div class="engine-icon">V</div><div><span>COFI VOICE</span><strong id="healthVoice">Đang kiểm tra</strong><small>Giọng đọc · SRT</small></div></article>
         <article class="engine-card" style="border-color:rgba(56,189,248,0.45);background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(14,116,144,0.18));cursor:pointer;" data-open-tab="edit" title="Mở Blender 4.2 3D EEVEE &amp; Vox 24-Archetype Studio"><div class="engine-icon" style="background:linear-gradient(135deg,#38bdf8,#0284c7);color:#090d16;font-weight:900;">3D</div><div><span>BLENDER 4.2 &amp; VOX GIS</span><strong id="healthBlenderVox" style="color:#4ade80;">Sẵn sàng · 3D EEVEE + 24 Mẫu</strong><small>8 Vệ tinh thật · 10 Pháp y · 6 Báo chí</small></div></article><article class="engine-card"><div class="engine-icon">M</div><div><span>COFI REMOTION</span><strong id="healthRemotion">Đang kiểm tra</strong><small>Dựng · Xem trước</small></div></article>
         <article class="engine-card" style="border-color:rgba(16,185,129,0.45);background:linear-gradient(135deg,rgba(15,23,42,0.95),rgba(5,150,105,0.18));cursor:pointer;" data-open-tab="accounts" title="Mở cấu hình Trail-Code Context Graph &amp; Learnings"><div class="engine-icon" style="background:linear-gradient(135deg,#34d399,#059669);color:#090d16;font-weight:900;">T</div><div><span>TRAIL-CODE GRAPH</span><strong id="healthTrail" style="color:#4ade80;">Đang kiểm tra</strong><small id="healthTrailSub">Tiết kiệm ~42% Token · Code Map + Learnings</small></div></article>
+        <article class="engine-card" style="border-color:rgba(192,132,252,0.5);background:linear-gradient(135deg,rgba(15,23,42,0.96),rgba(126,34,206,0.22));cursor:pointer;" data-open-agent-office="true" title="Mở 🏛️ 15 Phòng Ban Chuyên Môn (15 Tổ trưởng · 15 Tổ phó · 62 Chuyên viên Mini-Agents) (Ctrl+Shift+O)"><div class="engine-icon" style="background:linear-gradient(135deg,#c084fc,#9333ea);color:#090d16;font-weight:900;">15</div><div><span>15 PHÒNG BAN CHUYÊN MÔN</span><strong id="healthDepartments" style="color:#e9d5ff;">15 Trưởng · 15 Phó · 62 CV</strong><small id="healthDepartmentsSub">92 Nhân sự · DEPT-00..14 · @vox 8 NS</small></div></article>
       </section>
 
       <section class="overview-command-deck workspace-pane active" id="overviewCommandDeck" data-app-pane="overview">
@@ -180,320 +187,448 @@
         </div>
 
         <div class="topic-pane active" data-topic-pane="radar">
-          <div class="radar-actions saas-single-stack">
-            <form id="channelProfileForm" class="radar-card channel-profile-card saas-studio-card">
-              <div class="radar-card-icon">🧬</div>
-              <div class="radar-card-body">
-                <div class="channel-profile-head saas-profile-header-bar">
-                  <div class="saas-profile-title-block">
-                    <span class="saas-section-kicker">CHANNEL DNA &amp; EDITING STUDIO · TÁCH BIỆT 100% TỪNG KÊNH</span>
-                    <h3>Hồ sơ Kênh — Định danh DNA cố định, Lối Edit Riêng &amp; Liên kết Kênh</h3>
-                    <p>Mỗi hồ sơ khóa cứng Ngôn ngữ, Thời lượng, Chiến lược Hình ảnh, Bộ lọc Xanh tiền và Công thức Edit Remotion riêng biệt.</p>
-                  </div>
-                  <div class="channel-profile-picker saas-profile-toolbar">
-                    <label class="profile-select-label">
-                      <span>Hồ sơ đang chọn</span>
-                      <select id="channelProfileSelect"><option value="">Chọn hồ sơ đã lưu…</option></select>
-                    </label>
-                    <div class="saas-profile-quick-btns">
-                      <button class="ghost compact dna-preset-btn" type="button" id="presetTrueCrimeCnBtn" title="Nạp chuẩn Hồ sơ Kênh True Crime Hình Sự Trung Quốc (KR · Full AI)">⚡ Mẫu True Crime TQ</button>
-                      <button class="ghost compact" type="button" id="newChannelProfileBtn">＋ Tạo profile mới</button>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="saas-form-grid saas-grid-4">
-                  <label class="span-2">Tên hồ sơ kênh<input name="label" placeholder="Ví dụ: Hồ sơ Kênh True Crime Hình Sự Trung Quốc (KR · Full AI)" /></label>
-                  <label>Thị trường<select name="market"><option value="KR">KR (Hàn Quốc)</option><option value="JP">JP (Nhật Bản)</option><option value="US">US (Mỹ / Quốc tế)</option><option value="VN">VN (Việt Nam)</option></select></label>
-                  <label>Ngôn ngữ<select name="default_language"><option value="ko">Tiếng Hàn (KR)</option><option value="ja">Tiếng Nhật (JP)</option><option value="en">Tiếng Anh (US)</option><option value="vi">Tiếng Việt (VN)</option></select></label>
-                </div>
-
-                <div class="saas-form-grid saas-grid-4">
-                  <label>Thời lượng mặc định (Chọn nhanh hoặc nhập số phút)<div class="duration-combo-row" style="display:flex;gap:8px;align-items:center;"><select name="default_duration_minutes" id="profileDefaultDurationSelect" style="flex:1.2;"><option value="2">2 phút</option><option value="5">5 phút</option><option value="8">8 phút</option><option value="10">10 phút</option><option value="15">15 phút</option><option value="20" selected>20 phút</option><option value="22">22 phút (Chuẩn điều tra)</option><option value="25">25 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút (Long-form / Tâm linh)</option><option value="75">75 phút</option><option value="90">90 phút</option><option value="120">120 phút</option></select><input type="number" id="profileCustomDurationInput" min="2" max="180" step="1" value="20" placeholder="Nhập phút (VD: 22)" title="Nhập thời lượng mong muốn bất kỳ (từ 2 đến 180 phút)" style="flex:0.85;min-width:105px;" /></div></label>
-                  <label>Chiến lược Hình ảnh mặc định
-                    <select name="default_visual_strategy">
-                      <option value="full_ai" selected>100% Full AI (full_ai) — Khóa theo Ảnh tham chiếu</option>
-                      <option value="edit_direct_footage">Bán Content: AI tải Footage lúc Edit + Vài ảnh AI (Bỏ qua Bước 4)</option>
-                      <option value="hybrid">Kết hợp Footage thật + AI (hybrid)</option>
-                      <option value="evidence_footage">Bằng chứng thật + AI tái hiện (evidence_footage)</option>
-                      <option value="full_footage">100% Footage tư liệu (full_footage)</option>
-                    </select>
-                  </label>
-                  <label>Chế độ vận hành DNA Kênh
-                    <select name="dna_mode" id="profileDnaModeSelect">
-                      <option value="custom_dna_only" selected>🔒 Thuần DNA cố định (Không ép qua Radar)</option>
-                      <option value="auto_radar">📡 Chế độ AUTO (Kết hợp quét Radar 48h &amp; Đối thủ)</option>
-                    </select>
-                  </label>
-                  <label>Kênh YouTube của mình <small>(tùy chọn nếu chưa có kênh)</small>
-                    <input name="own_channel_ref" placeholder="Dán @handle, URL hoặc UC..." />
-                  </label>
-                </div>
-
-                <div class="dna-rulebook-box saas-subcard" id="channelDnaRulebookFields">
-                  <div class="dna-rulebook-head">
-                    <span>🛡️ BỘ LỌC ĐỀ TÀI &amp; AN TOÀN KIẾM TIỀN XANH TIỀN (100% GREEN MONETIZATION)</span>
-                    <small>Khóa cứng cho từng kênh để AI và người dùng thủ công luôn đi đúng tuyến nội dung, không vi phạm chính sách YouTube.</small>
-                  </div>
-                  <div class="saas-form-grid saas-grid-2">
-                    <label>Giọng kể &amp; Cấu trúc chuẩn
-                      <input name="voice_and_structure" placeholder="VD: Hàn Quốc (KR) — Giọng kể điều tra sắc lạnh (그것이 알고싶다 / 꼬꼬무 style) · 5 Hồi" />
-                    </label>
-                    <label>Quy chuẩn Ảnh tham chiếu (Reference Image)
-                      <input name="reference_image_policy" placeholder="VD: 100% Full AI — Nhận Ảnh tham chiếu đầu dự án khóa phong cách toàn bộ phân cảnh" />
-                    </label>
-                  </div>
-                  <div class="saas-form-grid saas-grid-2">
-                    <label class="channel-profile-field">
-                      <span class="dna-tag-allow">✅ CHỈ CHỌN (Bộ lọc Đề tài bắt buộc)</span>
-                      <textarea name="allowed_topics" rows="2" placeholder="VD: Trọng án hình sự có thật tại Trung Quốc — Tội phạm IQ cao xóa dấu vết, lẩn trốn 10–30 năm, đấu trí pháp y..."></textarea>
-                    </label>
-                    <label class="channel-profile-field">
-                      <span class="dna-tag-green">💚 NGÔI KỂ &amp; GÓC KỂ XANH TIỀN (Green Monetization)</span>
-                      <textarea name="monetization_safety_policy" rows="2" placeholder="VD: Ngôi thứ 3 theo góc nhìn Hồ sơ Điều tra viên Hình sự — Cắt bỏ 100% máu me trực diện, tập trung vào vật chứng pháp y..."></textarea>
-                    </label>
-                  </div>
-                  <label class="channel-profile-field">
-                    <span class="dna-tag-forbid">🚫 CẤM TUYỆT ĐỐI (Chặn sạch đề tài gây lệch DNA kênh)</span>
-                    <input name="forbidden_topics" placeholder="VD: Án kinh tế, tham nhũng quan chức, hối lộ, chính trị, hạ tầng." />
-                  </label>
-                  <label class="channel-profile-field">
-                    <span class="dna-tag-allow">🎯 CHIẾN LƯỢC CTA THEO BIỂU ĐỒ GIỮ CHÂN (2 ĐIỂM CHẠM LINH HOẠT THEO TỪNG VỤ ÁN)</span>
-                    <textarea name="cta_strategy" rows="4" placeholder="VD: Cấm CTA 2 phút đầu. Điểm chạm 1 (~30% thời lượng / phút 6–8, chuyển Hồi 2->3): CTA mềm 5–7s lồng tự nhiên vào nút thắt vụ án + pop-up góc dưới. Điểm chạm 2 (30–45s trước khi hết, ngay sau khi tuyên án): Đúc kết dư âm vụ án -> Kêu gọi Đăng ký/Chuông -> Bắc cầu sang video End Screen cùng mô-típ."></textarea>
-                  </label>
-                </div>
-
-                <div class="dna-editing-studio-box saas-subcard" id="channelEditingDnaStudio">
-                  <div class="dna-rulebook-head">
-                    <span>🎬 LỐI EDIT RIÊNG &amp; CÔNG THỨC DỰNG REMOTION CỦA KÊNH (EDITING DNA)</span>
-                    <small>Thiết lập sẵn lối dựng riêng cho kênh này (hoặc tự động cập nhật khi bạn bấm "Chốt Mẫu Edit Chuẩn" ở Bước 06 · Edit).</small>
-                  </div>
-                  <div class="saas-form-grid saas-grid-4">
-                    <label class="span-2">Preset Lối Edit Chuẩn của Kênh
-                      <select id="channelProfileEditingPreset">
-                        <option value="infra_25d_dossier">📐 Điều tra Hạ tầng &amp; Kỹ thuật 2.5D (@판세의이면 · 22p Hybrid)</option>
-                        <option value="true_crime_noir_ai">🕵️ Hồ sơ Trọng án Hình sự Noir (꼬꼬무 / 그것이 알고싶다 · 30p Full AI)</option>
-                        <option value="archival_vault_us">🏛️ Lưu trữ Lịch sử &amp; Hồ sơ Giải mật (@TheFirstFamilyVault · 30p Archival)</option>
-                        <option value="custom">⚙️ Tùy chỉnh công thức Edit riêng cho kênh</option>
-                      </select>
-                    </label>
-                    <label>Nhịp cắt (giây/beat)
-                      <input type="number" id="channelProfilePacingSec" step="0.5" min="2" max="15" value="6.0" />
-                    </label>
-                    <label>AI Media mặc định
-                      <select name="default_ai_media_mode" id="channelProfileAiMediaMode">
-                        <option value="image" selected>Chỉ ảnh (image)</option>
-                        <option value="mixed">Kết hợp (mixed)</option>
-                        <option value="video">Chỉ video (video)</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div class="saas-form-grid saas-grid-3">
-                    <label>Tỷ lệ pha trộn Visual Mix (Footage / AI / Motion)
-                      <input id="channelProfileVisualMix" placeholder="VD: 40% Footage · 40% AI · 20% Motion 2.5D" />
-                    </label>
-                    <label>Tông màu &amp; Khí sắc (Color Grade)
-                      <input id="channelProfileColorGrade" placeholder="VD: Cold Tech Cyan / Dark Forensic Noir" />
-                    </label>
-                    <label>Ngữ pháp Dựng Remotion (Editing Archetypes)
-                      <input name="editing_archetypes" id="channelProfileEditingArchetypes" placeholder="VD: 2.5D maps, HUD telemetry, chapter cards" />
-                    </label>
-                  </div>
-                  <div class="saas-form-grid saas-grid-3">
-                    <label>Góc nhìn khai thác (Angle)
-                      <input name="narrative_angle" id="channelProfileNarrativeAngle" placeholder="VD: Điều tra Hồ sơ Mật &amp; Pháp y" />
-                    </label>
-                    <label>Phong cách viết &amp; Giọng kể
-                      <input name="writing_style" id="channelProfileWritingStyle" placeholder="VD: Lạnh lùng, Sắc sảo &amp; Đối lập Số liệu" />
-                    </label>
-                    <label>Cấu trúc Hook mở màn
-                      <input name="hook_archetype" id="channelProfileHookArchetype" placeholder="VD: Nghịch lý &amp; Con số Gây sốc (0–30s)" />
-                    </label>
-                  </div>
-                  <div class="saas-form-grid saas-grid-2">
-                    <label>Ý tưởng / Lời dẫn Hook 30s mẫu
-                      <input name="opening_hook" id="channelProfileOpeningHook" placeholder="VD: Câu mở màn ấn tượng của kênh…" />
-                    </label>
-                    <label>Ghi chú &amp; Quy tắc sản xuất riêng (Notes)
-                      <input name="notes" id="channelProfileNotes" placeholder="VD: Nhịp dựng, tông màu, quy tắc riêng của kênh…" />
-                    </label>
-                  </div>
-                </div>
-                <input type="hidden" name="editing_dna" id="channelProfileEditingDna" value="" />
-
-                <div class="dna-rulebook-box saas-subcard" id="channelSeoKeywordDnaBox" style="margin-top:14px;">
-                  <div class="dna-rulebook-head">
-                    <span>🔑 TỪ KHÓA SEO TRỤ CỘT &amp; THƯƠNG HIỆU KÊNH (SEO KEYWORD DNA)</span>
-                    <small>Khóa cứng từ khóa thương hiệu bản ngữ và quy tắc đặt tên để 100% video trên kênh tạo authority đồng nhất.</small>
-                  </div>
-                  <div class="saas-form-grid saas-grid-3">
-                    <label>Từ khóa Tiêu đề Chủ lực (Primary Title Keyword)
-                      <input name="primary_title_keyword" id="channelPrimaryTitleKeyword" placeholder="VD: 중국 실화 사건" />
-                    </label>
-                    <label>Ý nghĩa Tiếng Việt (Vietnamese Meaning)
-                      <input name="primary_title_keyword_meaning_vi" id="channelPrimaryTitleKeywordMeaningVi" placeholder="VD: Vụ Án Có Thật ở Trung Quốc" />
-                    </label>
-                    <label>Quy tắc gắn Từ khóa vào Tiêu đề
-                      <select name="keyword_placement_rule" id="channelKeywordPlacementRule">
-                        <option value="smart_seo_flexible" selected>Linh hoạt thông minh (smart_seo_flexible)</option>
-                        <option value="prefix_bracket">Đầu tiêu đề trong ngoặc vuông [Từ khóa]</option>
-                        <option value="suffix_pipe">Cuối tiêu đề sau gạch đứng | Từ khóa</option>
-                        <option value="natural_hook">Tự nhiên trong câu Hook mở màn</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div class="saas-form-grid saas-grid-3">
-                    <label>Từ khóa ngách lặp lại (Secondary Anchors)
-                      <input name="secondary_anchor_keywords" id="channelSecondaryAnchorKeywords" placeholder="VD: 중국 미제사건, 실제 사건 파일, 공안 수사 기록, 특급수배록" />
-                    </label>
-                    <label>Hashtag bắt buộc (Mandatory Hashtags)
-                      <input name="mandatory_hashtags" id="channelMandatoryHashtags" placeholder="VD: #중국실화사건, #특급수배록, #중국미제사건, #실화사건" />
-                    </label>
-                    <label>Tags YouTube mặc định (Default Tags)
-                      <input name="default_seo_tags" id="channelDefaultSeoTags" placeholder="VD: 중국실화사건, 특급수배록, 중국미제사건, 실제사건파일, 공안수사기록" />
-                    </label>
-                  </div>
-                </div>
-
-                <div class="dna-rulebook-box saas-subcard" id="channelThumbnailDnaBox" style="margin-top:14px;">
-                  <div class="dna-rulebook-head" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div>
-                      <span>🎨 DNA THIẾT KẾ THUMBNAIL KÊNH (THUMBNAIL DESIGN DNA)</span>
-                      <small>Khóa bảng màu nhận diện, font chữ cỡ đại, linh vật mascot và bố cục chuẩn để 100% video tạo visual branding đồng nhất.</small>
-                    </div>
-                    <button class="secondary compact" type="button" id="channelProfileLockThumbnailDnaBtn" title="Khóa cấu hình Thumbnail DNA này vào Hồ sơ kênh" style="white-space:nowrap; padding:4px 10px; font-size:12px;">🔒 Lưu &amp; Khóa DNA Thumbnail Kênh</button>
-                  </div>
-                  <div class="saas-form-grid saas-grid-3">
-                    <label>Phong cách Thumbnail (Style Preset)
-                      <select name="thumbnail_style_preset" id="channelThumbnailStylePreset">
-                        <option value="cold_forensic_noir" selected>Cold Forensic Noir (Điều tra sắc lạnh)</option>
-                        <option value="teukgeup_archival_polaroid">True Crime Polaroid Đối Chứng (특급수배록 DNA)</option>
-                        <option value="cyber_financial_forensic_duality">Tội phạm CNC &amp; Lừa đảo Tài chính (중국 사기 실화 · 4D Faceless + PiP)</option>
-                        <option value="infra_25d_technical">2.5D Technical HUD &amp; Infrastructure</option>
-                        <option value="archival_vault_us">Archival Historical Vault &amp; Dossier</option>
-                        <option value="custom">Tùy chỉnh (Custom)</option>
-                      </select>
-                    </label>
-                    <label>Visual Signature nhận diện
-                      <input name="thumbnail_visual_signature" id="channelThumbnailVisualSignature" placeholder="VD: Cold Forensic Noir + 2D Golden Detective Mascot #FFE84A" />
-                    </label>
-                    <label>Bố cục Khung mẫu (Layout Archetype)
-                      <select name="thumbnail_archetype" id="channelThumbnailArchetype">
-                        <option value="broadcast_left_heavy" selected>Đài SBS Trái (Chủ thể phải 1/3, Chữ trái 2/3)</option>
-                        <option value="bottom_cinematic">Điện ảnh Đáy (Chữ căn giữa/trái dưới)</option>
-                        <option value="split_duality">Hai Bộ Mặt / Khung Ảnh Phụ (PiP)</option>
-                        <option value="evidence_spotlight">Khoanh Vùng Pháp Y (Spotlight Đỏ)</option>
-                        <option value="right_heavy_confrontation">Đối Diện Bên Phải</option>
-                      </select>
-                    </label>
-                  </div>
-                  <div class="saas-form-grid saas-grid-3">
-                    <label>Màu Điểm nhấn chính (Primary Accent / Line 2)
-                      <input type="text" name="thumbnail_color_primary" id="channelThumbnailColorPrimary" placeholder="#FFE84A hoặc #fbbf24" />
-                    </label>
-                    <label>Màu Nhãn cảnh báo (Danger Badge)
-                      <input type="text" name="thumbnail_color_accent" id="channelThumbnailColorAccent" placeholder="#dc2626 hoặc #ef4444" />
-                    </label>
-                    <label>Tông Nền tối (Background Tint)
-                      <input type="text" name="thumbnail_color_bg" id="channelThumbnailColorBg" placeholder="#04070d hoặc #020617" />
-                    </label>
-                  </div>
-                  <div class="saas-form-grid saas-grid-3">
-                    <label>Font chữ Typography chủ đạo
-                      <input name="thumbnail_font_family" id="channelThumbnailFontFamily" placeholder="VD: 'Pretendard ExtraBold', 'Gmarket Sans Bold', sans-serif" />
-                    </label>
-                    <label>Khóa Linh vật / Mascot Kênh
-                      <select name="thumbnail_mascot_lock" id="channelThumbnailMascotLock">
-                        <option value="false">Không khóa mascot</option>
-                        <option value="true">Bật Khóa Linh vật / Character Lock</option>
-                      </select>
-                    </label>
-                    <label>Đường dẫn Ảnh tham chiếu / Mascot
-                      <input name="thumbnail_ref_char_path" id="channelThumbnailRefCharPath" placeholder="VD: workspaces/.../style_reference.png" />
-                    </label>
-                  </div>
-                </div>
-
-                <details class="competitor-details-box" id="competitorDetailsBox">
-                  <summary class="competitor-head">
-                    <span>Kênh đối thủ / kênh mẫu tham khảo <small id="competitorOptionalHint">(Tùy chọn — chỉ dùng khi muốn quét thêm Radar đối thủ)</small></span>
-                    <button class="ghost compact" type="button" id="addCompetitorBtn">+ Thêm kênh</button>
-                  </summary>
-                  <div id="competitorInputs" class="competitor-inputs">
-                    <div class="competitor-input-row"><input name="competitor_ref" placeholder="Dán kênh đối thủ cùng niche (tùy chọn)" /><button class="icon-btn remove-competitor" type="button" title="Bỏ kênh">×</button></div>
-                  </div>
-                </details>
-
-                <div class="button-row channel-profile-save-row">
-                  <button class="primary compact" type="submit" id="saveChannelProfileBtn"><span id="saveChannelProfileLabel">💾 Cập nhật Hồ sơ hiện tại</span></button>
-                  <button class="secondary compact" type="button" id="createNewProfileBtn">＋ Lưu thành Hồ sơ mới</button>
-                  <button class="ghost compact" type="button" id="cloneChannelProfileBtn">⎘ Nhân bản hồ sơ (Clone)</button>
-                  <button class="ghost compact" type="button" id="refreshChannelProfileBtn">↻ Đồng bộ / Quét dữ liệu kênh YouTube</button>
-                </div>
-              </div>
-            </form>
-
-            <details class="saas-market-radar-drawer">
-              <summary class="saas-market-radar-summary">
-                <div>
-                  <span class="saas-section-kicker">TUBERADAR MARKET SCANNER · DÀNH CHO KÊNH MỚI CHƯA CÓ DNA</span>
-                  <strong>📡 Quét thị trường &amp; Tìm ngách mới nổi (Bấm để mở rộng công cụ quét thị trường)</strong>
-                </div>
-                <span class="saas-drawer-badge">Tùy chọn mở rộng ▾</span>
-              </summary>
-              <form id="marketScanForm" class="radar-card saas-studio-card">
-                <div class="radar-card-icon">↗</div>
-                <div class="radar-card-body">
-                  <h3>Kênh mới — tìm ngách/chủ đề đang có cơ hội</h3>
-                  <p>Luồng kiểu TubeRadar: chủ đề mới nổi → cụm đang tăng → nhu cầu tìm kiếm → video breakout.</p>
-                  <div class="saas-form-grid saas-grid-3">
-                    <label>Thị trường<select name="market"><option>KR</option><option>JP</option><option>US</option><option>VN</option></select></label>
-                    <label>Khoảng quét<select name="days"><option value="2">48 giờ</option><option value="7">7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option><option value="90" selected>90 ngày</option></select></label>
-                    <label>Từ khóa định hướng · tùy chọn<input name="seeds" placeholder="Để trống = tự tìm ngách win toàn thị trường" /></label>
-                  </div>
-                  <div class="saas-form-grid saas-grid-5 radar-filter-fields">
-                    <label>Chế độ<select name="niche_granularity"><option value="micro" selected>Micro-niche</option><option value="standard">Chủ đề rộng</option></select></label>
-                    <label>Sub tối đa<input name="max_channel_subscribers" type="number" min="100" max="10000000" step="100" value="100000" /></label>
-                    <label>Tuổi kênh tối đa (ngày)<input name="max_channel_age_days" type="number" min="1" max="3650" value="90" /></label>
-                    <label>Kênh chứng minh ≥<input name="min_proof_channels" type="number" min="3" max="10" value="3" /></label>
-                    <label>Video nổ ≥<input name="min_breakout_videos" type="number" min="4" max="20" value="4" /></label>
-                  </div>
-                  <button class="primary compact" type="submit">Quét thị trường</button>
-                </div>
-              </form>
-            </details>
+          <div class="radar-studio-command-bar">
+            <div class="radar-command-left">
+              <div class="radar-command-badge">🧬</div>
+              <label class="radar-command-picker">
+                <span>Hồ sơ đang chọn</span>
+                <select id="channelProfileSelect"><option value="">Chọn hồ sơ đã lưu…</option></select>
+              </label>
+            </div>
+            <div class="radar-command-actions">
+              <button class="secondary compact" type="button" id="openDnaStudioModalBtn" title="Mở Xưởng Cấu hình DNA Kênh (Popup 5 Tầng)">🧬 Cấu hình DNA Kênh (Popup)</button>
+              <button class="ghost compact dna-preset-btn" type="button" id="presetTrueCrimeCnBtn" title="Nạp chuẩn Hồ sơ Kênh True Crime Hình Sự Trung Quốc (KR · Full AI)">⚡ Mẫu True Crime TQ</button>
+              <button class="ghost compact" type="button" id="newChannelProfileBtn">＋ Tạo profile mới</button>
+              <button class="ghost compact" type="button" id="openSelfLearningModalBtn" title="Mở Báo cáo Giải phẫu Thắng / Thua (Post-Mortem)">🧠 Giải phẫu Thắng/Thua</button>
+              <button class="ghost compact" type="button" id="openMarketScanModalBtn" title="Mở công cụ Quét Thị trường mới TubeRadar">📡 Quét Thị trường</button>
+            </div>
           </div>
 
-          <section class="profile-library-box" aria-labelledby="profileLibraryTitle">
-            <div class="profile-library-head">
-              <div>
-                <span class="profile-library-kicker">HỒ SƠ ĐÃ LƯU</span>
-                <h3 id="profileLibraryTitle">Thư viện hồ sơ kênh</h3>
-                <p>Mỗi card là một hồ sơ DNA kênh. Bấm vào card để xem Quy chuẩn DNA đã khóa, gắn thêm link kênh YouTube hoặc chuyển sang Bước 2 để sản xuất ngay.</p>
+          <div class="radar-studio-split-grid">
+            <section class="profile-library-box" aria-labelledby="profileLibraryTitle">
+              <div class="profile-library-head">
+                <div>
+                  <span class="profile-library-kicker">HỒ SƠ ĐÃ LƯU</span>
+                  <h3 id="profileLibraryTitle">Thư viện hồ sơ kênh</h3>
+                  <p>Bấm vào card để xem Quy chuẩn DNA &amp; Sổ bộ nhớ, sửa DNA trong Popup hoặc chuyển sang Bước 2 sản xuất ngay.</p>
+                </div>
+                <span id="channelProfileCount" class="profile-library-count">0 hồ sơ</span>
               </div>
-              <span id="channelProfileCount" class="profile-library-count">0 hồ sơ</span>
-            </div>
-            <div id="channelProfileCards" class="channel-profile-cards"></div>
-          </section>
+              <div id="channelProfileCards" class="channel-profile-cards"></div>
+            </section>
 
-          <section class="self-learning-report-card wide" id="selfLearningReportBox" style="margin-top:20px;padding:16px 20px;background:rgba(18,24,36,0.95);border:1px solid rgba(0,200,255,0.25);border-radius:12px;">
-            <div class="self-learning-head" style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px;">
-              <div>
-                <span class="self-learning-eyebrow" style="font-size:11px;font-weight:800;letter-spacing:1px;color:#00c8ff;">🧠 CONTINUOUS SELF-LEARNING &amp; POST-MORTEM ENGINE</span>
-                <h3 id="selfLearningHeadline" style="margin:4px 0 2px;font-size:16px;color:#f1f5f9;">Báo cáo Giải phẫu Thắng / Thua &amp; Quy tắc Nâng cấp Video Kế tiếp</h3>
-                <p id="selfLearningSubtitle" style="margin:0;font-size:12.5px;color:#94a3b8;">Phân loại video Outlier Nổ View vs Thua Kém, mổ xẻ nguyên nhân thất bại và tự động tổng hợp bộ quy tắc tiến hóa cho video tiếp theo.</p>
+            <section class="radar-results-column">
+              <div class="radar-toolbar">
+                <div><strong>Kết quả Đề xuất / Radar</strong><span id="radarResultHint">Chưa có lần quét trong phiên này.</span></div>
+                <div class="scan-loader"><input id="scanIdInput" type="number" min="1" placeholder="Mã lượt quét" /><button class="ghost compact" id="loadScanBtn">Mở lượt quét</button></div>
               </div>
-              <div style="display:flex;gap:8px;">
-                <button type="button" class="primary compact" id="runSelfLearningBtn">⚡ Chạy Phân Tích Post-Mortem</button>
-              </div>
-            </div>
-            <div id="selfLearningContent" class="self-learning-content">
-              <div class="empty-state">Chọn một hồ sơ kênh ở trên để xem phân tích Thắng/Thua và bộ quy tắc tiến hóa video.</div>
-            </div>
-          </section>
+              <div id="radarResults" class="topic-results"><div class="empty-state">Chọn Hồ sơ Kênh bên trái để gợi ý đề tài theo DNA cố định, hoặc bấm 📡 Quét Thị trường để tìm ngách mới.</div></div>
+            </section>
+          </div>
 
-          <dialog id="channelProfileDialog" class="channel-profile-dialog">
-            <div class="channel-profile-dialog-shell">
+          <dialog id="dnaStudioEditorDialog" class="channel-profile-dialog agent-office-dialog studio-modal-xl">
+            <div class="ao-shell">
+              <header class="ao-header">
+                <div class="ao-header-left">
+                  <div class="ao-brand-badge">🧬</div>
+                  <div class="ao-header-titles">
+                    <h3 id="dnaStudioDialogTitle">XƯỞNG CẤU HÌNH DNA HỒ SƠ KÊNH · 5 TẦNG CHUYÊN GIA</h3>
+                    <p>Khóa cứng Ngôn ngữ, Thời lượng, Bộ lọc Xanh tiền, Màu Giọng 1-of-1, Công thức Edit Remotion &amp; SEO/Thumbnail riêng biệt</p>
+                  </div>
+                </div>
+                <div class="ao-header-controls">
+                  <span class="dialog-toast-pill" id="dnaDialogToastPill"></span>
+                  <button class="icon-btn channel-profile-dialog-close" type="button" id="closeDnaStudioDialogBtn" title="Đóng (Esc)">×</button>
+                </div>
+              </header>
+
+              <nav class="dna-studio-tabs-nav" id="dnaStudioTabsNav" aria-label="Các tầng cấu hình DNA Kênh">
+                <button type="button" class="dna-studio-tab-btn active" data-dna-tab="identity">🧬 1. Định danh &amp; Kênh</button>
+                <button type="button" class="dna-studio-tab-btn" data-dna-tab="rulebook">🛡️ 2. Bộ lọc Xanh tiền</button>
+                <button type="button" class="dna-studio-tab-btn" data-dna-tab="voice">🎙️ 3. Màu Giọng &amp; Nhịp</button>
+                <button type="button" class="dna-studio-tab-btn" data-dna-tab="editing">🎬 4. Lối Edit Remotion</button>
+                <button type="button" class="dna-studio-tab-btn" data-dna-tab="seothumb">🔑 5. SEO &amp; Thumbnail</button>
+              </nav>
+
+              <form id="channelProfileForm" class="radar-card channel-profile-card saas-studio-card">
+                <div class="radar-card-icon">🧬</div>
+                <div class="radar-card-body">
+                  <div class="studio-modal-body">
+                    <div class="dna-tab-pane active" data-dna-pane="identity">
+                      <div class="saas-form-grid saas-grid-4">
+                        <label class="span-2">Tên hồ sơ kênh<input name="label" placeholder="Ví dụ: Hồ sơ Kênh True Crime Hình Sự Trung Quốc (KR · Full AI)" /></label>
+                        <label>Thị trường<select name="market"><option value="KR">KR (Hàn Quốc)</option><option value="JP">JP (Nhật Bản)</option><option value="US">US (Mỹ / Quốc tế)</option><option value="VN">VN (Việt Nam)</option></select></label>
+                        <label>Ngôn ngữ<select name="default_language"><option value="ko">Tiếng Hàn (KR)</option><option value="ja">Tiếng Nhật (JP)</option><option value="en">Tiếng Anh (US)</option><option value="vi">Tiếng Việt (VN)</option></select></label>
+                      </div>
+
+                      <div class="saas-form-grid saas-grid-4">
+                        <label>Thời lượng mặc định (Chọn nhanh hoặc nhập số phút)<div class="duration-combo-row" style="display:flex;gap:8px;align-items:center;"><select name="default_duration_minutes" id="profileDefaultDurationSelect" style="flex:1.2;"><option value="2">2 phút</option><option value="5">5 phút</option><option value="8">8 phút</option><option value="10">10 phút</option><option value="15">15 phút</option><option value="20" selected>20 phút</option><option value="22">22 phút (Chuẩn điều tra)</option><option value="25">25 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút (Long-form / Tâm linh)</option><option value="75">75 phút</option><option value="90">90 phút</option><option value="120">120 phút</option></select><input type="number" id="profileCustomDurationInput" min="2" max="180" step="1" value="20" placeholder="Nhập phút (VD: 22)" title="Nhập thời lượng mong muốn bất kỳ (từ 2 đến 180 phút)" style="flex:0.85;min-width:105px;" /></div></label>
+                        <label>Chiến lược Hình ảnh mặc định
+                          <select name="default_visual_strategy">
+                            <option value="full_ai" selected>100% Full AI (full_ai) — Khóa theo Ảnh tham chiếu</option>
+                            <option value="edit_direct_footage">Bán Content: AI tải Footage lúc Edit + Vài ảnh AI (Bỏ qua Bước 4)</option>
+                            <option value="hybrid">Kết hợp Footage thật + AI (hybrid)</option>
+                            <option value="evidence_footage">Bằng chứng thật + AI tái hiện (evidence_footage)</option>
+                            <option value="full_footage">100% Footage tư liệu (full_footage)</option>
+                          </select>
+                        </label>
+                        <label>Chế độ vận hành DNA Kênh
+                          <select name="dna_mode" id="profileDnaModeSelect">
+                            <option value="custom_dna_only" selected>🔒 Thuần DNA cố định (Không ép qua Radar)</option>
+                            <option value="auto_radar">📡 Chế độ AUTO (Kết hợp quét Radar 48h &amp; Đối thủ)</option>
+                          </select>
+                        </label>
+                        <label>Kênh YouTube của mình <small>(tùy chọn nếu chưa có kênh)</small>
+                          <input name="own_channel_ref" placeholder="Dán @handle, URL hoặc UC..." />
+                        </label>
+                      </div>
+
+                      <details class="competitor-details-box" id="competitorDetailsBox" open>
+                        <summary class="competitor-head">
+                          <span>Kênh đối thủ / kênh mẫu tham khảo <small id="competitorOptionalHint">(Tùy chọn — chỉ dùng khi muốn quét thêm Radar đối thủ)</small></span>
+                          <button class="ghost compact" type="button" id="addCompetitorBtn">+ Thêm kênh</button>
+                        </summary>
+                        <div id="competitorInputs" class="competitor-inputs">
+                          <div class="competitor-input-row"><input name="competitor_ref" placeholder="Dán kênh đối thủ cùng niche (tùy chọn)" /><button class="icon-btn remove-competitor" type="button" title="Bỏ kênh">×</button></div>
+                        </div>
+                      </details>
+                    </div>
+
+                    <div class="dna-tab-pane" data-dna-pane="rulebook">
+                      <div class="dna-rulebook-box saas-subcard" id="channelDnaRulebookFields">
+                        <div class="dna-rulebook-head">
+                          <span>🛡️ BỘ LỌC ĐỀ TÀI &amp; AN TOÀN KIẾM TIỀN XANH TIỀN (100% GREEN MONETIZATION)</span>
+                          <small>Khóa cứng cho từng kênh để AI và người dùng thủ công luôn đi đúng tuyến nội dung, không vi phạm chính sách YouTube.</small>
+                        </div>
+                        <div class="saas-form-grid saas-grid-2">
+                          <label>Giọng kể &amp; Cấu trúc chuẩn
+                            <input name="voice_and_structure" placeholder="VD: Hàn Quốc (KR) — Giọng kể điều tra sắc lạnh (그것이 알고싶다 / 꼬꼬무 style) · 5 Hồi" />
+                          </label>
+                          <label>Quy chuẩn Ảnh tham chiếu (Reference Image)
+                            <input name="reference_image_policy" placeholder="VD: 100% Full AI — Nhận Ảnh tham chiếu đầu dự án khóa phong cách toàn bộ phân cảnh" />
+                          </label>
+                        </div>
+                        <div class="saas-form-grid saas-grid-2">
+                          <label class="channel-profile-field">
+                            <span class="dna-tag-allow">✅ CHỈ CHỌN (Bộ lọc Đề tài bắt buộc)</span>
+                            <textarea name="allowed_topics" rows="2" placeholder="VD: Trọng án hình sự có thật tại Trung Quốc — Tội phạm IQ cao xóa dấu vết, lẩn trốn 10–30 năm, đấu trí pháp y..."></textarea>
+                          </label>
+                          <label class="channel-profile-field">
+                            <span class="dna-tag-green">💚 NGÔI KỂ &amp; GÓC KỂ XANH TIỀN (Green Monetization)</span>
+                            <textarea name="monetization_safety_policy" rows="2" placeholder="VD: Ngôi thứ 3 theo góc nhìn Hồ sơ Điều tra viên Hình sự — Cắt bỏ 100% máu me trực diện, tập trung vào vật chứng pháp y..."></textarea>
+                          </label>
+                        </div>
+                        <label class="channel-profile-field">
+                          <span class="dna-tag-forbid">🚫 CẤM TUYỆT ĐỐI (Chặn sạch đề tài gây lệch DNA kênh)</span>
+                          <input name="forbidden_topics" placeholder="VD: Án kinh tế, tham nhũng quan chức, hối lộ, chính trị, hạ tầng." />
+                        </label>
+                        <label class="channel-profile-field">
+                          <span class="dna-tag-allow">🎯 ROLE CTA LINH HOẠT THEO CÂU CHUYỆN &amp; ĐA DẠNG CẤU TRÚC CÂU (KHÔNG BAO GIỜ LẶP LẠI CTA)</span>
+                          <textarea name="cta_strategy" rows="3" placeholder="VD: Cấm tuyệt đối lặp lại CTA trong cùng tập hoặc giữa các tập. Tối đa 0 hoặc 1 nhịp kết nối duy nhất mọc tự nhiên từ mạch truyện; luân phiên biến hóa cấu trúc câu — cấm mẫu '~하시려면 구독과... 눌러 주시기 바랍니다'."></textarea>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="dna-tab-pane" data-dna-pane="voice">
+                      <div class="dna-rulebook-box voice-rhythm-studio-box saas-subcard" id="channelVoiceRhythmStudioBox">
+                        <div class="dna-rulebook-head voice-rhythm-head">
+                          <div>
+                            <span>🎙️ CHUYÊN GIA PHÂN TÍCH &amp; THIẾT KẾ MÀU GIỌNG · NHỊP KỂ ĐỘC BẢN (VOICE &amp; RHYTHM DNA)</span>
+                            <small>Mỗi hồ sơ sở hữu đúng 1 màu giọng 1-of-1 riêng (điêu khắc từ mẫu gốc sạch <b>K1</b> hoặc clone từ file mẫu bạn tải lên) và đồng bộ 3 tầng nhịp: <b>Nhịp Viết (@script) → Nhịp Đọc (@voice) → Cảm Nhận Nhịp Dựng (@edit)</b>.</small>
+                          </div>
+                          <span class="voice-signature-badge" id="channelVoiceSignatureBadge">Chưa khóa màu giọng riêng</span>
+                        </div>
+
+                        <div class="voice-rhythm-toggle-row">
+                          <label class="voice-auto-toggle-label">
+                            <input type="checkbox" id="channelAutoDesignVoiceToggle" checked />
+                            <span>✨ <b>Tự động kích hoạt Chuyên Gia Voice &amp; Nhịp</b> để phân tích thể loại và tạo màu giọng riêng ngay khi bấm Tạo / Lưu hồ sơ</span>
+                          </label>
+                        </div>
+
+                        <div class="saas-form-grid saas-grid-3">
+                          <label>Nguồn Thiết Kế Màu Giọng Riêng
+                            <select id="channelVoiceSourceMode">
+                              <option value="base_voice" selected>🎛️ Điêu khắc từ Giọng Mẫu Sạch Gốc (Chuẩn K1 cho KR)</option>
+                              <option value="user_sample">🎤 Tải file mẫu giọng riêng để Clone &amp; Phối màu (WAV/MP3/M4A)</option>
+                            </select>
+                          </label>
+                          <label id="channelBaseMasterVoiceField">Giọng Mẫu Sạch Gốc (1st-Gen Clean Master)
+                            <select id="channelBaseMasterVoiceSelect">
+                              <option value="09c70cc1-cc86-4905-b65b-3967209c3175" selected>K1 — Giọng Mẫu Sạch Chuẩn Gốc KR (ko)</option>
+                              <option value="0d3edf08-7c0b-4f6f-b1bf-3bdfec8922ed">Jon US Già — Clean Archival Master (en)</option>
+                              <option value="b4c2376b-3d63-461a-a849-367e37261e4a">Jon — Clean Investigative Master (en)</option>
+                              <option value="262cf97e-c145-44ba-92a6-2dd36db1146e">PC Nam — Clean Investigative Master (vi)</option>
+                              <option value="f0670e81-6361-4567-b93c-2685b98c9a4e">Nhật — Clean Documentary Master (ja)</option>
+                            </select>
+                          </label>
+                          <label>Chỉ Đạo Màu Giọng &amp; Cảm Nhận Nhịp (Tùy chọn)
+                            <input type="text" id="channelVoiceCustomDirection" placeholder="VD: Trầm ấm đêm khuya hơn, nghỉ lấy hơi sâu ở câu lật hồ sơ…" />
+                          </label>
+                        </div>
+
+                        <div class="saas-form-grid saas-grid-2 hidden" id="channelVoiceSampleUploadRow">
+                          <label>File Mẫu Giọng Tải Lên (6s–30s sạch, không nhạc nền · WAV/MP3/M4A)
+                            <input type="file" id="channelVoiceSampleFile" accept=".wav,.mp3,.m4a,.ogg,.webm,audio/*" />
+                          </label>
+                          <label>Lời Thoại Trong File Mẫu (Tùy chọn — giúp Clone chuẩn khẩu hình hơn)
+                            <input type="text" id="channelVoiceSampleRefText" placeholder="Nhập câu thoại trong file mẫu hoặc để trống cho Whisper tự nhận diện…" />
+                          </label>
+                        </div>
+
+                        <div class="voice-rhythm-action-bar">
+                          <div class="voice-rhythm-btns">
+                            <button type="button" class="secondary compact" id="analyzeChannelVoiceRhythmBtn">🧠 Phân Tích Thể Loại &amp; Nhịp 3 Tầng</button>
+                            <button type="button" class="primary compact" id="designChannelVoiceNowBtn">🎙️ Thiết Kế &amp; Khóa Màu Giọng Độc Bản Ngay</button>
+                          </div>
+                          <div class="voice-signature-player-wrap hidden" id="channelVoiceSignatureAudioWrap">
+                            <span class="voice-signature-meta" id="channelVoiceSignatureMeta">Màu giọng riêng của hồ sơ</span>
+                            <audio id="channelVoiceSignatureAudio" controls preload="none"></audio>
+                          </div>
+                        </div>
+
+                        <div class="rhythm-dna-cards-grid" id="channelRhythmDnaCards">
+                          <div class="rhythm-dna-empty">Chọn một hồ sơ hoặc bấm <b>🧠 Phân Tích Thể Loại &amp; Nhịp 3 Tầng</b> để xem bản phối đồng bộ Nhịp Viết · Màu Giọng · Cảm Nhận Nhịp Dựng riêng cho kênh.</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="dna-tab-pane" data-dna-pane="editing">
+                      <div class="dna-editing-studio-box saas-subcard" id="channelEditingDnaStudio">
+                        <div class="dna-rulebook-head">
+                          <span>🎬 LỐI EDIT RIÊNG &amp; CÔNG THỨC DỰNG REMOTION CỦA KÊNH (EDITING DNA)</span>
+                          <small>Thiết lập sẵn lối dựng riêng cho kênh này (hoặc tự động cập nhật khi bạn bấm "Chốt Mẫu Edit Chuẩn" ở Bước 06 · Edit).</small>
+                        </div>
+                        <div class="saas-form-grid saas-grid-4">
+                          <label class="span-2">Preset Lối Edit Chuẩn của Kênh
+                            <select id="channelProfileEditingPreset">
+                              <option value="infra_25d_dossier">📐 Điều tra Hạ tầng &amp; Kỹ thuật 2.5D (@판세의이면 · 22p Hybrid)</option>
+                              <option value="true_crime_noir_ai">🕵️ Hồ sơ Trọng án Hình sự Noir (꼬꼬무 / 그것이 알고싶다 · 30p Full AI)</option>
+                              <option value="archival_vault_us">🏛️ Lưu trữ Lịch sử &amp; Hồ sơ Giải mật (@TheFirstFamilyVault · 30p Archival)</option>
+                              <option value="custom">⚙️ Tùy chỉnh công thức Edit riêng cho kênh</option>
+                            </select>
+                          </label>
+                          <label>Nhịp cắt (giây/beat)
+                            <input type="number" id="channelProfilePacingSec" step="0.5" min="2" max="15" value="6.0" />
+                          </label>
+                          <label>AI Media mặc định
+                            <select name="default_ai_media_mode" id="channelProfileAiMediaMode">
+                              <option value="image" selected>Chỉ ảnh (image)</option>
+                              <option value="mixed">Kết hợp (mixed)</option>
+                              <option value="video">Chỉ video (video)</option>
+                            </select>
+                          </label>
+                        </div>
+                        <div class="saas-form-grid saas-grid-3">
+                          <label>Tỷ lệ pha trộn Visual Mix (Footage / AI / Motion)
+                            <input id="channelProfileVisualMix" placeholder="VD: 40% Footage · 40% AI · 20% Motion 2.5D" />
+                          </label>
+                          <label>Tông màu &amp; Khí sắc (Color Grade)
+                            <input id="channelProfileColorGrade" placeholder="VD: Cold Tech Cyan / Dark Forensic Noir" />
+                          </label>
+                          <label>Ngữ pháp Dựng Remotion (Editing Archetypes)
+                            <input name="editing_archetypes" id="channelProfileEditingArchetypes" placeholder="VD: 2.5D maps, HUD telemetry, chapter cards" />
+                          </label>
+                        </div>
+                        <div class="saas-form-grid saas-grid-3">
+                          <label>Góc nhìn khai thác (Angle)
+                            <input name="narrative_angle" id="channelProfileNarrativeAngle" placeholder="VD: Điều tra Hồ sơ Mật &amp; Pháp y" />
+                          </label>
+                          <label>Phong cách viết &amp; Giọng kể
+                            <input name="writing_style" id="channelProfileWritingStyle" placeholder="VD: Lạnh lùng, Sắc sảo &amp; Đối lập Số liệu" />
+                          </label>
+                          <label>Cấu trúc Hook mở màn
+                            <input name="hook_archetype" id="channelProfileHookArchetype" placeholder="VD: Nghịch lý &amp; Con số Gây sốc (0–30s)" />
+                          </label>
+                        </div>
+                        <div class="saas-form-grid saas-grid-2">
+                          <label>Ý tưởng / Lời dẫn Hook 30s mẫu
+                            <input name="opening_hook" id="channelProfileOpeningHook" placeholder="VD: Câu mở màn ấn tượng của kênh…" />
+                          </label>
+                          <label>Ghi chú &amp; Quy tắc sản xuất riêng (Notes)
+                            <input name="notes" id="channelProfileNotes" placeholder="VD: Nhịp dựng, tông màu, quy tắc riêng của kênh…" />
+                          </label>
+                        </div>
+                      </div>
+                      <input type="hidden" name="editing_dna" id="channelProfileEditingDna" value="" />
+                    </div>
+
+                    <div class="dna-tab-pane" data-dna-pane="seothumb">
+                      <div class="dna-rulebook-box saas-subcard" id="channelSeoKeywordDnaBox">
+                        <div class="dna-rulebook-head">
+                          <span>🔑 TỪ KHÓA SEO TRỤ CỘT &amp; THƯƠNG HIỆU KÊNH (SEO KEYWORD DNA)</span>
+                          <small>Khóa cứng từ khóa thương hiệu bản ngữ và quy tắc đặt tên để 100% video trên kênh tạo authority đồng nhất.</small>
+                        </div>
+                        <div class="saas-form-grid saas-grid-3">
+                          <label>Từ khóa Tiêu đề Chủ lực (Primary Title Keyword)
+                            <input name="primary_title_keyword" id="channelPrimaryTitleKeyword" placeholder="VD: 중국 실화 사건" />
+                          </label>
+                          <label>Ý nghĩa Tiếng Việt (Vietnamese Meaning)
+                            <input name="primary_title_keyword_meaning_vi" id="channelPrimaryTitleKeywordMeaningVi" placeholder="VD: Vụ Án Có Thật ở Trung Quốc" />
+                          </label>
+                          <label>Quy tắc gắn Từ khóa vào Tiêu đề
+                            <select name="keyword_placement_rule" id="channelKeywordPlacementRule">
+                              <option value="smart_seo_flexible" selected>Linh hoạt thông minh (smart_seo_flexible)</option>
+                              <option value="prefix_bracket">Đầu tiêu đề trong ngoặc vuông [Từ khóa]</option>
+                              <option value="suffix_pipe">Cuối tiêu đề sau gạch đứng | Từ khóa</option>
+                              <option value="natural_hook">Tự nhiên trong câu Hook mở màn</option>
+                            </select>
+                          </label>
+                        </div>
+                        <div class="saas-form-grid saas-grid-3">
+                          <label>Từ khóa ngách lặp lại (Secondary Anchors)
+                            <input name="secondary_anchor_keywords" id="channelSecondaryAnchorKeywords" placeholder="VD: 중국 미제사건, 실제 사건 파일, 공안 수사 기록, 특급수배록" />
+                          </label>
+                          <label>Hashtag bắt buộc (Mandatory Hashtags)
+                            <input name="mandatory_hashtags" id="channelMandatoryHashtags" placeholder="VD: #중국실화사건, #특급수배록, #중국미제사건, #실화사건" />
+                          </label>
+                          <label>Tags YouTube mặc định (Default Tags)
+                            <input name="default_seo_tags" id="channelDefaultSeoTags" placeholder="VD: 중국실화사건, 특급수배록, 중국미제사건, 실제사건파일, 공안수사기록" />
+                          </label>
+                        </div>
+                      </div>
+
+                      <div class="dna-rulebook-box saas-subcard" id="channelThumbnailDnaBox">
+                        <div class="dna-rulebook-head" style="display:flex; justify-content:space-between; align-items:center;">
+                          <div>
+                            <span>🎨 DNA THIẾT KẾ THUMBNAIL KÊNH (THUMBNAIL DESIGN DNA)</span>
+                            <small>Khóa bảng màu nhận diện, font chữ cỡ đại, linh vật mascot và bố cục chuẩn để 100% video tạo visual branding đồng nhất.</small>
+                          </div>
+                          <button class="secondary compact" type="button" id="channelProfileLockThumbnailDnaBtn" title="Khóa cấu hình Thumbnail DNA này vào Hồ sơ kênh" style="white-space:nowrap;">🔒 Lưu &amp; Khóa DNA Thumbnail Kênh</button>
+                        </div>
+                        <div class="saas-form-grid saas-grid-3">
+                          <label>Phong cách Thumbnail (Style Preset)
+                            <select name="thumbnail_style_preset" id="channelThumbnailStylePreset">
+                              <option value="cold_forensic_noir" selected>Cold Forensic Noir (Điều tra sắc lạnh)</option>
+                              <option value="teukgeup_archival_polaroid">True Crime Polaroid Đối Chứng (특급수배록 DNA)</option>
+                              <option value="cyber_financial_forensic_duality">Tội phạm CNC &amp; Lừa đảo Tài chính (중국 사기 실화 · 4D Faceless + PiP)</option>
+                              <option value="infra_25d_technical">2.5D Technical HUD &amp; Infrastructure</option>
+                              <option value="archival_vault_us">Archival Historical Vault &amp; Dossier</option>
+                              <option value="custom">Tùy chỉnh (Custom)</option>
+                            </select>
+                          </label>
+                          <label>Visual Signature nhận diện
+                            <input name="thumbnail_visual_signature" id="channelThumbnailVisualSignature" placeholder="VD: Cold Forensic Noir + 2D Golden Detective Mascot #FFE84A" />
+                          </label>
+                          <label>Bố cục Khung mẫu (Layout Archetype)
+                            <select name="thumbnail_archetype" id="channelThumbnailArchetype">
+                              <option value="broadcast_left_heavy" selected>Đài SBS Trái (Chủ thể phải 1/3, Chữ trái 2/3)</option>
+                              <option value="bottom_cinematic">Điện ảnh Đáy (Chữ căn giữa/trái dưới)</option>
+                              <option value="split_duality">Hai Bộ Mặt / Khung Ảnh Phụ (PiP)</option>
+                              <option value="evidence_spotlight">Khoanh Vùng Pháp Y (Spotlight Đỏ)</option>
+                              <option value="right_heavy_confrontation">Đối Diện Bên Phải</option>
+                            </select>
+                          </label>
+                        </div>
+                        <div class="saas-form-grid saas-grid-3">
+                          <label>Màu Điểm nhấn chính (Primary Accent / Line 2)
+                            <input type="text" name="thumbnail_color_primary" id="channelThumbnailColorPrimary" placeholder="#FFE84A hoặc #fbbf24" />
+                          </label>
+                          <label>Màu Nhãn cảnh báo (Danger Badge)
+                            <input type="text" name="thumbnail_color_accent" id="channelThumbnailColorAccent" placeholder="#dc2626 hoặc #ef4444" />
+                          </label>
+                          <label>Tông Nền tối (Background Tint)
+                            <input type="text" name="thumbnail_color_bg" id="channelThumbnailColorBg" placeholder="#04070d hoặc #020617" />
+                          </label>
+                        </div>
+                        <div class="saas-form-grid saas-grid-3">
+                          <label>Font chữ Typography chủ đạo
+                            <input name="thumbnail_font_family" id="channelThumbnailFontFamily" placeholder="VD: 'Pretendard ExtraBold', 'Gmarket Sans Bold', sans-serif" />
+                          </label>
+                          <label>Khóa Linh vật / Mascot Kênh
+                            <select name="thumbnail_mascot_lock" id="channelThumbnailMascotLock">
+                              <option value="false">Không khóa mascot</option>
+                              <option value="true">Bật Khóa Linh vật / Character Lock</option>
+                            </select>
+                          </label>
+                          <label>Đường dẫn Ảnh tham chiếu / Mascot
+                            <input name="thumbnail_ref_char_path" id="channelThumbnailRefCharPath" placeholder="VD: workspaces/.../style_reference.png" />
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="studio-modal-footer button-row channel-profile-save-row">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                      <button class="primary compact" type="submit" id="saveChannelProfileBtn"><span id="saveChannelProfileLabel">💾 Cập nhật Hồ sơ hiện tại</span></button>
+                      <button class="secondary compact" type="button" id="createNewProfileBtn">＋ Lưu thành Hồ sơ mới</button>
+                      <button class="ghost compact" type="button" id="cloneChannelProfileBtn">⎘ Nhân bản hồ sơ (Clone)</button>
+                      <button class="ghost compact" type="button" id="refreshChannelProfileBtn">↻ Đồng bộ / Quét dữ liệu kênh YouTube</button>
+                    </div>
+                    <button class="ghost compact" type="button" data-close-dialog="dnaStudioEditorDialog">Đóng cửa sổ</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </dialog>
+
+          <dialog id="selfLearningDialog" class="channel-profile-dialog agent-office-dialog studio-modal-lg">
+            <div class="ao-shell">
+              <header class="ao-header">
+                <div class="ao-header-left">
+                  <div class="ao-brand-badge">🧠</div>
+                  <div class="ao-header-titles">
+                    <h3 id="selfLearningHeadline">BÁO CÁO GIẢI PHẪU THẮNG / THUA &amp; QUY TẮC TIẾN HÓA</h3>
+                    <p id="selfLearningSubtitle">Phân loại video Outlier Nổ View vs Thua Kém, mổ xẻ nguyên nhân và tổng hợp bộ quy tắc tiến hóa cho video kế tiếp.</p>
+                  </div>
+                </div>
+                <div class="ao-header-controls">
+                  <span class="dialog-toast-pill"></span>
+                  <button type="button" class="primary compact" id="runSelfLearningBtn">⚡ Chạy Phân Tích Post-Mortem</button>
+                  <button class="icon-btn channel-profile-dialog-close" type="button" data-close-dialog="selfLearningDialog" title="Đóng (Esc)">×</button>
+                </div>
+              </header>
+              <div class="studio-modal-body" id="selfLearningReportBox">
+                <div id="selfLearningContent" class="self-learning-content">
+                  <div class="empty-state">Chọn một hồ sơ kênh để xem phân tích Thắng/Thua và bộ quy tắc tiến hóa video.</div>
+                </div>
+              </div>
+            </div>
+          </dialog>
+
+          <dialog id="marketScanDialog" class="channel-profile-dialog agent-office-dialog studio-modal-md">
+            <div class="ao-shell">
+              <header class="ao-header">
+                <div class="ao-header-left">
+                  <div class="ao-brand-badge">📡</div>
+                  <div class="ao-header-titles">
+                    <h3>QUÉT THỊ TRƯỜNG &amp; TÌM NGÁCH MỚI NỔI (TUBERADAR)</h3>
+                    <p>Chủ đề mới nổi → cụm đang tăng → nhu cầu tìm kiếm → video breakout</p>
+                  </div>
+                </div>
+                <div class="ao-header-controls">
+                  <span class="dialog-toast-pill"></span>
+                  <button class="icon-btn channel-profile-dialog-close" type="button" data-close-dialog="marketScanDialog" title="Đóng (Esc)">×</button>
+                </div>
+              </header>
+              <div class="studio-modal-body">
+                <form id="marketScanForm" class="radar-card saas-studio-card" style="background:transparent !important;border:none !important;box-shadow:none !important;padding:0 !important;">
+                  <div class="radar-card-body">
+                    <div class="saas-form-grid saas-grid-3">
+                      <label>Thị trường<select name="market"><option>KR</option><option>JP</option><option>US</option><option>VN</option></select></label>
+                      <label>Khoảng quét<select name="days"><option value="2">48 giờ</option><option value="7">7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option><option value="90" selected>90 ngày</option></select></label>
+                      <label>Từ khóa định hướng · tùy chọn<input name="seeds" placeholder="Để trống = tự tìm ngách win toàn thị trường" /></label>
+                    </div>
+                    <div class="saas-form-grid saas-grid-5 radar-filter-fields" style="margin-top:10px;">
+                      <label>Chế độ<select name="niche_granularity"><option value="micro" selected>Micro-niche</option><option value="standard">Chủ đề rộng</option></select></label>
+                      <label>Sub tối đa<input name="max_channel_subscribers" type="number" min="100" max="10000000" step="100" value="100000" /></label>
+                      <label>Tuổi kênh tối đa (ngày)<input name="max_channel_age_days" type="number" min="1" max="3650" value="90" /></label>
+                      <label>Kênh chứng minh ≥<input name="min_proof_channels" type="number" min="3" max="10" value="3" /></label>
+                      <label>Video nổ ≥<input name="min_breakout_videos" type="number" min="4" max="20" value="4" /></label>
+                    </div>
+                    <div style="margin-top:14px;display:flex;justify-content:flex-end;gap:8px;">
+                      <button class="ghost compact" type="button" data-close-dialog="marketScanDialog">Đóng</button>
+                      <button class="primary compact" type="submit">📡 Bắt đầu Quét thị trường</button>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </dialog>
+
+          <dialog id="channelProfileDialog" class="channel-profile-dialog studio-modal-lg">
+            <div class="channel-profile-dialog-shell studio-modal-body">
               <div class="channel-profile-dialog-head">
                 <div>
                   <span class="profile-library-kicker">HỒ SƠ KÊNH</span>
@@ -526,12 +661,6 @@
               <p class="channel-profile-note-muted"><small>Tube/Cofi Radar thu dữ liệu công khai</small></p>
             </div>
           </dialog>
-
-          <div class="radar-toolbar">
-            <div><strong>Kết quả Đề xuất / Radar</strong><span id="radarResultHint">Chưa có lần quét trong phiên này.</span></div>
-            <div class="scan-loader"><input id="scanIdInput" type="number" min="1" placeholder="Mã lượt quét" /><button class="ghost compact" id="loadScanBtn">Mở lượt quét</button></div>
-          </div>
-          <div id="radarResults" class="topic-results"><div class="empty-state">Chọn Hồ sơ Kênh ở trên để chạy theo DNA cố định, hoặc quét thị trường khi muốn dò tìm ngách mới.</div></div>
         </div>
 
         <div class="topic-pane" data-topic-pane="manual">
@@ -551,55 +680,96 @@
         <form id="jobForm" class="production-form">
           <div class="form-main">
             <input type="hidden" name="title" id="createTitleInput" />
-            <label class="wide">
-              <span>Hồ sơ nội dung / DNA kênh</span>
-              <select name="channel_profile_id" id="createChannelProfileSelect"><option value="">Chọn hồ sơ kênh để nạp DNA &amp; quy chuẩn sản xuất</option></select>
-              <small class="field-help" id="createProfileHelpText">Khi chọn hồ sơ, toàn bộ Thị trường, Ngôn ngữ, Thời lượng mục tiêu, Chiến lược Hình ảnh, Công thức Edit và Bộ lọc Đề tài Xanh tiền sẽ tự động khóa 100% theo đúng hồ sơ đang chọn.</small>
-            </label>
+
+            <div class="create-top-config-strip">
+              <label>
+                <span>Hồ sơ nội dung / DNA kênh</span>
+                <select name="channel_profile_id" id="createChannelProfileSelect"><option value="">Chọn hồ sơ kênh để nạp DNA &amp; quy chuẩn sản xuất</option></select>
+                <small class="field-help hidden" id="createProfileHelpText">Đã khóa 100% quy chuẩn theo hồ sơ.</small>
+              </label>
+              <label><span>Thị trường</span><select name="market"><option value="KR">KR</option><option value="JP">JP</option><option value="US">US</option><option value="VN">VN</option></select></label>
+              <label><span>Ngôn ngữ</span><select name="language"><option value="ko">Tiếng Hàn</option><option value="ja">Tiếng Nhật</option><option value="en">Tiếng Anh</option><option value="vi">Tiếng Việt</option></select></label>
+              <label><span>Thời lượng (Phút)</span><div class="duration-combo-row" style="display:flex;gap:6px;align-items:center;"><select name="target_duration_minutes" id="createTargetDurationSelect" style="flex:1.15;"><option value="2">2 phút</option><option value="5">5 phút</option><option value="8">8 phút</option><option value="10">10 phút</option><option value="15">15 phút</option><option value="20" selected>20 phút</option><option value="22">22 phút</option><option value="25">25 phút</option><option value="30">30 phút</option><option value="45">45 phút</option><option value="60">60 phút</option><option value="75">75 phút</option><option value="90">90 phút</option><option value="120">120 phút</option></select><input type="number" id="createCustomDurationInput" min="2" max="180" step="1" value="20" placeholder="Phút" title="Nhập thời lượng mong muốn bất kỳ (từ 2 đến 180 phút)" style="width:74px;" /></div></label>
+            </div>
 
             <div id="createProfileDnaSummary" class="create-profile-dna-summary wide hidden"></div>
 
-            <section class="create-preflight-card wide" id="createPreflightSummaryBox" style="margin-top:14px;padding:14px 18px;background:rgba(18,24,36,0.92);border:1px solid rgba(0,200,255,0.22);border-radius:10px;">
-              <div class="preflight-head" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;">
-                <div>
-                  <span class="preflight-eyebrow" style="font-size:10.5px;font-weight:800;letter-spacing:0.8px;color:#00c8ff;">✈ CHANNEL-DNA PRE-FLIGHT CHECK</span>
-                  <h4 id="preflightStatusHeadline" style="margin:3px 0 0;font-size:14.5px;color:#f1f5f9;">Kiểm tra DNA Kênh: Đề tài &amp; Tiêu đề</h4>
+            <div class="create-recipe-summary-bar wide" id="createRecipeSummaryBar">
+              <div class="recipe-summary-left">
+                <span class="recipe-summary-kicker">⚙️ CẤU HÌNH SẢN XUẤT</span>
+                <div class="recipe-summary-chips">
+                  <button type="button" class="recipe-chip" data-open-create-config="engine" id="recipeChipEngine" title="Nhấn để đổi AI viết kịch bản">🤖 Codex</button>
+                  <button type="button" class="recipe-chip" data-open-create-config="strategy" id="recipeChipStrategy" title="Nhấn để đổi Chiến lược hình ảnh">🎬 Full Footage</button>
+                  <button type="button" class="recipe-chip" data-open-create-config="style" id="recipeChipStyle" title="Nhấn để đổi Phong cách &amp; Preset nét vẽ AI">🎨 AI tự chọn</button>
+                  <button type="button" class="recipe-chip" data-open-create-config="voice" id="recipeChipVoice" title="Nhấn để đổi Giọng đọc &amp; Tốc độ">🎙️ Giọng mặc định · 1.00×</button>
                 </div>
-                <button type="button" class="ghost compact" id="runPreflightCheckBtn" style="white-space:nowrap;">🔍 Kiểm tra Pre-Flight ngay</button>
+              </div>
+              <button type="button" class="secondary compact recipe-open-btn" id="openCreateConfigSheetBtn">⚙️ Chỉnh cấu hình</button>
+            </div>
+
+            <section class="create-preflight-card wide" id="createPreflightSummaryBox">
+              <div class="preflight-head" style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                  <span class="preflight-eyebrow" style="font-size:10px;font-weight:800;letter-spacing:0.8px;color:#38bdf8;">✈ PRE-FLIGHT DNA</span>
+                  <h4 id="preflightStatusHeadline" style="margin:0;font-size:12.5px;color:#f1f5f9;">Kiểm tra DNA Kênh: Đề tài &amp; Tiêu đề</h4>
+                </div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <button type="button" class="ghost compact hidden" id="openPreflightPopupBtn">🗗 Đọc chi tiết</button>
+                  <button type="button" class="ghost compact" id="runPreflightCheckBtn" style="white-space:nowrap;">🔍 Kiểm tra ngay</button>
+                </div>
               </div>
               <div id="preflightSummaryContent" class="preflight-summary-content">
-                <div class="empty-state" style="padding:10px 0;font-size:12.5px;color:#94a3b8;">Chọn hồ sơ kênh và nhập đề tài/tiêu đề để AI tự động đối chiếu danh mục video đã xuất bản, bộ lọc từ cấm, và cụm từ khóa Outlier thắng thế.</div>
+                <div class="empty-state" style="padding:4px 0;font-size:11.8px;color:#94a3b8;">Chọn hồ sơ kênh và đề tài để AI đối chiếu danh mục video đã xuất bản &amp; bộ lọc từ cấm.</div>
               </div>
             </section>
 
             <section class="create-topic-discovery wide">
               <div class="create-topic-discovery-head">
                 <div>
-                  <span id="createDiscoveryEyebrow">CHỌN LUỒNG ĐỀ XUẤT ĐỀ TÀI SẢN XUẤT</span>
-                  <strong id="createDiscoveryHeadline">Luồng 1: Thuần DNA Kênh cố định (Chống lệch đề tài) · Luồng 2: Quét Radar 48h</strong>
-                  <small id="createTopicDiscoveryStatus">Chọn hồ sơ kênh. Mặc định chạy thẳng theo Bộ lọc Đề tài &amp; Ngôi kể Xanh tiền của đúng Hồ sơ Kênh đang chọn.</small>
+                  <span id="createDiscoveryEyebrow" style="font-size:10px;font-weight:800;letter-spacing:0.06em;color:#7dd3fc;">RESEARCH &amp; ĐỀ XUẤT ĐỀ TÀI MỚI THEO DNA KÊNH</span>
+                  <strong id="createDiscoveryHeadline">2 Luồng Chủ Đạo (💰 Tội phạm Tài chính · 🚨 Vụ án Đặc biệt Nguy hiểm) · Chống Lặp 100%</strong>
+                  <small id="createTopicDiscoveryStatus">Chọn hồ sơ kênh để nạp đề xuất mới.</small>
                 </div>
-                <div class="create-discovery-controls">
+                <div class="create-discovery-controls" style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">
                   <div class="segmented create-discovery-mode-switch" id="createDiscoveryModeSwitch" role="tablist" aria-label="Chế độ tìm chủ đề">
-                    <button class="segment active" type="button" data-discovery-mode="dna_strict" title="Chỉ lấy và sinh đề tài bám sát 100% Bộ lọc Chỉ chọn / Cấm tuyệt đối của đúng DNA Kênh đang chọn, bỏ qua hoàn toàn Radar">🔒 Thuần DNA Cố định (Không qua Radar)</button>
-                    <button class="segment" type="button" data-discovery-mode="radar_trend" title="Quét kênh đối thủ và tín hiệu 48h từ TubeRadar">📡 Quét Radar 48h &amp; Đối thủ</button>
+                    <button class="segment active" type="button" data-discovery-mode="dna_strict" title="Research hồ sơ vụ án thật bám sát 100% Bộ lọc DNA Kênh">🔒 Thuần DNA</button>
+                    <button class="segment" type="button" data-discovery-mode="radar_trend" title="Quét kênh đối thủ và tín hiệu 48h từ TubeRadar">📡 Radar 48h</button>
                   </div>
-                  <button class="primary compact" id="discoverCreateTopicsBtn" type="button">⚡ Đề xuất đề tài mới theo DNA</button>
+                  <button class="primary compact" id="discoverCreateTopicsBtn" type="button">🔍 Research đề tài mới</button>
+                  <button class="ghost compact" id="clearSuggestedHistoryBtn" type="button" title="Xóa lịch sử các chủ đề đã từng gợi ý (Vẫn giữ nguyên 100% Bộ nhớ các bài đã sản xuất)">↺ Xóa lịch sử gợi ý</button>
                 </div>
               </div>
+              <div id="createTopicStreamBar" class="create-topic-stream-bar hidden" role="tablist" aria-label="Chọn luồng chủ đề DNA kênh">
+                <div class="topic-stream-pills">
+                  <button type="button" class="topic-stream-pill active" data-topic-stream="all">
+                    <span class="stream-pill-icon">⚖️</span>
+                    <span><b>Cả 2 Luồng</b> <small>Cân bằng Tài chính + Trọng án</small></span>
+                  </button>
+                  <button type="button" class="topic-stream-pill stream-fin" data-topic-stream="financial_crime">
+                    <span class="stream-pill-icon">💰</span>
+                    <span><b>Luồng 1: Tội phạm Tài chính</b> <small>Đại án ngân hàng · công trái · đào tẩu</small></span>
+                  </button>
+                  <button type="button" class="topic-stream-pill stream-vio" data-topic-stream="major_violent_crime">
+                    <span class="stream-pill-icon">🚨</span>
+                    <span><b>Luồng 2: Đặc biệt Nguy hiểm</b> <small>Truy nã cấp A · pháp y · 2 mặt ẩn mình</small></span>
+                  </button>
+                </div>
+                <div id="createTopicResearchMeta" class="topic-research-meta"></div>
+              </div>
               <div id="createTopicSuggestions" class="create-topic-suggestions"><div class="empty-state">Chưa có phân tích chủ đề.</div></div>
+              <div class="create-inline-manual-bar" style="display:flex;align-items:center;gap:8px;padding-top:6px;border-top:1px dashed rgba(148,163,184,0.16);">
+                <span style="font-size:11.5px;font-weight:700;color:#94a3b8;white-space:nowrap;">✎ Hoặc nhập trực tiếp:</span>
+                <input id="createManualTitleInput" placeholder="Nhập trực tiếp chủ đề hoặc tiêu đề video muốn sản xuất…" style="flex:1;" />
+              </div>
             </section>
-            <details class="create-manual-topic wide" open>
-              <summary>Nhập chủ đề / tiêu đề video trực tiếp (hoặc chọn từ đề xuất chuẩn DNA ở trên)</summary>
-              <input id="createManualTitleInput" placeholder="Nhập trực tiếp chủ đề hoặc tiêu đề video muốn sản xuất…" />
-            </details>
-            <div class="field-row three">
-              <label><span>Thị trường</span><select name="market"><option value="KR">KR</option><option value="JP">JP</option><option value="US">US</option><option value="VN">VN</option></select></label>
-              <label><span>Ngôn ngữ</span><select name="language"><option value="ko">Tiếng Hàn</option><option value="ja">Tiếng Nhật</option><option value="en">Tiếng Anh</option><option value="vi">Tiếng Việt</option></select></label>
-              <label><span>Thời lượng mong muốn (Chọn hoặc nhập số phút)</span><div class="duration-combo-row" style="display:flex;gap:8px;align-items:center;"><select name="target_duration_minutes" id="createTargetDurationSelect" style="flex:1.2;"><option value="2">Khoảng 2 phút</option><option value="5">Khoảng 5 phút</option><option value="8">Khoảng 8 phút</option><option value="10">Khoảng 10 phút</option><option value="15">Khoảng 15 phút</option><option value="20" selected>Khoảng 20 phút</option><option value="22">Khoảng 22 phút</option><option value="25">Khoảng 25 phút</option><option value="30">Khoảng 30 phút</option><option value="45">Khoảng 45 phút</option><option value="60">Khoảng 60 phút (1 giờ)</option><option value="75">Khoảng 75 phút</option><option value="90">Khoảng 90 phút</option><option value="120">Khoảng 120 phút (2 giờ)</option></select><input type="number" id="createCustomDurationInput" min="2" max="180" step="1" value="20" placeholder="Nhập phút (VD: 22)" title="Nhập thời lượng mong muốn bất kỳ (từ 2 đến 180 phút)" style="flex:0.85;min-width:115px;" /></div></label>
-            </div>
 
-            <section class="creative-brief-studio wide" id="creativeBriefStudio">
+            <details class="studio-accordion-drawer" id="createBriefAccordion">
+              <summary>
+                <span>✦ Định hướng Sáng tạo · Góc nhìn · Hook 30s &amp; Ngữ pháp Dựng</span>
+                <span class="drawer-chevron">Mở / Đóng ▾</span>
+              </summary>
+              <div class="studio-drawer-body">
+            <section class="creative-brief-studio wide" id="creativeBriefStudio" style="margin:0;padding:0;background:transparent;border:none;">
               <div class="creative-studio-head">
                 <div class="creative-studio-title-group">
                   <span class="creative-eyebrow">✦ ĐỊNH HƯỚNG SÁNG TẠO &amp; KỊCH BẢN (CHỌN NHANH HOẶC TỰ ĐỘNG THEO AI CHAT)</span>
@@ -695,14 +865,33 @@
                 <button type="button" class="ghost compact" id="clearAttachedOutlineBtn">Gỡ dàn ý</button>
               </div>
             </section>
+              </div>
+            </details>
 
-            <label class="wide"><span>Nguồn tham chiếu (nếu có)</span><input name="source_url" placeholder="YouTube / bài báo / tài liệu gốc" /></label>
-            <label class="wide"><span>Thư mục lưu dự án</span><div class="folder-picker"><input id="workspaceRootInput" name="workspace_root" placeholder="Mặc định: thư mục workspaces của app" /><button class="ghost" id="selectWorkspaceRootBtn" type="button">Chọn thư mục</button></div><small class="field-help">Mỗi video được lưu trong một thư mục con riêng; dung lượng sẽ hiện ở danh sách Dự án.</small></label>
-            <label class="wide"><span>Ghi chú sản xuất &amp; Quy tắc riêng (Custom Rules)</span><textarea name="notes" id="createNotesTextarea" rows="3" placeholder="Góc làm, quy tắc riêng cho tập này, nhịp dựng, điều cần tránh…"></textarea></label>
+            <details class="studio-accordion-drawer" id="createAdvancedAccordion">
+              <summary>
+                <span>⚙️ Nguồn tham chiếu · Thư mục lưu dự án &amp; Ghi chú sản xuất riêng</span>
+                <span class="drawer-chevron">Tùy chọn nâng cao ▾</span>
+              </summary>
+              <div class="studio-drawer-body">
+                <label class="wide"><span>Nguồn tham chiếu (nếu có)</span><input name="source_url" placeholder="YouTube / bài báo / tài liệu gốc" /></label>
+                <label class="wide"><span>Thư mục lưu dự án</span><div class="folder-picker"><input id="workspaceRootInput" name="workspace_root" placeholder="Mặc định: thư mục workspaces của app" /><button class="ghost" id="selectWorkspaceRootBtn" type="button">Chọn thư mục</button></div><small class="field-help">Mỗi video được lưu trong một thư mục con riêng; dung lượng sẽ hiện ở danh sách Dự án.</small></label>
+                <label class="wide"><span>Ghi chú sản xuất &amp; Quy tắc riêng (Custom Rules)</span><textarea name="notes" id="createNotesTextarea" rows="3" placeholder="Góc làm, quy tắc riêng cho tập này, nhịp dựng, điều cần tránh…"></textarea></label>
+              </div>
+            </details>
           </div>
 
-          <aside class="form-side">
-            <div class="config-card">
+          <div class="create-config-backdrop" id="createConfigBackdrop" aria-hidden="true"></div>
+          <aside class="form-side" id="createConfigSideSheet" aria-label="Cấu hình sản xuất dự án">
+            <div class="form-side-sheet-head">
+              <div>
+                <span class="sheet-kicker">PRODUCTION RECIPE</span>
+                <strong>Cấu hình Sản xuất Dự án</strong>
+              </div>
+              <button type="button" class="primary compact" id="closeCreateConfigSheetBtn">✓ Xong</button>
+            </div>
+            <div class="form-side-sheet-scroll">
+            <div class="config-card" data-config-section="engine">
               <div class="config-title"><span>AI viết kịch bản</span><small>Chọn bộ máy chính cho nghiên cứu + kịch bản + chia cảnh</small></div>
               <div class="choice-grid two">
                 <label class="choice"><input type="radio" name="plan_engine" value="codex" checked /><span><b>Codex</b><small>Ưu tiên mặc định</small></span></label>
@@ -710,50 +899,63 @@
               </div>
             </div>
 
-            <div class="config-card create-visual-strategy-card">
+            <div class="config-card create-visual-strategy-card" data-config-section="strategy">
               <div class="config-title"><span>Chiến lược hình ảnh</span><small>Chọn một nhánh sản xuất ngay từ đầu dự án</small></div>
               <div class="choice-grid visual-strategy-grid">
-                <label class="choice"><input type="radio" name="visual_strategy" value="full_ai" /><span><b>Full AI</b><small>Bỏ qua Footage, tạo hình cho toàn bộ Visuals</small></span></label>
-                <label class="choice"><input type="radio" name="visual_strategy" value="full_footage" checked /><span><b>Full Footage</b><small>Dùng tư liệu thật, bỏ qua bước AI Visual</small></span></label>
-                <label class="choice"><input type="radio" name="visual_strategy" value="hybrid" /><span><b>Kết hợp</b><small>Mỗi visual tự chọn Footage hoặc AI theo cốt truyện</small></span></label>
-                <label class="choice"><input type="radio" name="visual_strategy" value="evidence_footage" /><span><b>Bằng chứng + AI</b><small>Chỉ dùng Footage cho bằng chứng/nhân vật 100% thật, còn lại full AI</small></span></label>
-                <label class="choice"><input type="radio" name="visual_strategy" value="edit_direct_footage" /><span><b>Bán Content (Edit tải Footage + Vài ảnh AI)</b><small>Bỏ qua Bước 4 · AI Agent tự tìm &amp; tải video lúc Edit kết hợp vài ảnh AI điểm nhấn</small></span></label>
+                <label class="choice"><input type="radio" name="visual_strategy" value="full_ai" /><span><b>Full AI</b><small>Tạo hình AI cho toàn bộ Visuals</small></span></label>
+                <label class="choice"><input type="radio" name="visual_strategy" value="full_footage" checked /><span><b>Full Footage</b><small>AI Agent @footage tự tìm &amp; duyệt tư liệu bằng mắt, bỏ qua AI Visual</small></span></label>
+                <label class="choice"><input type="radio" name="visual_strategy" value="hybrid" /><span><b>Kết hợp</b><small>AI Agent @footage duyệt tư liệu bằng mắt + AI Visual bổ sung</small></span></label>
+                <label class="choice"><input type="radio" name="visual_strategy" value="evidence_footage" /><span><b>Bằng chứng + AI</b><small>AI Agent @footage duyệt bằng chứng thật bằng mắt, còn lại full AI</small></span></label>
+                <label class="choice"><input type="radio" name="visual_strategy" value="edit_direct_footage" /><span><b>Bán Content (AI Agent @footage + Vài ảnh AI)</b><small>AI Agent @footage tự tìm, cắt &amp; duyệt tư liệu bằng mắt kết hợp vài ảnh AI điểm nhấn</small></span></label>
               </div>
             </div>
 
-            <div class="config-card create-ai-visual-config" id="createAiVisualConfig">
+            <div class="config-card create-ai-visual-config" id="createAiVisualConfig" data-config-section="style">
               <div class="config-title"><span>Phong cách & kiểu media AI</span><small>Dùng cho Full AI và những visual được route sang AI trong chế độ Kết hợp</small></div>
               <div class="create-ai-config-grid">
                 <div class="wide create-ai-media-modes"><span>Kiểu media</span><div class="choice-grid visual-strategy-grid"><label class="choice"><input type="radio" name="ai_media_mode" value="image" /><span><b>Chỉ ảnh</b><small>Tạo ảnh cho visual AI</small></span></label><label class="choice"><input type="radio" name="ai_media_mode" value="video" /><span><b>Chỉ video</b><small>Tạo clip AI cho visual</small></span></label><label class="choice"><input type="radio" name="ai_media_mode" value="mixed" checked /><span><b>Ảnh + video</b><small>AI chọn loại phù hợp từng đoạn</small></span></label></div></div>
                 <label><span>Phong cách</span><select name="ai_style_mode" id="createAiStyleMode"><option value="auto">AI tự chọn theo nội dung</option><option value="preset">Preset có sẵn</option><option value="custom">Phong cách tự nhập</option></select></label>
-                <label><span>Preset nét vẽ</span><select name="ai_style_preset" id="createAiStylePreset"><option value="" disabled>Chọn preset…</option><option value="Siêu thực 4D Người vô diện (4D Faceless Forensic)">Siêu thực 4D Người vô diện (4D Faceless Forensic)</option><option value="Người que (Stickman)">Người que (Stickman)</option><option value="Sơn dầu (Oil painting)">Sơn dầu (Oil painting)</option><option value="Video 2D (US Animation)">Video 2D (US Animation)</option><option value="3D Hoạt hình (Pixar/Disney)">3D Hoạt hình (Pixar/Disney)</option><option value="Anime Nhật Bản">Anime Nhật Bản</option><option value="Hiện thực điện ảnh (Cinematic Realism)">Hiện thực điện ảnh (Cinematic Realism)</option><option value="Dark Fantasy (Ma mị/Kinh dị)">Dark Fantasy (Ma mị/Kinh dị)</option><option value="Màu nước (Watercolor)">Màu nước (Watercolor)</option><option value="Cyberpunk (Viễn tưởng)">Cyberpunk (Viễn tưởng)</option><option value="Thủy mặc (Cổ trang/Kiếm hiệp)">Thủy mặc (Cổ trang/Kiếm hiệp)</option><option value="Chibi Cute (Dễ thương)">Chibi Cute (Dễ thương)</option><option value="cinematic 2D editorial cartoon / American comic explainer illustration">cinematic 2D editorial cartoon / American comic explainer illustration</option><option value="Người que mỹ">Người que mỹ</option><option value="Người Que Mỹ 2">Người Que Mỹ 2</option><option value="Người Que US">Người Que US</option></select><small id="createAiStylePresetStatus">Đang tải đầy đủ preset từ SRT-To-Prompt…</small></label>
-                <label class="wide"><span>Phong cách mong muốn</span><textarea name="ai_custom_style" id="createAiCustomStyle" rows="3" placeholder="Ví dụ: tranh minh họa editorial 2D, nét mực rõ, ánh sáng điện ảnh, bảng màu trầm…"></textarea></label>
-                <label class="wide create-style-reference">
-                  <span>Ảnh tham chiếu phong cách</span>
-                  <input id="createStyleReferenceInput" type="file" accept="image/png,image/jpeg,image/webp" />
-                  <div id="createStyleReferencePreviewContainer" class="style-reference-preview-box hidden" style="margin-top:8px;display:flex;align-items:center;gap:12px;padding:8px 12px;background:rgba(0,0,0,0.3);border:1px solid rgba(0,200,255,0.3);border-radius:8px;">
-                    <img id="createStyleReferencePreviewImg" src="" alt="Ảnh tham chiếu" style="width:54px;height:54px;object-fit:cover;border-radius:6px;border:1px solid #38bdf8;" />
-                    <div style="flex:1;">
-                      <span class="badge" id="createStyleReferenceBadge" style="background:rgba(56,189,248,0.2);color:#38bdf8;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">🎨 Ảnh tham chiếu đã gắn</span>
-                      <div id="createStyleReferenceFilename" style="font-size:12px;color:#cbd5e1;margin-top:2px;">image.png</div>
-                    </div>
-                    <button type="button" class="ghost compact" id="clearCreateStyleReferenceBtn" style="color:#ef4444;border-color:rgba(239,68,68,0.4);font-size:12px;">✕ Xóa / Đổi ảnh tham chiếu</button>
+                <label><span>Preset nét vẽ</span><select name="ai_style_preset" id="createAiStylePreset"><option value="" disabled>Chọn preset…</option><option value="Điện ảnh Hầm Ngân hàng &amp; Cổ cồn trắng Đào tẩu (Prestige Vault &amp; Financial Thriller Noir - Luồng 1)">Điện ảnh Hầm Ngân hàng &amp; Cổ cồn trắng Đào tẩu (Prestige Vault &amp; Financial Thriller Noir - Luồng 1)</option><option value="Điện ảnh Hình sự &amp; Pháp y Đêm mưa (Atmospheric Forensic Crime Noir - Luồng 2)">Điện ảnh Hình sự &amp; Pháp y Đêm mưa (Atmospheric Forensic Crime Noir - Luồng 2)</option><option value="Siêu thực 4D Người vô diện (4D Faceless Forensic)">Siêu thực 4D Người vô diện (4D Faceless Forensic)</option><option value="Người que (Stickman)">Người que (Stickman)</option><option value="Sơn dầu (Oil painting)">Sơn dầu (Oil painting)</option><option value="Video 2D (US Animation)">Video 2D (US Animation)</option><option value="3D Hoạt hình (Pixar/Disney)">3D Hoạt hình (Pixar/Disney)</option><option value="Anime Nhật Bản">Anime Nhật Bản</option><option value="Hiện thực điện ảnh (Cinematic Realism)">Hiện thực điện ảnh (Cinematic Realism)</option><option value="Dark Fantasy (Ma mị/Kinh dị)">Dark Fantasy (Ma mị/Kinh dị)</option><option value="Màu nước (Watercolor)">Màu nước (Watercolor)</option><option value="Cyberpunk (Viễn tưởng)">Cyberpunk (Viễn tưởng)</option><option value="Thủy mặc (Cổ trang/Kiếm hiệp)">Thủy mặc (Cổ trang/Kiếm hiệp)</option><option value="Chibi Cute (Dễ thương)">Chibi Cute (Dễ thương)</option><option value="cinematic 2D editorial cartoon / American comic explainer illustration">cinematic 2D editorial cartoon / American comic explainer illustration</option><option value="Người que mỹ">Người que mỹ</option><option value="Người Que Mỹ 2">Người Que Mỹ 2</option><option value="Người Que US">Người Que US</option></select><small id="createAiStylePresetStatus">Đang tải đầy đủ preset từ SRT-To-Prompt…</small></label>
+                <details class="studio-accordion-drawer wide" id="createAiCustomDrawer">
+                  <summary>
+                    <span>🎨 Mô tả nét vẽ riêng &amp; Ảnh tham chiếu</span>
+                    <span class="drawer-chevron">Tùy chọn ▾</span>
+                  </summary>
+                  <div class="studio-drawer-body">
+                    <label class="wide"><span>Phong cách mong muốn</span><textarea name="ai_custom_style" id="createAiCustomStyle" rows="2" placeholder="Ví dụ: tranh minh họa editorial 2D, nét mực rõ, ánh sáng điện ảnh, bảng màu trầm…"></textarea></label>
+                    <label class="wide create-style-reference">
+                      <span>Ảnh tham chiếu phong cách</span>
+                      <input id="createStyleReferenceInput" type="file" accept="image/png,image/jpeg,image/webp" />
+                      <div id="createStyleReferencePreviewContainer" class="style-reference-preview-box hidden" style="margin-top:6px;display:flex;align-items:center;gap:10px;padding:6px 10px;background:rgba(0,0,0,0.3);border:1px solid rgba(0,200,255,0.3);border-radius:8px;">
+                        <img id="createStyleReferencePreviewImg" src="" alt="Ảnh tham chiếu" style="width:42px;height:42px;object-fit:cover;border-radius:6px;border:1px solid #38bdf8;" />
+                        <div style="flex:1;min-width:0;">
+                          <span class="badge" id="createStyleReferenceBadge" style="background:rgba(56,189,248,0.2);color:#38bdf8;padding:2px 6px;border-radius:4px;font-size:10.5px;font-weight:600;">🎨 Ảnh tham chiếu đã gắn</span>
+                          <div id="createStyleReferenceFilename" style="font-size:11.5px;color:#cbd5e1;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">image.png</div>
+                        </div>
+                        <button type="button" class="ghost compact" id="clearCreateStyleReferenceBtn" style="color:#ef4444;border-color:rgba(239,68,68,0.4);font-size:11.5px;">✕ Xóa</button>
+                      </div>
+                      <small>Ảnh tham chiếu bảo toàn màu sắc nhân vật, trang phục và phong cách gốc (không ép stickman).</small>
+                    </label>
                   </div>
-                  <small>Ảnh tham chiếu bảo toàn màu sắc nhân vật, trang phục và phong cách gốc (không ép stickman).</small>
-                </label>
+                </details>
               </div>
             </div>
 
-            <div class="config-card">
-              <div class="config-title"><span>Giọng đọc</span><small>CofiVoice tự tạo giọng theo từng đoạn hình ảnh</small></div>
-              <label><span>Giọng</span><select name="voice_id" id="voiceSelect"><option value="">Giọng mặc định</option></select></label>
-              <label><span>Tốc độ</span><input name="voice_speed" type="range" min="0.8" max="1.2" step="0.05" value="1" /><output id="voiceSpeedLabel">1.00×</output></label>
+            <div class="config-card" data-config-section="voice">
+              <div class="config-title"><span>Giọng đọc</span><small>CofiVoice tự động khớp từng đoạn</small></div>
+              <div class="voice-compact-grid">
+                <label><span>Giọng</span><select name="voice_id" id="voiceSelect"><option value="">Giọng mặc định</option></select></label>
+                <label><span style="display:flex;justify-content:space-between;align-items:center;width:100%;"><span>Tốc độ</span><output id="voiceSpeedLabel" style="display:inline;margin:0;color:#7dd3fc;font-weight:700;">1.00×</output></span><input name="voice_speed" type="range" min="0.8" max="1.2" step="0.05" value="1" /></label>
+              </div>
             </div>
 
-            <div class="pipeline-preview" id="createPipelineFlow">
-              <span>Luồng duyệt từng bước</span>
-              <div>1. Kịch bản</div><div>2. Voice + SRT</div><div>3. Visuals / Prompt</div><div>4. Footage</div><div>5. Dựng</div><div>6. SEO</div><div>7. QC</div>
-              <small>Mỗi bước hoàn tất sẽ dừng lại. Xem kết quả xong rồi bấm “Duyệt xong · Tiếp tục” để chạy bước kế tiếp.</small>
+            <div class="hidden" aria-hidden="true">
+              <div class="pipeline-preview" id="createPipelineFlow">
+                <span>Luồng duyệt từng bước</span>
+                <div>1. Kịch bản</div><div>2. Voice + SRT</div><div>3. Visuals / Prompt</div><div>4. AI Visual</div><div>5. Edit (@footage AI Agent duyệt bằng mắt)</div><div>6. SEO</div><div>7. QC</div>
+                <small>Mỗi bước hoàn tất sẽ dừng lại. Xem kết quả xong rồi bấm “Duyệt xong · Tiếp tục” để chạy bước kế tiếp.</small>
+              </div>
+            </div>
             </div>
           </aside>
 
@@ -771,28 +973,23 @@
         <div class="function-body" id="voiceWorkspace"><div class="empty-state">Chọn một dự án để cấu hình voice.</div></div>
       </section>
 
-      <section class="panel workspace-pane function-workspace" data-app-pane="footage">
-        <div class="section-head"><div><p class="eyebrow">TƯ LIỆU</p><h2>Footage & kiểm tra phủ hình</h2><p>Footage tools tự tìm, tải và xếp hạng candidate ở nền. AI chỉ duyệt media đã tải; app chỉ hiển thị footage đã được duyệt và chọn dùng cho đúng câu voice. Candidate không được chọn sẽ bị xóa.</p></div><div class="workspace-project" id="footageProjectLabel">Chưa chọn dự án</div></div>
-        <div class="function-body" id="footageWorkspace"><div class="empty-state">Chọn một dự án để xem tư liệu.</div></div>
-      </section>
-
       <section class="panel workspace-pane function-workspace" data-app-pane="ai_visual">
         <div class="section-head"><div><p class="eyebrow">AI VISUAL</p><h2>AI vẽ ảnh theo phong cách & Full AI</h2><p>Chọn preset nét vẽ, thêm ảnh tham chiếu phong cách, hoặc bật Full AI để tạo hình cho toàn bộ beat.</p></div><div class="workspace-project" id="aiVisualProjectLabel">Chưa chọn dự án</div></div>
         <div class="function-body" id="aiVisualWorkspace"><div class="empty-state">Chọn một dự án để xem phần AI bổ sung.</div></div>
       </section>
 
       <section class="panel workspace-pane function-workspace" data-app-pane="visuals">
-        <div class="section-head"><div><p class="eyebrow">VISUALS / STP</p><h2>Chia 100% lời thoại thành visual prompt</h2><p>Mỗi dòng là một visual ngắn, đủ nghĩa, bám nguyên script và route sang Footage hoặc AI theo chiến lược dự án.</p></div><div class="workspace-project" id="visualsProjectLabel">Chưa chọn dự án</div></div>
+        <div class="section-head"><div><p class="eyebrow">VISUALS / STP</p><h2>Chia 100% lời thoại thành visual prompt</h2><p>Mỗi dòng là một visual ngắn, đủ nghĩa, bám nguyên script và route sang @footage AI Agent hoặc AI Visual theo chiến lược dự án.</p></div><div class="workspace-project" id="visualsProjectLabel">Chưa chọn dự án</div></div>
         <div class="function-body" id="visualsWorkspace"><div class="empty-state">Chọn một dự án để xem Visuals và prompt.</div></div>
       </section>
 
       <section class="panel workspace-pane edit-workspace" data-app-pane="edit">
-        <div class="section-head edit-head"><div><p class="eyebrow">PHASE 06 · EDIT &amp; TIMELINE PREVIEW</p><h2>Dựng Phim &amp; Xem Trước Thời Gian Thực · Remotion Studio</h2><p>✂️ <b>Role Edit đã khóa cứng:</b> Footage lấy từ <b>3–6s/cut</b> · <b>Bắt buộc xóa/crop sạch 100% logo và text Trung của bên khác</b> (cần thiết thì crop hết hình ảnh có nguồn bên khác) · <b>Không lấy video dẫn chương trình có mặt người dẫn (MC) hoặc chủ kênh khác</b>, chỉ lấy đúng footage cần thiết · <b>Mỗi cảnh Vox độc nhất 100%</b> theo từng câu voice.</p></div><div class="workspace-project" id="editProjectLabel">Chưa chọn dự án</div></div>
+        <div class="section-head edit-head"><div><p class="eyebrow">PHASE 05 · EDIT, @FOOTAGE EYE AGENT &amp; TIMELINE PREVIEW</p><h2>Dựng Phim, AI Agent Săn Tư Liệu Bằng Mắt &amp; Xem Trước · Remotion Studio</h2><p>Chuyên gia AI Agent @footage tự tìm, cắt và duyệt từng khung hình tư liệu thật bằng mắt (read_file) khớp 1-1 với câu thoại trước khi đồng bộ timeline Remotion Studio.</p></div><div class="workspace-project" id="editProjectLabel">Chưa chọn dự án</div></div>
         <div class="edit-persistent-host" id="editWorkspace"><div class="empty-state">Chọn một dự án để mở editor.</div></div>
       </section>
 
       <section class="panel workspace-pane function-workspace" data-app-pane="seo">
-        <div class="section-head"><div><p class="eyebrow">PHASE 07 · PACKAGING &amp; DISTRIBUTION</p><h2>Đóng Gói Phát Hành · Thumbnail Studio &amp; Gói SEO YouTube</h2><p>Thiết kế 4 bản thumbnail A/B/C/D chuẩn CTR trên Bàn dựng Canva và xuất trọn bộ Tiêu đề, Mô tả, Tags chuẩn DNA kênh.</p></div><div class="workspace-project" id="seoProjectLabel">Chưa chọn dự án</div></div>
+        <div class="section-head"><div><p class="eyebrow">PHASE 06 · PACKAGING &amp; DISTRIBUTION</p><h2>Đóng Gói Phát Hành · Thumbnail Studio &amp; Gói SEO YouTube</h2><p>Thiết kế 4 bản thumbnail A/B/C/D chuẩn CTR trên Bàn dựng Canva và xuất trọn bộ Tiêu đề, Mô tả, Tags chuẩn DNA kênh.</p></div><div class="workspace-project" id="seoProjectLabel">Chưa chọn dự án</div></div>
         <div class="function-body" id="seoWorkspace"><div class="empty-state">Chọn một dự án để tạo SEO và prompt thumbnail.</div></div>
       </section>
 
@@ -890,6 +1087,7 @@
   </div>
 
   <aside class="global-codex-dock" id="globalCodexDock">
+    <div class="agy-dock-resizer" id="globalCodexResizer" title="Kéo cạnh trái để chỉnh độ rộng khung đọc AI (nhấp đúp để đặt lại)"></div>
     <button class="global-codex-toggle" type="button" id="globalCodexToggle">
       <span>✦</span>
       <small id="globalCodexMiniStatus">Mở AI</small>
@@ -905,6 +1103,7 @@
           </div>
         </div>
         <div class="global-codex-head-actions">
+          <button class="agy-action-btn" type="button" id="globalCodexWideBtn" title="Mở rộng / Thu chuẩn khung đọc AI">⇔ Rộng</button>
           <button class="agy-action-btn" type="button" id="globalCodexNewBtn" title="Phiên hội thoại mới (/new)">+ Mới</button>
           <button class="agy-action-btn" type="button" id="globalCodexCompactBtn" title="Nén ngữ cảnh (/compact)">⇄ Nén</button>
           <button class="global-codex-clear agy-action-btn" type="button" id="globalCodexClearBtn" title="Xóa lịch sử chat">Xóa</button>
@@ -1006,9 +1205,107 @@
     </div>
   </dialog>
 
-  <div id="toast" class="toast" data-ui-version="chat-agent-experience-v3"></div>
-  <script src="/static/thumbnail_studio.js?v=20261027-smart-save-v2"></script>
-  <script src="/static/app.js?v=20261027-smart-save-v2"></script>
-  <script src="/static/desktop_chrome.js?v=20261027-smart-save-v2"></script>
+  <dialog id="agentOfficeDialog" class="channel-profile-dialog agent-office-dialog">
+    <div class="ao-shell">
+      <header class="ao-header">
+        <div class="ao-header-left">
+          <div class="ao-brand-badge">🎬</div>
+          <div class="ao-header-titles">
+            <h3>COFI TOON STUDIO · PHIM TRƯỜNG HOẠT HÌNH 15 PHÒNG BAN · 92 NHÂN SỰ</h3>
+            <p>Xưởng Hoạt Hình Sản Xuất Sống Động: <strong>15 👑 Đạo diễn Phòng</strong> · <strong>15 🛡️ Phó phòng</strong> · <strong>62 ⚡ Họa sĩ &amp; Chuyên viên</strong> · <strong>12 🏃 Giao liên &amp; Thú cưng</strong></p>
+          </div>
+        </div>
+        <div class="ao-header-controls">
+          <div class="ao-view-switch" role="group" aria-label="Chế độ hiển thị 15 Phòng Ban Chuyên Môn">
+            <button type="button" class="ao-view-btn active" data-ao-view="chibi" title="Phim trường Hoạt hình: 15 Phòng Ban sống động × 92 Nhân vật cử động tay chân">🎬 Phim Trường Hoạt Hình</button>
+            <button type="button" class="ao-view-btn" data-ao-view="departments" title="Sơ đồ Tổ chức 3 Tầng của 15 Phòng Ban">🧬 Sơ Đồ Tổ Chức</button>
+            <button type="button" class="ao-view-btn" data-ao-view="grid" title="Bảng Kỹ Thuật 5 Khối">📋 Bảng 5 Khối</button>
+          </div>
+          <button class="studio-action ao-sound-btn" type="button" id="aoToggle3dBtn" data-ao-toggle-3d="1" title="Chuyển đổi góc nhìn Phim trường 2D sắc nét hoặc Nghiêng 2.5D">🎬 Góc Phim 2D</button>
+          <button class="studio-action ao-sound-btn" type="button" id="aoToggleMaxStageBtn" data-ao-toggle-max-stage="1" title="Mở rộng toàn màn hình Văn phòng hoặc chia đôi cùng Bảng Điều Khiển">⛶ Mở Rộng</button>
+          <button class="studio-action ao-sound-btn" type="button" id="agentOfficeSoundBtn" title="Bật/Tắt hiệu ứng âm thanh Studio">🔊 Âm thanh</button>
+          <label class="ao-job-picker" title="Chọn dự án để giám sát hoạt động của 15 Phòng Ban">
+            <span>DỰ ÁN</span>
+            <select id="agentOfficeJobSelect" aria-label="Chọn dự án giám sát trong 15 Phòng Ban Chuyên Môn">
+              <option value="">Tự động theo dự án đang chạy</option>
+            </select>
+          </label>
+          <span class="ao-live-pill" id="agentOfficeLiveStamp">LIVE · Đang đồng bộ…</span>
+          <button class="studio-action" type="button" id="agentOfficeRefreshBtn" title="Làm mới tức thì">↻</button>
+          <button class="icon-btn channel-profile-dialog-close" type="button" id="closeAgentOfficeDialog" title="Đóng (Esc / Ctrl+Shift+O)">×</button>
+        </div>
+      </header>
+
+      <section class="ao-kpi-strip" id="agentOfficeKpis"></section>
+      <section class="ao-live-status-strip" id="agentOfficeLiveStatusBar" aria-label="Thanh báo cáo tiến độ và thời gian dự kiến hoàn thành"></section>
+
+      <div class="ao-body" id="agentOfficeBodyGrid">
+        <div class="ao-floorplan-wrap is-chibi-mode" id="agentOfficeStageWrap">
+          <div class="ao-stage-legend ao-office-floor-toolbar" id="officeFloorToolbar">
+            <div class="ao-toolbar-filter-row" role="group" aria-label="Bộ lọc Khu Vực trên Mặt Bằng Văn Phòng">
+              <span class="ao-toolbar-pill-live">🟢 15 Phòng · 92 NS</span>
+              <button type="button" class="ao-floor-zone-btn active" data-ao-zone-filter="all">🎬 Toàn Phim Trường (15 Phòng · 92 NS)</button>
+              <button type="button" class="ao-floor-zone-btn" data-ao-zone-filter="north">🏛️ Khối Nội Dung (00–04 · 30 NS)</button>
+              <button type="button" class="ao-floor-zone-btn" data-ao-zone-filter="central">🎨 Khối Hình Ảnh &amp; VOX (05–09 · 32 NS)</button>
+              <button type="button" class="ao-floor-zone-btn" data-ao-zone-filter="south">⚖️ Khối Kiểm Định &amp; Kỹ Thuật (10–14 · 30 NS)</button>
+            </div>
+            <div class="ao-toolbar-actions">
+              <button type="button" class="ao-auto-zoom-btn" data-ao-exit-focus="true" title="Thu nhỏ về Toàn Cảnh Xưởng Phim 15 Phòng Ban (92 Nhân sự)">
+                ⬅ Toàn Cảnh 15 Phòng (92 NS)
+              </button>
+              <button type="button" class="ao-auto-zoom-btn active" id="aoJumpActiveRoomBtn" data-ao-jump-active-room="1" title="Vào xem chi tiết bên trong Phòng Ban đang làm việc trực tiếp">
+                🔍 Vào Phòng Đang Làm
+              </button>
+              <button type="button" class="ao-auto-zoom-btn" id="aoAutoZoomActiveBtn" data-ao-toggle-auto-zoom="1" title="Bật/Tắt chế độ tự động Zoom vào Phòng Ban đang làm việc">
+                🎥 Tự Vào Phòng: TẮT
+              </button>
+              <span class="ao-mouse-hint">🖱️ Cuộn trang thoải mái · Click Phòng bất kỳ để xem 6–8 nhân sự bên trong</span>
+              <button type="button" class="ao-parallel-cta-all-btn" id="aoFloorParallelWaveBtn" data-ao-dispatch-parallel-dept="all" title="Kích hoạt chia lô chạy song song toàn bộ 15 Phòng Ban × 92 Nhân sự">
+                ⚡ Chạy Chia Lô (62 Luồng)
+              </button>
+            </div>
+          </div>
+          <div class="ao-floorplan-canvas" id="agentOfficeFloorplanCanvas" data-office-floor="true"></div>
+        </div>
+
+        <aside class="ao-inspector" id="agentOfficeInspectorAside">
+          <nav class="ao-tabs" aria-label="Chế độ thanh tra 15 Phòng Ban Chuyên Môn">
+            <button type="button" class="ao-tab-btn active" data-ao-tab="chat">💬 Nhóm Chat Báo Cáo</button>
+            <button type="button" class="ao-tab-btn" data-ao-tab="departments">🏛️ 15 Phòng</button>
+            <button type="button" class="ao-tab-btn" data-ao-tab="roster">👥 92 Nhân Sự</button>
+            <button type="button" class="ao-tab-btn" data-ao-tab="critique">⚖️ 8 Cổng QA</button>
+            <button type="button" class="ao-tab-btn" data-ao-tab="charter">📜 Hồ Sơ</button>
+          </nav>
+          <div class="ao-inspector-body" id="agentOfficeInspectorBody"></div>
+        </aside>
+      </div>
+    </div>
+  </dialog>
+
+  <dialog id="studioInspectorDialog" class="channel-profile-dialog agent-office-dialog studio-inspector-dialog">
+    <div class="ao-shell">
+      <header class="ao-header">
+        <div class="ao-header-left" style="min-width:0;flex:1;">
+          <div class="ao-brand-badge" id="studioInspectorBadge">📜</div>
+          <div class="ao-header-titles" style="min-width:0;flex:1;">
+            <h3 id="studioInspectorTitle">Chi tiết tài liệu</h3>
+            <p id="studioInspectorSubtitle">Chế độ đọc tập trung · 15 Phòng Ban Chuyên Môn</p>
+          </div>
+        </div>
+        <div class="ao-header-controls" style="flex-shrink:0;flex-wrap:nowrap;">
+          <span class="dialog-toast-pill" aria-live="polite"></span>
+          <button class="studio-action" type="button" id="studioInspectorCopyBtn" title="Sao chép toàn bộ nội dung">📋 Sao chép</button>
+          <button class="icon-btn channel-profile-dialog-close" type="button" id="closeStudioInspectorBtn" data-close-dialog="studioInspectorDialog" title="Đóng (Esc)">×</button>
+        </div>
+      </header>
+      <div class="studio-modal-body" id="studioInspectorBody"></div>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" data-ui-version="chat-agent-experience-v6-topbar-v28"></div>
+  <script src="/static/thumbnail_studio.js?v=20261113-noflicker-v2"></script>
+  <script src="/static/app.js?v=20261113-noflicker-v2"></script>
+  <script src="/static/desktop_chrome.js?v=20261113-noflicker-v2"></script>
+  <script src="/static/agent_office.js?v=20261109-rework-v29"></script>
 </body>
 </html>

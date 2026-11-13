@@ -7,13 +7,22 @@ for all 24 True Crime investigative archetypes.
 
 from .typography import (
     CJKFallbackFont,
+    FONT_STYLE_CANDIDATES,
     draw_text_safe,
     get_cascade_font,
     get_font,
     load_font,
+    resolve_contextual_font_style,
     split_balanced_korean,
     verify_text_glyphs,
     wrap_text_multiline,
+    wrap_text_to_width,
+)
+from .composable_scene_graph import (
+    LOCKED_VOX_STYLE_DNA,
+    build_composable_vox_scene_spec,
+    classify_voice_semantic_intent,
+    render_composable_vox_frame,
 )
 from .gis_cache import (
     W,
@@ -50,6 +59,8 @@ from .renderer import (
 from .semantic_router import (
     VOX_ARCHETYPE_RULES,
     VoxSemanticRouter,
+    attach_two_layer_visual_prompts,
+    build_bespoke_vox_design_prompt,
     is_vox_satellite_enabled,
 )
 from .blender_bridge import (
@@ -63,6 +74,8 @@ __all__ = [
     "W",
     "H",
     "CJKFallbackFont",
+    "FONT_STYLE_CANDIDATES",
+    "resolve_contextual_font_style",
     "draw_text_safe",
     "get_cascade_font",
     "get_font",
@@ -70,6 +83,11 @@ __all__ = [
     "split_balanced_korean",
     "verify_text_glyphs",
     "wrap_text_multiline",
+    "wrap_text_to_width",
+    "LOCKED_VOX_STYLE_DNA",
+    "classify_voice_semantic_intent",
+    "build_composable_vox_scene_spec",
+    "render_composable_vox_frame",
     "deg2num",
     "lonlat_to_plate_px",
     "crop_map_camera",
@@ -95,6 +113,8 @@ __all__ = [
     "render_cinema_full",
     "VoxSceneRenderer",
     "VoxSemanticRouter",
+    "attach_two_layer_visual_prompts",
+    "build_bespoke_vox_design_prompt",
     "is_vox_satellite_enabled",
     "VOX_ARCHETYPE_RULES",
     "ARCHETYPE_PREVIEW_URLS",

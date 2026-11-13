@@ -1,7 +1,7 @@
 """Dedicated Financial & Investigative 2.5D Tactile Vox & GIS Map Engine.
 
-Strictly isolated to `channel-cn-cyber-finance-kr` (`financial_forensic_vox`).
-Never mix or share these archetypes with True Crime (`channel-e544a64b7c`).
+Strictly isolated to `financial_forensic_vox` preset.
+Never mix or share these archetypes with True Crime (`forensic_noir`).
 
 Core Principles:
 1. Authentic Tactile Vox Craft: Full-bleed paper grain, Financial Times salmon newsprint,
@@ -296,7 +296,14 @@ CANONICAL_24_FIN_ARCHETYPES: list[str] = [
 
 
 def is_financial_vox_enabled(job: dict[str, Any], profile: dict[str, Any] | None = None) -> bool:
-    """Strictly activates ONLY for channel-cn-cyber-finance-kr or financial_forensic_vox preset."""
+    """Strictly activates via editing_dna.financial_vox_enabled capability flag, preset_id, or legacy fallback."""
+    for cand_ed in (
+        job.get("editing_dna"),
+        (profile or {}).get("editing_dna") if isinstance(profile, dict) else None,
+        (job.get("channel_profile_snapshot") or {}).get("editing_dna") if isinstance(job.get("channel_profile_snapshot"), dict) else None,
+    ):
+        if isinstance(cand_ed, dict) and isinstance(cand_ed.get("financial_vox_enabled"), bool):
+            return bool(cand_ed["financial_vox_enabled"])
     profile_id = str(
         job.get("channel_profile_id")
         or (profile or {}).get("id")
@@ -305,14 +312,30 @@ def is_financial_vox_enabled(job: dict[str, Any], profile: dict[str, Any] | None
     ).strip()
     if profile_id == "channel-cn-cyber-finance-kr":
         return True
-    if profile_id:
+    if profile_id in {"channel-e544a64b7c", "channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2"}:
         return False
     preset_id = str(
         (job.get("editing_dna") or {}).get("preset_id")
         or ((profile or {}).get("editing_dna") or {}).get("preset_id")
+        or (job.get("channel_profile_snapshot") or {}).get("editing_dna", {}).get("preset_id")
         or ""
     ).strip().lower()
-    return preset_id == "financial_forensic_vox"
+    if preset_id == "financial_forensic_vox":
+        return True
+    strategy = str(
+        job.get("visual_strategy")
+        or (profile or {}).get("visual_strategy")
+        or ""
+    ).strip().lower()
+    if "cyber_finance" in strategy or "financial" in strategy:
+        return True
+    niche = str(
+        job.get("niche")
+        or (profile or {}).get("niche")
+        or (job.get("channel_profile_snapshot") or {}).get("niche")
+        or ""
+    ).strip().lower()
+    return "financial" in niche and "crime" in niche
 
 
 # ==============================================================================
@@ -1784,7 +1807,7 @@ FINANCIAL_ARCHETYPE_RENDERERS.update(
 
 
 class FinancialVoxSemanticRouter:
-    """Dedicated semantic router for `channel-cn-cyber-finance-kr` with strict Zero-Repetition (`max_uses = 1`)."""
+    """Dedicated semantic router for financial forensic vox with strict Zero-Repetition (`max_uses = 1`)."""
 
     def __init__(self) -> None:
         self.recent_archetypes: list[str] = []

@@ -1,0 +1,1142 @@
+{
+  "schema_version": "1.0",
+  "architecture": "nexus_single_model_multi_agent",
+  "agent_count": 15,
+  "divisions": {
+    "direction": {
+      "id": "direction",
+      "label": "Executive Direction, Radar & Channel DNA",
+      "label_vi": "Ban Chỉ Huy Sản Xuất, Radar & Chiến Lược DNA Kênh",
+      "emoji": "🎯",
+      "color": "#0EA5E9",
+      "order": 1,
+      "description": "Autonomous studio orchestration, CofiRadar outlier topic scouting, channel DNA isolation, handoff ledgers, and closed-loop retry control."
+    },
+    "editorial": {
+      "id": "editorial",
+      "label": "Editorial, Archival Research & Acoustic Voice",
+      "label_vi": "Ban Nội Dung, Điều Tra Hồ Sơ & Đạo Diễn Thanh Nhạc",
+      "emoji": "🖋️",
+      "color": "#F59E0B",
+      "order": 2,
+      "description": "Fact-grounded source investigation, broadcast-grade spoken screenwriting isolated per channel DNA, and studio acoustic TTS direction."
+    },
+    "visual_cinema": {
+      "id": "visual_cinema",
+      "label": "Cinematography, Archival Footage, AI Art, Vox Motion & Editing",
+      "label_vi": "Ban Phân Cảnh, Tư Liệu Thật, Mỹ Thuật AI, Đồ Họa Vox & Dựng Phim",
+      "emoji": "🎬",
+      "color": "#8B5CF6",
+      "order": 3,
+      "description": "1-to-1 storyboard architecture, 3-frame hygienic archival retrieval, cinematographic AI keyframing, Walter Murch timeline editing, and CTR packaging."
+    },
+    "quality_and_engineering": {
+      "id": "quality_and_engineering",
+      "label": "Stage Critique, Master Broadcast Screening & Core Engineering",
+      "label_vi": "Ban Phản Biện Từng Bước, Duyệt Phim Xuất Bản & Kỹ Thuật Cốt Lõi",
+      "emoji": "🛡️",
+      "color": "#10B981",
+      "order": 4,
+      "description": "Continuous Maker-QA verification loops, default-to-NEEDS-WORK final broadcast certification, and pure technical core software engineering."
+    }
+  },
+  "runbooks": [
+    {
+      "slug": "investigative_evidence_documentary",
+      "title": "Investigative Evidence + AI Documentary Pipeline",
+      "title_vi": "Dây Chuyền Phim Tài Liệu Bằng Chứng Xác Thực + Tái Dựng Điện Ảnh",
+      "mode": "CofiStudio-Production",
+      "visual_strategies": [
+        "evidence_footage",
+        "hybrid"
+      ],
+      "summary": "End-to-end closed-loop broadcast production pairing verified archival evidence with style-locked AI cinematography, composable Vox scenes, and 2-tier QC.",
+      "roster": [
+        {
+          "group": "Direction & Editorial Core",
+          "activation": "phase_1_to_3",
+          "agents": [
+            "orchestrator",
+            "radar",
+            "research",
+            "script",
+            "voice"
+          ]
+        },
+        {
+          "group": "Visual & Post-Production Crew",
+          "activation": "phase_4_to_7",
+          "agents": [
+            "visuals",
+            "footage",
+            "ai_visual",
+            "vox",
+            "edit",
+            "seo"
+          ]
+        },
+        {
+          "group": "Quality & Certification Gatekeepers",
+          "activation": "continuous_and_final",
+          "agents": [
+            "evidence_qa",
+            "qc"
+          ]
+        }
+      ],
+      "handoff_chain": [
+        "radar",
+        "research",
+        "script",
+        "voice",
+        "visuals",
+        "footage",
+        "ai_visual",
+        "vox",
+        "edit",
+        "seo",
+        "qc"
+      ]
+    },
+    {
+      "slug": "full_footage_archival_documentary",
+      "title": "100% Authentic Archival Footage Documentary",
+      "title_vi": "Dây Chuyền Phim Tài Liệu 100% Tư Liệu Thật Lưu Trữ",
+      "mode": "CofiStudio-Production",
+      "visual_strategies": [
+        "full_footage",
+        "edit_direct_footage"
+      ],
+      "summary": "Pure archival documentary workflow enforcing 3-frame visual hygiene, zero watermarks/anchors, and organic cutaway rhythm.",
+      "roster": [
+        {
+          "group": "Core Production",
+          "activation": "always",
+          "agents": [
+            "orchestrator",
+            "radar",
+            "research",
+            "script",
+            "voice",
+            "visuals",
+            "footage",
+            "vox",
+            "edit",
+            "seo"
+          ]
+        },
+        {
+          "group": "Verification Gate",
+          "activation": "continuous_and_final",
+          "agents": [
+            "evidence_qa",
+            "qc"
+          ]
+        }
+      ],
+      "handoff_chain": [
+        "radar",
+        "research",
+        "script",
+        "voice",
+        "visuals",
+        "footage",
+        "vox",
+        "edit",
+        "seo",
+        "qc"
+      ]
+    },
+    {
+      "slug": "full_ai_cinematic_documentary",
+      "title": "Full AI Cinematographic Documentary",
+      "title_vi": "Dây Chuyền Phim Tài Liệu Điện Ảnh Full AI Đồng Nhất Mỹ Thuật",
+      "mode": "CofiStudio-Production",
+      "visual_strategies": [
+        "full_ai"
+      ],
+      "summary": "Style-locked full AI visual narrative with pixel-entropy & defect sensors, bespoke motion choreography, and transparent AI disclosure.",
+      "roster": [
+        {
+          "group": "Core Production",
+          "activation": "always",
+          "agents": [
+            "orchestrator",
+            "radar",
+            "research",
+            "script",
+            "voice",
+            "visuals",
+            "ai_visual",
+            "vox",
+            "edit",
+            "seo"
+          ]
+        },
+        {
+          "group": "Verification Gate",
+          "activation": "continuous_and_final",
+          "agents": [
+            "evidence_qa",
+            "qc"
+          ]
+        }
+      ],
+      "handoff_chain": [
+        "radar",
+        "research",
+        "script",
+        "voice",
+        "visuals",
+        "ai_visual",
+        "vox",
+        "edit",
+        "seo",
+        "qc"
+      ]
+    },
+    {
+      "slug": "app_core_incident_repair",
+      "title": "Pure Technical Core Diagnostics & Repair",
+      "title_vi": "Điều Tra Lỗi Gốc & Nâng Cấp Cốt Lõi Kỹ Thuật App",
+      "mode": "CofiStudio-Micro",
+      "visual_strategies": [],
+      "summary": "Root-cause forensic debugging, minimal-diff core repair without hardcoding channel DNA, and regression pytest verification.",
+      "roster": [
+        {
+          "group": "Engineering Strike Team",
+          "activation": "always",
+          "agents": [
+            "orchestrator",
+            "debug",
+            "dev",
+            "evidence_qa"
+          ]
+        }
+      ],
+      "handoff_chain": [
+        "debug",
+        "dev",
+        "evidence_qa"
+      ]
+    }
+  ],
+  "agents": [
+    {
+      "id": "orchestrator",
+      "name": "Cofi Executive Producer",
+      "display_vi": "Tổng Đạo Diễn Điều Phối Sản Xuất",
+      "division": "direction",
+      "department": "direction",
+      "emoji": "🎯",
+      "color": "#0EA5E9",
+      "vibe": "Tổng Đạo Diễn Điều Phối Thuần Khiết — tuyệt đối không tự làm thay việc chuyên môn, 100% ủy nhiệm cho đúng Agent chuyên trách và chỉ tổng duyệt dựa trên bằng chứng mắt thật.",
+      "mission": "Điều phối dây chuyền sản xuất đa tác tử Cofi Studio từ ý tưởng đến xuất bản MP4: TUYỆT ĐỐI KHÔNG tự thực thi việc chuyên môn trong phiên chat/điều phối mà BẮT BUỘC ủy nhiệm 100% cho đúng Agent chuyên trách (@radar, @research, @script, @voice, @visuals, @footage, @ai_visual, @vox, @edit, @seo, @evidence_qa, @qc, @dev, @debug), cấm bỏ qua bước (đặc biệt là @footage và @vox), quản lý sổ cái bàn giao (nexus_ledger.json), vận hành vòng lặp Maker <-> EvidenceQA và tổng duyệt chất lượng lần cuối",
+      "scope": "pure multi-agent dispatching, zero self-execution enforcement, pipeline orchestration, Cofi Studio handoff ledger, and final executive quality gate sign-off",
+      "workspace_scope": "orchestration",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery",
+        "cofi-vox-blender-director"
+      ],
+      "tools_permitted": [
+        "read_state",
+        "inspect_ledger",
+        "delegate_agent",
+        "delegate_squad",
+        "approve_actions",
+        "phase_gate_control"
+      ],
+      "allowed_actions": [
+        "select_job",
+        "navigate",
+        "fill_create_form",
+        "create_job",
+        "create_job_from_radar",
+        "approve_step",
+        "run_phase",
+        "rerun_phase",
+        "pause_footage",
+        "resume_footage",
+        "stop_footage",
+        "restart_footage",
+        "run_pipeline",
+        "resume",
+        "update_creative_brief",
+        "update_outline",
+        "delegate_agent",
+        "delegate_squad"
+      ],
+      "allowed_phases": [
+        "*"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "outline.json",
+        "visual_manifest.json",
+        "final_manifest.json",
+        ".producer/nexus_ledger.json"
+      ],
+      "writes_artifacts": [
+        ".producer/nexus_ledger.json",
+        ".producer/nexus_handoffs/*",
+        ".producer/company_reviews/*"
+      ],
+      "upstream_agents": [],
+      "downstream_agents": [
+        "radar",
+        "research",
+        "script",
+        "voice",
+        "visuals",
+        "footage",
+        "ai_visual",
+        "vox",
+        "edit",
+        "seo",
+        "evidence_qa",
+        "qc",
+        "dev",
+        "debug"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/direction/orchestrator.md",
+      "sha256": "d01e0b0d3debd4a7feb484510fac709831afedb6ff3cd25d61ef8651d87ef89d"
+    },
+    {
+      "id": "radar",
+      "name": "Channel DNA & Outlier Topic Scout",
+      "display_vi": "Giám Đốc Săn Đề Tài Radar & Chiến Lược DNA Kênh",
+      "division": "direction",
+      "department": "direction",
+      "emoji": "📡",
+      "color": "#38BDF8",
+      "vibe": "Đôi mắt radar săn điểm bùng nổ (Outlier) — chỉ chọn đề tài vừa trúng mạch tò mò thị trường vừa khớp tuyệt đối 100% DNA riêng của kênh, không bao giờ trùng lặp kho đề tài cũ.",
+      "mission": "Quét dữ liệu thị trường qua CofiRadar, phân tích DNA kênh mẫu/kênh nhà theo đúng hồ sơ kênh đang chọn, lọc trùng tuyệt đối với sổ nhớ đề tài (topic_memory) và đề xuất góc khai thác (Creative Brief) có sức giữ chân cao nhất trước khi lập dự án",
+      "scope": "market outlier radar, channel DNA profiling, topic_memory deduplication, and creative angle pitching",
+      "workspace_scope": "orchestration",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery",
+        "cofi-youtube-policy-monetization-guard"
+      ],
+      "tools_permitted": [
+        "radar_client_scan",
+        "channel_dna_analyzer",
+        "topic_memory_ledger",
+        "self_learning_reader",
+        "pitch_angle_builder"
+      ],
+      "allowed_actions": [
+        "radar_market_scan",
+        "radar_channel_scan",
+        "refresh_channel_profile",
+        "channel_profile_today",
+        "radar_today",
+        "fill_create_form",
+        "create_job_from_radar"
+      ],
+      "allowed_phases": [],
+      "reads_artifacts": [
+        "input.json",
+        "outline.json"
+      ],
+      "writes_artifacts": [
+        ".producer/nexus_handoffs/*"
+      ],
+      "upstream_agents": [
+        "orchestrator"
+      ],
+      "downstream_agents": [
+        "orchestrator",
+        "research",
+        "script"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/direction/radar.md",
+      "sha256": "4c6e122c242a3371120c45e71f23fe810fd85046126f7b61adf94118c1981d22"
+    },
+    {
+      "id": "research",
+      "name": "Investigative Archivist",
+      "display_vi": "Chuyên Gia Điều Tra Hồ Sơ & Nguồn Tư Liệu",
+      "division": "editorial",
+      "department": "production",
+      "emoji": "🔎",
+      "color": "#D97706",
+      "vibe": "Hoài nghi như phóng viên điều tra kỳ cựu — không có nguồn kiểm chứng thì không được bước vào kịch bản, không một tình tiết mở đầu nào bị bỏ rơi.",
+      "mission": "Nghiên cứu tư liệu xác thực theo đúng DNA hồ sơ kênh & quốc gia mục tiêu; bảo đảm tính toàn vẹn dữ kiện, nguồn dẫn gốc và mạch nhân quả trọn vẹn cho mọi nhân vật/chi tiết được giới thiệu",
+      "scope": "research, source verification, narrative continuity, and radar",
+      "workspace_scope": "project_workspace",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery"
+      ],
+      "tools_permitted": [
+        "radar_scan",
+        "web_research",
+        "source_verification",
+        "read_workspace_artifact",
+        "write_workspace_artifact"
+      ],
+      "allowed_actions": [
+        "radar_market_scan",
+        "radar_channel_scan",
+        "radar_today",
+        "channel_profile_today",
+        "refresh_channel_profile",
+        "fill_create_form"
+      ],
+      "allowed_phases": [
+        "plan"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "outline.json",
+        "research.md"
+      ],
+      "writes_artifacts": [
+        "research.md",
+        "factual_ledger.json",
+        "outline.json"
+      ],
+      "upstream_agents": [
+        "orchestrator",
+        "radar"
+      ],
+      "downstream_agents": [
+        "script",
+        "footage"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/editorial/research.md",
+      "sha256": "0ed6b7a2b9a18d4f07fed7dbcab55a1eb1135cbdbe6b0980e69df26ee186442f"
+    },
+    {
+      "id": "script",
+      "name": "Lead Broadcast Showrunner",
+      "display_vi": "Biên Kịch Trưởng Văn Nói Phát Sóng",
+      "division": "editorial",
+      "department": "production",
+      "emoji": "🖋️",
+      "color": "#F59E0B",
+      "vibe": "Viết bằng đôi tai phát thanh viên kỳ cựu — ghét cay ghét đắng mùi dịch máy AI, nhịp câu có hơi thở thật, hóa thân trọn vẹn vào linh hồn riêng của từng kênh.",
+      "mission": "Phác thảo dàn ý (outline.json) và biên kịch văn nói (script.md) bám sát 100% DNA sáng tạo, giọng điệu (register) và thị trường của riêng hồ sơ kênh đang chọn; tối ưu nhịp thở tự nhiên cho TTS, khử triệt để văn dịch máy/mùi AI và chạy vòng lặp tự phản biện trước khi chốt",
+      "scope": "plan/script artifacts, profile-isolated voice & register, and TTS spoken cadence",
+      "workspace_scope": "project_workspace",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery",
+        "cofi-youtube-policy-monetization-guard"
+      ],
+      "tools_permitted": [
+        "read_workspace_artifact",
+        "write_workspace_artifact",
+        "script_spoken_sensor",
+        "cadence_rebalancer"
+      ],
+      "allowed_actions": [
+        "update_creative_brief",
+        "update_outline",
+        "update_script",
+        "run_phase",
+        "rerun_phase"
+      ],
+      "allowed_phases": [
+        "plan"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "outline.json",
+        "research.md",
+        "factual_ledger.json",
+        "plan_critic_report.json"
+      ],
+      "writes_artifacts": [
+        "outline.json",
+        "script.md",
+        "visual_manifest.json",
+        "research.md"
+      ],
+      "upstream_agents": [
+        "orchestrator",
+        "research"
+      ],
+      "downstream_agents": [
+        "voice",
+        "visuals"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/editorial/script.md",
+      "sha256": "ac0dc6f31e2c6f57d63cfaae65ea135140293e02819e423c1e02c2b55260b93d"
+    },
+    {
+      "id": "voice",
+      "name": "Acoustic Voice Director",
+      "display_vi": "Đạo Diễn Thanh Nhạc & Chuẩn Hóa TTS",
+      "division": "editorial",
+      "department": "production",
+      "emoji": "🎙️",
+      "color": "#EC4899",
+      "vibe": "Đôi tai vàng phòng thu — một con số đọc sượng, một nhịp ngắt cụt hơi hay thiếu 3.8 giây khoảng lặng hạ màn đều phải thu lại ngay tại chỗ.",
+      "mission": "Tổng hợp giọng đọc tự nhiên theo đúng cấu hình voice của hồ sơ kênh; chuẩn hóa ký hiệu/số đếm/đơn vị theo ngôn ngữ đích trước TTS, kiểm định âm học & ASR từng beat (tự reroll câu lỗi) và bảo toàn trọn vẹn câu kết kèm đuôi lặng outro 3.8s",
+      "scope": "voice synthesis, acoustic/ASR listen-back QC, and outro tail",
+      "workspace_scope": "project_workspace",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery"
+      ],
+      "tools_permitted": [
+        "cofi_voice_tts",
+        "text_normalizer",
+        "whisper_asr_sensor",
+        "ffmpeg_audio_probe",
+        "read_workspace_artifact",
+        "write_workspace_artifact"
+      ],
+      "allowed_actions": [
+        "update_voice",
+        "run_phase",
+        "rerun_phase"
+      ],
+      "allowed_phases": [
+        "voice"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "script.md",
+        "visual_manifest.json"
+      ],
+      "writes_artifacts": [
+        "voice_manifest.json",
+        "voice_qc_report.json",
+        "narration.srt",
+        "audio/*"
+      ],
+      "upstream_agents": [
+        "script"
+      ],
+      "downstream_agents": [
+        "visuals",
+        "edit"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/editorial/voice.md",
+      "sha256": "ac412d43c0c8b8e37577c5fbb184d96faae6e2347ce8c4b630cc23aaea681156"
+    },
+    {
+      "id": "visuals",
+      "name": "Storyboard & Cinematography Architect",
+      "display_vi": "Kiến Trúc Sư Phân Cảnh & Ngôn Ngữ Máy Quay",
+      "division": "visual_cinema",
+      "department": "production",
+      "emoji": "🎥",
+      "color": "#8B5CF6",
+      "vibe": "Đọc hiểu sâu từng câu kịch bản sau khi có giọng đọc thật — phân bổ thị giác linh hoạt 100% theo nghĩa câu nói: Ưu tiên số 1 là Footage thật của vụ án; ở những đoạn không có footage thật, bắt buộc dùng VOX minh họa làm Ưu tiên số 2 (không khóa cố định bao nhiêu mẫu hay vị trí rải VOX); sau cuối cùng mới là Ảnh AI. Mỗi cảnh độc lập, mỗi video độc lập.",
+      "mission": "Đọc toàn bộ kịch bản và nhịp giọng đọc thật (voice_manifest.json + narration.srt) để lập kịch bản phân cảnh thị giác (visual_manifest.json) khớp 1-to-1 nghĩa từng câu theo Thứ tự Ưu tiên Thị giác 3 Tầng: (1) Ưu tiên số 1 = Tư liệu video thật (REAL_FTG) khi có footage thật của sự kiện; (2) Ưu tiên số 2 = Đồ họa VOX minh họa độc bản (VOX_NEWSROOM — Bàn biên tập cắt dán <Desk> hoặc Bản đồ vệ tinh 3D <GeoJson3DMapStage> khi nói về lộ trình di chuyển) bắt buộc cho những đoạn không có footage thật, linh hoạt hoàn toàn theo nghĩa câu thoại, 0% khóa số mẫu hay rải định kỳ; (3) Ưu tiên số 3 (cuối cùng) = Ảnh AI (AI_IMAGE) chỉ dùng khi cả footage thật và VOX minh họa đều không phù hợp; mỗi câu VOX phải được thiết kế ý nghĩa, motion, bố cục, cách xuất hiện, cách cắt dán và khoanh tròn (nếu cần) riêng biệt 100%.",
+      "scope": "visual manifest, 1-to-1 STP semantic scene breakdown, 3-Tier Visual Priority Routing (#1 Real Footage -> #2 Bespoke VOX Illustration -> #3 AI Image Last Resort), and independent per-sentence Voice-to-Vox specification",
+      "workspace_scope": "project_workspace",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery",
+        "cofi-vox-blender-director",
+        "vox-scrapbook-cutout-director",
+        "documentary-pacing-and-motion-reviewer"
+      ],
+      "tools_permitted": [
+        "read_workspace_artifact",
+        "write_workspace_artifact",
+        "storyboard_sequence_sensor"
+      ],
+      "allowed_actions": [
+        "run_phase",
+        "rerun_phase"
+      ],
+      "allowed_phases": [
+        "visuals"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "script.md",
+        "voice_manifest.json",
+        "narration.srt",
+        "research.md"
+      ],
+      "writes_artifacts": [
+        "visual_manifest.json",
+        "visual_prompts.json",
+        "storyboard_critic_report.json"
+      ],
+      "upstream_agents": [
+        "script",
+        "voice"
+      ],
+      "downstream_agents": [
+        "footage",
+        "ai_visual",
+        "vox",
+        "edit"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/visual_cinema/visuals.md",
+      "sha256": "f0957552f93325839b2f9922060a9393ab85ef8f77708f06c4a2798c1195a05f"
+    },
+    {
+      "id": "footage",
+      "name": "Archival Footage Hunter",
+      "display_vi": "Chuyên Gia Săn Tư Liệu Gốc & Kiểm Duyệt Mắt Thật 100%",
+      "division": "visual_cinema",
+      "department": "production",
+      "emoji": "🎞️",
+      "color": "#06B6D4",
+      "vibe": "Đạo diễn tư liệu mắt thật kỷ luật thép — kiểm tra tận mắt từng khung hình video gắn vào câu voice, đảm bảo đã crop sạch 100% logo bên khác và chữ chạy bên khác, hình ảnh/video minh họa khớp 100% nội dung câu voice đang nói đến, cấm tuyệt đối dùng code tự động cắt và ghép tự động làm lệch nghĩa và hình.",
+      "mission": "Thực thi bước săn và cắt lọc tư liệu gốc (Ưu tiên số 1: REAL_FTG) bằng MẮT THẬT 100% (read_file / vision_inspect_frames): (1) Kiểm tra thật kỹ bằng mắt các video gắn vào từng câu voice, căn chỉnh crop=W:H:X:Y trên lưới tọa độ 100px để đảm bảo đã crop sạch 100% logo bên khác, watermark, mã QR và chữ chạy/phụ đề bên khác; (2) Kiểm tra thực sự bằng mắt để đảm bảo hình ảnh hoặc video footage minh họa khớp 100% với nội dung câu voice đang nói đến (ở những câu không có footage thật khớp 100% nghĩa, bàn giao ngay sang Ưu tiên số 2 là VOX minh họa, sau cuối cùng mới là Ảnh AI); (3) CẤM TUYỆT ĐỐI dùng code tự động cắt và ghép tự động (--auto, blind_auto_offset, cộng giây cố định, hoặc tự động giữ/lặp clip câu trước sang câu sau) làm cho nghĩa và hình lệch nhau gây khó chịu cho khán giả.",
+      "scope": "100% eye-verified archival footage sourcing, 100px-grid safe-cropping of third-party logos and running text/subtitles, 100% 1-to-1 voice-meaning visual verification, and strict ban on automatic cutting or splicing code",
+      "workspace_scope": "project_workspace",
+      "skills": [
+        "documentary-pacing-and-motion-reviewer",
+        "cofi-broadcast-storytelling-mastery"
+      ],
+      "tools_permitted": [
+        "footage_search",
+        "yt_dlp_section",
+        "ffmpeg_frame_extract",
+        "vision_scan_logos",
+        "vision_inspect_frames",
+        "read_workspace_artifact",
+        "write_workspace_artifact"
+      ],
+      "allowed_actions": [
+        "run_phase",
+        "rerun_phase",
+        "pause_footage",
+        "resume_footage",
+        "stop_footage",
+        "restart_footage"
+      ],
+      "allowed_phases": [
+        "footage",
+        "edit"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "visual_manifest.json",
+        "research.md",
+        "footage_checkpoint.json"
+      ],
+      "writes_artifacts": [
+        "footage_codex.json",
+        "footage_gemini.json",
+        "footage_review.json",
+        "footage_approved_live.json",
+        "footage_hygiene_report.json",
+        "footage_checkpoint.json",
+        "asset_registry.json",
+        "media/*"
+      ],
+      "upstream_agents": [
+        "research",
+        "visuals"
+      ],
+      "downstream_agents": [
+        "vox",
+        "ai_visual",
+        "edit"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/visual_cinema/footage.md",
+      "sha256": "b74be13b326ab9c667f1920f4d50114bde9956f50dee83de2a11e9773789850d"
+    },
+    {
+      "id": "ai_visual",
+      "name": "Cinematographic AI Art Director",
+      "display_vi": "Giám Đốc Mỹ Thuật Tái Dựng Điện Ảnh AI",
+      "division": "visual_cinema",
+      "department": "production",
+      "emoji": "🎨",
+      "color": "#EC4899",
+      "vibe": "Đạo diễn ánh sáng điện ảnh thực thụ — dị ứng với ảnh nhựa bóng rẻ tiền, bàn tay lỗi hay chữ vô nghĩa; khóa chặt chất liệu mỹ thuật riêng của từng kênh.",
+      "mission": "Tạo và kiểm định chất lượng ảnh keyframe / video AI khớp 1-to-1 từng cảnh theo đúng phong cách mỹ thuật (visual_style_tokens) của hồ sơ kênh, sạch lỗi giải phẫu/chữ rác/watermark và minh bạch nhãn tái dựng",
+      "scope": "AI media generation, style consistency, pixel defect screening, and 1-to-1 scene coverage",
+      "workspace_scope": "project_workspace",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery"
+      ],
+      "tools_permitted": [
+        "ai_image_gen",
+        "ai_video_gen",
+        "pixel_defect_sensor",
+        "vision_inspect_frames",
+        "read_workspace_artifact",
+        "write_workspace_artifact"
+      ],
+      "allowed_actions": [
+        "run_phase",
+        "rerun_phase"
+      ],
+      "allowed_phases": [
+        "ai_visual"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "visual_manifest.json",
+        "footage_review.json",
+        "footage_approved_live.json"
+      ],
+      "writes_artifacts": [
+        "ai_visual_manifest.json",
+        "ai_visual_critic_report.json",
+        "media/*"
+      ],
+      "upstream_agents": [
+        "visuals",
+        "footage"
+      ],
+      "downstream_agents": [
+        "edit",
+        "seo"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/visual_cinema/ai_visual.md",
+      "sha256": "f93ae21e5acdb424ec9e1c3a5ce9e56e4c046b19bfa6ff8a803a2f51d0ff05cd"
+    },
+    {
+      "id": "vox",
+      "name": "Flow-First Cutout Evidence, Center-Footage Tactile Desk & 3D Satellite Cartography Director",
+      "display_vi": "Đạo Diễn Đồ Họa VOX Vẽ Vật Chứng Bằng Flow Trước, Video/Ảnh Footage Thật Ở Trung Tâm & Bản Đồ Vệ Tinh 3D",
+      "division": "visual_cinema",
+      "department": "production",
+      "emoji": "🗺️",
+      "color": "#EC4899",
+      "vibe": "Đạo Diễn Đồ Họa Điều Tra Chuẩn Vox (Vẽ Vật Chứng Bằng Google Flow Trước + Video Hoặc Ảnh Footage Thật Ở Trung Tâm [Ưu Tiên Video Nếu Có] + Vật Chứng Cắt Dán RGBA Ở Xung Quanh + Motions Xuất Hiện & Cách Nhấn Mạnh Tùy Biến Theo Câu Voice + Bản Đồ Vệ Tinh 3D Dẫn Đường) — Phối hợp chặt chẽ theo Thứ tự Ưu tiên Thị giác 3 Tầng (Ưu tiên 1: Footage thật; Ưu tiên 2 bắt buộc khi không có footage thật: VOX minh họa; Ưu tiên 3 cuối cùng: Ảnh AI góc kín). Quy trình bất di bất dịch cho mọi cảnh <Desk>: (1) Đọc hiểu câu voice đang nói về vật chứng gì -> (2) BẮT BUỘC vẽ ảnh vật chứng rõ nét bằng Google Flow trước (CofiStudioMediaFactoryRunner) rồi tách nền trong suốt RGBA (rembg) và chuẩn bị Video/Ảnh Footage thật của vụ án -> (3) Giữ đúng phong cách và bố cục chuẩn: đặt Video hoặc Ảnh Footage thật lớn ở chính giữa trung tâm màn hình (ưu tiên Video nếu có, left: 620..665, top: 200..235, w: 645, h: 410) và xếp các ảnh vật chứng Flow cắt dán cỡ lớn (w: 450..465, h: 330..335) cùng thẻ hồ sơ, mảnh báo xé, con dấu ở 4 góc xung quanh -> (4) Giữ camera bàn giấy khóa tĩnh 100% (z = 1.0, transform: 'none', 0% zoom-in/zoom-out, 0% cuộn 4 góc), tùy biến linh hoạt motions xuất hiện 12fps và cách nhấn mạnh theo bối cảnh và nhịp nhấn của từng câu voice. Với câu voice mô tả lộ trình di chuyển của hung thủ hoặc cảnh sát, dùng Bản đồ vệ tinh 3D Esri GIS (<GeoJson3DMapStage> 2.5d) khóa tọa độ thực tế và đường đi chính xác 100%.",
+      "mission": "Chuyển hóa từng câu thoại thuộc tuyến VOX (Ưu tiên số 2 bắt buộc ở mọi phân đoạn không có footage thật) thành cảnh đồ họa báo chí điều tra độc bản khớp 100% nghĩa câu nói: (1) BẮT BUỘC vẽ ảnh vật chứng/đạo cụ cụ thể của câu thoại bằng Google Flow (CofiStudioMediaFactoryRunner) trước rồi tách nền RGBA (rembg) sắc nét — tuyệt đối không dùng hộp sơ đồ SVG lặp lại hay hình vẽ PIL giả, không dùng lại vật chứng của câu khác; (2) Dàn dựng mặt bàn <Desk> 1920x1080 giữ đúng phong cách và bố cục chuẩn: Video hoặc Ảnh Footage thật của vụ án đặt lớn ở chính giữa trung tâm (Center Hero Real Footage Video or Photo — ưu tiên Video nếu có), các ảnh vật chứng Flow cắt dán RGBA cỡ lớn cùng thẻ hồ sơ, báo xé, nhãn ghim và con dấu đặt cân đối ở 4 góc xung quanh (Surrounding Cutout Evidence), 0% đè chồng che khuất, 0% zoom-in/zoom-out camera (z = 1.0, transform: 'none'), tùy biến motions xuất hiện 12fps và cách nhấn mạnh theo bối cảnh từng câu voice; (3) Gắn Bản đồ vệ tinh 3D Esri GIS (<GeoJson3DMapStage>) duy nhất vào đúng các câu voice mô tả đường di chuyển của hung thủ hoặc cảnh sát với tọa độ thực tế và đường kẻ OSRM/OSM chính xác 100%.",
+      "scope": "Flow-First RGBA Evidence Generation (CofiStudioMediaFactoryRunner + rembg), Center Real-Footage Hero (Video Prioritized or Photo) + Surrounding Cutout Evidence Tabletop Layout (src/vox-studio/vox-editorial-desk/index.tsx — 0% Camera Zoom, Context-Adaptive 12fps Entrance & Vocal Emphasis Motions), and Voice-Locked 3D Esri Satellite GIS Cartography (<GeoJson3DMapStage>)",
+      "workspace_scope": "remotion_and_workspace",
+      "skills": [
+        "cofi-vox-blender-director",
+        "vox-scrapbook-cutout-director",
+        "remotion-motion-physics",
+        "cofi-broadcast-storytelling-mastery"
+      ],
+      "tools_permitted": [
+        "vox_composable_engine",
+        "remotion_timeline_edit",
+        "vision_inspect_frames",
+        "read_workspace_artifact",
+        "write_workspace_artifact"
+      ],
+      "allowed_actions": [
+        "start_remotion",
+        "edit",
+        "run_phase",
+        "rerun_phase"
+      ],
+      "allowed_phases": [
+        "visuals",
+        "edit"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "script.md",
+        "voice_manifest.json",
+        "subtitles.srt",
+        "visual_manifest.json",
+        "visual_prompts.json",
+        "vox_scene_manifest.json"
+      ],
+      "writes_artifacts": [
+        "vox_scene_manifest.json",
+        "scenes.json",
+        "timeline.json",
+        "edit_checkpoint.json",
+        "live_edit_event.json"
+      ],
+      "upstream_agents": [
+        "script",
+        "voice",
+        "visuals",
+        "footage"
+      ],
+      "downstream_agents": [
+        "edit",
+        "evidence_qa",
+        "qc"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/visual_cinema/vox.md",
+      "sha256": "6121918c6db0673a8696a3089d53e8993795bb9448c5def6479a5a464b30d66f"
+    },
+    {
+      "id": "edit",
+      "name": "Master Film Editor & Vox Choreographer",
+      "display_vi": "Đạo Diễn Dựng Phim, Tích Hợp Timeline & Âm Thanh Phát Sóng",
+      "division": "visual_cinema",
+      "department": "production",
+      "emoji": "✂️",
+      "color": "#6366F1",
+      "vibe": "Đạo diễn dựng phim con người có cảm xúc thật, mắt thật và nhịp thở thật — tôn trọng tuyệt đối dây chuyền chuyên môn hóa (@footage -> @vox -> @edit -> @evidence_qa), kiểm soát dHash toàn cục & Motion Energy thực tế trên từng beat.",
+      "mission": "Đạo diễn hậu kỳ toàn bộ bộ phim theo dây chuyền chuyên môn hóa (@footage -> @vox -> @edit -> @evidence_qa): điêu khắc nhịp thở voice từ stem gốc (editorial_voice_cutter.py), tích hợp các clip tư liệu đã kiểm duyệt mắt (eye_verified: true, có Motion Energy thực tế), các cảnh VOX (VOX_01..VOX_N) đã vượt cổng AST (validate-vox-newsroom-ast.mjs), FramelessCinemaTextBeat.tsx và ảnh AI 1-to-1 vào timeline Remotion, khóa dHash toàn cục xuyên suốt toàn bộ các beat (cấm 1 bức ảnh xuất hiện quá 1 lần giữa Footage và VOX), dựng J-cut/L-cut, phối màu 5 Hồi, phụ đề không đóng hộp và thiết kế âm thanh chuẩn EBU R128",
+      "scope": "edit, active voice rhythm & caesura cutting, Remotion timeline assembly, global dHash & optical motion enforcement, J/L-cuts, 5-act color grading, frameless subtitles, EBU R128 sound design, and outro fade-out",
+      "workspace_scope": "remotion_and_workspace",
+      "skills": [
+        "cofi-vox-blender-director",
+        "vox-scrapbook-cutout-director",
+        "remotion-motion-physics",
+        "documentary-pacing-and-motion-reviewer",
+        "cofi-broadcast-storytelling-mastery",
+        "cofi-agency-sfx"
+      ],
+      "tools_permitted": [
+        "editorial_voice_cutter",
+        "remotion_timeline_edit",
+        "vox_composable_engine",
+        "audio_library_bgm",
+        "ffmpeg_ebur128_sensor",
+        "vision_inspect_frames",
+        "read_workspace_artifact",
+        "write_workspace_artifact"
+      ],
+      "allowed_actions": [
+        "start_remotion",
+        "edit",
+        "run_phase",
+        "rerun_phase"
+      ],
+      "allowed_phases": [
+        "edit"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "script.md",
+        "voice_manifest.json",
+        "subtitles.srt",
+        "visual_manifest.json",
+        "edit_rhythm_score.json",
+        "editorial_voice_plan.json",
+        "footage_approved_live.json",
+        "ai_visual_manifest.json"
+      ],
+      "writes_artifacts": [
+        "scenes.json",
+        "timeline.json",
+        "editorial_voice_plan.json",
+        "editorial_voice_overrides.json",
+        "edit_rhythm_score.json",
+        "edit_checkpoint.json",
+        "edit_screening_report.json",
+        "live_edit_event.json",
+        "remotion_media_manifest.json"
+      ],
+      "upstream_agents": [
+        "script",
+        "voice",
+        "visuals",
+        "footage",
+        "ai_visual",
+        "vox"
+      ],
+      "downstream_agents": [
+        "seo",
+        "qc"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/visual_cinema/edit.md",
+      "sha256": "b0c9410b9834163bc246318e791d4badc72dc9d9a956f626e9439a9f8c8e9a65"
+    },
+    {
+      "id": "seo",
+      "name": "Packaging & CTR Strategist",
+      "display_vi": "Chiến Lược Gia Tiêu Đề, SEO & Thumbnail Thị Giác",
+      "division": "visual_cinema",
+      "department": "production",
+      "emoji": "🚀",
+      "color": "#F43F5E",
+      "vibe": "Bậc thầy khoảng trống tò mò (Curiosity Gap) — luôn kiểm tra DNA kênh trước khi làm thumb, tái hiện 4 mẫu khuôn mặt & biểu cảm tự nhiên nhất của hung thủ (ra tòa, bị bắt, thẩm vấn, vỏ bọc) nhưng tuyệt đối không sao chép mặt hay dáng từ ảnh mẫu.",
+      "mission": "Kiểm tra khóa chặt seo_keyword_dna & thumbnail_dna của hồ sơ kênh trước khi thiết kế; tạo gói tiêu đề SEO (seo_package.json) và 4 phương án Thumbnail phân lớp (thumbnail_design.json) tái hiện 4 biểu cảm tình huống tự nhiên nhất của hung thủ (0% sao chép tư thế/biểu cảm ảnh mẫu), vượt bài kiểm tra độ rõ 168x94 trên di động",
+      "scope": "SEO metadata packaging, title curiosity engineering, Channel DNA pre-check, 4-variant candid culprit expression thumbnail design, and mobile legibility QC",
+      "workspace_scope": "project_workspace",
+      "skills": [
+        "cofi-thumbnail-designer",
+        "cofi-broadcast-storytelling-mastery",
+        "cofi-youtube-policy-monetization-guard"
+      ],
+      "tools_permitted": [
+        "read_workspace_artifact",
+        "write_workspace_artifact",
+        "thumbnail_studio_render",
+        "mobile_squint_sensor"
+      ],
+      "allowed_actions": [
+        "design_thumbnail",
+        "generate_thumbnail_bg",
+        "run_phase",
+        "rerun_phase"
+      ],
+      "allowed_phases": [
+        "seo"
+      ],
+      "reads_artifacts": [
+        "input.json",
+        "outline.json",
+        "script.md",
+        "visual_manifest.json",
+        "ai_visual_manifest.json",
+        "edit_screening_report.json"
+      ],
+      "writes_artifacts": [
+        "seo_package.json",
+        "seo_reference_context.json",
+        "thumbnail_design.json",
+        "seo_critic_report.json",
+        "thumbnails/*"
+      ],
+      "upstream_agents": [
+        "orchestrator",
+        "script",
+        "ai_visual",
+        "edit"
+      ],
+      "downstream_agents": [
+        "qc"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/visual_cinema/seo.md",
+      "sha256": "2bf2df3dc025b4b11c02e2e966b3562c6f2121c6ab6436e091c8267dbe16d90b"
+    },
+    {
+      "id": "evidence_qa",
+      "name": "Stage Critic & Sensor Auditor",
+      "display_vi": "Giám Đốc Phản Biện & Kiểm Chứng Mắt Thật Từng Bước",
+      "division": "quality_and_engineering",
+      "department": "quality",
+      "emoji": "🔬",
+      "color": "#14B8A6",
+      "vibe": "Người gác cổng kỷ luật thép — kiểm định trực quan bằng mắt thật kết hợp đo Perceptual Hash (dHash) toàn cục xuyên suốt toàn bộ các beat và đo Motion Energy (Optical Flow) thực tế giữa các frame để chặn đứng mọi hành vi lười biếng.",
+      "mission": "Kiểm định bằng MẮT THẬT (vision_inspect_frames / read_file trên khung hình đã xuất) kết hợp cảm biến kỹ thuật (critic_loops.py + validate-vox-newsroom-ast.mjs) ngay sau từng bước thực thi: (1) chặn cứng mọi clip footage cắt mù thiếu eye_verified/observed_content, kéo giãn ảnh tĩnh bằng setpts (Motion Energy = 0) hoặc dính logo/phụ đề/MC trường quay, (2) chặn cứng mọi cảnh VOX làm kiểu slide 2–3 hộp nhiều chữ, mẫu 3 cột lặp lại, cảnh 1 lớp lười biếng (<3 lớp cắt dán 12fps), copy-paste chữ ký chuyển động (motionSignature / motion_intent) hoặc copy đạo cụ SHA-256 từ dự án khác, (3) đo dHash toàn cục xuyên suốt toàn bộ các beat giữa cả Footage và VOX để cấm 1 bức ảnh xuất hiện quá 1 lần trong cả tập",
+      "scope": "task-by-task visual eye verification, global cross-beat dHash uniqueness, frame-to-frame optical motion energy audit, Full-Stage VOX AST & SHA-256 anti-lazy audit, 3D GIS audit, and structured PASS/FAIL retry feedback",
+      "workspace_scope": "project_workspace_readonly_plus_qa",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery",
+        "cofi-vox-blender-director",
+        "vox-scrapbook-cutout-director",
+        "remotion-motion-physics",
+        "documentary-pacing-and-motion-reviewer"
+      ],
+      "tools_permitted": [
+        "read_workspace_artifact",
+        "inspect_sensor_reports",
+        "vision_inspect_frames",
+        "ffmpeg_probe_readonly",
+        "write_qa_verdict"
+      ],
+      "allowed_actions": [
+        "rerun_phase",
+        "edit",
+        "update_script"
+      ],
+      "allowed_phases": [
+        "plan",
+        "voice",
+        "visuals",
+        "footage",
+        "ai_visual",
+        "edit",
+        "seo"
+      ],
+      "reads_artifacts": [
+        "*"
+      ],
+      "writes_artifacts": [
+        ".producer/qa_verdicts/*",
+        ".producer/nexus_handoffs/*"
+      ],
+      "upstream_agents": [
+        "radar",
+        "research",
+        "script",
+        "voice",
+        "visuals",
+        "footage",
+        "ai_visual",
+        "vox",
+        "edit",
+        "seo",
+        "dev",
+        "debug"
+      ],
+      "downstream_agents": [
+        "orchestrator",
+        "qc"
+      ],
+      "qa_partner": "qc",
+      "source_path": "agents/quality_and_engineering/evidence_qa.md",
+      "sha256": "e83e35ee1157d5ec367f80d08264bb829953a1508ea49cac53d6e2c35a7c0bf7"
+    },
+    {
+      "id": "qc",
+      "name": "Broadcast Master Screening Director",
+      "display_vi": "Hội Đồng Duyệt Phim & Kiểm Định Bản Xuất MP4 Cuối",
+      "division": "quality_and_engineering",
+      "department": "production",
+      "emoji": "🛡️",
+      "color": "#10B981",
+      "vibe": "Chốt chặn kiểm định xuất bản cuối cùng — tận mắt soi từng khung hình trích xuất từ file MP4 cuối cùng, đo dHash toàn cục và biến thiên chuyển động giữa các frame để đảm bảo sạch 100% logo, footage khớp 100% voice, và VOX là Sân khấu cắt dán báo chí điều tra độc bản.",
+      "mission": "Kiểm định xuất bản đa phương thức khép kín trên file MP4 kết xuất thực tế (release/video.mp4): soi mắt trực tiếp các khung hình trích xuất từ MP4 kết hợp đo dHash toàn cục xuyên suốt toàn bộ các beat và đo Motion Energy thực tế giữa các frame để đảm bảo 0% logo/watermark/phụ đề gốc, 0% dùng trùng ảnh giữa Footage và VOX, 0% clip tĩnh kéo giãn setpts, 100% cảnh VOX tuân thủ chuẩn Bàn biên tập cắt dán Vox (src/vox-studio/vox-editorial-desk/index.tsx — V10 Cut-and-Paste 12fps + nền bàn giấy ấm #E4DDCF + #voxGrain, <BlackCard>), Bản đồ vệ tinh 3D (<GeoJson3DMapStage>) và Sơ đồ hiện trường 2.5D (<ArchitecturalCrimePlan>), âm thanh chuẩn LUFS và câu kết trọn vẹn kèm 3.8s BGM fade-out",
+      "scope": "QC, multimodal visual eye-screening on final MP4, global cross-beat dHash & optical motion verification, EBU R128 audio loudness, outro completeness, and final MP4 export certification",
+      "workspace_scope": "project_workspace_readonly_plus_qc",
+      "skills": [
+        "cofi-broadcast-storytelling-mastery",
+        "cofi-vox-blender-director",
+        "vox-scrapbook-cutout-director",
+        "remotion-motion-physics",
+        "documentary-pacing-and-motion-reviewer",
+        "cofi-thumbnail-designer"
+      ],
+      "tools_permitted": [
+        "ffprobe_stream_check",
+        "ffmpeg_black_silence_scan",
+        "ffmpeg_ebur128_loudness",
+        "vision_inspect_frames",
+        "read_workspace_artifact",
+        "write_qc_manifest"
+      ],
+      "allowed_actions": [
+        "run_phase",
+        "rerun_phase",
+        "edit"
+      ],
+      "allowed_phases": [
+        "qc",
+        "edit",
+        "seo",
+        "voice"
+      ],
+      "reads_artifacts": [
+        "*"
+      ],
+      "writes_artifacts": [
+        "final_manifest.json",
+        "director_report.md",
+        "qc_master_screening_report.json",
+        "qc_content_report.json",
+        "qc_scan_passed.json"
+      ],
+      "upstream_agents": [
+        "script",
+        "voice",
+        "edit",
+        "seo",
+        "evidence_qa"
+      ],
+      "downstream_agents": [
+        "orchestrator"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/quality_and_engineering/qc.md",
+      "sha256": "f9d48cd9409991dfa527bc5cfa474f8ae9872fcee09e2c9f65bd11ae0d14c0bc"
+    },
+    {
+      "id": "dev",
+      "name": "Core Platform Architect",
+      "display_vi": "Kỹ Sư Trưởng Cốt Lõi Kỹ Thuật App",
+      "division": "quality_and_engineering",
+      "department": "engineering",
+      "emoji": "⚙️",
+      "color": "#3B82F6",
+      "vibe": "Kiến trúc sư tối giản, kỷ luật thép — code App là 100% cơ khí kỹ thuật thuần khiết, tuyệt đối không bao giờ đóng đinh luật sáng tạo của bất kỳ kênh nào vào mã nguồn.",
+      "mission": "Thiết kế và triển khai nâng cấp mã nguồn cốt lõi kỹ thuật (documentary/*, services/*, static/*) sạch gọn, tối giản diff, giữ vững ranh giới bất khả xâm phạm giữa App Technical Core và Channel Profile DNA, kèm kiểm thử tự động pytest đầy đủ",
+      "scope": "application source architecture, minimal-diff implementation, profile-isolation compliance, and focused pytest suites",
+      "workspace_scope": "app_source",
+      "skills": [],
+      "tools_permitted": [
+        "trail_graph",
+        "read_source",
+        "write_source",
+        "run_pytest",
+        "syntax_compile_check"
+      ],
+      "allowed_actions": [
+        "read_file",
+        "write_file",
+        "run_command"
+      ],
+      "allowed_phases": [],
+      "reads_artifacts": [
+        "documentary/*",
+        "services/*",
+        "static/*",
+        "templates/*",
+        "tests/*",
+        "agents/*"
+      ],
+      "writes_artifacts": [
+        "documentary/*",
+        "services/*",
+        "static/*",
+        "templates/*",
+        "tests/*",
+        "agents/*"
+      ],
+      "upstream_agents": [
+        "orchestrator",
+        "debug"
+      ],
+      "downstream_agents": [
+        "evidence_qa",
+        "orchestrator"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/quality_and_engineering/dev.md",
+      "sha256": "3efdd5b2d36e062b69eaacf2d67c8019700b394d500187740448fbe9ff9c12c9"
+    },
+    {
+      "id": "debug",
+      "name": "Root-Cause Forensics Debugger",
+      "display_vi": "Chuyên Gia Giải Phẫu Lỗi Gốc & Chống Tái Phát",
+      "division": "quality_and_engineering",
+      "department": "engineering",
+      "emoji": "🩺",
+      "color": "#EF4444",
+      "vibe": "Bác sĩ pháp y mã nguồn — không bao giờ dán băng cá nhân che lỗi bằng try/except mù, lần ngược dấu vết tới tận dòng lệnh sinh bệnh và khóa chặt bằng test hồi quy.",
+      "mission": "Truy vết nguyên nhân gốc rễ (Root-Cause Analysis) từ log thực tế, sự kiện pipeline và mã nguồn; dựng kịch bản tái hiện lỗi, sửa dứt điểm tận gốc không gây tác dụng phụ dây chuyền và khóa bằng regression test",
+      "scope": "root-cause diagnostics, trace log forensics, bug fixes, and regression tests",
+      "workspace_scope": "app_source",
+      "skills": [],
+      "tools_permitted": [
+        "trail_graph",
+        "read_logs",
+        "read_source",
+        "write_source",
+        "run_pytest",
+        "process_diagnostics"
+      ],
+      "allowed_actions": [
+        "read_file",
+        "write_file",
+        "run_command"
+      ],
+      "allowed_phases": [],
+      "reads_artifacts": [
+        "documentary/*",
+        "services/*",
+        "static/*",
+        "tests/*",
+        "logs/*",
+        ".producer/*"
+      ],
+      "writes_artifacts": [
+        "documentary/*",
+        "services/*",
+        "static/*",
+        "tests/*"
+      ],
+      "upstream_agents": [
+        "orchestrator",
+        "evidence_qa",
+        "qc"
+      ],
+      "downstream_agents": [
+        "dev",
+        "evidence_qa",
+        "orchestrator"
+      ],
+      "qa_partner": "evidence_qa",
+      "source_path": "agents/quality_and_engineering/debug.md",
+      "sha256": "7238e9458b781aad0241a9df581b28a5ace72c72b830b85e735a97527d1ef03f"
+    }
+  ]
+}

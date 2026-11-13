@@ -41,7 +41,7 @@ PROFILES_FILE = DATA_DIR / "channel_profiles.json"
 # ==============================================================================
 
 def test_canonical_channel_profiles_contain_seo_dna():
-    """Verify all 4 canonical channel profiles contain valid, non-empty seo_keyword_dna."""
+    """Verify canonical channel profiles (including split Stream 1 & Stream 2) contain valid, non-empty seo_keyword_dna."""
     assert PROFILES_FILE.exists(), "channel_profiles.json must exist"
     data = json.loads(PROFILES_FILE.read_text(encoding="utf-8"))
     profiles = {p["id"]: p for p in data.get("profiles", [])}
@@ -52,10 +52,20 @@ def test_canonical_channel_profiles_contain_seo_dna():
             "meaning_vi": "Vụ Án Có Thật ở Trung Quốc",
             "rule": "smart_seo_flexible",
         },
-        "channel-1e24de3ab5": {
-            "primary": "중국 인프라의 이면",
-            "meaning_vi": "Mặt Tối & Đại Công Trình Hạ Tầng Trung Quốc",
+        "channel-kr-truecrime-director-v2": {
+            "primary": "중국 실화 사건",
+            "meaning_vi": "Vụ Án Có Thật ở Trung Quốc",
             "rule": "smart_seo_flexible",
+        },
+        "channel-kr-financial-fugitive-director-v2": {
+            "primary": "중국 실화 사건",
+            "meaning_vi": "Vụ Án Có Thật ở Trung Quốc",
+            "rule": "smart_seo_flexible",
+        },
+        "channel-1e24de3ab5": {
+            "primary": "중국",
+            "meaning_vi": "Mặt Tối & Đại Công Trình Hạ Tầng Trung Quốc",
+            "rule": "prefix_entity_location",
         },
         "channel-aa913eb90d": {
             "primary": "Declassified US Intelligence Files",
@@ -82,6 +92,14 @@ def test_canonical_channel_profiles_contain_seo_dna():
         assert isinstance(dna.get("secondary_anchor_keywords"), list) and len(dna["secondary_anchor_keywords"]) > 0
         assert isinstance(dna.get("mandatory_hashtags"), list) and len(dna["mandatory_hashtags"]) > 0
         assert isinstance(dna.get("default_seo_tags"), list) and len(dna["default_seo_tags"]) > 0
+
+    # Verify Stream 1 channel SEO DNA is 100% independent of 특급수배록
+    fin_dna = profiles["channel-kr-financial-fugitive-director-v2"]["seo_keyword_dna"]
+    assert "#금고추적록" in fin_dna["mandatory_hashtags"]
+    assert "#금융범죄실화" in fin_dna["mandatory_hashtags"]
+    assert "#특급수배록" not in fin_dna["mandatory_hashtags"]
+    assert "특급수배록" not in fin_dna["secondary_anchor_keywords"]
+    assert "특급수배록" not in fin_dna["default_seo_tags"]
 
 
 # ==============================================================================

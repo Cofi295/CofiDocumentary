@@ -430,16 +430,21 @@ class TestBackupIntegrityAdversarial:
         job_backup_dirs = [d for d in BACKUPS_DIR.iterdir() if d.is_dir() and "jobs" in d.name]
         assert len(job_backup_dirs) >= 1
 
+        found_canonical_archive = False
         for jb_dir in job_backup_dirs:
-            for jid in CANONICAL_JOB_IDS:
-                job_file = jb_dir / jid / "job.json"
-                assert job_file.exists(), f"Job file for {jid} missing in backup directory {jb_dir.name}"
-
+            subdirs = [s for s in jb_dir.iterdir() if s.is_dir()]
+            assert len(subdirs) >= 1, f"Backup directory {jb_dir.name} contains zero job subfolders"
+            if all((jb_dir / jid / "job.json").exists() for jid in CANONICAL_JOB_IDS):
+                found_canonical_archive = True
+            for job_sub in subdirs:
+                job_file = job_sub / "job.json"
+                assert job_file.exists(), f"job.json missing in {jb_dir.name}/{job_sub.name}"
                 content = job_file.read_text(encoding="utf-8")
                 assert len(content) > 100
                 job_data = json.loads(content)
                 assert isinstance(job_data, dict)
-                assert job_data.get("id") == jid or jid in str(job_file)
+                assert job_data.get("id") == job_sub.name or job_sub.name in str(job_file)
+        assert found_canonical_archive, "Original pre-migration canonical job backups must remain preserved"
 
     def test_backup_routine_execution_and_schema_completeness(self):
         """
@@ -470,7 +475,7 @@ class TestBackupIntegrityAdversarial:
 
             # Top-level non-null fields
             assert p.get("id") == pid
-            assert p.get("visual_strategy") in {"full_ai", "full_footage", "hybrid", "evidence_footage"}
+            assert p.get("visual_strategy") in {"full_ai", "full_footage", "hybrid", "evidence_footage", "edit_direct_footage"}
             assert p.get("default_visual_strategy") is not None
             assert p.get("language") is not None
             assert p.get("target_duration_minutes") is not None
@@ -487,9 +492,8 @@ class TestBackupIntegrityAdversarial:
             for dk in ["pacing", "visual_mix", "editing_archetypes", "subtitle_style", "color_grade", "audio_rules"]:
                 assert dna.get(dk) is not None
 
-            # self_learning_memory completeness
+            # self_learning_memory completeness (Milestone 1 winners/underperformers or V2 core_strengths/next_video_upgrades)
             slm = p.get("self_learning_memory")
             assert isinstance(slm, dict)
-            assert slm.get("winners") is not None
-            assert slm.get("underperformers") is not None
-            assert isinstance(slm.get("upgrade_rules"), dict)
+            assert slm.get("winners") is not None or slm.get("core_strengths") is not None
+            assert isinstance(slm.get("upgrade_rules"), dict) or isinstance(slm.get("next_video_upgrades"), list)

@@ -1,0 +1,3623 @@
+/* ==========================================================================
+   COFI DOCUMENTARY — AI STUDIO NEXUS ("VĂN PHÒNG AI") DESKTOP UI SYSTEM
+   Viewport-Locked · Bounded Scroll Boxes · Crisp Blueprint Aesthetic · Popups
+   ========================================================================== */
+
+:root {
+  --nexus-bg-deep: #060f1a;
+  --nexus-bg-canvas: #071220;
+  --nexus-surface-1: rgba(11, 23, 39, 0.88);
+  --nexus-surface-2: rgba(15, 28, 46, 0.94);
+  --nexus-surface-3: rgba(8, 18, 31, 0.96);
+  --nexus-border: rgba(148, 163, 184, 0.17);
+  --nexus-border-cyan: rgba(56, 189, 248, 0.32);
+  --nexus-border-emerald: rgba(52, 211, 153, 0.45);
+  --nexus-border-amber: rgba(251, 191, 36, 0.44);
+  --nexus-border-rose: rgba(251, 113, 133, 0.44);
+  --nexus-cyan: #38bdf8;
+  --nexus-emerald: #34d399;
+  --nexus-amber: #fbbf24;
+  --nexus-rose: #fb7185;
+  --nexus-text: #f1f5f9;
+  --nexus-text-soft: #cbd5e1;
+  --nexus-text-muted: #94a3b8;
+}
+
+/* 1. Custom Thin Studio Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(56, 189, 248, 0.28) rgba(7, 15, 28, 0.55);
+}
+
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+*::-webkit-scrollbar-track {
+  background: rgba(7, 15, 28, 0.55);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(56, 189, 248, 0.28);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(56, 189, 248, 0.52);
+}
+
+/* 2. Strict Viewport Lock — Zero Endless Web-Page Scrolling */
+html,
+body {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  background: var(--nexus-bg-deep) !important;
+  color: var(--nexus-text) !important;
+  font-family: "Plus Jakarta Sans", "Inter", "Noto Sans KR", system-ui, sans-serif !important;
+}
+
+.app-shell.channel-studio-shell {
+  display: grid !important;
+  grid-template-columns: 220px minmax(0, 1fr) !important;
+  height: 100vh !important;
+  max-height: 100vh !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: var(--nexus-bg-deep) !important;
+}
+
+body.desktop-mode .app-shell.channel-studio-shell {
+  height: calc(100vh - 34px) !important;
+  max-height: calc(100vh - 34px) !important;
+}
+
+/* Desktop Titlebar Refinement */
+body.desktop-mode .desktop-titlebar {
+  background: linear-gradient(90deg, #050d18 0%, #081526 60%, #06101d 100%) !important;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.18) !important;
+}
+
+.desktop-titlebar-mark {
+  background: linear-gradient(135deg, #38bdf8, #10b981) !important;
+  color: #04101c !important;
+  font-weight: 900 !important;
+  border-radius: 5px !important;
+}
+
+/* 3. Sleek Compact AI-Office Sidebar (Fits 100% on 1080p without scroll) */
+.sidebar.channel-studio-sidebar {
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 10px 10px 10px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(14, 165, 233, 0.1), transparent 40%),
+    linear-gradient(180deg, #07111f 0%, #050c17 100%) !important;
+  border-right: 1px solid rgba(56, 189, 248, 0.16) !important;
+}
+
+.channel-studio-sidebar .brand {
+  padding: 5px 7px 9px !important;
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12) !important;
+  gap: 9px !important;
+}
+
+.channel-studio-sidebar .brand-mark {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 9px !important;
+  font-size: 12.5px !important;
+  font-weight: 900 !important;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.28), rgba(16, 185, 129, 0.24)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  color: #e0f2fe !important;
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.16) !important;
+}
+
+.channel-studio-sidebar .brand strong {
+  font-size: 12.5px !important;
+  letter-spacing: 0.03em !important;
+  color: #f8fafc !important;
+}
+
+.channel-studio-sidebar .brand span {
+  font-size: 10px !important;
+  color: #7dd3fc !important;
+  letter-spacing: 0.05em !important;
+}
+
+.channel-studio-sidebar .side-nav {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+.channel-studio-sidebar .nav-group-label {
+  margin: 7px 8px 2px !important;
+  padding: 0 !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.09em !important;
+  color: #64748b !important;
+}
+
+.channel-studio-sidebar .nav-group-label:first-child {
+  margin-top: 2px !important;
+}
+
+.channel-studio-sidebar .nav-item {
+  padding: 5.5px 9px !important;
+  min-height: 30px !important;
+  border-radius: 8px !important;
+  font-size: 12.2px !important;
+  font-weight: 600 !important;
+  gap: 8px !important;
+  color: #94a3b8 !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  transition: all 0.14s ease !important;
+}
+
+.channel-studio-sidebar .nav-item > span:first-child {
+  width: 21px !important;
+  height: 20px !important;
+  border-radius: 5px !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  font-size: 10.5px !important;
+  font-family: "JetBrains Mono", monospace !important;
+  font-weight: 700 !important;
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  color: #7dd3fc !important;
+  flex-shrink: 0 !important;
+}
+
+.channel-studio-sidebar .nav-item:hover {
+  color: #f1f5f9 !important;
+  background: rgba(15, 28, 46, 0.72) !important;
+  border-color: rgba(56, 189, 248, 0.22) !important;
+}
+
+.channel-studio-sidebar .nav-item.active {
+  color: #f8fafc !important;
+  font-weight: 700 !important;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.22), rgba(12, 26, 46, 0.92)) !important;
+  border-color: rgba(56, 189, 248, 0.48) !important;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.14), inset 2px 0 0 #38bdf8 !important;
+}
+
+.channel-studio-sidebar .nav-item.active > span:first-child {
+  background: linear-gradient(135deg, #38bdf8, #0284c7) !important;
+  border-color: transparent !important;
+  color: #04101c !important;
+}
+
+.channel-studio-sidebar .sidebar-agent-button {
+  padding: 7px 10px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, rgba(12, 28, 48, 0.95), rgba(16, 185, 129, 0.16)) !important;
+  border: 1px solid rgba(52, 211, 153, 0.36) !important;
+  margin-top: auto !important;
+}
+
+.channel-studio-sidebar .sidebar-agent-button strong {
+  font-size: 12px !important;
+}
+
+.channel-studio-sidebar .sidebar-agent-button small {
+  font-size: 10.5px !important;
+}
+
+.channel-studio-sidebar .sidebar-status {
+  padding: 6px 9px !important;
+  border-radius: 9px !important;
+  background: rgba(9, 18, 32, 0.85) !important;
+  border: 1px solid rgba(148, 163, 184, 0.14) !important;
+}
+
+.channel-studio-sidebar .sidebar-status strong {
+  font-size: 11px !important;
+}
+
+.channel-studio-sidebar .sidebar-status small {
+  font-size: 9.8px !important;
+}
+
+/* 4. Main Studio Column & Compact Topbar */
+main.channel-studio-main {
+  height: 100% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+  background-color: var(--nexus-bg-canvas) !important;
+  background-image:
+    radial-gradient(circle at 12% 6%, rgba(14, 165, 233, 0.09), transparent 36%),
+    radial-gradient(circle at 88% 10%, rgba(16, 185, 129, 0.07), transparent 34%),
+    linear-gradient(rgba(56, 189, 248, 0.038) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.038) 1px, transparent 1px) !important;
+  background-size: 100% 100%, 100% 100%, 26px 26px, 26px 26px !important;
+}
+
+.channel-studio-topbar {
+  height: 52px !important;
+  min-height: 52px !important;
+  max-height: 52px !important;
+  padding: 0 16px !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.16) !important;
+  background: rgba(8, 18, 31, 0.94) !important;
+  backdrop-filter: blur(12px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-shrink: 0 !important;
+  position: relative !important;
+  top: auto !important;
+}
+
+.channel-studio-page-copy {
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.channel-studio-page-copy #studioPageKicker {
+  padding: 2px 8px !important;
+  border-radius: 999px !important;
+  background: rgba(14, 165, 233, 0.14) !important;
+  border: 1px solid rgba(56, 189, 248, 0.32) !important;
+  color: #7dd3fc !important;
+  font-size: 9.8px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  white-space: nowrap !important;
+}
+
+.channel-studio-page-copy h1#studioPageTitle {
+  margin: 0 !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+  white-space: nowrap !important;
+}
+
+.channel-studio-page-copy p#studioPageHint {
+  margin: 0 !important;
+  font-size: 11.5px !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  padding-left: 8px !important;
+  border-left: 1px solid rgba(148, 163, 184, 0.18) !important;
+}
+
+@media (max-width: 1420px) {
+  .channel-studio-page-copy p#studioPageHint,
+  .studio-engine-chip {
+    display: none !important;
+  }
+}
+
+.channel-studio-top-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  flex-shrink: 0 !important;
+}
+
+.global-project-switcher {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  padding: 4px 10px !important;
+  border-radius: 9px !important;
+  background: rgba(15, 23, 42, 0.88) !important;
+  border: 1px solid rgba(56, 189, 248, 0.24) !important;
+  margin: 0 !important;
+}
+
+.global-project-switcher span {
+  font-size: 9.8px !important;
+  font-weight: 800 !important;
+  color: #7dd3fc !important;
+  letter-spacing: 0.05em !important;
+  white-space: nowrap !important;
+}
+
+.global-project-switcher select {
+  background: transparent !important;
+  border: none !important;
+  padding: 0 4px !important;
+  height: 22px !important;
+  min-height: 22px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  max-width: 230px !important;
+}
+
+.studio-action,
+.studio-primary-action {
+  height: 31px !important;
+  padding: 0 11px !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  border-radius: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  white-space: nowrap !important;
+}
+
+.studio-action {
+  background: rgba(15, 23, 42, 0.85) !important;
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+  color: #e2e8f0 !important;
+}
+
+.studio-action:hover {
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  color: #f8fafc !important;
+}
+
+.studio-primary-action {
+  background: linear-gradient(135deg, #38bdf8, #0284c7) !important;
+  border: 1px solid rgba(186, 230, 253, 0.35) !important;
+  color: #04101c !important;
+  box-shadow: 0 0 16px rgba(56, 189, 248, 0.25) !important;
+}
+
+/* 5. Content Viewport — Bounded Flex Container */
+.channel-studio-content {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow: hidden !important;
+  padding: 12px 16px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+.workspace-pane {
+  display: none !important;
+}
+
+/* Standard Cards & Buttons Harmonized to Agent Office */
+.panel,
+.config-card,
+.radar-card,
+.ai-account-card,
+.overview-console-card,
+.overview-projects-card,
+.artifact-card,
+.seo-result-card,
+.final-output-card,
+.storyboard-card {
+  background: var(--nexus-surface-1) !important;
+  border: 1px solid var(--nexus-border) !important;
+  border-radius: 13px !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 10px 28px rgba(0, 0, 0, 0.22) !important;
+}
+
+button.primary {
+  background: linear-gradient(135deg, #38bdf8, #0284c7) !important;
+  color: #04101c !important;
+  font-weight: 800 !important;
+  border: 1px solid rgba(186, 230, 253, 0.35) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.22) !important;
+}
+
+button.primary:hover:not(:disabled) {
+  filter: brightness(1.06) !important;
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.35) !important;
+}
+
+button.secondary {
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.18), rgba(16, 185, 129, 0.16)) !important;
+  color: #e0f2fe !important;
+  border: 1px solid rgba(56, 189, 248, 0.42) !important;
+  border-radius: 8px !important;
+  font-weight: 700 !important;
+}
+
+button.ghost {
+  background: rgba(15, 23, 42, 0.78) !important;
+  border: 1px solid rgba(148, 163, 184, 0.24) !important;
+  color: #cbd5e1 !important;
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
+
+button.ghost:hover:not(:disabled) {
+  border-color: rgba(56, 189, 248, 0.52) !important;
+  color: #f8fafc !important;
+  background: rgba(14, 30, 52, 0.92) !important;
+}
+
+button.compact {
+  padding: 5px 10px !important;
+  font-size: 12px !important;
+  min-height: 29px !important;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+select,
+textarea {
+  background: rgba(7, 15, 28, 0.88) !important;
+  border: 1px solid rgba(148, 163, 184, 0.22) !important;
+  color: #f1f5f9 !important;
+  border-radius: 8px !important;
+  font-size: 12.5px !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: rgba(56, 189, 248, 0.72) !important;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.16) !important;
+  outline: none !important;
+}
+
+/* ==========================================================================
+   6. TAB OVERVIEW — AI STUDIO MISSION CONTROL (Fits 100% in 1 Screen)
+   ========================================================================== */
+
+#tong-quan.workspace-pane.active {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  padding: 10px 16px !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+  border-radius: 13px !important;
+  background: linear-gradient(135deg, rgba(10, 22, 39, 0.94), rgba(8, 32, 46, 0.55)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+}
+
+#tong-quan .hero-copy {
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+}
+
+#tong-quan .hero-copy .eyebrow,
+#tong-quan .hero-copy .lead,
+#tong-quan .hero-side > p {
+  display: none !important;
+}
+
+#tong-quan .hero-copy h1 {
+  margin: 0 !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+}
+
+#tong-quan .hero-kicker {
+  margin: 0 !important;
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  background: rgba(6, 78, 59, 0.42) !important;
+  border: 1px solid rgba(52, 211, 153, 0.4) !important;
+  color: #6ee7b7 !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+}
+
+#tong-quan .top-actions {
+  margin: 0 !important;
+  display: flex !important;
+  gap: 7px !important;
+}
+
+#tong-quan .top-actions button {
+  padding: 5px 11px !important;
+  font-size: 12px !important;
+  min-height: 30px !important;
+}
+
+#tong-quan .hero-side {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  flex-shrink: 0 !important;
+}
+
+#tong-quan .hero-side-head {
+  text-align: right !important;
+  max-width: 260px !important;
+}
+
+#tong-quan .hero-side-head span {
+  display: block !important;
+  font-size: 9.8px !important;
+  color: #7dd3fc !important;
+  font-weight: 800 !important;
+}
+
+#tong-quan .hero-side-head strong {
+  display: block !important;
+  font-size: 12px !important;
+  color: #f1f5f9 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#tong-quan .hero-metrics {
+  display: flex !important;
+  gap: 7px !important;
+  margin: 0 !important;
+}
+
+#tong-quan .hero-metrics > div {
+  padding: 5px 11px !important;
+  border-radius: 9px !important;
+  background: rgba(15, 23, 42, 0.86) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  min-width: 74px !important;
+  text-align: center !important;
+}
+
+#tong-quan .hero-metrics span {
+  display: block !important;
+  font-size: 10px !important;
+  color: #94a3b8 !important;
+}
+
+#tong-quan .hero-metrics strong {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  color: #38bdf8 !important;
+  font-family: "JetBrains Mono", monospace !important;
+}
+
+/* 7-Engine Mini-Desk Strip */
+#engineGrid.workspace-pane.active {
+  display: grid !important;
+  grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+@media (max-width: 1360px) {
+  #engineGrid.workspace-pane.active {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+#engineGrid .engine-card {
+  padding: 8px 10px !important;
+  border-radius: 11px !important;
+  background: linear-gradient(180deg, rgba(15, 28, 46, 0.92), rgba(10, 19, 33, 0.95)) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  transition: transform 0.14s ease, border-color 0.18s ease !important;
+}
+
+#engineGrid .engine-card:hover {
+  transform: translateY(-1px) !important;
+  border-color: rgba(56, 189, 248, 0.48) !important;
+}
+
+#engineGrid .engine-icon {
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 8px !important;
+  font-size: 11.5px !important;
+  font-weight: 800 !important;
+  display: grid !important;
+  place-items: center !important;
+  background: rgba(14, 165, 233, 0.16) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  color: #7dd3fc !important;
+  flex-shrink: 0 !important;
+}
+
+#engineGrid .engine-card > div:last-child {
+  min-width: 0 !important;
+  flex: 1 !important;
+}
+
+#engineGrid .engine-card span {
+  display: block !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.05em !important;
+  color: #94a3b8 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#engineGrid .engine-card strong {
+  display: block !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: #f8fafc !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#engineGrid .engine-card small {
+  display: block !important;
+  font-size: 10px !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Command Deck 2-Column Bounded Split */
+#overviewCommandDeck.workspace-pane.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  overflow: hidden !important;
+}
+
+.overview-deck-grid {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.32fr) minmax(360px, 0.95fr) !important;
+  gap: 12px !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.overview-console-card,
+.overview-projects-card {
+  height: 100% !important;
+  min-height: 0 !important;
+  padding: 13px 15px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+  overflow: hidden !important;
+}
+
+.overview-console-head h2 {
+  font-size: 15.5px !important;
+  line-height: 1.32 !important;
+  margin: 4px 0 2px !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.overview-workspace-path {
+  font-size: 11px !important;
+  margin: 0 !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.overview-pipeline-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  align-content: start !important;
+  padding-right: 4px !important;
+}
+
+@media (max-width: 1360px) {
+  .overview-pipeline-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+.overview-step-card {
+  padding: 10px 11px !important;
+  border-radius: 11px !important;
+  background: linear-gradient(180deg, rgba(15, 28, 46, 0.92), rgba(10, 19, 33, 0.95)) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  cursor: pointer !important;
+  transition: transform 0.14s ease, border-color 0.18s ease !important;
+}
+
+.overview-step-card:hover {
+  transform: translateY(-2px) !important;
+  border-color: rgba(56, 189, 248, 0.55) !important;
+}
+
+.overview-step-card.succeeded {
+  border-color: rgba(52, 211, 153, 0.42) !important;
+  background: linear-gradient(180deg, rgba(6, 48, 41, 0.45), rgba(10, 19, 33, 0.95)) !important;
+}
+
+.overview-step-card.running {
+  border-color: rgba(56, 189, 248, 0.78) !important;
+  box-shadow: 0 0 18px rgba(14, 165, 233, 0.22) !important;
+}
+
+.overview-projects-list {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 7px !important;
+  padding-right: 4px !important;
+}
+
+.overview-project-row {
+  padding: 9px 11px !important;
+  border-radius: 10px !important;
+  background: rgba(9, 18, 32, 0.84) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+}
+
+.overview-project-row.selected {
+  border-color: rgba(56, 189, 248, 0.58) !important;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.14), rgba(11, 23, 39, 0.92)) !important;
+}
+
+/* ==========================================================================
+   7. SHARED WORKSPACE HEADER & BOUNDED SCROLL CONTAINERS
+   ========================================================================== */
+
+.panel.workspace-pane.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  max-height: 100% !important;
+  margin: 0 !important;
+  padding: 12px 15px !important;
+  overflow: hidden !important;
+}
+
+.panel.workspace-pane > .section-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 0 0 9px 0 !important;
+  margin: 0 0 10px 0 !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14) !important;
+  flex-shrink: 0 !important;
+}
+
+.panel.workspace-pane > .section-head > div:first-child {
+  display: flex !important;
+  align-items: baseline !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+}
+
+.panel.workspace-pane > .section-head .eyebrow {
+  margin: 0 !important;
+  padding: 2px 7px !important;
+  border-radius: 999px !important;
+  background: rgba(56, 189, 248, 0.13) !important;
+  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  color: #7dd3fc !important;
+  font-size: 9.8px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+}
+
+.panel.workspace-pane > .section-head h2 {
+  margin: 0 !important;
+  font-size: 15px !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+}
+
+.panel.workspace-pane > .section-head p {
+  margin: 0 !important;
+  font-size: 11.5px !important;
+  color: #94a3b8 !important;
+  max-width: 720px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.workspace-project {
+  padding: 4px 10px !important;
+  border-radius: 999px !important;
+  background: rgba(15, 23, 42, 0.9) !important;
+  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+  color: #bae6fd !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  max-width: 340px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  flex-shrink: 0 !important;
+}
+
+.function-body,
+.edit-persistent-host {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding-right: 5px !important;
+}
+
+/* ==========================================================================
+   8. TAB RADAR (BƯỚC 1) — 2-COLUMN STUDIO + POPUP MODALS
+   ========================================================================== */
+
+#chu-de .topic-pane.active {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  gap: 10px !important;
+  overflow: hidden !important;
+}
+
+.radar-studio-command-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 9px 13px;
+  border-radius: 11px;
+  background: linear-gradient(135deg, rgba(12, 26, 46, 0.94), rgba(8, 32, 46, 0.55));
+  border: 1px solid rgba(56, 189, 248, 0.28);
+  flex-shrink: 0;
+}
+
+.radar-command-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.radar-command-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: 16px;
+  background: rgba(14, 165, 233, 0.2);
+  border: 1px solid rgba(56, 189, 248, 0.42);
+}
+
+.radar-command-picker {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px;
+  border-radius: 9px;
+  background: rgba(7, 15, 28, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+.radar-command-picker span {
+  font-size: 10.5px;
+  font-weight: 800;
+  color: #7dd3fc;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.radar-command-picker select {
+  border: none !important;
+  background: transparent !important;
+  font-weight: 700 !important;
+  min-width: 240px;
+  max-width: 340px;
+  padding: 2px 4px !important;
+}
+
+.radar-command-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.radar-studio-split-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);
+  gap: 12px;
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 1120px) {
+  .radar-studio-split-grid {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+}
+
+.radar-studio-split-grid .profile-library-box {
+  margin: 0 !important;
+  padding: 12px 13px !important;
+  border-radius: 12px !important;
+  background: rgba(9, 19, 34, 0.86) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.radar-studio-split-grid .profile-library-head {
+  margin-bottom: 9px !important;
+  padding-bottom: 8px !important;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.16) !important;
+  flex-shrink: 0 !important;
+}
+
+.radar-studio-split-grid .profile-library-head h3 {
+  font-size: 13.5px !important;
+  margin: 2px 0 !important;
+}
+
+.radar-studio-split-grid .profile-library-head p {
+  font-size: 11px !important;
+  margin: 0 !important;
+  line-height: 1.38 !important;
+}
+
+.radar-studio-split-grid #channelProfileCards {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding-right: 4px !important;
+}
+
+.channel-profile-card-item {
+  flex-shrink: 0 !important;
+  min-height: auto !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+  padding: 11px 13px !important;
+  border-radius: 11px !important;
+  background: linear-gradient(180deg, rgba(15, 28, 46, 0.92), rgba(10, 19, 33, 0.95)) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  transition: border-color 0.16s ease, box-shadow 0.16s ease !important;
+}
+
+.channel-profile-card-open {
+  display: block !important;
+  width: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: none !important;
+  background: transparent !important;
+  text-align: left !important;
+}
+
+.channel-profile-card-item .profile-card-actions {
+  position: static !important;
+  margin-top: 2px !important;
+  padding-top: 9px !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.16) !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-wrap: wrap !important;
+  gap: 6px !important;
+}
+
+.channel-profile-card-item .profile-card-actions .compact {
+  min-height: 29px !important;
+  padding: 4px 10px !important;
+  font-size: 11.5px !important;
+}
+
+.channel-profile-card-item.active {
+  border-color: rgba(52, 211, 153, 0.65) !important;
+  background: linear-gradient(180deg, rgba(6, 48, 41, 0.55), rgba(10, 23, 38, 0.96)) !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.16) !important;
+}
+
+.radar-results-column {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(9, 19, 34, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.radar-results-column .radar-toolbar {
+  margin: 0 0 9px 0 !important;
+  padding: 0 0 8px 0 !important;
+  border-bottom: 1px dashed rgba(148, 163, 184, 0.16) !important;
+  flex-shrink: 0 !important;
+}
+
+.radar-results-column #radarResults {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+/* ==========================================================================
+   9. TAB CREATE (BƯỚC 2) — COMPACT 2-COLUMN LAUNCH STUDIO + BOUNDED BOXES
+   ========================================================================== */
+
+#tao-video #jobForm.production-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.56fr) minmax(330px, 385px) !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+  gap: 12px !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 1180px) {
+  #tao-video #jobForm.production-form {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+}
+
+#tao-video .form-main {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding-right: 6px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 9px !important;
+}
+
+#tao-video .form-side {
+  grid-column: 2 !important;
+  grid-row: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 9px !important;
+  position: static !important;
+}
+
+#tao-video .submit-row {
+  grid-column: 1 / -1 !important;
+  grid-row: 2 !important;
+  margin: 0 !important;
+  padding: 9px 14px !important;
+  border-radius: 11px !important;
+  background: rgba(8, 18, 32, 0.96) !important;
+  border: 1px solid rgba(56, 189, 248, 0.28) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 10px !important;
+  flex-shrink: 0 !important;
+}
+
+#tao-video .submit-row button.large {
+  padding: 8px 18px !important;
+  font-size: 13px !important;
+  min-height: 36px !important;
+}
+
+.create-top-config-strip {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.55fr) 0.65fr 0.75fr 1.15fr;
+  gap: 9px;
+  padding: 10px 12px;
+  border-radius: 11px;
+  background: rgba(11, 23, 39, 0.9);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+@media (max-width: 1360px) {
+  .create-top-config-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.create-top-config-strip label {
+  margin: 0 !important;
+  font-size: 11.5px !important;
+}
+
+/* Compact DNA Lock Strip in Step 2 */
+.dna-compact-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(6, 48, 41, 0.42), rgba(11, 23, 39, 0.92));
+  border: 1px solid rgba(52, 211, 153, 0.42);
+}
+
+.dna-compact-strip-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.dna-compact-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: rgba(15, 23, 42, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  color: #e2e8f0;
+  white-space: nowrap;
+}
+
+.dna-compact-pill.emerald {
+  color: #6ee7b7;
+  border-color: rgba(52, 211, 153, 0.45);
+  background: rgba(6, 78, 59, 0.45);
+}
+
+.dna-compact-pill.cyan {
+  color: #7dd3fc;
+  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(12, 74, 110, 0.38);
+}
+
+.dna-compact-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* Compact Pre-Flight Strip */
+#createPreflightSummaryBox {
+  margin-top: 0 !important;
+  padding: 9px 12px !important;
+  border-radius: 10px !important;
+  background: rgba(11, 23, 39, 0.88) !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+}
+
+#createPreflightSummaryBox .preflight-head {
+  margin-bottom: 5px !important;
+}
+
+/* Bounded Topic Research Box in Step 2 */
+.create-topic-discovery {
+  padding: 11px 13px !important;
+  border-radius: 12px !important;
+  background: rgba(9, 19, 34, 0.9) !important;
+  border: 1px solid rgba(56, 189, 248, 0.24) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+.create-topic-discovery-head {
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+.create-topic-discovery-head strong {
+  font-size: 13px !important;
+  display: block !important;
+}
+
+.create-topic-discovery-head small {
+  display: none !important;
+}
+
+#createTopicSuggestions {
+  max-height: 480px !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+.create-topic-suggestions.two-stream-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+@media (max-width: 1360px) {
+  .create-topic-suggestions.two-stream-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.create-topic-option {
+  padding: 12px 14px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(180deg, rgba(15, 28, 46, 0.92), rgba(10, 19, 33, 0.96)) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 9px !important;
+  align-items: stretch !important;
+}
+
+.create-topic-option.selected {
+  border-color: rgba(52, 211, 153, 0.78) !important;
+  background: linear-gradient(180deg, rgba(6, 48, 41, 0.65), rgba(10, 23, 38, 0.96)) !important;
+  box-shadow: 0 0 18px rgba(16, 185, 129, 0.2) !important;
+}
+
+.topic-card-header-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+.topic-card-badges {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+}
+
+.create-topic-option-rank {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 2px 7px !important;
+  border-radius: 6px !important;
+  background: rgba(56, 189, 248, 0.14) !important;
+  border: 1px solid rgba(56, 189, 248, 0.32) !important;
+  color: #38bdf8 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+.topic-card-btn-col {
+  display: flex !important;
+  flex-direction: row !important;
+  gap: 6px !important;
+  align-items: center !important;
+  flex-shrink: 0 !important;
+}
+
+/* Collapsible Studio Drawers in Step 2 */
+details.studio-accordion-drawer {
+  border-radius: 11px;
+  background: rgba(11, 23, 39, 0.86);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  overflow: hidden;
+}
+
+details.studio-accordion-drawer[open] {
+  border-color: rgba(56, 189, 248, 0.35);
+}
+
+details.studio-accordion-drawer > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 9px 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #e2e8f0;
+  background: rgba(15, 28, 46, 0.65);
+  user-select: none;
+}
+
+details.studio-accordion-drawer > summary::-webkit-details-marker {
+  display: none;
+}
+
+details.studio-accordion-drawer > summary .drawer-chevron {
+  font-size: 11px;
+  color: #7dd3fc;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.14);
+  border: 1px solid rgba(56, 189, 248, 0.28);
+}
+
+details.studio-accordion-drawer > .studio-drawer-body {
+  padding: 11px 13px;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* Right Side Config Cards — Sleek Horizontal Rows Matching Overview Queue (Image 1) */
+#tao-video #createProfileHelpText,
+#tao-video #createPipelineFlow {
+  display: none !important;
+}
+
+#tao-video .form-side {
+  gap: 8px !important;
+}
+
+#tao-video .form-side .config-card {
+  padding: 9px 11px !important;
+  border-radius: 12px !important;
+  background: rgba(8, 17, 30, 0.92) !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+}
+
+#tao-video .form-side .config-title {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin-bottom: 6px !important;
+}
+
+#tao-video .form-side .config-title span {
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.05em !important;
+  color: #38bdf8 !important;
+  white-space: nowrap !important;
+}
+
+#tao-video .form-side .config-title small {
+  font-size: 10.5px !important;
+  color: #64748b !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Reset outer .choice padding so inner <span> is the exact compact row box */
+#tao-video .choice {
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 9px !important;
+}
+
+/* 1) AI viết kịch bản: 2 sleek side-by-side compact rows */
+#tao-video .choice-grid.two {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 6px !important;
+}
+
+#tao-video .choice-grid.two .choice > span {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 7px 10px !important;
+  border-radius: 9px !important;
+  background: rgba(9, 18, 32, 0.86) !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  transition: border-color 0.15s ease, background 0.15s ease !important;
+}
+
+#tao-video .choice-grid.two .choice > span > b {
+  font-size: 12.4px !important;
+  font-weight: 700 !important;
+  color: #f1f5f9 !important;
+  white-space: nowrap !important;
+}
+
+#tao-video .choice-grid.two .choice > span > small {
+  margin: 0 !important;
+  font-size: 10.5px !important;
+  color: #7c93a8 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* 2) Chiến lược hình ảnh: 1-column sleek horizontal queue rows (Exact Image 1 style!) */
+#tao-video .create-visual-strategy-card .visual-strategy-grid {
+  grid-template-columns: 1fr !important;
+  gap: 5px !important;
+}
+
+#tao-video .create-visual-strategy-card .choice > span {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 6px 10px !important;
+  border-radius: 9px !important;
+  background: rgba(9, 18, 32, 0.86) !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  column-gap: 8px !important;
+  row-gap: 1px !important;
+  transition: border-color 0.15s ease, background 0.15s ease !important;
+}
+
+#tao-video .create-visual-strategy-card .choice > span > b {
+  grid-column: 1 !important;
+  font-size: 12.2px !important;
+  font-weight: 700 !important;
+  line-height: 1.28 !important;
+  color: #f1f5f9 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#tao-video .create-visual-strategy-card .choice > span > small {
+  grid-column: 1 !important;
+  margin: 0 !important;
+  font-size: 10.8px !important;
+  line-height: 1.25 !important;
+  color: #829ab0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#tao-video .create-visual-strategy-card .choice > span::after {
+  content: "Chọn";
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 3px 8px;
+  border-radius: 7px;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #94a3b8;
+  background: rgba(15, 28, 46, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  white-space: nowrap;
+}
+
+#tao-video .choice input:checked + span {
+  border-color: rgba(56, 189, 248, 0.68) !important;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(11, 23, 39, 0.94)) !important;
+  box-shadow: 0 0 14px rgba(14, 165, 233, 0.12) !important;
+}
+
+#tao-video .create-visual-strategy-card .choice input:checked + span::after {
+  content: "✓ Đang chọn";
+  color: #7dd3fc;
+  background: rgba(14, 165, 233, 0.24);
+  border-color: rgba(56, 189, 248, 0.55);
+}
+
+/* 3) Phong cách & kiểu media AI: Compact 1-line segmented pills + 2-col selects */
+#tao-video .create-ai-config-grid {
+  gap: 7px !important;
+}
+
+#tao-video .create-ai-media-modes > span {
+  display: block !important;
+  font-size: 11px !important;
+  color: #94a3b8 !important;
+  margin-bottom: 4px !important;
+}
+
+#tao-video .create-ai-media-modes .visual-strategy-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 5px !important;
+}
+
+#tao-video .create-ai-media-modes .choice > span {
+  min-height: 0 !important;
+  height: auto !important;
+  padding: 5px 6px !important;
+  border-radius: 8px !important;
+  text-align: center !important;
+  background: rgba(9, 18, 32, 0.86) !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+}
+
+#tao-video .create-ai-media-modes .choice > span > b {
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  white-space: nowrap !important;
+}
+
+#tao-video .create-ai-media-modes .choice > span > small,
+#tao-video #createAiStylePresetStatus {
+  display: none !important;
+}
+
+/* 4) Giọng đọc: 2-column compact row */
+#tao-video .voice-compact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 0.9fr);
+  gap: 8px;
+  align-items: end;
+}
+
+#tao-video .voice-compact-grid label {
+  margin: 0 !important;
+  font-size: 11px !important;
+}
+
+/* 5) Topic Cards: Full Bilingual Titles Outside + Detailed Case Explanation in Popup */
+.create-topic-option {
+  padding: 12px 14px !important;
+  align-items: stretch !important;
+}
+
+.create-topic-option .topic-title-dual {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+}
+
+.create-topic-option .topic-title-target {
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  line-height: 1.48 !important;
+  color: #f8fafc !important;
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+.create-topic-option .topic-title-vi {
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  line-height: 1.48 !important;
+  color: #93c5fd !important;
+  padding: 6px 10px !important;
+  border-radius: 6px !important;
+  background: rgba(15, 23, 42, 0.72) !important;
+  border-left: 3px solid #38bdf8 !important;
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: unset !important;
+  overflow: visible !important;
+  white-space: normal !important;
+}
+
+.topic-card-btn-col {
+  flex-direction: row !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.channel-profile-card-item strong {
+  font-size: 13px !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 1 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+.channel-profile-card-item span:nth-of-type(2) {
+  display: none !important;
+}
+
+#du-an #jobList .job-card {
+  padding: 8px 11px !important;
+}
+
+#du-an #jobList .job-card h3 {
+  margin: 4px 0 2px !important;
+  font-size: 12.8px !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 1 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+#du-an #jobList .job-card .job-storage-path {
+  display: none !important;
+}
+
+/* ==========================================================================
+   10. PIPELINE TABS (01..08), TABLES, CODE VIEWERS & PROJECTS SPLIT
+   ========================================================================== */
+
+/* Studio Sub-Tab Navigation (Matches Agent Office .ao-tabs) */
+.studio-subtabs-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 6px 8px;
+  margin: 8px 0 10px;
+  border-radius: 11px;
+  background: rgba(8, 17, 30, 0.92);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+}
+
+.studio-subtabs-group {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.studio-subtab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.14s ease;
+}
+
+.studio-subtab-btn:hover {
+  color: #f1f5f9;
+  background: rgba(15, 28, 46, 0.72);
+}
+
+.studio-subtab-btn.active {
+  color: #f8fafc;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.24), rgba(15, 23, 42, 0.94));
+  border-color: rgba(56, 189, 248, 0.48);
+  box-shadow: 0 0 12px rgba(14, 165, 233, 0.16);
+}
+
+.studio-subpane-hidden {
+  display: none !important;
+}
+
+/* Bounded Tables & Code Blocks */
+.storyboard-table-wrap {
+  max-height: calc(100vh - 285px) !important;
+  overflow-y: auto !important;
+  border-radius: 9px !important;
+}
+
+.artifact-card {
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.artifact-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  padding: 8px 12px !important;
+  background: rgba(8, 17, 30, 0.85) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14) !important;
+}
+
+.artifact-head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.artifact-card pre {
+  max-height: 230px !important;
+  overflow-y: auto !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  font-size: 11.8px !important;
+  line-height: 1.5 !important;
+}
+
+.seo-copy-box {
+  max-height: 135px !important;
+  overflow-y: auto !important;
+}
+
+.director-report pre {
+  max-height: 195px !important;
+  overflow-y: auto !important;
+}
+
+/* Tab Projects (#du-an) Viewport-Locked Split */
+#du-an.project-layout.workspace-pane.active {
+  display: grid !important;
+  grid-template-columns: 340px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+#du-an .queue-panel,
+#du-an .detail-panel {
+  height: 100% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+#du-an #jobList {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 8px !important;
+}
+
+#du-an #jobList .job-card {
+  flex-shrink: 0 !important;
+  overflow: visible !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  background: rgba(11, 22, 37, 0.88) !important;
+  border: 1px solid rgba(148, 163, 184, 0.16) !important;
+}
+
+#du-an #jobList .job-card.selected {
+  border-color: rgba(56, 189, 248, 0.65) !important;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(11, 23, 39, 0.94)) !important;
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.14) !important;
+}
+
+.overview-project-row,
+.create-topic-option {
+  flex-shrink: 0 !important;
+}
+
+#du-an #jobDetail {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+/* AI Accounts Grid */
+.ai-account-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  overflow-y: auto !important;
+  padding-right: 4px !important;
+}
+
+@media (max-width: 1024px) {
+  .ai-account-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ==========================================================================
+   11. STUDIO POPUP MODALS (DNA 5-TAB STUDIO, UNIVERSAL READER, SELF-LEARNING)
+   ========================================================================== */
+
+dialog.studio-modal-xl,
+dialog.studio-modal-lg,
+dialog.studio-modal-md,
+dialog.studio-inspector-dialog {
+  padding: 0 !important;
+  border: 1px solid rgba(56, 189, 248, 0.36) !important;
+  border-radius: 18px !important;
+  background: #060f1a !important;
+  color: #e2e8f0 !important;
+  box-shadow: 0 28px 90px rgba(0, 0, 0, 0.82), 0 0 42px rgba(14, 165, 233, 0.16) !important;
+  overflow: hidden !important;
+}
+
+dialog.studio-modal-xl {
+  width: min(1320px, 95vw) !important;
+  max-width: 95vw !important;
+  height: min(860px, 91vh) !important;
+  max-height: 91vh !important;
+}
+
+dialog.studio-modal-lg,
+dialog.studio-inspector-dialog {
+  width: min(1120px, 93vw) !important;
+  max-width: 93vw !important;
+  height: min(820px, 89vh) !important;
+  max-height: 89vh !important;
+}
+
+dialog.studio-modal-md {
+  width: min(860px, 92vw) !important;
+  max-width: 92vw !important;
+  max-height: 86vh !important;
+}
+
+dialog.studio-modal-xl .ao-header,
+dialog.studio-modal-lg .ao-header,
+dialog.studio-modal-md .ao-header,
+dialog.studio-inspector-dialog .ao-header {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 14px !important;
+  flex-wrap: nowrap !important;
+  padding: 13px 18px !important;
+}
+
+dialog .ao-header-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+dialog .ao-header-titles h3 {
+  margin: 0 !important;
+  font-size: 14.5px !important;
+  font-weight: 800 !important;
+  line-height: 1.3 !important;
+  color: #f8fafc !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+dialog .ao-header-titles p {
+  margin: 2px 0 0 !important;
+  font-size: 11.5px !important;
+  color: #7dd3fc !important;
+}
+
+dialog .ao-header-controls {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+  flex-wrap: nowrap !important;
+}
+
+.studio-modal-body {
+  flex: 1 1 0%;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 20px;
+  background-color: #071220;
+  background-image:
+    linear-gradient(rgba(56, 189, 248, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(56, 189, 248, 0.04) 1px, transparent 1px);
+  background-size: 26px 26px;
+}
+
+.studio-modal-footer {
+  padding: 11px 20px;
+  background: rgba(8, 18, 31, 0.96);
+  border-top: 1px solid rgba(56, 189, 248, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+/* DNA 5-Tab Studio inside Modal */
+.dna-studio-tabs-nav {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 8px 18px;
+  background: rgba(9, 20, 34, 0.92);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  flex-shrink: 0;
+}
+
+.dna-studio-tab-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 9px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.75);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dna-studio-tab-btn:hover {
+  color: #f1f5f9;
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.dna-studio-tab-btn.active {
+  color: #f8fafc;
+  background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(15, 23, 42, 0.95));
+  border-color: #38bdf8;
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.22);
+}
+
+#dnaStudioEditorDialog #channelProfileForm {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: hidden !important;
+}
+
+#dnaStudioEditorDialog #channelProfileForm > .radar-card-icon {
+  display: none !important;
+}
+
+#dnaStudioEditorDialog #channelProfileForm > .radar-card-body {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.dna-tab-pane {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.dna-tab-pane.active {
+  display: flex;
+}
+
+/* Modal Live Toast Pill (Visible inside #top-layer dialogs!) */
+.dialog-toast-pill {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 11px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 700;
+  background: rgba(6, 78, 59, 0.65);
+  border: 1px solid rgba(52, 211, 153, 0.55);
+  color: #6ee7b7;
+  max-width: 420px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dialog-toast-pill.is-visible {
+  display: inline-flex;
+}
+
+.dialog-toast-pill.is-error {
+  background: rgba(127, 29, 29, 0.65);
+  border-color: rgba(248, 113, 113, 0.6);
+  color: #fecaca;
+}
+
+/* Universal Reader Content Typography */
+.inspector-reader-pre {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 12px;
+  background: rgba(8, 16, 28, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  color: #e2e8f0;
+  font-family: "Plus Jakarta Sans", "Inter", "Noto Sans KR", sans-serif;
+  font-size: 13.8px;
+  line-height: 1.68;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.inspector-reader-pre.is-code {
+  font-family: "JetBrains Mono", Consolas, monospace;
+  font-size: 12.2px;
+  line-height: 1.55;
+}
+
+.inspector-dossier-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (max-width: 860px) {
+  .inspector-dossier-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.inspector-dossier-card {
+  padding: 13px 15px;
+  border-radius: 12px;
+  background: rgba(11, 23, 39, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.inspector-dossier-card h4 {
+  margin: 0 0 8px 0;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #7dd3fc;
+}
+
+.inspector-dossier-card ul {
+  margin: 0;
+  padding-left: 17px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 12.8px;
+  line-height: 1.52;
+  color: #e2e8f0;
+}
+
+
+/* ==========================================================================
+   12. 4-PILLAR ADAPTIVE SAAS WORKBENCH (LINEAR · CURSOR · FIGMA/CAPCUT)
+   Fixes:
+   - Pillar 1: Collapsible Icon Rail Sidebar (58px) + @container Queries + Slide-Over Config Sheet
+   - Pillar 2: Uniform 36px Form Grid Alignment & Non-Wrapping Accordion Pills
+   - Pillar 3 & 4: Clean De-Boxed SaaS Elevation & 1-Row Pipeline Status Bars
+   ========================================================================== */
+
+:root {
+  --chat-dock-width: clamp(384px, 28vw, 436px);
+  --saas-border-subtle: rgba(148, 163, 184, 0.13);
+  --saas-border-hover: rgba(56, 189, 248, 0.38);
+}
+
+/* 12.1 Responsive AI Chat Dock Width (Prevents Crushing Center Workspace) */
+.global-codex-dock {
+  width: var(--chat-dock-width) !important;
+}
+
+body.global-chat-open .app-shell.channel-studio-shell {
+  padding-right: var(--chat-dock-width) !important;
+  transition: padding-right 0.18s ease, grid-template-columns 0.18s ease !important;
+}
+
+body.is-resizing-chat,
+body.is-resizing-chat * {
+  user-select: none !important;
+}
+
+body.is-resizing-chat .app-shell.channel-studio-shell,
+body.is-resizing-chat .global-codex-dock {
+  transition: none !important;
+}
+
+@media (max-width: 1120px) {
+  body.global-chat-open .app-shell.channel-studio-shell {
+    padding-right: 0 !important;
+  }
+}
+
+/* Keep Topbar Sleek Single/Compact Row Even When Chat Dock Opens */
+.channel-studio-topbar {
+  height: auto !important;
+  min-height: 48px !important;
+  max-height: none !important;
+  padding: 6px 14px !important;
+  flex-wrap: wrap !important;
+  row-gap: 6px !important;
+}
+
+/* 12.2 Sidebar Brand & Collapse Toggle Button */
+.channel-studio-sidebar {
+  width: 220px !important;
+  min-width: 220px !important;
+  max-width: 220px !important;
+  box-sizing: border-box !important;
+}
+
+.channel-studio-sidebar .brand {
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+}
+
+.channel-studio-sidebar .brand-copy {
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+}
+
+.channel-studio-sidebar .brand-copy strong,
+.channel-studio-sidebar .brand-copy span {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.sidebar-collapse-btn {
+  width: 24px !important;
+  height: 24px !important;
+  min-height: 24px !important;
+  padding: 0 !important;
+  border-radius: 6px !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  background: rgba(15, 23, 42, 0.78) !important;
+  color: #94a3b8 !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1 !important;
+  display: inline-grid !important;
+  place-items: center !important;
+  cursor: pointer !important;
+  flex-shrink: 0 !important;
+  transition: all 0.14s ease !important;
+}
+
+.sidebar-collapse-btn:hover {
+  color: #f8fafc !important;
+  border-color: rgba(56, 189, 248, 0.52) !important;
+  background: rgba(14, 165, 233, 0.18) !important;
+}
+
+.channel-studio-sidebar .nav-item .nav-item-text {
+  font-style: normal !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+}
+
+.channel-studio-sidebar .sidebar-agent-copy,
+.channel-studio-sidebar .sidebar-status-copy {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Adaptive Icon Rail Mode (58px): Manual, Narrow Window (<=1460px), or Chat Open (<=1720px) */
+body.sidebar-collapsed .app-shell.channel-studio-shell {
+  grid-template-columns: 58px minmax(0, 1fr) !important;
+}
+
+@media (max-width: 1460px) {
+  body:not(.sidebar-expanded-override) .app-shell.channel-studio-shell {
+    grid-template-columns: 58px minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 1720px) {
+  body.global-chat-open:not(.sidebar-expanded-override) .app-shell.channel-studio-shell {
+    grid-template-columns: 58px minmax(0, 1fr) !important;
+  }
+}
+
+body.sidebar-collapsed .channel-studio-sidebar {
+  width: 58px !important;
+  min-width: 58px !important;
+  max-width: 58px !important;
+  padding: 8px 6px !important;
+  align-items: center !important;
+  overflow-x: hidden !important;
+}
+body.sidebar-collapsed .channel-studio-sidebar .brand {
+  flex-direction: column !important;
+  justify-content: center !important;
+  padding: 2px 0 7px !important;
+  gap: 5px !important;
+  width: 100% !important;
+}
+body.sidebar-collapsed .channel-studio-sidebar .brand-copy,
+body.sidebar-collapsed .channel-studio-sidebar .nav-group-label,
+body.sidebar-collapsed .channel-studio-sidebar .nav-item-text,
+body.sidebar-collapsed .channel-studio-sidebar .nav-skip-badge,
+body.sidebar-collapsed .channel-studio-sidebar .nav-item.nav-item-skipped::after,
+body.sidebar-collapsed .channel-studio-sidebar .sidebar-agent-copy,
+body.sidebar-collapsed .channel-studio-sidebar .sidebar-status-copy {
+  display: none !important;
+  content: none !important;
+}
+body.sidebar-collapsed .channel-studio-sidebar .side-nav {
+  width: 100% !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+body.sidebar-collapsed .channel-studio-sidebar .nav-item {
+  width: 42px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  justify-content: center !important;
+}
+body.sidebar-collapsed .channel-studio-sidebar .nav-item > span:first-child {
+  width: 26px !important;
+  height: 24px !important;
+  font-size: 11px !important;
+}
+body.sidebar-collapsed .channel-studio-sidebar .sidebar-agent-button,
+body.sidebar-collapsed .channel-studio-sidebar .sidebar-status {
+  width: 42px !important;
+  min-height: 34px !important;
+  padding: 6px 0 !important;
+  justify-content: center !important;
+}
+
+@media (max-width: 1460px) {
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar {
+    width: 58px !important;
+    min-width: 58px !important;
+    max-width: 58px !important;
+    padding: 8px 6px !important;
+    align-items: center !important;
+    overflow-x: hidden !important;
+  }
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .brand {
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 2px 0 7px !important;
+    gap: 5px !important;
+    width: 100% !important;
+  }
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .brand-copy,
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-group-label,
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-item-text,
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-skip-badge,
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-item.nav-item-skipped::after,
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .sidebar-agent-copy,
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .sidebar-status-copy {
+    display: none !important;
+    content: none !important;
+  }
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .side-nav {
+    width: 100% !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-item {
+    width: 42px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-item > span:first-child {
+    width: 26px !important;
+    height: 24px !important;
+    font-size: 11px !important;
+  }
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .sidebar-agent-button,
+  body:not(.sidebar-expanded-override) .channel-studio-sidebar .sidebar-status {
+    width: 42px !important;
+    min-height: 34px !important;
+    padding: 6px 0 !important;
+    justify-content: center !important;
+  }
+}
+
+@media (max-width: 1720px) {
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar {
+    width: 58px !important;
+    min-width: 58px !important;
+    max-width: 58px !important;
+    padding: 8px 6px !important;
+    align-items: center !important;
+    overflow-x: hidden !important;
+  }
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .brand {
+    flex-direction: column !important;
+    justify-content: center !important;
+    padding: 2px 0 7px !important;
+    gap: 5px !important;
+    width: 100% !important;
+  }
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .brand-copy,
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-group-label,
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-item-text,
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-skip-badge,
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-item.nav-item-skipped::after,
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .sidebar-agent-copy,
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .sidebar-status-copy {
+    display: none !important;
+    content: none !important;
+  }
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .side-nav {
+    width: 100% !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-item {
+    width: 42px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    padding: 0 !important;
+    justify-content: center !important;
+  }
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .nav-item > span:first-child {
+    width: 26px !important;
+    height: 24px !important;
+    font-size: 11px !important;
+  }
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .sidebar-agent-button,
+  body.global-chat-open:not(.sidebar-expanded-override) .channel-studio-sidebar .sidebar-status {
+    width: 42px !important;
+    min-height: 34px !important;
+    padding: 6px 0 !important;
+    justify-content: center !important;
+  }
+}
+
+/* 12.3 Step 2 (#tao-video) Full-Width Workspace + Recipe Bar + Slide-Over Config Sheet */
+#tao-video {
+  position: relative !important;
+  overflow-x: clip !important;
+}
+
+#tao-video #jobForm.production-form {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  overflow: hidden !important;
+}
+
+#tao-video .form-main {
+  grid-column: 1 !important;
+  grid-row: 1 !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.create-recipe-summary-bar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+  padding: 7px 12px !important;
+  border-radius: 10px !important;
+  background: linear-gradient(135deg, rgba(11, 22, 38, 0.95), rgba(8, 17, 30, 0.92)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.25) !important;
+}
+
+.recipe-summary-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.recipe-summary-kicker {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.06em !important;
+  color: #7dd3fc !important;
+  white-space: nowrap !important;
+}
+
+.recipe-summary-chips {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+}
+
+.recipe-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  height: 27px !important;
+  min-height: 27px !important;
+  padding: 0 10px !important;
+  border-radius: 7px !important;
+  background: rgba(15, 26, 44, 0.92) !important;
+  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  color: #e2e8f0 !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  max-width: 240px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  cursor: pointer !important;
+  transition: all 0.14s ease !important;
+}
+
+.recipe-chip:hover {
+  border-color: rgba(56, 189, 248, 0.55) !important;
+  color: #ffffff !important;
+  background: rgba(14, 165, 233, 0.16) !important;
+}
+
+.recipe-open-btn {
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
+}
+
+/* Slide-Over Config Sheet Backdrop & Drawer */
+.create-config-backdrop {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 40 !important;
+  background: rgba(3, 8, 18, 0.58) !important;
+  backdrop-filter: blur(3px) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: opacity 0.18s ease !important;
+}
+
+#tao-video.config-sheet-open .create-config-backdrop {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+#tao-video #createConfigSideSheet.form-side {
+  position: absolute !important;
+  top: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  grid-column: auto !important;
+  grid-row: auto !important;
+  width: min(448px, 95%) !important;
+  z-index: 45 !important;
+  padding: 0 !important;
+  background: #07101e !important;
+  border-left: 1px solid rgba(56, 189, 248, 0.32) !important;
+  border-radius: 12px 0 0 12px !important;
+  box-shadow: -20px 0 54px rgba(0, 0, 0, 0.72) !important;
+  display: none !important;
+  flex-direction: column !important;
+  gap: 0 !important;
+  overflow: hidden !important;
+  transform: translateX(104%) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.16s ease !important;
+}
+
+#tao-video.config-sheet-open #createConfigSideSheet.form-side {
+  display: flex !important;
+  transform: translateX(0) !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+}
+
+.form-side-sheet-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  padding: 11px 14px !important;
+  background: rgba(11, 22, 38, 0.96) !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.15) !important;
+  flex-shrink: 0 !important;
+}
+
+.form-side-sheet-head .sheet-kicker {
+  display: block !important;
+  font-size: 9.5px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.08em !important;
+  color: #38bdf8 !important;
+}
+
+.form-side-sheet-head strong {
+  display: block !important;
+  font-size: 13.5px !important;
+  font-weight: 800 !important;
+  color: #f8fafc !important;
+}
+
+.form-side-sheet-scroll {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  padding: 12px 14px 18px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 10px !important;
+}
+
+/* 12.4 Pillar 2 — Uniform 36px Form Grid & Input Alignment (Fixes Screenshot 1) */
+.create-ai-config-grid label + label,
+.create-top-config-strip label + label,
+.voice-compact-grid label + label,
+.field-row label + label,
+.saas-form-grid label + label,
+.studio-drawer-body label + label {
+  margin-top: 0 !important;
+}
+
+#tao-video .create-ai-config-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+  align-items: start !important;
+}
+
+#tao-video .create-ai-config-grid > .wide {
+  grid-column: 1 / -1 !important;
+}
+
+#tao-video .create-ai-config-grid > label,
+.create-top-config-strip > label,
+#tao-video .voice-compact-grid > label,
+.saas-form-grid > label {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 5px !important;
+  margin: 0 !important;
+  min-width: 0 !important;
+}
+
+#tao-video .create-ai-config-grid > label > span,
+.create-top-config-strip > label > span,
+#tao-video .voice-compact-grid > label > span {
+  display: flex !important;
+  align-items: center !important;
+  min-height: 18px !important;
+  line-height: 1.25 !important;
+  font-size: 11.5px !important;
+  font-weight: 700 !important;
+  color: #cbd5e1 !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#tao-video .create-ai-config-grid select,
+#tao-video .create-ai-config-grid input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.create-top-config-strip select,
+.create-top-config-strip input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+#tao-video .voice-compact-grid select {
+  height: 36px !important;
+  min-height: 36px !important;
+  padding: 0 10px !important;
+  box-sizing: border-box !important;
+  width: 100% !important;
+  margin: 0 !important;
+}
+
+details.studio-accordion-drawer > summary {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+}
+
+details.studio-accordion-drawer > summary > span:first-child {
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  line-height: 1.35 !important;
+}
+
+details.studio-accordion-drawer > summary .drawer-chevron {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 4px !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  padding: 3px 10px !important;
+  height: 24px !important;
+  line-height: 1 !important;
+}
+
+/* 12.5 CSS @container Queries on .channel-studio-content (True Remaining-Width Adaptation) */
+.channel-studio-content {
+  container-type: inline-size !important;
+  container-name: studio-content !important;
+}
+
+/* Stream Pills: Sleek Horizontal Bar */
+.topic-stream-pills {
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+
+.topic-stream-pill {
+  min-width: 0 !important;
+  padding: 7px 10px !important;
+}
+
+.topic-stream-pill span {
+  min-width: 0 !important;
+}
+
+.topic-stream-pill b,
+.topic-stream-pill small {
+  display: block !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+/* Ensure 2-Stream Topic Grid ONLY stays 2-col when container > 1060px (full horizontal rows below!) */
+.create-topic-suggestions.two-stream-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 10px !important;
+}
+
+.create-topic-option > div {
+  min-width: 0 !important;
+}
+
+.create-topic-option .topic-title-target,
+.create-topic-option .topic-title-vi {
+  word-break: keep-all !important;
+  overflow-wrap: break-word !important;
+}
+
+/* Prevent AI Chat Dock Header Title + Tab Pill from overlapping '+ Mới' when dock narrows */
+.agy-dock-title-wrap {
+  min-width: 0 !important;
+  flex: 1 1 0% !important;
+  overflow: hidden !important;
+}
+
+.agy-brand-row {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+.agy-tab-pill {
+  display: inline-block !important;
+  min-width: 0 !important;
+  flex: 0 1 auto !important;
+  max-width: 92px !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  vertical-align: middle !important;
+}
+
+@container studio-content (max-width: 1060px) {
+  .create-topic-suggestions.two-stream-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@container studio-content (max-width: 960px) {
+  .create-top-config-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .overview-deck-grid {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+  #tong-quan.workspace-pane.active {
+    flex-wrap: wrap !important;
+  }
+  .radar-studio-split-grid {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+  #du-an.project-layout.workspace-pane.active {
+    grid-template-columns: 280px minmax(0, 1fr) !important;
+  }
+  .topic-stream-pill small {
+    display: none !important;
+  }
+}
+
+@container studio-content (max-width: 840px) {
+  .create-topic-suggestions.two-stream-grid {
+    grid-template-columns: 1fr !important;
+  }
+  #engineGrid.workspace-pane.active {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+  .ai-account-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .field-row.two {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@container studio-content (max-width: 660px) {
+  .create-top-config-strip {
+    grid-template-columns: 1fr !important;
+  }
+  .topic-stream-pills {
+    grid-template-columns: 1fr !important;
+  }
+  #du-an.project-layout.workspace-pane.active {
+    grid-template-columns: 1fr !important;
+    overflow-y: auto !important;
+  }
+}
+
+/* 12.6 Pillar 4 — SaaS De-Boxing & Single-Row Pipeline Status Bar (01..08) */
+.panel.workspace-pane.active {
+  background: rgba(8, 16, 29, 0.72) !important;
+  border-color: var(--saas-border-subtle) !important;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2) !important;
+}
+
+.step-status-card {
+  padding: 7px 12px !important;
+  margin: 0 0 8px 0 !important;
+  border-radius: 9px !important;
+  border-color: var(--saas-border-subtle) !important;
+  background: rgba(11, 21, 36, 0.9) !important;
+}
+
+.step-status-card:not(:has(.step-error)) {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+.step-status-card .step-status-main {
+  flex: 1 1 320px !important;
+  min-width: 0 !important;
+}
+
+.step-status-card .step-actions {
+  margin-top: 0 !important;
+  justify-content: flex-end !important;
+  flex-shrink: 0 !important;
+}
+
+/* Clean Single-Row Workspace Headers & Step Status Bars Across All 13 Tabs */
+.panel.workspace-pane > .section-head {
+  padding-bottom: 6px !important;
+  margin-bottom: 8px !important;
+}
+
+.panel.workspace-pane > .section-head p:not(.eyebrow) {
+  display: none !important;
+}
+
+.step-status-card .step-status-main small {
+  display: block !important;
+  max-width: 680px !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+
+/* ==========================================================================
+   13. EDITORIAL AI READER & REALTIME ANTIGRAVITY WORKING STATUS
+   - Layer 1: Zero-Box Editorial Surface for Completed AI Turns + Quiet Headers
+   - Layer 2: 100% Preserved & Elevated Realtime Antigravity Working Status (.agy-live-turn)
+   - Layer 3: Magazine-Grade Prose Typography, De-noised Code, File Chips, Tables & Nested Lists
+   - Layer 4: Drag-Resizable Chat Dock, 1-Click Split Reader ("⇔ Rộng") & Popup Reader ("Đọc rộng ↗")
+   ========================================================================== */
+
+/* 13.1 Resizable Dock Handle & Split Reader Toggle */
+.agy-dock-resizer {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 45;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.global-codex-dock:not(.open) .agy-dock-resizer {
+  display: none !important;
+}
+
+.agy-dock-resizer::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.agy-dock-resizer:hover::after,
+body.is-resizing-chat .agy-dock-resizer::after {
+  background: rgba(56, 189, 248, 0.78);
+  box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+}
+
+#globalCodexWideBtn.is-active {
+  background: rgba(14, 165, 233, 0.2) !important;
+  border-color: rgba(56, 189, 248, 0.52) !important;
+  color: #e0f2fe !important;
+}
+
+.global-codex-panel.agy-dock-panel {
+  background: #0b101b !important;
+  border-left: 1px solid rgba(148, 163, 184, 0.14) !important;
+}
+
+/* 13.2 Slim Project Progress Strip (1-Line Idle · Full Live Bar When Running) */
+.global-codex-progress {
+  padding: 6px 14px !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1) !important;
+  background: rgba(13, 20, 34, 0.72) !important;
+}
+
+.global-codex-progress:not(:has(.is-running)) .agy-segmented-bar,
+.global-codex-progress:not(:has(.is-running)) .agy-progress-caption {
+  display: none !important;
+}
+
+.global-codex-progress:has(.is-running) {
+  padding: 8px 14px !important;
+  background: linear-gradient(180deg, rgba(30, 27, 75, 0.34), rgba(13, 20, 34, 0.86)) !important;
+  border-bottom-color: rgba(99, 102, 241, 0.28) !important;
+}
+
+/* 13.3 Stream Container, Crisp User Bubble & Zero-Box Completed AI Turns */
+.global-codex-messages.agy-messages-stream,
+.producer-codex-messages.agy-messages-stream {
+  padding: 14px 16px 20px !important;
+  gap: 14px !important;
+  overflow-x: hidden !important;
+  background: #0b101b !important;
+}
+
+.producer-codex-message.user.agy-msg-user {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.46), rgba(15, 23, 42, 0.94)) !important;
+  border: 1px solid rgba(56, 189, 248, 0.26) !important;
+  border-radius: 14px 14px 4px 14px !important;
+  padding: 9px 14px !important;
+  max-width: 88% !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22) !important;
+}
+
+.producer-codex-message.user.agy-msg-user .agy-user-text {
+  font-size: 13.4px !important;
+  line-height: 1.58 !important;
+  color: #f8fafc !important;
+}
+
+/* Zero-Box Editorial Surface ONLY for Completed Assistant Turns */
+.global-codex-messages .agy-msg-assistant:not(.agy-live-turn),
+.producer-codex-messages .agy-msg-assistant:not(.agy-live-turn) {
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.09) !important;
+  border-radius: 0 !important;
+  padding: 4px 2px 15px !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+.global-codex-messages .agy-msg-assistant:not(.agy-live-turn):last-child,
+.producer-codex-messages .agy-msg-assistant:not(.agy-live-turn):last-child {
+  border-bottom: 0 !important;
+  padding-bottom: 6px !important;
+}
+
+/* Quiet Editorial Header on Completed Turns */
+.agy-msg-assistant:not(.agy-live-turn) > .agy-msg-head {
+  margin-bottom: 7px !important;
+  gap: 7px !important;
+}
+
+.agy-msg-assistant:not(.agy-live-turn) > .agy-msg-head .agy-role-ai {
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  color: #e2e8f0 !important;
+}
+
+.agy-msg-assistant:not(.agy-live-turn) > .agy-msg-head .agy-msg-model-badge {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0 !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+}
+
+.agy-msg-assistant:not(.agy-live-turn) > .agy-msg-head .agy-msg-model-badge::before {
+  content: "· ";
+  color: #475569;
+}
+
+.agy-msg-assistant:not(.agy-live-turn):not([data-agy-mode="goal"]) > .agy-msg-head .agy-msg-mode-badge {
+  display: none !important;
+}
+
+/* 13.4 Realtime Antigravity Working Status (100% Preserved & Elevated) */
+.producer-codex-message.assistant.agy-msg-assistant.agy-live-turn {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(10, 15, 26, 0.96)) !important;
+  border: 1px solid rgba(99, 102, 241, 0.38) !important;
+  border-radius: 12px !important;
+  padding: 12px 14px !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(129, 140, 248, 0.16) !important;
+}
+
+.agy-live-turn .agy-live-head {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin-bottom: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+.agy-live-turn .agy-live-title-group {
+  display: flex !important;
+  align-items: center !important;
+  gap: 7px !important;
+  flex-wrap: wrap !important;
+  min-width: 0 !important;
+}
+
+.agy-live-status-pill.is-active {
+  background: rgba(99, 102, 241, 0.18) !important;
+  border-color: rgba(129, 140, 248, 0.48) !important;
+  color: #e0e7ff !important;
+  box-shadow: 0 0 12px rgba(99, 102, 241, 0.22) !important;
+}
+
+.agy-stop-btn {
+  padding: 3px 9px !important;
+  border-radius: 6px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  background: rgba(244, 63, 94, 0.14) !important;
+  border: 1px solid rgba(244, 63, 94, 0.38) !important;
+  color: #fda4af !important;
+  cursor: pointer !important;
+  transition: all 0.14s ease !important;
+}
+
+.agy-stop-btn:hover:not(:disabled) {
+  background: rgba(244, 63, 94, 0.26) !important;
+  border-color: rgba(244, 63, 94, 0.65) !important;
+  color: #ffe4e6 !important;
+}
+
+/* Completed vs Live Step Group Pill */
+.agy-step-group.is-done {
+  margin: 0 0 10px 0 !important;
+  border-radius: 8px !important;
+  background: rgba(15, 23, 42, 0.56) !important;
+  border: 1px solid rgba(148, 163, 184, 0.12) !important;
+}
+
+.agy-step-group.is-done:not([open]) > .agy-step-group-summary {
+  padding: 5px 10px !important;
+}
+
+.agy-step-group.is-live {
+  margin: 0 0 11px 0 !important;
+  border-radius: 9px !important;
+  border: 1px solid rgba(99, 102, 241, 0.32) !important;
+  background: rgba(12, 18, 30, 0.9) !important;
+}
+
+.agy-step-live-dot {
+  flex-shrink: 0;
+  margin-right: 1px;
+}
+
+.agy-tool-status.running {
+  animation: agyPulse 1.25s ease-in-out infinite;
+}
+
+.agy-live-stream-md {
+  margin-top: 8px !important;
+  padding-top: 8px !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.1) !important;
+}
+
+/* 13.5 Magazine-Grade Editorial Typography, File Chips, Tables & Nested Lists */
+.agy-markdown-body {
+  font-family: "Plus Jakarta Sans", "Inter", "Noto Sans KR", system-ui, sans-serif !important;
+  font-size: 13.7px !important;
+  line-height: 1.72 !important;
+  color: #cbd5e1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 11px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow-wrap: break-word !important;
+}
+
+.agy-markdown-body p {
+  margin: 0 !important;
+  color: #cbd5e1 !important;
+  line-height: 1.72 !important;
+}
+
+.agy-markdown-body strong,
+.agy-markdown-body b {
+  color: #f8fafc !important;
+  font-weight: 650 !important;
+}
+
+.agy-md-heading {
+  margin: 10px 0 0 0 !important;
+  padding-top: 9px !important;
+  border-top: 1px solid rgba(148, 163, 184, 0.1) !important;
+  font-size: 14.5px !important;
+  font-weight: 700 !important;
+  line-height: 1.42 !important;
+  letter-spacing: -0.01em !important;
+  color: #f8fafc !important;
+}
+
+.agy-md-heading.agy-h2 {
+  font-size: 15.2px !important;
+}
+
+.agy-md-heading.agy-h4 {
+  font-size: 13.8px !important;
+  border-top: 0 !important;
+  padding-top: 2px !important;
+  color: #e2e8f0 !important;
+}
+
+.agy-markdown-body > .agy-md-heading:first-child {
+  margin-top: 2px !important;
+  padding-top: 0 !important;
+  border-top: 0 !important;
+}
+
+/* Crisp Lists & Indented Sub-Bullets (Preserves <ol> Numbering!) */
+.agy-md-list {
+  margin: 0 !important;
+  padding-left: 20px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 7px !important;
+}
+
+.agy-md-list > li {
+  color: #cbd5e1 !important;
+  line-height: 1.68 !important;
+  padding-left: 2px !important;
+}
+
+.agy-md-list > li::marker {
+  color: #64748b !important;
+  font-weight: 600 !important;
+}
+
+.agy-md-list > li.agy-sub-li {
+  list-style: none !important;
+  margin-left: 14px !important;
+  position: relative !important;
+  color: #94a3b8 !important;
+  font-size: 13.1px !important;
+  line-height: 1.62 !important;
+}
+
+.agy-md-list > li.agy-sub-li::before {
+  content: "–";
+  position: absolute;
+  left: -13px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+/* De-noised Inline Code (Zero Purple Box Clutter, Zero Horizontal Overflow) */
+.agy-markdown-body .agy-inline-code {
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace !important;
+  font-size: 12px !important;
+  padding: 1px 5px !important;
+  border-radius: 4px !important;
+  background: rgba(56, 189, 248, 0.085) !important;
+  border: 0 !important;
+  color: #7dd3fc !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+}
+
+/* Compact Cursor/Linear-Style File Reference Chips */
+.agy-markdown-body a.agy-file-chip {
+  display: inline !important;
+  font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace !important;
+  font-size: 11.8px !important;
+  font-weight: 500 !important;
+  padding: 1px 6px !important;
+  border-radius: 5px !important;
+  background: rgba(30, 41, 59, 0.78) !important;
+  border: 1px solid rgba(148, 163, 184, 0.18) !important;
+  color: #bae6fd !important;
+  text-decoration: none !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease !important;
+}
+
+.agy-markdown-body a.agy-file-chip:hover {
+  background: rgba(14, 165, 233, 0.18) !important;
+  border-color: rgba(56, 189, 248, 0.48) !important;
+  color: #f0f9ff !important;
+}
+
+/* Markdown Tables */
+.agy-md-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  background: rgba(13, 20, 34, 0.72);
+  margin: 2px 0;
+}
+
+.agy-md-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.4px;
+  line-height: 1.52;
+}
+
+.agy-md-table th,
+.agy-md-table td {
+  padding: 7px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+  vertical-align: top;
+}
+
+.agy-md-table th {
+  font-weight: 700;
+  color: #e2e8f0;
+  background: rgba(30, 41, 59, 0.55);
+  font-size: 11.8px;
+  white-space: nowrap;
+}
+
+.agy-md-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.agy-md-table td {
+  color: #cbd5e1;
+}
+
+/* Editorial Blockquotes & Callouts */
+.agy-md-quote {
+  margin: 2px 0 !important;
+  padding: 8px 12px !important;
+  border-left: 3px solid #38bdf8 !important;
+  background: rgba(14, 165, 233, 0.07) !important;
+  border-radius: 0 8px 8px 0 !important;
+  color: #cbd5e1 !important;
+  font-size: 13px !important;
+  line-height: 1.62 !important;
+}
+
+.agy-md-quote.is-callout .agy-callout-title {
+  font-size: 11.8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7dd3fc;
+  margin-bottom: 4px;
+}
+
+.agy-md-quote.is-callout.is-important {
+  border-left-color: #818cf8 !important;
+  background: rgba(99, 102, 241, 0.09) !important;
+}
+.agy-md-quote.is-callout.is-important .agy-callout-title {
+  color: #a5b4fc;
+}
+
+.agy-md-quote.is-callout.is-warning,
+.agy-md-quote.is-callout.is-caution {
+  border-left-color: #fbbf24 !important;
+  background: rgba(245, 158, 11, 0.09) !important;
+}
+.agy-md-quote.is-callout.is-warning .agy-callout-title,
+.agy-md-quote.is-callout.is-caution .agy-callout-title {
+  color: #fcd34d;
+}
+
+/* Quiet Turn Action Footer (Copy + Open Wide Reader) */
+.agy-msg-footer {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 9px;
+  opacity: 0.72;
+  transition: opacity 0.15s ease;
+}
+
+.agy-msg-assistant:hover .agy-msg-footer {
+  opacity: 1;
+}
+
+.agy-msg-action-btn {
+  padding: 3px 9px !important;
+  min-height: 24px !important;
+  border-radius: 6px !important;
+  font-size: 11.2px !important;
+  font-weight: 600 !important;
+  background: rgba(15, 23, 42, 0.65) !important;
+  border: 1px solid rgba(148, 163, 184, 0.15) !important;
+  color: #94a3b8 !important;
+  cursor: pointer !important;
+  transition: all 0.14s ease !important;
+}
+
+.agy-msg-action-btn:hover {
+  background: rgba(30, 41, 59, 0.9) !important;
+  border-color: rgba(56, 189, 248, 0.42) !important;
+  color: #f1f5f9 !important;
+}
+
+.agy-msg-action-btn.is-reader {
+  color: #7dd3fc !important;
+  border-color: rgba(56, 189, 248, 0.24) !important;
+}
+
+/* Centered Spacious Popup Document Reader (#studioInspectorDialog) */
+.agy-reader-article.agy-markdown-body {
+  max-width: 760px !important;
+  margin: 0 auto !important;
+  padding: 8px 16px 28px !important;
+  font-size: 14.8px !important;
+  line-height: 1.8 !important;
+  gap: 14px !important;
+}
+
+.agy-reader-article.agy-markdown-body p,
+.agy-reader-article.agy-markdown-body .agy-md-list > li {
+  font-size: 14.8px !important;
+  line-height: 1.8 !important;
+}
+
+.agy-reader-article.agy-markdown-body .agy-md-heading {
+  font-size: 16.5px !important;
+  margin-top: 14px !important;
+  padding-top: 12px !important;
+}
+
+.agy-reader-article.agy-markdown-body .agy-inline-code,
+.agy-reader-article.agy-markdown-body a.agy-file-chip {
+  font-size: 12.8px !important;
+}
+
+/* ==========================================================================
+   14. TAB 06 · EDIT — CAPCUT-STYLE EMBEDDED NLE WORKBENCH & 1-ROW TOPBAR
+   ========================================================================== */
+
+.panel.workspace-pane.edit-workspace.active {
+  padding: 4px 6px 6px !important;
+  background: #080a0f !important;
+  border-color: rgba(255, 255, 255, 0.08) !important;
+  overflow: hidden !important;
+}
+
+.panel.workspace-pane.edit-workspace:has(.nle-workbench-shell) > .section-head.edit-head {
+  display: none !important;
+}
+
+.edit-workspace .edit-persistent-host {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  overflow: hidden !important;
+  padding: 0 !important;
+}
+
+.persistent-editor-shell.nle-workbench-shell {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  border-radius: 8px !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: #0a0c12 !important;
+  overflow: hidden !important;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.55) !important;
+}
+
+/* Minimalist CapCut 38px Topbar */
+.editor-toolbar.nle-edit-topbar {
+  min-height: 38px !important;
+  height: 38px !important;
+  padding: 0 12px !important;
+  background: #0e1118 !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.07) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  flex-shrink: 0 !important;
+  overflow: hidden !important;
+}
+
+.nle-topbar-left {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+  overflow: hidden !important;
+}
+
+.nle-step-badge {
+  padding: 2px 7px !important;
+  border-radius: 4px !important;
+  background: rgba(255, 255, 255, 0.06) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  color: #e2e8f0 !important;
+  font-size: 10.5px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em !important;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+}
+
+.nle-status-pill {
+  padding: 2px 8px !important;
+  border-radius: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 140px !important;
+  flex-shrink: 0 !important;
+}
+
+/* Inline Compact Sync Pill */
+.edit-sync-policy-panel.nle-inline-sync {
+  display: inline-flex !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  flex-shrink: 0 !important;
+}
+
+.nle-sync-compact-wrap {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+}
+
+.nle-sync-pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 5px !important;
+  height: 24px !important;
+  padding: 0 8px !important;
+  border-radius: 5px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.14s ease !important;
+}
+
+.nle-sync-pill.is-clean {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border: 1px solid rgba(52, 211, 153, 0.28) !important;
+  color: #6ee7b7 !important;
+}
+
+.nle-sync-pill.is-clean:hover {
+  background: rgba(16, 185, 129, 0.18) !important;
+}
+
+.nle-sync-pill.is-warn {
+  background: rgba(245, 158, 11, 0.1) !important;
+  border: 1px solid rgba(251, 191, 36, 0.3) !important;
+  color: #fcd34d !important;
+}
+
+.nle-sync-pill.is-loading {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #94a3b8 !important;
+}
+
+.nle-repair-mini-btn {
+  height: 24px !important;
+  padding: 0 8px !important;
+  border-radius: 5px !important;
+  background: rgba(56, 189, 248, 0.14) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  color: #7dd3fc !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+}
+.nle-repair-mini-btn:hover {
+  background: rgba(56, 189, 248, 0.24) !important;
+  color: #ffffff !important;
+}
+
+.nle-sync-sep {
+  opacity: 0.4;
+}
+
+/* Right Action Bar & Mode Switcher */
+.nle-topbar-right {
+  display: flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  flex-shrink: 0 !important;
+  flex-wrap: nowrap !important;
+}
+
+.nle-topbar-right > button.compact {
+  height: 25px !important;
+  min-height: 25px !important;
+  padding: 0 9px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
+  border-radius: 5px !important;
+  white-space: nowrap !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  color: #cbd5e1 !important;
+  box-shadow: none !important;
+}
+
+.nle-topbar-right > button.compact:hover {
+  background: rgba(255, 255, 255, 0.09) !important;
+  color: #ffffff !important;
+}
+
+.nle-topbar-right > button.primary.compact {
+  background: #38bdf8 !important;
+  border-color: #38bdf8 !important;
+  color: #04101c !important;
+  font-weight: 700 !important;
+}
+
+.nle-mode-switch {
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 2px !important;
+  border-radius: 6px !important;
+  background: rgba(0, 0, 0, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  gap: 2px !important;
+}
+
+.nle-mode-btn {
+  height: 21px !important;
+  padding: 0 9px !important;
+  border-radius: 4px !important;
+  border: none !important;
+  background: transparent !important;
+  color: #64748b !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  white-space: nowrap !important;
+  transition: all 0.12s ease !important;
+}
+
+.nle-mode-btn:hover {
+  color: #cbd5e1 !important;
+}
+
+.nle-mode-btn.is-active {
+  background: rgba(255, 255, 255, 0.11) !important;
+  color: #f8fafc !important;
+  box-shadow: none !important;
+}
+
+/* Full-Height NLE Canvas & Frame */
+.editor-body.nle-editor-body {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  overflow: hidden !important;
+  background: #090b10 !important;
+}
+
+.editor-canvas.nle-editor-canvas {
+  flex: 1 1 0% !important;
+  min-height: 0 !important;
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+.editor-canvas.nle-editor-canvas > iframe.remotion-frame {
+  flex: 1 1 0% !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: #090b10 !important;
+}
+
+@media (max-width: 1360px) {
+  .nle-status-pill {
+    display: none !important;
+  }
+}
+
+

@@ -1,0 +1,49 @@
+{
+  "version": "2.0",
+  "updated_at": "2026-11-13T05:37:55.303643+00:00",
+  "profiles": {
+    "channel-e544a64b7c": {
+      "profile_id": "channel-e544a64b7c",
+      "last_synced_produced_count": 28,
+      "replenished_total": 170,
+      "last_newly_replenished_count": 2,
+      "total_vault_size": 116,
+      "available_unproduced_total": 109,
+      "available_by_stream": {
+        "financial_crime": 66,
+        "major_violent_crime": 43
+      },
+      "curated_active_count": 10,
+      "updated_at": "2026-11-11T07:13:00.716217+00:00"
+    },
+    "channel-kr-truecrime-director-v2": {
+      "profile_id": "channel-kr-truecrime-director-v2",
+      "last_synced_produced_count": 46,
+      "replenished_total": 768,
+      "last_newly_replenished_count": 30,
+      "total_vault_size": 116,
+      "available_unproduced_total": 103,
+      "available_by_stream": {
+        "financial_crime": 64,
+        "major_violent_crime": 39
+      },
+      "curated_active_count": 10,
+      "updated_at": "2026-11-13T05:37:55.303263+00:00"
+    },
+    "channel-kr-financial-fugitive-director-v2": {
+      "profile_id": "channel-kr-financial-fugitive-director-v2",
+      "last_synced_produced_count": 1,
+      "replenished_total": 103,
+      "last_newly_replenished_count": 0,
+      "total_vault_size": 116,
+      "available_unproduced_total": 115,
+      "available_by_stream": {
+        "financial_crime": 67,
+        "major_violent_crime": 48
+      },
+      "curated_active_count": 10,
+      "updated_at": "2026-11-11T07:13:02.826720+00:00"
+    }
+  },
+  "dynamic_cases": []
+}

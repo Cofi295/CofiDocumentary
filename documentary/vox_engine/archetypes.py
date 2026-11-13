@@ -1198,10 +1198,13 @@ def _extract_voice_clauses_and_windows(
     voice_spec: dict[str, Any] | None,
     fallback_clauses: list[str],
 ) -> tuple[list[str], list[tuple[float, float]], list[str], str, str]:
+    lang = str((voice_spec or {}).get("language") or "ko").lower()
+    default_header = "형사 과학수사 정밀 분석" if lang == "ko" else "Forensic Evidence Analysis"
+    default_sub = "음성 문구 동기화 증거 브리핑" if lang == "ko" else "Synchronized Evidence Briefing"
     if not voice_spec:
         n = max(1, len(fallback_clauses))
         windows = [(i / n, (i + 1) / n) for i in range(n)]
-        return fallback_clauses, windows, ["EVIDENCE #01", "VERIFIED"], "형사 과학수사 정밀 분석", "음성 문구 동기화 증거 브리핑"
+        return fallback_clauses, windows, ["EVIDENCE #01", "VERIFIED"], default_header, default_sub
     clauses = list(voice_spec.get("clauses") or fallback_clauses)
     if not clauses:
         clauses = fallback_clauses
@@ -1210,8 +1213,8 @@ def _extract_voice_clauses_and_windows(
         n = max(1, len(clauses))
         windows = [(i / n, (i + 1) / n) for i in range(n)]
     metrics = list(voice_spec.get("metrics") or ["EVIDENCE #01"])
-    header_ko = str(voice_spec.get("header_ko") or clauses[0][:28]).strip()
-    sub_ko = str(voice_spec.get("sub_ko") or (clauses[1][:42] if len(clauses) > 1 else clauses[0][:42])).strip()
+    header_ko = str(voice_spec.get("header_ko") or (clauses[0][:28] if clauses else default_header)).strip()
+    sub_ko = str(voice_spec.get("sub_ko") or ((clauses[1][:42] if len(clauses) > 1 else clauses[0][:42]) if clauses else default_sub)).strip()
     return clauses, windows, metrics, header_ko, sub_ko
 
 
@@ -1510,7 +1513,7 @@ def render_vox_forensic_cross_section(
         for l_i, l_str in enumerate(c_lines[:2]):
             draw_text_safe(sdraw, (bx0 + 22, by0 + 72 + l_i * 44), l_str, fill=VOX_INK, font_size=24, bold=True)
 
-    _draw_circular_official_seal(sdraw, 770, 735, dept_ko="특급수배록분석", sub_ko="메커니즘검증필", r=44, alpha=190)
+    _draw_circular_official_seal(sdraw, 770, 735, dept_ko="기록분석실", sub_ko="메커니즘검증필", r=44, alpha=190)
     canvas.paste(sheet, (56, 112), sheet)
 
     # Right Panel: Two Large Tactile Polaroid Evidence Cutouts + Linking Red String (x=1000..1860)
@@ -1859,15 +1862,17 @@ def render_vox_dossier_board(
     _draw_pushpin(draw, 1380, 190, VOX_YELLOW)
 
     # Center VS / Match Badge
+    badge_label = "기록 교차 대조" if any('\uac00' <= ch <= '\ud7a3' for ch in str(header_ko or "")) else "CROSS-EXAMINATION"
     draw.rounded_rectangle([W // 2 - 115, 290, W // 2 + 115, 366], radius=10, fill=(18, 22, 30, 245), outline=VOX_CRIMSON + (240,), width=3)
-    draw_text_safe(draw, (W // 2 - 88, 314), "기록 교차 대조", fill=(250, 204, 21, 255), font_size=22, bold=True)
+    draw_text_safe(draw, (W // 2 - 88, 314), badge_label, fill=(250, 204, 21, 255), font_size=20 if len(badge_label) > 8 else 22, bold=True)
 
     # Bottom Lined Case Summary Sheet with 3 Clause Rows
     sheet_w, sheet_h = 1680, 380
     sheet = get_torn_paper_sheet(sheet_w, sheet_h, fill_rgb=VOX_CREAM_CARD, roughness=2.8, seed=149 + (seed % 23))
     sdraw = ImageDraw.Draw(sheet, "RGBA")
     sdraw.rectangle([36, 26, sheet_w - 36, 74], fill=(24, 28, 36, 245))
-    draw_text_safe(sdraw, (56, 36), f"수사 기록 핵심 요지 대조표 · {header_ko}", fill=(250, 204, 21, 255), font_size=21, bold=True)
+    summary_title = f"수사 기록 핵심 요지 대조표 · {header_ko}" if any('\uac00' <= ch <= '\ud7a3' for ch in str(header_ko or "")) else f"CASE EVIDENCE CROSS-COMPARISON · {header_ko}"
+    draw_text_safe(sdraw, (56, 36), summary_title, fill=(250, 204, 21, 255), font_size=21, bold=True)
 
     for idx, clause_str in enumerate(clauses[:3]):
         w0, w1 = windows[idx] if idx < len(windows) else (idx / 3.0, (idx + 1) / 3.0)

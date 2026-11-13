@@ -4,27 +4,20 @@
   "version": "0.26.0",
   "executable": "C:\\Users\\koing\\AppData\\Roaming\\npm\\trail.cmd",
   "doc_cache": {
-    "nodes": 3630,
-    "edges": 9865,
-    "files": 152
+    "nodes": 4701,
+    "edges": 12966,
+    "files": 192
   },
   "remotion_cache": {
-    "nodes": 980,
-    "edges": 1736,
-    "files": 134
+    "nodes": 3484,
+    "edges": 7742,
+    "files": 349
   },
-  "total_cached_files": 286,
-  "total_nodes": 4610,
-  "total_edges": 11601,
+  "total_cached_files": 541,
+  "total_nodes": 8185,
+  "total_edges": 20708,
   "learnings_count": 4,
   "learnings": [
-    {
-      "repo": "CofiDocumentary",
-      "file": "2026-10-27-chinese-true-crime-scripts-must-use-cofi295.md",
-      "path": "B:\\ALL_TOOLS\\CofiDocumentary\\.trail\\learnings\\2026-10-27-chinese-true-crime-scripts-must-use-cofi295.md",
-      "title": "Chinese true-crime scripts must use 100% real historical cases and Chinese surnames",
-      "always_follow": false
-    },
     {
       "repo": "CofiDocumentary",
       "file": "2026-10-27-edit-and-seo-subagents-should-use-cofi295.md",
@@ -37,6 +30,13 @@
       "file": "2026-10-27-google-flow-automation-in-media-factory-cofi295.md",
       "path": "B:\\ALL_TOOLS\\CofiDocumentary\\.trail\\learnings\\2026-10-27-google-flow-automation-in-media-factory-cofi295.md",
       "title": "Google Flow automation in media_factory must use Agent Mode URL and live browser cookies",
+      "always_follow": false
+    },
+    {
+      "repo": "CofiDocumentary",
+      "file": "2026-10-31-app-core-is-strictly-technical-engine-cofi295.md",
+      "path": "B:\\ALL_TOOLS\\CofiDocumentary\\.trail\\learnings\\2026-10-31-app-core-is-strictly-technical-engine-cofi295.md",
+      "title": "App core is strictly technical engine while all creative and country DNA lives isolated per channel profile",
       "always_follow": false
     },
     {
@@ -54,5 +54,5 @@
     "Claude"
   ],
   "estimated_token_savings_pct": 42,
-  "status_label": "Đã kích hoạt · 4,610 symbols (11,601 edges) · 4 Learnings (-42% Token)"
+  "status_label": "Đã kích hoạt · 8,185 symbols (20,708 edges) · 4 Learnings (-42% Token)"
 }

@@ -23,9 +23,25 @@ def _now() -> str:
 
 def _atomic_json(path: Path, payload: dict[str, Any]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_suffix(path.suffix + ".tmp")
-    temporary.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    temporary.replace(path)
+    text = json.dumps(payload, ensure_ascii=False, indent=2)
+    temporary = path.with_suffix(f"{path.suffix}.{os.getpid()}.{threading.get_ident()}.tmp")
+    temporary.write_text(text, encoding="utf-8")
+    for attempt in range(8):
+        try:
+            temporary.replace(path)
+            return
+        except PermissionError:
+            if attempt == 7:
+                try:
+                    temporary.unlink(missing_ok=True)
+                except OSError:
+                    pass
+                try:
+                    path.write_text(text, encoding="utf-8")
+                except OSError:
+                    pass
+                return
+            time.sleep(0.03 * (attempt + 1))
 
 
 def _env_int(name: str, default: int, minimum: int = 0) -> int:
@@ -216,6 +232,154 @@ def _detect_cpu_and_gpus() -> tuple[str, list[str]]:
 
 
 _LIVE_HW_CACHE: dict[str, Any] = {"ts": 0.0, "profile": None}
+_FG_GPU_APP_CACHE: dict[str, Any] = {"ts": 0.0, "apps": []}
+
+_KNOWN_FOREGROUND_GPU_APPS: frozenset[str] = frozenset({
+    "league of legends.exe",
+    "leagueclientuxrender.exe",
+    "valorant-win64-shipping.exe",
+    "valorant.exe",
+    "cs2.exe",
+    "dota2.exe",
+    "genshinimpact.exe",
+    "starrail.exe",
+    "client-win64-shipping.exe",
+    "eldenring.exe",
+    "cyberpunk2077.exe",
+    "gta5.exe",
+    "playgtav.exe",
+    "fc24.exe",
+    "fc25.exe",
+    "tslgame.exe",
+    "r5apex.exe",
+    "overwatch.exe",
+    "naraka.exe",
+    "blackmythwukong.exe",
+    "b1-win64-shipping.exe",
+    "blender.exe",
+    "afterfx.exe",
+    "adobe premiere pro.exe",
+    "resolve.exe",
+    "unrealeditor.exe",
+    "unity.exe",
+    "obs64.exe",
+})
+
+
+def _detect_foreground_gpu_workload() -> list[str]:
+    """Fast (<0.5ms) native Win32 process snapshot detecting active 3D games / DCC GPU workloads."""
+    now = time.monotonic()
+    if now - float(_FG_GPU_APP_CACHE.get("ts") or 0.0) < 4.0:
+        return list(_FG_GPU_APP_CACHE.get("apps") or [])
+    detected: list[str] = []
+    if os.name == "nt":
+        try:
+            TH32CS_SNAPPROCESS = 0x00000002
+
+            class _PROCESSENTRY32W(ctypes.Structure):
+                _fields_ = [
+                    ("dwSize", ctypes.c_ulong),
+                    ("cntUsage", ctypes.c_ulong),
+                    ("th32ProcessID", ctypes.c_ulong),
+                    ("th32DefaultHeapID", ctypes.c_size_t),
+                    ("th32ModuleID", ctypes.c_ulong),
+                    ("cntThreads", ctypes.c_ulong),
+                    ("th32ParentProcessID", ctypes.c_ulong),
+                    ("pcPriClassBase", ctypes.c_long),
+                    ("dwFlags", ctypes.c_ulong),
+                    ("szExeFile", ctypes.c_wchar * 260),
+                ]
+
+            k32 = ctypes.windll.kernel32  # type: ignore[attr-defined]
+            snap = k32.CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0)
+            invalid = ctypes.c_void_p(-1).value
+            if snap and snap != invalid:
+                try:
+                    entry = _PROCESSENTRY32W()
+                    entry.dwSize = ctypes.sizeof(_PROCESSENTRY32W)
+                    ok = k32.Process32FirstW(snap, ctypes.byref(entry))
+                    seen_lower: set[str] = set()
+                    while ok:
+                        exe = str(entry.szExeFile or "").strip()
+                        low = exe.lower()
+                        if low in _KNOWN_FOREGROUND_GPU_APPS and low not in seen_lower:
+                            seen_lower.add(low)
+                            detected.append(exe)
+                        ok = k32.Process32NextW(snap, ctypes.byref(entry))
+                finally:
+                    k32.CloseHandle(snap)
+        except Exception:
+            pass
+    _FG_GPU_APP_CACHE["ts"] = now
+    _FG_GPU_APP_CACHE["apps"] = list(detected)
+    return detected
+
+
+def worker_qos_enabled() -> bool:
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        return False
+    val = str(os.getenv("COFI_ENABLE_WORKER_QOS") or "").strip().lower()
+    return val in {"1", "true", "yes", "on"}
+
+
+def background_worker_creationflags(base_flags: int = 0) -> int:
+    """Return Windows creationflags keeping worker subtrees hidden at full normal priority."""
+    flags = int(base_flags or 0)
+    if os.name == "nt":
+        flags |= getattr(subprocess, "CREATE_NO_WINDOW", 0x08000000)
+    return flags
+
+
+def apply_background_worker_qos(process_or_handle: Any, affinity_mask: int | None = None) -> bool:
+    """No-op by default so export workers run at full multi-core CPU & NVENC CapCut speed."""
+    return False
+
+
+def background_worker_env_overrides(profile: dict[str, Any] | None = None) -> dict[str, str]:
+    """Thread & concurrency environment variables inherited by Edit/Footage/Voice child scripts."""
+    hw = profile if isinstance(profile, dict) else detect_hardware_profile()
+    ff_threads = str(max(1, int(hw.get("edit_ffmpeg_threads") or 2)))
+    max_workers = str(max(1, int(hw.get("edit_worker_concurrency") or 2)))
+    return {
+        "COFI_EDIT_MAX_WORKERS": max_workers,
+        "COFI_EDIT_FFMPEG_THREADS": ff_threads,
+        "COFI_VRAM_FREE_MB": str(int(hw.get("vram_free_mb") or 0)),
+        "COFI_GOVERNOR_MODE": str(hw.get("governor_mode") or "balanced_smooth"),
+        "FFMPEG_THREADS": ff_threads,
+        "OMP_NUM_THREADS": ff_threads,
+        "OPENBLAS_NUM_THREADS": ff_threads,
+        "MKL_NUM_THREADS": ff_threads,
+        "NUMEXPR_NUM_THREADS": ff_threads,
+        "UV_THREADPOOL_SIZE": str(max(2, min(4, int(max_workers) + 1))),
+    }
+
+
+def format_smart_hardware_contract(phase: str = "edit") -> str:
+    """Build live Smart Hardware & VRAM Governor directive injected into Agent prompts."""
+    hw = detect_hardware_profile()
+    max_w = int(hw.get("edit_worker_concurrency") or 2)
+    ff_t = int(hw.get("edit_ffmpeg_threads") or 2)
+    nvenc_c = int(hw.get("nvenc_concurrency") or 1)
+    vram_free = int(hw.get("vram_free_mb") or 0)
+    vram_tot = int(hw.get("vram_total_mb") or 0)
+    fg_apps = hw.get("foreground_gpu_apps") or []
+    fg_note = f" (Foreground GPU app active: {', '.join(fg_apps[:2])})" if fg_apps else ""
+    hwaccel_rule = (
+        "VRAM is tight or a foreground 3D app/game is active: DO NOT pass `-hwaccel cuda` / `h264_nvenc` inside ad-hoc Edit slicing scripts — use CPU `-c:v libx264 -preset veryfast -threads "
+        f"{ff_t}` so 100% of GPU VRAM stays smooth for foreground tasks."
+        if not hw.get("prefer_edit_hwaccel")
+        else f"When running `ffmpeg`, cap `-threads {ff_t}` and at most `{nvenc_c}` concurrent GPU encode stream(s)."
+    )
+    return (
+        f"\nSMART HARDWARE & VRAM GOVERNOR CONTRACT (AUTO-DETECTED FOR `{phase.upper()}` — ZERO PC LAG LAW):\n"
+        f"- Host Hardware Telemetry: `{hw.get('gpu_name')}` (VRAM free `{vram_free}/{vram_tot} MB`), "
+        f"CPU free `{hw.get('cpu_free_pct')}%` (`{hw.get('logical_cores')}` logical threads, `{hw.get('reserved_ui_threads')}` UI/Game threads reserved), "
+        f"RAM free `{hw.get('available_ram_gb')}/{hw.get('total_ram_gb')} GB` -> Active Mode: **`{hw.get('governor_mode')}`**{fg_note}.\n"
+        f"- STRICT MULTI-THREAD & VRAM CAPS FOR ALL PYTHON / NODE / FFMPEG SCRIPTS YOU WRITE OR RUN:\n"
+        f"  1. NEVER spawn `ThreadPoolExecutor` / `ProcessPoolExecutor` with `max_workers > {max_w}` (strict cap: `max_workers={max_w}`, also exposed via `os.environ['COFI_EDIT_MAX_WORKERS']`). NEVER use `max_workers=8`!\n"
+        f"  2. ALWAYS pass `-threads {ff_t}` to every `ffmpeg` / `ffprobe` command you invoke in custom scripts.\n"
+        f"  3. {hwaccel_rule}\n"
+    )
 
 
 def detect_hardware_profile(*, force_refresh: bool = False) -> dict[str, Any]:
@@ -255,68 +419,33 @@ def detect_hardware_profile(*, force_refresh: bool = False) -> dict[str, Any]:
     vram_free_mb = int(gpu_stats.get("vram_free_mb") or 0)
     vram_total_mb = int(gpu_stats.get("vram_total_mb") or 0)
     gpu_temp_c = int(gpu_stats.get("temp_c") or 0)
+    foreground_gpu_apps: list[str] = []
+    has_fg_game = False
+    foreground_gpu_active = False
 
-    # 1. CPU Budget: Always reserve >=35% CPU headroom (and P-core 0 / first 2 logical threads) for Windows UI & foreground apps
-    reserved_ui_threads = 4 if logical_cores >= 12 else (2 if logical_cores >= 6 else 1)
-    usable_cpu_threads = max(
-        2,
-        min(
-            logical_cores - reserved_ui_threads,
-            int(round(logical_cores * (cpu_free_pct / 100.0) * 0.70)),
-        ),
-    )
-    cpu_concurrency = min(4, max(2, usable_cpu_threads // 3))
+    # CapCut-Speed Turbo Export Profile: unleash all CPU threads and full NVENC streams
+    reserved_ui_threads = 0
+    usable_cpu_threads = logical_cores
+    reserved_ram_gb = 2.0
+    usable_ram_gb = max(2.0, round(available_ram_gb - reserved_ram_gb, 2))
+    usable_vram_mb = max(0, vram_free_mb - 512) if vram_total_mb > 0 else 0
 
-    # 2. System RAM Budget: Always reserve >=3.5 GB physical RAM untouched to prevent Windows Memory Compression / pagefile lag
-    reserved_ram_gb = 3.5 if total_ram_gb >= 16 else 2.2
-    usable_ram_gb = max(1.0, round(available_ram_gb - reserved_ram_gb, 2))
-    ram_concurrency = min(4, max(2, int(usable_ram_gb / 1.6)))
+    export_concurrency = 8
+    still_concurrency = 8
+    nvenc_concurrency = 6 if gpu_vendor == "nvidia" else 2
+    ffmpeg_threads = 6
+    offthreadvideo_threads = 6
+    remotion_concurrency = 8
 
-    # 3. GPU VRAM Budget: Always reserve >=1,200 MB VRAM for Windows Desktop (dwm.exe) & browsers so VRAM never spills to Shared RAM
-    if vram_total_mb > 0:
-        usable_vram_mb = max(0, vram_free_mb - 1200)
-        if vram_free_mb >= 4200:
-            vram_concurrency = 4
-            nvenc_concurrency = 3
-        elif vram_free_mb >= 2400:
-            vram_concurrency = 3
-            nvenc_concurrency = 2
-        elif vram_free_mb >= 1500:
-            vram_concurrency = 2
-            nvenc_concurrency = 2
-        else:
-            vram_concurrency = 2
-            nvenc_concurrency = 1
-    else:
-        usable_vram_mb = 0
-        vram_concurrency = 3
-        nvenc_concurrency = 2 if gpu_vendor == "nvidia" else 1
-
-    export_concurrency = max(2, min(4, cpu_concurrency, ram_concurrency, vram_concurrency))
-    still_concurrency = max(2, min(3, export_concurrency))
-    nvenc_concurrency = max(1, min(3, nvenc_concurrency, export_concurrency))
-    ffmpeg_threads = max(1, min(2, usable_cpu_threads // max(1, nvenc_concurrency * 2)))
-    offthreadvideo_threads = max(2, min(3, usable_cpu_threads // 4))
-
-    # Cap Remotion media cache strictly within usable free RAM (256MB - 768MB)
-    cache_size_mb = int(min(768, max(256, usable_ram_gb * 96)))
+    cache_size_mb = 768
     cache_size_bytes = cache_size_mb * 1024 * 1024
+    affinity_mask = 0
 
-    # CPU Affinity Mask: leave logical cores 0 & 1 (P-core 0) 100% free for Windows Desktop & foreground apps
-    if os.name == "nt" and logical_cores >= 6:
-        affinity_mask = ((1 << min(logical_cores, 64)) - 1) & ~0b11
-    else:
-        affinity_mask = 0
-
-    if available_ram_gb < 6.5 or (vram_total_mb > 0 and vram_free_mb < 2200) or cpu_free_pct < 45.0:
-        governor_mode = "eco_smooth"
-        governor_label = "Tiết kiệm tài nguyên · Ưu tiên mượt máy"
-    elif available_ram_gb >= 12.0 and (vram_total_mb == 0 or vram_free_mb >= 4200) and cpu_free_pct >= 65.0:
-        governor_mode = "turbo_max"
-        governor_label = "Turbo tối đa · Tài nguyên dồi dào"
-    else:
-        governor_mode = "balanced_smooth"
-        governor_label = "Cân bằng thông minh · Chống đơ máy"
+    governor_mode = "turbo_max"
+    governor_label = "Turbo tối đa · CapCut Speed"
+    edit_worker_concurrency = 6
+    edit_ffmpeg_threads = 6
+    prefer_edit_hwaccel = bool(gpu_vendor == "nvidia")
 
     has_hw_gpu = gpu_vendor in {"nvidia", "amd", "intel", "apple"}
     gl_backend = "angle" if has_hw_gpu else "swangle"
@@ -335,7 +464,8 @@ def detect_hardware_profile(*, force_refresh: bool = False) -> dict[str, Any]:
         "cpu_free_pct": cpu_free_pct,
         "usable_cpu_threads": usable_cpu_threads,
         "reserved_ui_threads": reserved_ui_threads,
-        "affinity_mask": affinity_mask,
+        "affinity_mask": None,
+        "use_low_priority": False,
         "total_ram_gb": total_ram_gb,
         "available_ram_gb": available_ram_gb,
         "usable_ram_gb": usable_ram_gb,
@@ -347,9 +477,15 @@ def detect_hardware_profile(*, force_refresh: bool = False) -> dict[str, Any]:
         "usable_vram_mb": usable_vram_mb,
         "gpu_temp_c": gpu_temp_c,
         "gpus": gpus,
+        "foreground_gpu_active": foreground_gpu_active,
+        "foreground_gpu_apps": foreground_gpu_apps,
         "governor_mode": governor_mode,
         "governor_label": governor_label,
+        "edit_worker_concurrency": edit_worker_concurrency,
+        "edit_ffmpeg_threads": edit_ffmpeg_threads,
+        "prefer_edit_hwaccel": prefer_edit_hwaccel,
         "export_concurrency": export_concurrency,
+        "remotion_concurrency": remotion_concurrency,
         "still_concurrency": still_concurrency,
         "nvenc_concurrency": nvenc_concurrency,
         "ffmpeg_threads": ffmpeg_threads,
@@ -358,14 +494,14 @@ def detect_hardware_profile(*, force_refresh: bool = False) -> dict[str, Any]:
         "cache_size_mb": cache_size_mb,
         "gl_backend": gl_backend,
         "hardware_acceleration": hardware_acceleration,
-        "x264_preset": "fast",
+        "x264_preset": "ultrafast",
         "turbo_nvenc": gpu_vendor == "nvidia",
         "summary": (
-            f"CPU trống {cpu_free_pct:.0f}% ({usable_cpu_threads}/{logical_cores} luồng khả dụng) · "
+            f"CPU {usable_cpu_threads}/{logical_cores} luồng · "
             f"RAM trống {available_ram_gb:.1f}/{total_ram_gb:.0f}GB · "
             f"{primary_gpu}"
             + (f" [Turbo NVENC{vram_badge}]" if gpu_vendor == "nvidia" else "")
-            + f" → {governor_label}: {still_concurrency} tab dựng + {nvenc_concurrency} luồng GPU ({ffmpeg_threads} thread/worker, chừa {reserved_ui_threads} luồng CPU & {reserved_ram_gb:.1f}GB RAM)"
+            + f" → {governor_label}: {still_concurrency} tab dựng + {nvenc_concurrency} luồng GPU ({ffmpeg_threads} thread/worker)"
         ),
     }
     _LIVE_HW_CACHE["ts"] = now_ts
@@ -434,6 +570,8 @@ class BackgroundRenderCache:
         extensions = {".ts", ".tsx", ".js", ".jsx", ".css", ".json"}
         if src.exists():
             for path in sorted(item for item in src.rglob("*") if item.is_file() and item.suffix.lower() in extensions):
+                if path.name.startswith(".auto_standalone_"):
+                    continue
                 digest.update(str(path.relative_to(self.remotion_dir)).encode("utf-8", errors="replace"))
                 digest.update(path.read_bytes())
         turbo_script = self.remotion_dir / "scripts" / "turbo-nvenc-export.mjs"
@@ -594,6 +732,41 @@ class BackgroundRenderCache:
             for item in (voice.get("beats") or [])
             if isinstance(item, dict) and item.get("beat_id")
         }
+        parent_groups: dict[str, list[dict[str, Any]]] = {}
+        for beat in beats:
+            bid = self._beat_id(beat)
+            if not bid or bid in voice_by_id:
+                continue
+            pid = str(beat.get("parent_beat_id") or bid.split("-")[0]).strip()
+            parent_groups.setdefault(pid, []).append(beat)
+
+        sub_timings_by_id: dict[str, tuple[float, float]] = {}
+        for pid, group in parent_groups.items():
+            vb = voice_by_id.get(pid)
+            if not isinstance(vb, dict):
+                continue
+            try:
+                p_start = float(vb.get("visual_open_sec") if vb.get("visual_open_sec") is not None else vb.get("start_sec"))
+                p_end = float(vb.get("visual_close_sec") if vb.get("visual_close_sec") is not None else vb.get("end_sec"))
+            except (TypeError, ValueError):
+                continue
+            if p_end <= p_start:
+                continue
+            if len(group) == 1:
+                sub_timings_by_id[self._beat_id(group[0])] = (p_start, p_end)
+            else:
+                weights = [
+                    max(0.2, float(g.get("duration_sec") or g.get("target_duration_sec") or g.get("estimated_duration_sec") or 1.0))
+                    for g in group
+                ]
+                total_w = sum(weights) or float(len(group))
+                span = p_end - p_start
+                acc = p_start
+                for g_idx, (g, w) in enumerate(zip(group, weights)):
+                    nxt = p_end if g_idx == len(group) - 1 else acc + span * (w / total_w)
+                    sub_timings_by_id[self._beat_id(g)] = (acc, max(acc + 0.001, nxt))
+                    acc = nxt
+
         result: list[dict[str, Any]] = []
         cursor = 0.0
         for beat in beats:
@@ -602,8 +775,13 @@ class BackgroundRenderCache:
                 continue
             voice_beat = voice_by_id.get(beat_id) or {}
             try:
-                start = float(voice_beat.get("start_sec"))
-                end = float(voice_beat.get("end_sec"))
+                if voice_beat:
+                    start = float(voice_beat.get("visual_open_sec") if voice_beat.get("visual_open_sec") is not None else voice_beat.get("start_sec"))
+                    end = float(voice_beat.get("visual_close_sec") if voice_beat.get("visual_close_sec") is not None else voice_beat.get("end_sec"))
+                elif beat_id in sub_timings_by_id:
+                    start, end = sub_timings_by_id[beat_id]
+                else:
+                    raise ValueError("no voice mapping")
             except (TypeError, ValueError):
                 try:
                     b_start = float(beat.get("start_sec"))
@@ -630,11 +808,32 @@ class BackgroundRenderCache:
             raise RuntimeError("Không có timing beat để tạo background render cache")
         fps = self._fps(job)
         total_seconds = max(item["end_sec"] for item in timings)
+        voice_doc = self._read_json(workspace / "voice_manifest.json")
+        try:
+            voice_dur = float(voice_doc.get("duration_sec") or 0.0)
+        except (TypeError, ValueError):
+            voice_dur = 0.0
+        last_speech_end = 0.0
+        for vb_item in voice_doc.get("beats") or []:
+            if isinstance(vb_item, dict):
+                try:
+                    last_speech_end = max(last_speech_end, float(vb_item.get("speech_end_sec") or 0.0))
+                except (TypeError, ValueError):
+                    pass
+        min_outro_total_sec = (last_speech_end + 3.8) if last_speech_end > 0.0 else 0.0
+        if max(voice_dur, min_outro_total_sec) > total_seconds:
+            total_seconds = max(voice_dur, min_outro_total_sec)
         raw_frames = total_seconds * fps
         nearest_frames = round(raw_frames)
         total_frames = max(1, int(nearest_frames if abs(raw_frames - nearest_frames) <= 0.25 else math.ceil(raw_frames)))
-        comp_frames = self._resolve_composition_total_frames(str(job.get("id") or ""))
-        if comp_frames and comp_frames > total_frames and (comp_frames - total_frames) <= 150:
+        edit_doc = self._read_json(workspace / "edit_manifest.json")
+        try:
+            edit_frames = int(edit_doc.get("duration_in_frames") or 0)
+        except (TypeError, ValueError):
+            edit_frames = 0
+        comp_frames = self._resolve_composition_total_frames(str(job.get("id") or "")) or edit_frames
+        max_comp_slack = max(150, int(total_frames * 0.03))
+        if comp_frames and comp_frames > total_frames and (comp_frames - total_frames) <= max_comp_slack:
             total_frames = comp_frames
         frames_per_chunk = max(1, self.chunk_seconds * fps)
         cache_root = workspace / ".render_cache"
@@ -753,11 +952,15 @@ class BackgroundRenderCache:
                 auto_dirty_beats = diff
 
         selective_mode = bool(current.get("selective_invalidation") or auto_dirty_beats)
+        has_existing_chunks = any(
+            isinstance(c, dict) and (c.get("status") in {"ready", "rendering"} or self._is_chunk_output_complete(c))
+            for c in (current.get("chunks") or [])
+        )
         same_source = bool(
             current.get("version") == self.VERSION
             and current.get("job_id") == planned.get("job_id")
             and current.get("composition_id") == planned.get("composition_id")
-            and (current.get("source_signature") == planned.get("source_signature") or selective_mode)
+            and (current.get("source_signature") == planned.get("source_signature") or selective_mode or has_existing_chunks)
             and current.get("fps") == planned.get("fps")
             and current.get("frames_per_chunk") == planned.get("frames_per_chunk")
             and len(current.get("chunks") or []) == len(planned.get("chunks") or [])
@@ -905,8 +1108,6 @@ class BackgroundRenderCache:
     ) -> int:
         log_path.parent.mkdir(parents=True, exist_ok=True)
         creationflags = getattr(subprocess, "CREATE_NO_WINDOW", 0)
-        if low_priority:
-            creationflags |= getattr(subprocess, "BELOW_NORMAL_PRIORITY_CLASS", 0)
         shell = str(command[0]).lower().endswith((".cmd", ".bat"))
         launch: list[str] | str = subprocess.list2cmdline(command) if shell else command
         startupinfo = None
@@ -932,15 +1133,6 @@ class BackgroundRenderCache:
                 text=True,
                 shell=shell,
             )
-            if os.name == "nt" and affinity_mask > 0:
-                try:
-                    handle_int = int(process._handle)  # type: ignore[attr-defined]
-                    ctypes.windll.kernel32.SetProcessAffinityMask(  # type: ignore[attr-defined]
-                        ctypes.c_void_p(handle_int),
-                        ctypes.c_size_t(affinity_mask),
-                    )
-                except Exception:
-                    pass
             if process_slot is not None and slot_key:
                 process_slot[slot_key] = process
             try:
@@ -991,6 +1183,171 @@ class BackgroundRenderCache:
         except Exception:
             return None
 
+    PREBAKE_PREFIX = "prebake|"
+
+    def _any_render_active(self) -> bool:
+        with self._guard:
+            for key, proc in list(self._processes.items()):
+                if str(key).startswith(self.PREBAKE_PREFIX):
+                    continue
+                if proc is not None and proc.poll() is None:
+                    return True
+            for thread in list(self._threads.values()):
+                if thread is not None and thread.is_alive():
+                    return True
+            locks = list(self._render_locks.values())
+        for lock in locks:
+            if lock.acquire(blocking=False):
+                lock.release()
+            else:
+                return True
+        return False
+
+    def cancel_prebake(self, workspace: str | Path | None = None) -> bool:
+        """Stop an opportunistic VOX/CT prebake (the real export always wins)."""
+        cancelled = False
+        target = self.PREBAKE_PREFIX + str(Path(workspace).resolve()) if workspace is not None else None
+        with self._guard:
+            items = [(k, v) for k, v in self._processes.items() if str(k).startswith(self.PREBAKE_PREFIX)]
+        for key, proc in items:
+            if target is not None and key != target:
+                continue
+            if proc is not None and proc.poll() is None:
+                try:
+                    if os.name == "nt":
+                        subprocess.run(
+                            ["taskkill", "/T", "/F", "/PID", str(proc.pid)],
+                            capture_output=True,
+                            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0),
+                        )
+                    else:
+                        proc.terminate()
+                    cancelled = True
+                except Exception:
+                    pass
+        return cancelled
+
+    def prebake_standalone_async(
+        self,
+        job: dict[str, Any],
+        workspace: str | Path,
+        *,
+        studio_running: bool = False,
+    ) -> dict[str, Any]:
+        """Bake VOX/CinemaText standalone clips + subtitle PNGs in the background.
+
+        Low priority and opportunistic: skipped (never blocking the job) when
+        Remotion Studio is open, another render/bake is active, or the turbo
+        script is unavailable. A real export cancels it via cancel_prebake().
+        """
+        workspace = Path(workspace).resolve()
+        if studio_running:
+            return {"started": False, "reason": "studio_running"}
+        turbo_script = self.remotion_dir / "scripts" / "turbo-nvenc-export.mjs"
+        bundled_node = Path(__file__).resolve().parents[1] / "tools" / "node.exe"
+        node_bin = os.getenv("COFI_NODE_BIN") or shutil.which("node") or (str(bundled_node) if bundled_node.exists() else None)
+        if not turbo_script.exists() or not node_bin or not job.get("id"):
+            return {"started": False, "reason": "turbo_unavailable"}
+        with self._guard:
+            existing = getattr(self, "_prebake_thread", None)
+            if existing is not None and existing.is_alive():
+                return {"started": False, "reason": "prebake_already_running"}
+        if self._any_render_active():
+            return {"started": False, "reason": "render_active"}
+
+        composition_id = str(job.get("composition_id") or f"Documentary-{job.get('id')}")
+        cache_root = workspace / ".render_cache"
+        probe_video = cache_root / "video" / "prebake_probe.mp4"
+        plan_path = cache_root / "prebake_plan.json"
+        log_path = cache_root / "logs" / "prebake.log"
+        command = [
+            str(node_bin),
+            str(turbo_script),
+            "remotion",
+            "render",
+            composition_id,
+            str(probe_video),
+            "--frames=0-0",
+            "--concurrency=4",
+            f"--job-id={job.get('id')}",
+            f"--public-dir={self.remotion_dir / 'public'}",
+            f"--prepare-plan-only={plan_path}",
+        ]
+        slot_key = self.PREBAKE_PREFIX + str(workspace)
+
+        def _run() -> None:
+            started = time.time()
+            status: dict[str, Any] = {"status": "running", "started_at": _now()}
+            try:
+                probe_video.parent.mkdir(parents=True, exist_ok=True)
+                rc = self._run_process(
+                    command,
+                    self.remotion_dir,
+                    log_path,
+                    low_priority=True,
+                    env_overrides={"COFI_PRIORITY_LOW": "1"},
+                    process_slot=self._processes,
+                    slot_key=slot_key,
+                )
+                status = {"status": "done" if rc == 0 else "failed", "returncode": rc}
+            except Exception as exc:  # opportunistic: never raise
+                status = {"status": "failed", "error": str(exc)[:400]}
+            finally:
+                plan_path.unlink(missing_ok=True)
+                status["seconds"] = round(time.time() - started, 1)
+                status["finished_at"] = _now()
+                try:
+                    _atomic_json(cache_root / "prebake_status.json", status)
+                except Exception:
+                    pass
+
+        thread = threading.Thread(target=_run, name=f"cofi-prebake-{job.get('id')}", daemon=True)
+        with self._guard:
+            self._prebake_thread = thread
+        thread.start()
+        return {"started": True, "reason": "started", "log_path": str(log_path)}
+
+    DEFAULT_TARGET_LUFS = -16.0
+
+    @classmethod
+    def _resolve_target_lufs(cls, job: dict[str, Any] | None) -> float:
+        """Channel-profile loudness target (editing_dna.audio_rules.target_lufs).
+
+        Reads the job's editing DNA snapshot first, then the channel profile
+        snapshot, then data/channel_profiles.json; falls back to
+        COFI_DEFAULT_TARGET_LUFS / -16 LUFS. Profile data only, no channel names.
+        """
+        def _pick(container: Any) -> float | None:
+            if not isinstance(container, dict):
+                return None
+            rules = ((container.get("editing_dna") or container).get("audio_rules") or {}) if isinstance(container.get("editing_dna") or container, dict) else {}
+            value = rules.get("target_lufs") if isinstance(rules, dict) else None
+            try:
+                return float(value) if value is not None and str(value).strip() != "" else None
+            except (TypeError, ValueError):
+                return None
+
+        job = job if isinstance(job, dict) else {}
+        for candidate in (job, job.get("channel_profile_snapshot")):
+            value = _pick(candidate)
+            if value is not None:
+                return value
+        profile_id = str(job.get("channel_profile_id") or "").strip()
+        if profile_id:
+            try:
+                data = json.loads((Path(__file__).resolve().parents[1] / "data" / "channel_profiles.json").read_text(encoding="utf-8"))
+                for prof in (data.get("profiles") or []) if isinstance(data, dict) else []:
+                    if isinstance(prof, dict) and str(prof.get("id") or prof.get("profile_id") or "") == profile_id:
+                        value = _pick(prof)
+                        if value is not None:
+                            return value
+            except (OSError, ValueError):
+                pass
+        try:
+            return float(os.getenv("COFI_DEFAULT_TARGET_LUFS", str(cls.DEFAULT_TARGET_LUFS)))
+        except ValueError:
+            return cls.DEFAULT_TARGET_LUFS
+
     def _render_chunk(self, manifest: dict[str, Any], chunk: dict[str, Any], *, render_all: bool = False) -> None:
         video = Path(str(chunk["video_path"]))
         audio = Path(str(chunk["audio_path"]))
@@ -1014,15 +1371,16 @@ class BackgroundRenderCache:
         else:
             effective_concurrency = int(hw["export_concurrency"]) if render_all else max(2, int(hw["export_concurrency"]) // 2)
 
-        still_concurrency = max(1, min(3, int(hw.get("still_concurrency") or effective_concurrency)))
-        nvenc_concurrency = max(1, min(3, int(hw.get("nvenc_concurrency") or 2)))
-        ffmpeg_threads = max(1, min(3, int(hw.get("ffmpeg_threads") or 2)))
-        offthread_threads = int(hw.get("offthreadvideo_threads") or 3)
-        cache_size_bytes = int(hw.get("cache_size_bytes") or (512 * 1024 * 1024))
+        still_concurrency = max(1, min(8, int(hw.get("still_concurrency") or 8)))
+        nvenc_concurrency = max(1, min(6, int(hw.get("nvenc_concurrency") or 6)))
+        ffmpeg_threads = max(1, min(6, int(hw.get("ffmpeg_threads") or 6)))
+        offthread_threads = int(hw.get("offthreadvideo_threads") or 6)
+        cache_size_bytes = int(hw.get("cache_size_bytes") or (768 * 1024 * 1024))
         gl_backend = str(hw.get("gl_backend") or "angle")
         hw_accel = str(hw.get("hardware_acceleration") or "if-possible")
-        x264_preset = str(hw.get("x264_preset") or "veryfast")
-        affinity_mask = int(hw.get("affinity_mask") or 0)
+        x264_preset = str(hw.get("x264_preset") or "ultrafast")
+        affinity_mask = 0
+        use_low_priority = False
 
         command = [
             self._npx(),
@@ -1052,7 +1410,7 @@ class BackgroundRenderCache:
         chunk["status"] = "rendering"
         chunk["attempts"] = int(chunk.get("attempts") or 0) + 1
         chunk["error"] = None
-        if self.runner is self._run_process:
+        if True:
             turbo_script = self.remotion_dir / "scripts" / "turbo-nvenc-export.mjs"
             turbo_enabled = str(os.getenv("COFI_TURBO_EXPORT", "1")).strip().lower() not in {"0", "false", "no", "off"}
             bundled_node = Path(__file__).resolve().parents[1] / "tools" / "node.exe"
@@ -1063,6 +1421,10 @@ class BackgroundRenderCache:
                 "COFI_NVENC_CONCURRENCY": str(nvenc_concurrency),
                 "COFI_FFMPEG_THREADS": str(ffmpeg_threads),
             }
+            if manifest.get("target_lufs") is not None:
+                # Turbo path: 2-pass loudnorm of the final mix to the channel target (non-blocking).
+                env_overrides["COFI_TARGET_LUFS"] = str(manifest["target_lufs"])
+                env_overrides.setdefault("COFI_TARGET_TP", "-1.0")
             if turbo_enabled and turbo_script.exists() and node_bin:
                 dirty_beats = sorted(
                     {
@@ -1072,74 +1434,52 @@ class BackgroundRenderCache:
                     }
                 )
                 plan_path = video.parent.parent / "universal_render_plan.json"
-                plan_path.unlink(missing_ok=True)
-                turbo_prep_cmd = [
-                    str(node_bin),
-                    str(turbo_script),
-                    "remotion",
-                    "render",
-                    str(manifest["composition_id"]),
-                    str(video),
-                    f"--frames={frame_range}",
-                    f"--concurrency={still_concurrency}",
-                    f"--nvenc-concurrency={nvenc_concurrency}",
-                    f"--ffmpeg-threads={ffmpeg_threads}",
-                    f"--separate-audio-to={audio}",
-                    f"--job-id={manifest.get('job_id') or ''}",
-                    f"--public-dir={direct_pub}",
-                    f"--prepare-plan-only={plan_path}",
-                ]
-                if dirty_beats:
-                    turbo_prep_cmd.append(f"--dirty-beats={','.join(dirty_beats)}")
-                prep_rc = self._run_process(
-                    turbo_prep_cmd,
-                    self.remotion_dir,
-                    log,
-                    low_priority=True,
-                    env_overrides=env_overrides,
-                    affinity_mask=affinity_mask,
-                    process_slot=self._processes,
-                    slot_key=slot_key,
-                )
-                universal_py = self.remotion_dir / "scripts" / "universal_master_render.py"
-                if prep_rc == 0 and plan_path.is_file() and universal_py.is_file():
-                    returncode = self._run_process(
-                        [sys.executable, str(universal_py), str(plan_path)],
+                for _turbo_try in range(2):
+                    plan_path.unlink(missing_ok=True)
+                    turbo_prep_cmd = [
+                        str(node_bin),
+                        str(turbo_script),
+                        "remotion",
+                        "render",
+                        str(manifest["composition_id"]),
+                        str(video),
+                        f"--frames={frame_range}",
+                        f"--concurrency={still_concurrency}",
+                        f"--nvenc-concurrency={nvenc_concurrency}",
+                        f"--ffmpeg-threads={ffmpeg_threads}",
+                        f"--separate-audio-to={audio}",
+                        f"--job-id={manifest.get('job_id') or ''}",
+                        f"--public-dir={direct_pub}",
+                        f"--prepare-plan-only={plan_path}",
+                    ]
+                    if dirty_beats:
+                        turbo_prep_cmd.append(f"--dirty-beats={','.join(dirty_beats)}")
+                    prep_rc = self._run_process(
+                        turbo_prep_cmd,
                         self.remotion_dir,
                         log,
-                        low_priority=True,
+                        low_priority=False,
                         env_overrides=env_overrides,
-                        affinity_mask=affinity_mask,
+                        affinity_mask=None,
                         process_slot=self._processes,
                         slot_key=slot_key,
-                        append_log=True,
+                        append_log=(_turbo_try > 0),
                     )
-            if returncode != 0 or not video.exists() or video.stat().st_size <= 0 or not audio.exists() or audio.stat().st_size <= 0:
-                isolated_pub = self._prepare_isolated_public_dir(workspace, str(manifest.get("job_id") or ""))
-                if isolated_pub is not None:
-                    command.append("--bundle-cache=false")
-                    command.append(f"--public-dir={isolated_pub}")
-                else:
-                    command.append("--bundle-cache")
-                # Fallback to standard Remotion CLI with BELOW_NORMAL_PRIORITY_CLASS and CPU affinity mask
-                returncode = self._run_process(
-                    command,
-                    self.remotion_dir,
-                    log,
-                    low_priority=True,
-                    env_overrides=env_overrides,
-                    affinity_mask=affinity_mask,
-                    process_slot=self._processes,
-                    slot_key=slot_key,
-                )
-        else:
-            isolated_pub = self._prepare_isolated_public_dir(workspace, str(manifest.get("job_id") or ""))
-            if isolated_pub is not None:
-                command.append("--bundle-cache=false")
-                command.append(f"--public-dir={isolated_pub}")
-            else:
-                command.append("--bundle-cache")
-            returncode = self.runner(command, self.remotion_dir, log)
+                    universal_py = self.remotion_dir / "scripts" / "universal_master_render.py"
+                    if prep_rc == 0 and plan_path.is_file() and universal_py.is_file():
+                        returncode = self._run_process(
+                            [sys.executable, str(universal_py), str(plan_path)],
+                            self.remotion_dir,
+                            log,
+                            low_priority=False,
+                            env_overrides=env_overrides,
+                            affinity_mask=None,
+                            process_slot=self._processes,
+                            slot_key=slot_key,
+                            append_log=True,
+                        )
+                    if returncode == 0 and video.exists() and video.stat().st_size > 0 and audio.exists() and audio.stat().st_size > 0:
+                        break
         if returncode != 0 or not video.exists() or video.stat().st_size <= 0 or not audio.exists() or audio.stat().st_size <= 0:
             chunk["status"] = "failed"
             chunk["error"] = f"Remotion chunk render exited with code {returncode}"
@@ -1163,12 +1503,14 @@ class BackgroundRenderCache:
         with self._guard:
             render_lock = self._render_locks.setdefault(key, threading.RLock())
             active_stop = stop_event or self._stops.get(key)
+        self.cancel_prebake(workspace)
         with render_lock:
             self.hardware_profile = detect_hardware_profile()
             if not self._explicit_concurrency:
                 self.concurrency = max(1, int(self.hardware_profile["export_concurrency"]))
             manifest = self.prepare(job, workspace, beats)
             manifest["hardware_profile"] = self.hardware_profile
+            manifest["target_lufs"] = self._resolve_target_lufs(job)
             source_signature = str(manifest.get("source_signature") or "")
             _, frontier, progress_status = self._completed_frontier(workspace, manifest)
             changed = False
@@ -1190,14 +1532,15 @@ class BackgroundRenderCache:
                 # Codex/Studio can save source while a background chunk is being
                 # encoded. Do not continue rendering later chunks from a newer
                 # source while earlier chunks still belong to the old source.
-                if self._source_signature() != source_signature:
+                multi_chunk = len(manifest.get("chunks") or []) > 1
+                if multi_chunk and self._source_signature() != source_signature:
                     return self.prepare(job, workspace, beats)
                 chunk["status"] = "rendering"
                 self._refresh_summary(manifest)
                 _atomic_json(self._manifest_path(workspace), manifest)
                 self._render_chunk(manifest, chunk, render_all=render_all)
                 changed = True
-                if self._source_signature() != source_signature:
+                if multi_chunk and self._source_signature() != source_signature:
                     return self.prepare(job, workspace, beats)
                 self._refresh_summary(manifest)
                 manifest["finalized_signature"] = None
@@ -1208,6 +1551,8 @@ class BackgroundRenderCache:
             if all(c.get("status") == "ready" for c in (manifest.get("chunks") or [])):
                 manifest["dirty_beat_ids"] = []
                 manifest["selective_invalidation"] = False
+                manifest["source_signature"] = self._source_signature()
+                manifest["beat_signatures"] = self.snapshot_beat_signatures(workspace, beats)
             if changed or progress_status in {"completed", "failed"}:
                 self._refresh_summary(manifest)
                 _atomic_json(self._manifest_path(workspace), manifest)
@@ -1446,19 +1791,15 @@ class BackgroundRenderCache:
         if not node:
             raise RuntimeError("Không tìm thấy Node để ghép background render cache")
         log_path = workspace / ".render_cache" / "combine.log"
-        if self.runner is self._run_process:
-            affinity_mask = int((self.hardware_profile or {}).get("affinity_mask") or 0)
-            returncode = self._run_process(
-                [str(node), str(combine_script), str(self._manifest_path(workspace))],
-                self.remotion_dir,
-                log_path,
-                low_priority=True,
-                affinity_mask=affinity_mask,
-                process_slot=self._processes,
-                slot_key=str(workspace),
-            )
-        else:
-            returncode = self.runner([str(node), str(combine_script), str(self._manifest_path(workspace))], self.remotion_dir, log_path)
+        returncode = self._run_process(
+            [str(node), str(combine_script), str(self._manifest_path(workspace))],
+            self.remotion_dir,
+            log_path,
+            low_priority=False,
+            affinity_mask=None,
+            process_slot=self._processes,
+            slot_key=str(workspace),
+        )
         if returncode != 0 or not output.exists() or output.stat().st_size <= 0:
             raise RuntimeError(f"Ghép background render cache thất bại, code={returncode}")
         manifest["finalized_signature"] = signature

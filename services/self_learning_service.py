@@ -159,6 +159,19 @@ class SelfLearningService:
         Compatible with E2E opaque-box reference specification.
         """
         profile_id = profile.get("id", "channel_default")
+        prof_thumb_dna = profile.get("thumbnail_dna") if isinstance(profile.get("thumbnail_dna"), dict) else {}
+        prof_palette = prof_thumb_dna.get("color_palette") if isinstance(prof_thumb_dna.get("color_palette"), dict) else {}
+        resolved_thumb_dna = {
+            "style_preset": str(prof_thumb_dna.get("style_preset") or prof_thumb_dna.get("preset_id") or "teukgeup_archival_polaroid"),
+            "archetype": str(prof_thumb_dna.get("layout_archetype") or prof_thumb_dna.get("layout_template") or "split_duality"),
+            "max_words": 5,
+            "primary_color": str(prof_palette.get("primary") or "#FFE600"),
+            "accent_color": str(prof_palette.get("accent") or "#FF2424"),
+            "badge_color": str(prof_palette.get("badge_color") or "#39FF14"),
+            "rim_glow": str(prof_palette.get("rim_glow") or "#FDE68A"),
+            "background_color": str(prof_palette.get("background") or "#070B10"),
+            "min_contrast": 4.5,
+        }
         if not videos:
             return {
                 "status": "success",
@@ -170,16 +183,19 @@ class SelfLearningService:
                 "upgrade_rules": {
                     "what_to_stop_doing": [],
                     "what_to_double_down_on": [],
-                    "next_video_upgrades": [
-                        "Khóa chặt góc nhìn điều tra khách quan",
-                        "Mở đầu bằng số liệu chênh lệch",
-                    ],
+                    "next_video_upgrades": (
+                        [
+                            "Maintain objective archival perspective aligned with channel DNA",
+                            "Open with a concrete documented contrast",
+                        ]
+                        if (str(profile.get("language") or "").lower() == "en" or str(profile.get("market") or "").upper() == "US")
+                        else [
+                            "Bám sát góc nhìn và giọng điệu riêng của hồ sơ kênh",
+                            "Mở đầu bằng chi tiết hoặc số liệu đối lập cụ thể",
+                        ]
+                    ),
                 },
-                "thumbnail_dna": {
-                    "archetype": "broadcast_left_heavy",
-                    "max_words": 5,
-                    "accent_color": "#38BDF8",
-                },
+                "thumbnail_dna": dict(resolved_thumb_dna),
                 "seo_dna": {
                     "min_tags": 8,
                     "core_winner_tags": [],
@@ -231,48 +247,73 @@ class SelfLearningService:
                 })
                 diagnostics.append(f"Video '{v_title}' thua vì {cause}")
 
-        # Synthesize Evolutionary Upgrade Rules
-        what_to_stop_doing = [
-            "Tiêu đề dài dòng mơ hồ",
-            "Mô tả bạo lực trực diện vi phạm YPP",
-            "Cấm bỏ quên nhân vật mở màn (vi phạm nguyên tắc Chiếc súng của Chekhov — nhắc thương nhân họ Ngụy ở đầu nhưng bỏ bẵng kết cục)",
-            "Cấm gọi người 58–62 tuổi (50–65 tuổi) là 'ông bà già / cụ già' (노부부 / 노인) gây gượng gạo văn hóa Hàn Quốc",
-            "Cấm cắt ngang câu kết màn (closing narration) giữa chừng hoặc kết thúc cụt ngủn không có nhạc nền fade-out",
-            "Cấm dùng tông giọng TTS quá căng/gắt gây mệt tai ('목소리 톤이 넘 강팔라 피곤해'), đọc sai số đếm ('19년' đọc thành '열아홉 년'), hoặc để TTS cắt đôi số có dấu phẩy ('2,000') và kéo dài khoảng nghỉ giữa câu >0.5s làm nhịp đọc bị chậm",
-            "Cấm tuyệt đối dùng Regex / Find-and-Replace xóa hoặc thay chủ ngữ hàng loạt trong kịch bản tiếng Hàn gây lỗi định ngữ gắn nhầm vào đồ vật ('서른한 살이 된 동영상 플랫폼', '무릎을 꿇은 판결문 복사본') hoặc đánh tráo chủ thể hung thủ - nạn nhân",
-            "Cấm dùng giao diện Cyber-Finance HUD tối màu cho kênh True Crime Hình Sự ('특급수배록') hoặc đặt sai bố cục 2 ảnh phụ Polaroid góc trái trên của Thumbnail DNA",
-            "Cấm viết chuỗi số phiên âm Hangul dài ngoằng ('천구백팔십이년생', '오백팔십일억 칠천오백만 위안', '백구십육 개', '십사점육 퍼센트', '구조 원') trực tiếp vào script.md và phụ đề gây khó đọc và làm TTS ngắt sai ('백구... 십육 개')",
-        ]
-        if any(u.get("cause") == "title_too_long_low_ctr" for u in underperformers):
-            what_to_stop_doing.append("Tiêu đề quá 15 từ làm giảm tỷ lệ click trên thiết bị di động")
-        if any(u.get("cause") == "weak_keyword_fatigue" for u in underperformers):
-            what_to_stop_doing.append("Lạm dụng từ khóa học thuật chung chung thiếu điểm nổ cảm xúc")
+        # Synthesize Profile-Scoped Evolutionary Upgrade Rules (100% isolated per profile & language-safe)
+        lang = str(profile.get("language") or profile.get("default_language") or "").strip().lower()
+        market = str(profile.get("market") or "").strip().upper()
+        is_english_profile = (lang == "en" or market == "US")
 
-        what_to_double_down_on = [
-            "Cấu trúc 5 hồi kịch tính",
-            "Bản đồ 2.5D vệ tinh đối chiếu hiện trường",
-            "Nguyên tắc Chiếc súng của Chekhov: Mọi nhân vật/manh mối mở màn đều có kết cục rõ ràng (hoặc 1–2 câu tóm lược nhẹ nhàng nếu nhạy cảm)",
-            "Tông giọng trầm ấm, đầm, đều đặn chuẩn kể chuyện đêm khuya (K1 - Trầm Sâu Đêm Khuya SBS Style / K1 - Điềm Tĩnh) + chuẩn hóa số đếm Hán-Hàn (십구 년, 오십대)",
-            "Hoàn tất trọn vẹn 100% câu chào kết màn + để dư 3.5–5 giây (3.8s) nhạc nền hạ màn (fade-out) tự nhiên",
-        ]
-        winner_terms = own_dna.get("winner_terms") or []
-        if winner_terms:
-            top_winners_str = ", ".join(str(w) for w in winner_terms[:4])
-            what_to_double_down_on.append(f"Tập trung khai thác cụm từ khóa Outlier thắng thế: {top_winners_str}")
+        if is_english_profile:
+            what_to_stop_doing = [
+                "Vague or overly wordy titles that bury the core curiosity hook",
+                "Graphic or policy-sensitive phrasing that risks YPP limited monetization",
+                "Introducing early narrative leads or archival exhibits without resolving their outcome",
+                "Abrupt ending cuts without a complete closing thought and 3.8s BGM fade-out",
+                "Robotic AI translationese, passive-voice walls, or repetitive CTA templates across episodes",
+            ]
+            if any(u.get("cause") == "title_too_long_low_ctr" for u in underperformers):
+                what_to_stop_doing.append("Titles exceeding 15 words that truncate on mobile screens")
+            if any(u.get("cause") == "weak_keyword_fatigue" for u in underperformers):
+                what_to_stop_doing.append("Overusing generic academic phrasing without concrete stakes")
 
-        next_video_upgrades = [
-            "Mở đầu bằng nghịch lý 30 giây",
-            "Tối ưu text thumbnail dưới 5 từ",
-            "Khóa chặt góc nhìn điều tra khách quan",
-            "Mở đầu bằng số liệu chênh lệch",
-            "Tăng mật độ HUD 2.5D",
-            "[Checklist Kịch bản] Mọi nhân vật xuất hiện ở phần đầu đã có kết cục rõ ràng (Chekhov's Gun) + xưng hô trung tính chuẩn văn hóa Hàn ('여관 주인 부부', '50대 후반 부부')",
-            "[Checklist Giọng đọc] Tông giọng trầm ấm êm tai chuẩn đêm khuya + rà soát số đếm/năm tháng/danh từ riêng (19년=십구 년) không đọc vấp",
-            "[Checklist Phần kết] Câu thoại cuối cùng hoàn tất trọn vẹn 100% + có 3–5 giây (3.8s) nhạc nền hạ màn fade-out",
-            "[Checklist Ngữ pháp Hàn] Cấm dùng Regex xóa/thay chủ ngữ; kiểm tra 100% sự tương hợp Định ngữ - Danh từ trung tâm và phân biệt chuẩn chủ thể Nạn nhân vs Hung thủ",
-            "[Checklist Nhịp độ Voice] Chuẩn hóa số có dấu phẩy sang Hangul (2,000킬로미터 -> 이천 킬로미터) trước TTS + gọt khoảng nghỉ giữa câu (0.285s/0.185s) đạt chuẩn 255–270 SPM đài SBS",
-        ]
+            what_to_double_down_on = [
+                "Structured multi-act progression anchored in verified primary records",
+                "Clean 3-frame verified archival footage paired with bespoke motion graphics",
+                "Natural ear-ready broadcast narration with varied sentence rhythm",
+                "Complete closing narration followed by a clean 3.8s BGM fade-out tail",
+            ]
+            winner_terms = own_dna.get("winner_terms") or []
+            if winner_terms:
+                top_winners_str = ", ".join(str(w) for w in winner_terms[:4])
+                what_to_double_down_on.append(f"Focus on proven channel outlier terms: {top_winners_str}")
 
+            next_video_upgrades = [
+                "Open on a concrete factual paradox within the first 30 seconds",
+                "Keep thumbnail overlay hook text concise (under 5 words per line)",
+                "Maintain strict alignment with this channel profile's own editorial and visual DNA",
+                "Ensure zero CTA repetition and fresh closing lines tailored to the episode",
+            ]
+        else:
+            what_to_stop_doing = [
+                "Tiêu đề dài dòng mơ hồ làm chìm điểm tò mò chính",
+                "Từ ngữ nhạy cảm vi phạm chính sách nguyên tắc cộng đồng / YPP xanh tiền",
+                "Giới thiệu nhân vật hoặc chi tiết mở màn nhưng bỏ quên kết cục ở phần sau",
+                "Cắt ngang câu kết màn giữa chừng hoặc thiếu 3.8 giây nhạc nền hạ màn (fade-out)",
+                "Văn phong dịch máy rập khuôn mùi AI, đồng phục độ dài câu hoặc lặp lại mẫu câu CTA giữa các tập",
+            ]
+            if any(u.get("cause") == "title_too_long_low_ctr" for u in underperformers):
+                what_to_stop_doing.append("Tiêu đề quá 15 từ làm giảm tỷ lệ click trên thiết bị di động")
+            if any(u.get("cause") == "weak_keyword_fatigue" for u in underperformers):
+                what_to_stop_doing.append("Lạm dụng từ khóa học thuật chung chung thiếu điểm chạm cụ thể")
+
+            what_to_double_down_on = [
+                "Cấu trúc chương hồi mạch lạc bám sát đúng DNA riêng của hồ sơ kênh",
+                "Kết hợp tư liệu sạch kiểm duyệt 3-frame với đồ họa chuyển động thiết kế khớp câu đọc",
+                "Giọng đọc tự nhiên, nhịp thở câu ngắn-dài biến thiên linh hoạt, chuẩn hóa số đếm trước TTS",
+                "Hoàn tất trọn vẹn 100% câu kết màn kèm 3.8 giây nhạc nền hạ màn tự nhiên",
+            ]
+            winner_terms = own_dna.get("winner_terms") or []
+            if winner_terms:
+                top_winners_str = ", ".join(str(w) for w in winner_terms[:4])
+                what_to_double_down_on.append(f"Tập trung khai thác cụm từ khóa Outlier thắng thế của riêng kênh: {top_winners_str}")
+
+            next_video_upgrades = [
+                "Mở đầu trực diện vào chi tiết đắt giá ngay 30 giây đầu theo đúng phong cách kênh",
+                "Tối ưu chữ trên thumbnail ngắn gọn dưới 5 từ/dòng, không che mặt nhân vật chính",
+                "Giữ độc lập 100% DNA biên tập & mỹ thuật của riêng hồ sơ kênh này",
+                "Đảm bảo 0% lặp lại cấu trúc CTA và viết mới hoàn toàn đoạn kết theo mạch nội dung tập phim",
+            ]
+
+        # Also keep empty-videos fallback English-safe when profile is English
         # Idempotent deduplication preserving order
         what_to_stop_doing = list(dict.fromkeys(what_to_stop_doing))
         what_to_double_down_on = list(dict.fromkeys(what_to_double_down_on))
@@ -294,12 +335,7 @@ class SelfLearningService:
             "underperformers": underperformers,
             "diagnostics": diagnostics,
             "upgrade_rules": upgrade_rules,
-            "thumbnail_dna": {
-                "archetype": "broadcast_left_heavy",
-                "max_words": 5,
-                "accent_color": "#38BDF8",
-                "min_contrast": 4.5,
-            },
+            "thumbnail_dna": dict(resolved_thumb_dna),
             "seo_dna": {
                 "min_tags": 8,
                 "core_winner_tags": [str(t) for t in winner_terms[:8]],

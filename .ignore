@@ -5,3 +5,4 @@ tools/
 static/vox_studio/
 graft/
 .producer/
+.trail/cache/

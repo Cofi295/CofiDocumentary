@@ -9,6 +9,20 @@ Use this skill whenever designing, critiquing, or updating YouTube thumbnails in
 
 ---
 
+## 0. Mandatory Pre-Design Channel DNA Style Check (Kiểm Tra Kỹ DNA Kênh Trước Khi Làm — Giữ 100% Phong Cách DNA, 0% Sao Chép & 0% Spoil Kết Cục)
+
+Before designing or generating ANY thumbnail or title, you MUST inspect the active channel profile's `thumbnail_dna`, `seo_keyword_dna`, `latest_5_reference_videos`, `winner_titles`, `topic_memory`, and `seo_reference_context.json`:
+1. **Lock 100% to the Channel's Winner Style DNA (Giữ Phong Cách DNA Kênh)**:
+   - Preserve the channel's exact layout geometry (`style_preset` / `layout_archetype`), dark studio negative space (`#070B10`), typography (`Paperlogy ExtraBold` / `Pretendard ExtraBold`), badge style (`#39FF14`), and 2-line color formula:
+     * **Line 1 (`line_1` — `Trắng #FFFFFF + Vàng #FFE600` in quotes `“...”`)**: Concrete behavioral rule, extreme evasion scale, or chilling paradox of the current case.
+     * **Line 2 (`line_2` — `Vàng #FFE600 + Đỏ #FF2424` ending with `!`)**: Open curiosity-gap punchline about the culprit's hidden identity or shocking motive.
+2. **Anti-Spoiler Law (`0%` Spoil Kết Cục Trên Dòng 2 Hoặc Tiêu Đề)**:
+   - NEVER spoil how the culprit was caught or the final forensic arrest clue on `line_2` or in the Title (strictly forbid `...에 잡힌/무너진 진범!`, `지문 하나`, `족보에 잡힌` on Line 2). Keep the curiosity gap open so viewers must click to discover how the case was cracked.
+3. **Zero Copying Law (`0%` Sao Chép Câu Từ, Mô-típ Cũ Hay Dáng/Biểu Cảm Ảnh Mẫu)**:
+   - Checking DNA means **keeping the style, color hierarchy, and psychological tension — NEVER copying phrases, sentences, or specific hooks** from previous videos (`latest_5_reference_videos` / `topic_memory`), and **NEVER copying facial expressions, head angles, or poses** from reference photos. Every word and candid expression must be freshly crafted 100% for the current case.
+
+---
+
 ## 1. Core Architectural Rule: Clean Base Image + Vector Layer Composition
 
 Never rely on raw AI image generators to bake long Korean (`중국 실화 사건`), Vietnamese, or English headlines directly into pixels—baked pixel text warps Hangul strokes, breaks channel font consistency, and cannot be dragged or edited by the user.

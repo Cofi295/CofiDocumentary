@@ -35,19 +35,18 @@ DEFAULT_REM_IGNORE = [
 
 DEFAULT_DOC_LEARNINGS: list[tuple[str, str]] = [
     (
-        "Chinese true-crime scripts must use 100% real historical cases and Chinese surnames",
+        "App core is strictly technical engine while all creative and country DNA lives isolated per channel profile",
         """## Decided
-- In `documentary/prompts.py`, `documentary/service.py`, and `data/channel_profiles.json` (`channel-cn-cyber-finance-kr`), every script must be 100% grounded in a single real named historical case (e.g. Ezubao / Qian Zhimin) with real court dates and real recovery rates.
-- Chinese citizens and victims in China must use Korean-transliterated Chinese surnames (`천 씨`, `왕 씨`, `린 씨`, `저우 씨`, `장 씨`), never Korean surnames (`김 씨`, `박 씨`, `이 씨`, `최 씨`, `정 씨`).
-- Conversational `~죠` (`~었죠`, `~았죠`, `~였죠`, `~하죠`) endings must be capped at 6 to 8 occurrences across a 180-sentence script, never on consecutive sentences.
+- `documentary/*.py` acts strictly as a pure technical core (closed-loop `Maker -> Sensor -> Critic -> Fixer -> Final` execution, acoustic/ASR/pixel/loudness/outro sensors, TTS symbol normalization, and schema validation).
+- Every channel profile in `data/channel_profiles.json` (`channel_profile_snapshot`, `editorial_dna`, `voice_and_structure`, `editing_dna`, `seo_keyword_dna`, `creative_brief`) owns 100% isolated creative tone, speech register, narrative structure, and country/domain rules with zero cross-channel leakage.
 ## Tried and ruled out
-- Composite cases stitching multiple scams or using `김 씨` for Chinese victims in Hunan/Changsha: rejected by Korean viewers as AI-generated localization errors and unrealistic 14-day timelines.""",
+- Hardcoding a single channel's genre, case names, surname rules, or speech register globally across all profiles in Python code: blocks AI Agent creative freedom on other channels and countries.""",
     ),
     (
         "Edit and SEO subagents should use exact quality.py and thumbnail_studio.py schemas without re-reading service.py",
         """## Decided
 - In `documentary/quality.py` and `documentary/service.py`, `edit` phase requires `edit_manifest.json`, `remotion_media_manifest.json`, `asset_registry.json`, and `edit_progress.json` (`status: completed`, `completed_beats == total_beats`).
-- `seo` phase in `documentary/quality.py` and `documentary/thumbnail_studio.py` requires `seo_package.json` (with `primary_title`, `title_variants`, `description`, `chapters`, `tags`, `hashtags`, `pinned_comment`, `thumbnail_text_variants`) and `thumbnail_design.json` rendered via `render_design_thumbnails_to_disk(workspace, design)`.
+- `seo` phase in `documentary/quality.py` and `documentary/thumbnail_studio.py` requires `seo_package.json` (with `recommended_title`, `title_options`, `description`, `tags`, `hashtags`, `reference_analysis`, `thumbnail.prompt`, `thumbnail.overlay_text`, `thumbnail.visual_priority`, `thumbnail.background_policy`) and `thumbnail_design.json` rendered via `render_design_thumbnails_to_disk(workspace, design)`.
 ## Tried and ruled out
 - Subagents grepping and reading 10,000+ lines of `documentary/service.py` and `documentary/quality.py` on every job run: wastes 30-45% of uncached input tokens when the schema is fixed.""",
     ),
@@ -78,6 +77,7 @@ class TrailCodeManager:
     def __init__(self, doc_root: str | Path, remotion_root: str | Path) -> None:
         self.doc_root = Path(doc_root).resolve()
         self.remotion_root = Path(remotion_root).resolve()
+        self._version_cache: str | None = None
 
     def _subprocess_kwargs(self) -> dict[str, Any]:
         kwargs: dict[str, Any] = {
@@ -107,13 +107,36 @@ class TrailCodeManager:
         return None
 
     def get_version(self, exe: str | None = None) -> str | None:
+        if self._version_cache:
+            return self._version_cache
         exe = exe or self.find_executable()
         if not exe:
             return None
+        # Read package.json directly from disk first so F5 / health checks never spawn cmd.exe / trail.cmd
+        exe_path = Path(exe)
+        pkg_candidates = [
+            exe_path.parent / "node_modules" / "@trailhq" / "trail-code" / "package.json",
+            self.doc_root / "node_modules" / "@trailhq" / "trail-code" / "package.json",
+            self.remotion_root / "node_modules" / "@trailhq" / "trail-code" / "package.json",
+        ]
+        if os.name == "nt":
+            appdata = os.getenv("APPDATA", "")
+            if appdata:
+                pkg_candidates.insert(0, Path(appdata) / "npm" / "node_modules" / "@trailhq" / "trail-code" / "package.json")
+        for pkg in pkg_candidates:
+            if pkg.is_file():
+                try:
+                    ver = str(json.loads(pkg.read_text(encoding="utf-8")).get("version") or "").strip()
+                    if ver:
+                        self._version_cache = ver
+                        return ver
+                except Exception:
+                    pass
         try:
             res = subprocess.run([exe, "--version"], timeout=10, **self._subprocess_kwargs())
             if res.returncode == 0 and res.stdout.strip():
-                return res.stdout.strip().splitlines()[-1].strip()
+                self._version_cache = res.stdout.strip().splitlines()[-1].strip()
+                return self._version_cache
         except Exception:
             pass
         return None
@@ -297,16 +320,12 @@ class TrailCodeManager:
             except Exception:
                 pass
 
-            for idx, root in enumerate((self.doc_root, self.remotion_root)):
+            for root in (self.doc_root, self.remotion_root):
                 if not root.exists():
                     continue
-                cache_dir = root / ".trail" / "cache"
-                if not cache_dir.exists():
-                    cmd = [exe, "init", "--agents", "antigravity", "agents", "gemini", "claude"]
-                    if idx > 0:
-                        cmd.append("--no-global")
-                else:
-                    cmd = [exe, "build"]
+                # Always run ``build`` directly (never ``init --agents``) so syncing
+                # never re-injects cmd.exe hooks or ``trail.cmd`` MCP entries on Windows.
+                cmd = [exe, "build"]
                 try:
                     res = subprocess.run(cmd, cwd=str(root), timeout=180, **self._subprocess_kwargs())
                     logs.append(f"{root.name}: {' '.join(cmd[1:])} (code={res.returncode})")
@@ -324,7 +343,7 @@ class TrailCodeManager:
             "synced_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    def build_prompt_context(self, phase: str) -> str:
+    def build_prompt_context(self, phase: str, language: str = "ko") -> str:
         """Return a compact, high-signal Trail-Code context & learnings block for producer prompts."""
         learnings = self.list_learnings()
         if not learnings and not (self.doc_root / ".trail" / "cache").exists():
@@ -337,16 +356,23 @@ class TrailCodeManager:
             "- **QUY TẮC TIẾT KIỆM TOKEN**: Tuyệt đối KHÔNG đọc toàn bộ các file lớn (`documentary/service.py`, `documentary/quality.py`, `documentary/thumbnail_studio.py`, `scripts/turbo-nvenc-export.mjs`). Hãy dùng ngay các quyết định đã ghim trong `.trail/learnings/` dưới đây hoặc chạy `trail ask \"<câu hỏi>\" --source` / `trail skeleton <file>`.",
         ]
 
+        lang = str(language or "ko").strip().lower()
+
         if phase in {"plan", "visuals"}:
-            lines.append(
-                "- **[Learning Ghim Cố Định - Kịch Bản]**: 100% bám sát 1 vụ án có thật duy nhất (không ghép vụ án); công dân/nạn nhân Trung Quốc bắt buộc dùng họ Trung Quốc phiên âm Hàn (`천 씨`, `왕 씨`, `린 씨`, `저우 씨`, tuyệt đối cấm `김 씨 / 박 씨 / 이 씨`); đuôi câu `~죠` tối đa 6–8 lần/bài và không bao giờ đứng ở 2 câu liên tiếp; timeline điều tra và tỷ lệ thu hồi tài sản phải đúng phán quyết tòa án thật."
-            )
+            if lang == "ko":
+                lines.append(
+                    "- **[Learning Kỹ Thuật - Kịch Bản & Hồ Sơ Độc Lập]**: Mọi định hướng sáng tạo (tông giọng, thể loại, ngôi kể, đuôi câu/register, cấu trúc chương hồi và quy ước quốc gia/chủ đề) tuân thủ 100% theo `PROFILE-SPECIFIC EDITORIAL DNA` + `CREATIVE BRIEF` của riêng hồ sơ kênh đang chạy (tuyệt đối không áp chéo luật của kênh khác). Tạo tuần tự `research.md` -> `outline.json` -> `script.md` -> `visual_manifest.json` (`+ plan_visual_manifest.json`) đúng schema mà không cần đọc mã nguồn `documentary/*.py`; tối ưu văn nói tự nhiên cho TTS và viết chữ `퍼센트` thay cho ký hiệu `%` trần."
+                )
+            else:
+                lines.append(
+                    "- **[Technical Learning - Isolated Profile DNA & Plan Schema]**: All creative decisions (tone, speech register, chapter structure, and country/domain conventions) follow 100% of the active job's `PROFILE-SPECIFIC EDITORIAL DNA` + `CREATIVE BRIEF` with zero cross-channel leakage. Author `research.md` -> `outline.json` -> `script.md` -> `visual_manifest.json` (`+ plan_visual_manifest.json`) sequentially without reading `documentary/*.py`, optimizing natural spoken cadence for TTS."
+                )
         elif phase == "edit":
             lines.append(
                 "- **[Learning Ghim Cố Định - Edit & Remotion]**: (1) Trong `*Case*.tsx` (`MERGED_VISUAL_SHOTS`) và `scripts/turbo-nvenc-export.mjs`, bắt buộc nối kín khoảng nghỉ nhịp thở giữa các câu (`merged[i].endFrame = merged[i+1].startFrame`, `merged[0].startFrame = 0`, `last.endFrame = DURATION_FRAMES`) để tổng số frame xuất ra khớp tuyệt đối 100% với `duration_in_frames` (`0 gaps`), tránh lỗi `File xuất thiếu frame` ở bước QC. (2) Các file bắt buộc của phase `edit`: `edit_manifest.json`, `remotion_media_manifest.json`, `asset_registry.json`, `edit_progress.json` (`status: \"completed\"`, `completed_beats == total_beats`). Không cần đọc lại `service.py` hay `quality.py`."
             )
         elif phase == "seo":
             lines.append(
-                "- **[Learning Ghim Cố Định - SEO & Thumbnail]**: Chỉ cần ghi trực tiếp `seo_package.json` (đủ `primary_title`, `title_variants`, `description`, `chapters` bắt đầu từ `00:00`, `tags`, `hashtags`, `pinned_comment`, `thumbnail_text_variants`) và chạy `build_default_thumbnail_design` + `render_design_thumbnails_to_disk` từ `documentary.thumbnail_studio`. Tuyệt đối không cần đọc lại `documentary/service.py` hay `documentary/quality.py`."
+                "- **[Learning Ghim Cố Định - SEO & Thumbnail]**: Chỉ cần ghi trực tiếp `seo_package.json` theo đúng schema chuẩn của `quality.py` (`recommended_title`, `recommended_title_vi`, `title_options`, `description`, `tags`, `hashtags`, `reference_analysis`, `thumbnail` gồm `prompt`, `overlay_text`, `overlay_text_options`, `visual_priority`, `background_policy`, `featured_real_people`, `identity_references`) và chạy `build_default_thumbnail_design` + `render_design_thumbnails_to_disk` từ `documentary.thumbnail_studio`. Tuyệt đối không cần đọc lại `documentary/service.py` hay `documentary/quality.py`."
             )
         return "\n".join(lines) + "\n"

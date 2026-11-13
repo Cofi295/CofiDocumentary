@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import copy
 from datetime import datetime, timezone
 import json
 import os
@@ -22,9 +23,22 @@ class JobStore:
         self.root = Path(root)
         self.root.mkdir(parents=True, exist_ok=True)
         self._lock = RLock()
+        self._cache: dict[str, tuple[int, int, dict[str, Any]]] = {}
 
     def _path(self, job_id: str) -> Path:
         return self.root / job_id / "job.json"
+
+    def _read_cached(self, path: Path) -> dict[str, Any]:
+        key = str(path)
+        st = path.stat()
+        sig_mtime = int(getattr(st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000)))
+        sig_size = int(st.st_size)
+        cached = self._cache.get(key)
+        if cached is not None and cached[0] == sig_mtime and cached[1] == sig_size:
+            return copy.deepcopy(cached[2])
+        normalized = self._normalize_job(json.loads(path.read_text(encoding="utf-8")))
+        self._cache[key] = (sig_mtime, sig_size, copy.deepcopy(normalized))
+        return normalized
 
     def _write(self, path: Path, payload: dict[str, Any]) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -38,6 +52,14 @@ class JobStore:
             json.dump(payload, handle, ensure_ascii=False, indent=2)
             temp_name = handle.name
         os.replace(temp_name, path)
+        try:
+            st = path.stat()
+            sig_mtime = int(getattr(st, "st_mtime_ns", int(st.st_mtime * 1_000_000_000)))
+            sig_size = int(st.st_size)
+            normalized = self._normalize_job(copy.deepcopy(payload))
+            self._cache[str(path)] = (sig_mtime, sig_size, copy.deepcopy(normalized))
+        except OSError:
+            self._cache.pop(str(path), None)
 
     @staticmethod
     def _normalize_job(job: dict[str, Any]) -> dict[str, Any]:
@@ -87,6 +109,8 @@ class JobStore:
         if strategy not in {"full_ai", "full_footage", "hybrid", "evidence_footage", "edit_direct_footage"}:
             strategy = "full_footage"
         job["visual_strategy"] = strategy
+        if str(job.get("current_phase") or "") == "footage":
+            job["current_phase"] = "edit" if strategy == "full_footage" else "ai_visual"
         job.setdefault("ai_media_mode", "mixed")
         job.setdefault("ai_visual", {})
         job.setdefault("voice", {})
@@ -98,12 +122,21 @@ class JobStore:
             try:
                 expected_sec = round(float(target_mins) * 60)
                 recipe = job.get("production_recipe")
-                if not isinstance(recipe, dict) or not recipe.get("quality_contract") or abs(float(recipe.get("target_duration_sec") or 0) - expected_sec) > 1:
+                edna = job.get("editing_dna") if isinstance(job.get("editing_dna"), dict) else {}
+                vox_preset = str(edna.get("preset_id") or edna.get("editing_dna_preset") or "").strip()
+                is_vox = vox_preset in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"} or (
+                    str(edna.get("director_mode") or "").strip().lower() in {"v2", "vox_china_crime_newsroom_v10"}
+                )
+                vox_mismatch = is_vox and isinstance(recipe, dict) and (
+                    str((recipe.get("quality_contract") or {}).get("visual_routing_policy") or "") != "vox_newsroom_v13_composable_lego_50pct_footage"
+                )
+                if not isinstance(recipe, dict) or not recipe.get("quality_contract") or abs(float(recipe.get("target_duration_sec") or 0) - expected_sec) > 1 or vox_mismatch:
                     from .quality import normalize_production_recipe
                     job["production_recipe"] = normalize_production_recipe(
                         recipe if isinstance(recipe, dict) else None,
                         target_duration_minutes=target_mins,
                         visual_strategy=strategy,
+                        editing_dna=edna,
                     )
             except Exception:
                 pass
@@ -157,7 +190,10 @@ class JobStore:
         if not path.exists():
             return None
         with self._lock:
-            return self._normalize_job(json.loads(path.read_text(encoding="utf-8")))
+            try:
+                return self._read_cached(path)
+            except (OSError, json.JSONDecodeError, ValueError):
+                return None
 
     def update(self, job_id: str, patch: dict[str, Any]) -> dict[str, Any]:
         with self._lock:
@@ -180,24 +216,63 @@ class JobStore:
                         raise ValueError("phases must be a dictionary")
                 else:
                     job[key] = value
+            if job.get("status") in {"running", "queued"} or any(
+                isinstance(st, dict) and st.get("status") in {"running", "queued"}
+                for st in (job.get("phases") or {}).values()
+            ):
+                job["owner_pid"] = os.getpid()
             job["updated_at"] = _now()
             self._write(self._path(job_id), job)
             return job
 
     def delete(self, job_id: str) -> bool:
         with self._lock:
-            job_dir = self._path(job_id).parent
+            path = self._path(job_id)
+            self._cache.pop(str(path), None)
+            job_dir = path.parent
             if not job_dir.exists():
                 return False
             shutil.rmtree(job_dir)
             return True
 
+    @staticmethod
+    def _is_job_worker_still_active(job: dict[str, Any], root_dir: Path) -> bool:
+        if os.environ.get("PYTEST_CURRENT_TEST"):
+            return False
+        owner_pid = job.get("owner_pid")
+        if owner_pid and int(owner_pid) > 0 and int(owner_pid) != os.getpid():
+            try:
+                from COFI_BRAIN.chat_run_manager import _pid_is_alive
+                if _pid_is_alive(int(owner_pid)):
+                    return True
+            except Exception:
+                pass
+        ws_raw = str(job.get("workspace") or "").strip()
+        ws = Path(ws_raw) if ws_raw else (root_dir.parent.parent / "workspaces" / str(job.get("id") or ""))
+        prod_dir = ws / ".producer"
+        if prod_dir.is_dir():
+            import time as _time
+            now_ts = _time.time()
+            try:
+                for ev_file in prod_dir.glob("*/events.jsonl"):
+                    if now_ts - ev_file.stat().st_mtime < 300:
+                        return True
+            except OSError:
+                pass
+        return False
+
     def recover_interrupted(self) -> list[str]:
         recovered: list[str] = []
         for path in self.root.glob("*/job.json"):
             try:
-                job = self._normalize_job(json.loads(path.read_text(encoding="utf-8")))
+                job = self._read_cached(path)
             except (OSError, json.JSONDecodeError, ValueError):
+                continue
+            has_running = job.get("status") in {"running", "queued"} or any(
+                isinstance(state, dict) and state.get("status") in {"running", "queued"}
+                for state in (job.get("phases") or {}).values()
+            )
+            if has_running and self._is_job_worker_still_active(job, self.root):
                 continue
             changed = False
             for phase, state in job["phases"].items():
@@ -219,7 +294,7 @@ class JobStore:
         with self._lock:
             for path in self.root.glob("*/job.json"):
                 try:
-                    jobs.append(self._normalize_job(json.loads(path.read_text(encoding="utf-8"))))
+                    jobs.append(self._read_cached(path))
                 except (OSError, json.JSONDecodeError, ValueError):
                     continue
         jobs.sort(key=lambda item: item.get("created_at") or "", reverse=True)

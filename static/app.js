@@ -5,6 +5,8 @@ const state = {
   selectedChannelPlan: null,
   selectedCreateTopic: null,
   createTopicSuggestions: [],
+  selectedTopicStream: "all",
+  sessionSuggestedTopicKeys: {},
   channelProfiles: [],
   selectedChannelProfileId: null,
   radarItems: [],
@@ -33,16 +35,15 @@ const state = {
   chatRunConnections: {},
 };
 
-const phases = ["plan", "voice", "visuals", "footage", "ai_visual", "edit", "seo", "qc"];
+const phases = ["plan", "voice", "visuals", "ai_visual", "edit", "seo", "qc"];
 const phaseLabels = {
   plan: "Kịch bản + chia cảnh",
   voice: "Giọng đọc + SRT",
   visuals: "Visuals / Prompt",
-  footage: "Tìm tư liệu",
   ai_visual: "AI bổ sung",
-  edit: "Dựng Remotion",
+  edit: "Dựng Remotion (@footage AI Agent)",
   seo: "SEO + Thumbnail",
-  qc: "Duyệt & Xuất video",
+  qc: "Xuất video",
 };
 const statusLabels = {
   pending: "Chưa chạy",
@@ -57,9 +58,8 @@ const statusLabels = {
 
 function effectivePhases(job) {
   const strategy = String(job?.visual_strategy || job?.production_recipe?.visual_strategy || "full_footage").toLowerCase();
-  if (["full_ai", "edit_direct_footage", "semi_content", "ban_content", "edit_footage"].includes(strategy)) return ["plan", "voice", "visuals", "ai_visual", "edit", "seo", "qc"];
-  if (["hybrid", "evidence_footage", "selective_footage"].includes(strategy)) return [...phases];
-  return ["plan", "voice", "visuals", "footage", "edit", "seo", "qc"];
+  if (strategy === "full_footage") return ["plan", "voice", "visuals", "edit", "seo", "qc"];
+  return ["plan", "voice", "visuals", "ai_visual", "edit", "seo", "qc"];
 }
 
 function phaseWorkspaceTab(phase) {
@@ -78,9 +78,13 @@ function phaseWorkspaceTab(phase) {
 function pipelineUiSignature(job) {
   if (!job) return "";
   const phaseState = effectivePhases(job)
-    .map(phase => `${phase}:${job.phases?.[phase]?.status || "pending"}:${job.phases?.[phase]?.last_message || ""}`)
+    .map(phase => {
+      const p = job.phases?.[phase] || {};
+      return `${phase}:${p.status || "pending"}:${p.started_at || ""}:${p.finished_at || ""}:${p.error || ""}:${p.is_paused ? 1 : 0}:${p.last_message || ""}`;
+    })
     .join("|");
-  return `${job.id}|${job.status || ""}|${job.current_phase || ""}|${phaseState}`;
+  const pulseSig = state.realtimeLive?.job_id === job.id ? JSON.stringify(state.realtimeLive) : "";
+  return `${job.id}|${job.status || ""}|${job.current_phase || ""}|${job.updated_at || ""}|${phaseState}|${pulseSig}`;
 }
 
 function followPipelineJob(job, { switchTab = true } = {}) {
@@ -787,12 +791,169 @@ function escapeHtml(value) {
 
 function toast(message, error = false) {
   const el = $("#toast");
-  el.textContent = message;
-  el.className = `toast show${error ? " error" : ""}`;
+  if (el) {
+    el.textContent = message;
+    el.className = `toast show${error ? " error" : ""}`;
+  }
+  $$("dialog[open] .dialog-toast-pill").forEach(pill => {
+    pill.textContent = message;
+    pill.className = `dialog-toast-pill is-visible${error ? " is-error" : ""}`;
+  });
   clearTimeout(toast.timer);
-  toast.timer = setTimeout(() => { el.className = "toast"; }, 3600);
+  toast.timer = setTimeout(() => {
+    if (el) el.className = "toast";
+    $$(".dialog-toast-pill").forEach(pill => {
+      pill.className = "dialog-toast-pill";
+    });
+  }, 3600);
 }
 window.toast = toast;
+
+const studioReaderStore = new Map();
+let studioReaderSeq = 0;
+
+function registerStudioReaderPayload(payload) {
+  if (studioReaderStore.size > 240) {
+    const oldestKey = studioReaderStore.keys().next().value;
+    if (oldestKey) studioReaderStore.delete(oldestKey);
+  }
+  const key = `sr-${++studioReaderSeq}`;
+  studioReaderStore.set(key, payload);
+  return key;
+}
+
+function openStudioDialogById(dialogId) {
+  const dlg = document.getElementById(dialogId);
+  if (!dlg) return null;
+  if (typeof dlg.showModal === "function") {
+    if (!dlg.open) dlg.showModal();
+  } else {
+    dlg.setAttribute("open", "");
+  }
+  return dlg;
+}
+
+function closeStudioDialogById(dialogId) {
+  const dlg = document.getElementById(dialogId);
+  if (!dlg) return;
+  if (typeof dlg.close === "function" && dlg.open) {
+    dlg.close();
+  } else {
+    dlg.removeAttribute("open");
+  }
+}
+
+function switchDnaStudioTab(tabName = "identity") {
+  const target = String(tabName || "identity");
+  $$("#dnaStudioTabsNav [data-dna-tab]").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.dnaTab === target);
+  });
+  $$("#dnaStudioEditorDialog .dna-tab-pane[data-dna-pane]").forEach(pane => {
+    pane.classList.toggle("active", pane.dataset.dnaPane === target);
+  });
+}
+
+function openDnaStudioModal(tabName = "identity") {
+  if (state.appTab !== "radar") {
+    setAppTab("radar");
+  }
+  const activeProfile = typeof currentChannelProfile === "function" ? currentChannelProfile() : null;
+  const titleEl = $("#dnaStudioDialogTitle");
+  if (titleEl) {
+    titleEl.textContent = activeProfile
+      ? `DNA KÊNH · ${(activeProfile.label || activeProfile.id).toUpperCase()}`
+      : "TẠO HỒ SƠ DNA KÊNH MỚI · 5 TẦNG CHUYÊN GIA";
+  }
+  switchDnaStudioTab(tabName);
+  return openStudioDialogById("dnaStudioEditorDialog");
+}
+
+function openStudioInspectorModal({
+  badge = "📜",
+  title = "Chi tiết tài liệu",
+  subtitle = "Chế độ đọc tập trung · 15 Phòng Ban Chuyên Môn",
+  html = "",
+  rawText = "",
+  isCode = false,
+  onOpen = null,
+} = {}) {
+  const dlg = $("#studioInspectorDialog");
+  const badgeEl = $("#studioInspectorBadge");
+  const titleEl = $("#studioInspectorTitle");
+  const subEl = $("#studioInspectorSubtitle");
+  const bodyEl = $("#studioInspectorBody");
+  const copyBtn = $("#studioInspectorCopyBtn");
+  if (!dlg || !bodyEl) return null;
+  if (badgeEl) badgeEl.textContent = badge;
+  if (titleEl) titleEl.textContent = title;
+  if (subEl) subEl.textContent = subtitle;
+  dlg.dataset.copyText = String(rawText || "");
+  if (copyBtn) {
+    copyBtn.classList.toggle("hidden", !rawText && Boolean(html));
+  }
+  if (html) {
+    bodyEl.innerHTML = html;
+  } else {
+    bodyEl.innerHTML = `<pre class="inspector-reader-pre${isCode ? " is-code" : ""}">${escapeHtml(rawText || "Chưa có dữ liệu.")}</pre>`;
+  }
+  openStudioDialogById("studioInspectorDialog");
+  bodyEl.scrollTop = 0;
+  if (typeof onOpen === "function") {
+    onOpen(bodyEl, dlg);
+  }
+  return dlg;
+}
+window.openStudioInspectorModal = openStudioInspectorModal;
+window.openDnaStudioModal = openDnaStudioModal;
+
+document.addEventListener("click", event => {
+  const closeTrigger = event.target.closest("[data-close-dialog]");
+  if (closeTrigger) {
+    event.preventDefault();
+    closeStudioDialogById(closeTrigger.dataset.closeDialog);
+    return;
+  }
+  const dnaTabBtn = event.target.closest("#dnaStudioTabsNav [data-dna-tab]");
+  if (dnaTabBtn) {
+    event.preventDefault();
+    switchDnaStudioTab(dnaTabBtn.dataset.dnaTab);
+    return;
+  }
+  const readerBtn = event.target.closest("[data-studio-reader-key]");
+  if (readerBtn) {
+    event.preventDefault();
+    event.stopPropagation();
+    const payload = studioReaderStore.get(readerBtn.dataset.studioReaderKey);
+    if (payload) openStudioInspectorModal(payload);
+    return;
+  }
+  if (event.target instanceof HTMLDialogElement && ["dnaStudioEditorDialog", "selfLearningDialog", "marketScanDialog", "studioInspectorDialog"].includes(event.target.id)) {
+    closeStudioDialogById(event.target.id);
+  }
+});
+
+$("#closeDnaStudioDialogBtn")?.addEventListener("click", () => closeStudioDialogById("dnaStudioEditorDialog"));
+$("#openDnaStudioModalBtn")?.addEventListener("click", () => openDnaStudioModal("identity"));
+$("#openMarketScanModalBtn")?.addEventListener("click", () => openStudioDialogById("marketScanDialog"));
+$("#openSelfLearningModalBtn")?.addEventListener("click", () => {
+  openStudioDialogById("selfLearningDialog");
+  if (state.selectedChannelProfileId && typeof renderSelfLearningReportForProfile === "function") {
+    renderSelfLearningReportForProfile(state.selectedChannelProfileId);
+  }
+});
+$("#studioInspectorCopyBtn")?.addEventListener("click", async () => {
+  const dlg = $("#studioInspectorDialog");
+  const text = String(dlg?.dataset?.copyText || $("#studioInspectorBody")?.innerText || "").trim();
+  if (!text) return;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+    }
+    toast("Đã sao chép nội dung vào bộ nhớ tạm.");
+  } catch (err) {
+    toast("Không thể sao chép tự động.", true);
+  }
+});
 
 function scrollToId(id) {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -816,6 +977,7 @@ function setAppTab(tab) {
   document.querySelector(".channel-studio-content")?.scrollTo({ top: 0, behavior: "auto" });
   document.querySelector("main")?.scrollTo({ top: 0, behavior: "auto" });
   if (["script", "voice", "visuals", "footage", "ai_visual", "edit", "seo", "qc"].includes(tab)) renderFunctionWorkspaces();
+  if (tab === "projects" && state.selectedId) renderDetail();
   if (tab === "accounts") loadHealth().catch(err => toast(err.message, true));
   renderGlobalProducerChat({ loadHistory: state.globalCodexOpen }).catch(() => {});
 }
@@ -831,9 +993,85 @@ const CHAT_IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
 const CHAT_IMAGE_MAX_BYTES = 10 * 1024 * 1024;
 const CHAT_IMAGE_MAX_COUNT = 4;
 
+async function revealLocalJobMedia(jobId, rawPath, buttonEl = null) {
+  const origText = buttonEl ? buttonEl.textContent : "";
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = "Đang mở thư mục…";
+  }
+  try {
+    const res = await api(`/api/jobs/${encodeURIComponent(jobId)}/media/local-action`, {
+      method: "POST",
+      body: JSON.stringify({ path: rawPath, action: "reveal" }),
+    });
+    toast(`Đã mở thư mục chứa file: ${res.path || rawPath}`);
+  } catch (err) {
+    toast(`Không mở được thư mục: ${err.message || err}`, true);
+  } finally {
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = origText;
+    }
+  }
+}
+
+async function saveLocalMediaDirectly(jobId, rawPath, suggestedFilename, buttonEl = null) {
+  const origText = buttonEl ? buttonEl.textContent : "";
+  if (buttonEl) {
+    buttonEl.disabled = true;
+    buttonEl.textContent = "⏳ Đang chọn thư mục lưu…";
+  }
+  try {
+    const cleanSuggested = String(suggestedFilename || "").trim();
+    const isGenericName = !cleanSuggested || ["video.mp4", "final.mp4", `video_${jobId}.mp4`].includes(cleanSuggested.toLowerCase());
+    const res = await api(`/api/jobs/${encodeURIComponent(jobId)}/media/local-action`, {
+      method: "POST",
+      body: JSON.stringify({
+        path: rawPath || "release/video.mp4",
+        action: "save_copy",
+        filename: isGenericName ? "" : cleanSuggested,
+        open_folder_after: true,
+      }),
+    });
+    if (res && res.cancelled) {
+      return;
+    }
+    if (res && res.ok) {
+      toast(`✅ Đã lưu video sang: ${res.saved_path}`);
+      return;
+    }
+    throw new Error(res?.detail || res?.message || "Lỗi lưu video");
+  } catch (err) {
+    toast(`Không thể lưu video: ${err.message || err}`, true);
+  } finally {
+    if (buttonEl) {
+      buttonEl.disabled = false;
+      buttonEl.textContent = origText;
+    }
+  }
+}
+
 async function downloadFileWithSmartPicker(url, defaultFilename, buttonEl = null) {
   const safeName = String(defaultFilename || "video.mp4").trim();
   const lower = safeName.toLowerCase();
+  let dlUrl = String(url || "").trim();
+  if (dlUrl && dlUrl.includes("/media?") && !dlUrl.includes("download=1")) {
+    dlUrl += `&download=1&filename=${encodeURIComponent(safeName)}`;
+  }
+
+  // Inside Desktop App (pywebview EdgeChromium): trigger <a download> so desktop_app.py's
+  // _smart_on_download_starting opens native WinForms.SaveFileDialog(self.form) on top of the window
+  // (allowing any drive/folder selection) and copies local files directly via shutil.copy2 at disk speed.
+  if (typeof window !== "undefined" && window.pywebview) {
+    const a = document.createElement("a");
+    a.href = dlUrl || url;
+    a.download = safeName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    return;
+  }
+
   let pickerTypes = [{ description: "Video MP4 (*.mp4)", accept: { "video/mp4": [".mp4"] } }];
   if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
     pickerTypes = [{ description: "Ảnh JPEG (*.jpg)", accept: { "image/jpeg": [".jpg", ".jpeg"] } }];
@@ -858,10 +1096,10 @@ async function downloadFileWithSmartPicker(url, defaultFilename, buttonEl = null
       const origText = buttonEl ? buttonEl.textContent : "";
       if (buttonEl) {
         buttonEl.style.pointerEvents = "none";
-        buttonEl.textContent = "Đang lưu file…";
+        buttonEl.textContent = "⏳ Đang lưu file…";
       }
       try {
-        const resp = await fetch(url);
+        const resp = await fetch(dlUrl || url);
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const writable = await handle.createWritable();
         if (resp.body && typeof resp.body.pipeTo === "function") {
@@ -871,7 +1109,7 @@ async function downloadFileWithSmartPicker(url, defaultFilename, buttonEl = null
           await writable.write(blob);
           await writable.close();
         }
-        toast(`Đã lưu thành công: ${handle.name || safeName}`);
+        toast(`✅ Đã lưu thành công: ${handle.name || safeName}`);
       } finally {
         if (buttonEl) {
           buttonEl.style.pointerEvents = "";
@@ -884,7 +1122,7 @@ async function downloadFileWithSmartPicker(url, defaultFilename, buttonEl = null
     }
   }
   const a = document.createElement("a");
-  a.href = url;
+  a.href = dlUrl || url;
   a.download = safeName;
   document.body.appendChild(a);
   a.click();
@@ -1200,9 +1438,9 @@ async function saveChatProvider(provider) {
   toast(`Đã đổi AI điều khiển toàn app: ${result.chat_provider}.`);
 }
 
-async function loadHealth() {
+async function loadHealth({ cached = false } = {}) {
   try {
-    const h = await api("/api/health");
+    const h = await api(cached ? "/api/health?cached=1" : "/api/health");
     if (!h.trail_code) {
       try {
         const r = await fetch(`/static/trail_status.json?t=${Date.now()}`, { cache: "no-store" });
@@ -1293,6 +1531,13 @@ function normalizeTopic(item, meta = {}) {
     title: item.title || item.topic_anchor || item.evidence_title || item.label || "Chủ đề chưa có tên",
     titleTarget: item.title_target || null,
     titleVi: item.title_vi || null,
+    topicStream: item.topic_stream || null,
+    streamBadgeVi: item.stream_badge_vi || null,
+    streamLabelVi: item.stream_label_vi || null,
+    caseRealNameZh: item.case_real_name_zh || null,
+    archivalSearchKeywordsZh: Array.isArray(item.archival_search_keywords_zh) ? item.archival_search_keywords_zh : [],
+    recommendedVoxVerbs: Array.isArray(item.recommended_vox_verbs) ? item.recommended_vox_verbs : [],
+    researchOrigin: item.research_origin || item.trend_source || null,
     seoKeywordDna: item.seo_keyword_dna || meta.seoKeywordDna || null,
     videoId: item.video_id || item.id || item.evidence_video_id || null,
     url: item.url || item.video_url || item.evidence_url || "",
@@ -1313,6 +1558,7 @@ function normalizeTopic(item, meta = {}) {
     scanId: meta.scanId || item.scan_id || null,
     profileId: meta.profileId || item.profile_id || null,
     targetDurationMinutes: Number(meta.targetDurationMinutes || item.target_duration_minutes || 0) || null,
+    caseNote: baseNote,
     note: [winnerNote, codexNote, baseNote, supportNote].filter(Boolean).join(" "),
   };
 }
@@ -2030,10 +2276,10 @@ const TRUE_CRIME_CN_KR_PRESET = {
   dna_mode: "custom_dna_only",
   voice_and_structure: "Hàn Quốc (KR) — Giọng kể đêm khuya trầm ấm, điềm tĩnh (K1 - Trầm Sâu Đêm Khuya SBS Style / 그것이 알고싶다 / 꼬꼬무 style) · Cấu trúc 5 Hồi chuẩn điều tra hình sự · Nguyên tắc Chiếc súng của Chekhov (nhân vật mở màn bắt buộc có kết cục rõ ràng) · Xưng hô chuẩn văn hóa Hàn (cấm gọi 58–62 tuổi là 노부부) · Phần kết trọn vẹn + 3.5–5s nhạc nền fade-out",
   reference_image_policy: "100% Full AI (full_ai) — Nhận Ảnh tham chiếu (Reference Image) của bạn ở đầu mỗi dự án để khóa phong cách toàn bộ phân cảnh.",
-  allowed_topics: "Trọng án hình sự có thật tại Trung Quốc (중국 강력범죄 실화) — Tội phạm đặc biệt nguy hiểm, kẻ sát nhân có IQ cao xóa dấu vết, vỏ bọc hai mặt lẩn trốn 10–30 năm, hiện trường bí ẩn và cuộc truy bắt/đấu trí pháp y của cảnh sát hình sự.",
-  forbidden_topics: "Án kinh tế, tham nhũng quan chức, hối lộ, chính trị, hạ tầng.",
+  allowed_topics: "100% đại án có thật tại Trung Quốc (중국 실화 대사건 — có >=50% tư liệu CCTV/công an/tòa án thật), chia thành 2 LUỒNG CHÍNH chuẩn DNA kênh: (1) [LUỒNG 1 — TỘI PHẠM TÀI CHÍNH & ĐẠI ÁN KINH TẾ ĐÀO TẨU (금융·경제 대사건 & 해외 도피 추적)]: Đại án rút ruột ngân hàng, công trái khống, chứng khoán, kho bạc, két sắt ngân hàng, sổ tiết kiệm bốc hơi, hối phiếu giả, thao túng tài chính rồi tẩy trắng thân phận đào tẩu xuyên biên giới 10–25 năm. (2) [LUỒNG 2 — VỤ ÁN ĐẶC BIỆT NGUY HIỂM & TRUY NÃ CẤP A (특수 강력사건 & A급 수배범 미제 추적)]: Trọng án hình sự đặc biệt nguy hiểm, lệnh truy nã cấp A, hung thủ IQ cao xóa dấu vết, vỏ bọc hai mặt lẩn trốn 10–30 năm, pháp y ADN và đấu trí phòng thẩm vấn.",
+  forbidden_topics: "chính trị đảng phái nhạy cảm, đập tam hiệp, nam thủy bắc điều, hạ tầng cầu đường thuần túy, 삼협댐, 남수북조, tranh chấp dân sự vặt, bạo lực học đường nhỏ lẻ, chuyện ngoại tình gia đình giật gân, tin đồn chưa kiểm chứng hoặc gộp nhiều vụ án, mô tả máu me tra tấn trực diện",
   monetization_safety_policy: "Ngôi thứ 3 theo góc nhìn Hồ sơ Điều tra viên Hình sự & Chuyên gia Tâm lý Tội phạm — Cắt bỏ 100% miêu tả máu me/thi thể trực diện, tập trung vào sự ranh ma của hung thủ, vật chứng pháp y và màn đấu trí nghẹt thở trong phòng thẩm vấn.",
-  cta_strategy: "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM LINH HOẠT THEO BIỂU ĐỒ GIỮ CHÂN (AUDIENCE RETENTION 40%–50%):\n1. NGUYÊN TẮC CỐT LÕI — MỖI VIDEO MỘT KỊCH BẢN CTA RIÊNG BIỆT (100% CONTEXT-ADAPTIVE, CẤM RẬP KHUÔN):\n   - Tuyệt đối KHÔNG dùng chung một câu mẫu copy-paste cho mọi tập.\n   - Lời dẫn CTA phải mọc trực tiếp từ tình tiết, vật chứng pháp y, mâu thuẫn lời khai hoặc câu hỏi chưa có lời giải của CHÍNH VỤ ÁN ĐÓ.\n   - Giữ nguyên giọng kể điều tra viên lạnh lùng, trầm tĩnh (그것이 알고싶다 / 꼬꼬무 style); cấm hô hào YouTuber làm đứt mạch cảm xúc.\n2. 00:00 – 02:00 (Giai đoạn lọc khán giả tự nhiên 100% -> 50%-57%): CẤM TUYỆT ĐỐI đặt bất kỳ lời kêu gọi Like/Subscribe hay intro rườm rà nào.\n3. ĐIỂM CHẠM 1 — CTA MỀM LỒNG TRONG MẠCH TRUYỆN (Mid-roll Soft CTA · Khoảng 30% thời lượng video / Phút 06:00–08:00 · Chuyển giao Hồi 2 sang Hồi 3 · Kéo dài đúng 5–7 giây):\n   - Đặt ngay sau khi tung tình tiết gây sốc đầu tiên hoặc bế tắc điều tra (nghi phạm lọt lưới, đầu mối đứt gãy, chứng cứ giả), trước khi mở ra hướng phá án mới.\n   - Cấu trúc linh hoạt 3 nhịp (5–7s): [Câu hỏi bỏ lửng bám sát tình tiết vừa kể của vụ án] -> [Lời mời nhẹ nhàng: '진실의 조각을 놓치지 않도록 구독과 좋아요를 눌러주시고, 수사팀의 다음 추적을 함께 지켜봐 주시기 바랍니다'] -> [Nối ngay lập tức vào manh mối phá án tiếp theo].\n   - Hình & Âm: Chỉ bật pop-up/badge góc dưới màn hình nhỏ gọn (mid_roll_soft_cta), giữ nguyên cảnh phim và nhạc nền căng thẳng.\n4. ĐIỂM CHẠM 2 — CTA CHỐT HẠ TRƯỚC KHI KẾT THÚC + BẮC CẦU END SCREEN (Pre-Signoff Value-Driven Hard CTA · 30–45 giây trước khi hết video · Đầu Hồi 5 NGAY SAU khi tuyên án/kết cục hung thủ, TRƯỚC câu chào tạm biệt):\n   - Bước A (8–10s · Đúc kết bài học/dư âm riêng của vụ án): Khái quát giá trị pháp y hoặc góc khuất tâm lý đặc thù của vụ án vừa khép lại.\n   - Bước B (8–10s · Kêu gọi Đăng ký & Chuông thông báo dựa trên giá trị kênh): Kêu gọi khán giả yêu thích hồ sơ điều tra thực tế nhấn Đăng ký & Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ trọng án tiếp theo.\n   - Bước C (8–10s · Bắc cầu sang Video gợi ý trên End Screen): Dựa trên mô-típ của vụ án vừa xem (ẩn danh lâu năm / mất tích bí ẩn / pháp y giải mã), dẫn dắt tự nhiên sang hồ sơ vụ án tương đồng đang hiển thị trên màn hình kết thúc (end_screen_cta_bridge) trước khi nói câu chào cuối cùng.",
+  cta_strategy: "ROLE KỂ CHUYỆN & CTA LINH HOẠT THEO TRUYỆN — KHÔNG BAO GIỜ LẶP LẠI CTA Ở BẤT KỲ ĐÂU:\n1. NGUYÊN TẮC CỐT LÕI (ZERO CTA REPETITION ANYWHERE): Tuyệt đối KHÔNG BAO GIỜ đặt 2 lần CTA trong cùng một tập (cấm vừa có CTA giữa bài vừa có CTA cuối bài) và KHÔNG BAO GIỜ lặp lại từ ngữ hay cấu trúc ngữ pháp câu CTA giữa các tập. Cấm tuyệt đối CTA trong 2 phút đầu (00:00–02:00).\n2. VỊ TRÍ & SỰ XUẤT HIỆN DO CÂU CHUYỆN QUYẾT ĐỊNH: Toàn bài chỉ có tối đa 0 hoặc 1 nhịp kết nối khán giả duy nhất đặt ở điểm lặng tự nhiên nhất của câu chuyện đó (hoặc giữ 100% thuần phóng sự 0 khẩu lệnh nút bấm như SBS 그것이 알고싶다 / 꼬꼬무). Tuyệt đối không đóng đinh CTA chặn ngang cuối Hồi 2 hay dựng 4 câu quảng cáo End Screen cuối bài.\n3. ĐA DẠNG CẤU TRÚC CÂU CTA KHÉO LÉO KHÁC HẲN NHAU: CẤM TUYỆT ĐỐI khung câu công nghiệp '[~하시려면 / ~궁금하시다면] + [구독과 좋아요/알림 설정을 눌러 주시기 바랍니다]'. Luân phiên biến hóa cấu trúc câu tự nhiên: câu hỏi mở đặt khán giả vào tình huống (?), lời ghi chú trầm tĩnh khi khép hồ sơ, câu kể đối chiếu vật chứng, hoặc đoản ngữ danh từ tiết chế.",
   narrative_angle: "Điều tra hình sự sắc lạnh",
   writing_style: "Cold Forensic Noir",
   hook_archetype: "Con số định lượng",
@@ -2053,7 +2299,7 @@ const TRUE_CRIME_CN_KR_PRESET = {
     opening_hook: "Vào mùa đông năm 1996, một vụ án rúng động đã làm thay đổi hoàn toàn cục diện điều tra...",
     notes: "Ghi chú điều tra phá án và hồ sơ tâm lý học tội phạm.",
     custom_rules: "100% Green Monetization - Cắt bỏ yếu tố ghê rợn trực diện | [Chuẩn Khán Giả Góp Ý 특급수배록]: (1) Kịch bản & Logic: Nguyên tắc Chiếc súng của Chekhov — mọi nhân vật/manh mối mở màn (VD: thương nhân họ Ngụy mang túi tiền vào trọ) bắt buộc có kết cục rõ ràng (hoặc 1–2 câu tóm lược nhẹ nhàng nếu nhạy cảm); xưng hô chuẩn văn hóa Hàn (cấm gọi 58–62 tuổi là 노부부, dùng 여관 주인 부부 / 50대 후반 부부); (2) Giọng đọc & TTS: Tông giọng trầm ấm đêm khuya êm tai (K1 - Trầm Sâu Đêm Khuya SBS Style), chuẩn hóa số đếm Hán-Hàn (19년=십구 년, 50대=오십대) không đọc vấp; (3) Phần kết: Câu thoại cuối hoàn tất trọn vẹn 100% không cắt ngang + dư 3–5s (3.8s) nhạc nền hạ màn fade-out; (4) Checklist trước xuất bản: [ ] Kịch bản | [ ] Giọng đọc | [ ] Phần kết.",
-    cta_strategy: "CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM LINH HOẠT THEO BIỂU ĐỒ GIỮ CHÂN (AUDIENCE RETENTION 40%–50%):\n1. NGUYÊN TẮC CỐT LÕI — MỖI VIDEO MỘT KỊCH BẢN CTA RIÊNG BIỆT (100% CONTEXT-ADAPTIVE, CẤM RẬP KHUÔN):\n   - Tuyệt đối KHÔNG dùng chung một câu mẫu copy-paste cho mọi tập.\n   - Lời dẫn CTA phải mọc trực tiếp từ tình tiết, vật chứng pháp y, mâu thuẫn lời khai hoặc câu hỏi chưa có lời giải của CHÍNH VỤ ÁN ĐÓ.\n   - Giữ nguyên giọng kể điều tra viên lạnh lùng, trầm tĩnh (그것이 알고싶다 / 꼬꼬무 style); cấm hô hào YouTuber làm đứt mạch cảm xúc.\n2. 00:00 – 02:00 (Giai đoạn lọc khán giả tự nhiên 100% -> 50%-57%): CẤM TUYỆT ĐỐI đặt bất kỳ lời kêu gọi Like/Subscribe hay intro rườm rà nào.\n3. ĐIỂM CHẠM 1 — CTA MỀM LỒNG TRONG MẠCH TRUYỆN (Mid-roll Soft CTA · Khoảng 30% thời lượng video / Phút 06:00–08:00 · Chuyển giao Hồi 2 sang Hồi 3 · Kéo dài đúng 5–7 giây):\n   - Đặt ngay sau khi tung tình tiết gây sốc đầu tiên hoặc bế tắc điều tra (nghi phạm lọt lưới, đầu mối đứt gãy, chứng cứ giả), trước khi mở ra hướng phá án mới.\n   - Cấu trúc linh hoạt 3 nhịp (5–7s): [Câu hỏi bỏ lửng bám sát tình tiết vừa kể của vụ án] -> [Lời mời nhẹ nhàng: '진실의 조각을 놓치지 않도록 구독과 좋아요를 눌러주시고, 수사팀의 다음 추적을 함께 지켜봐 주시기 바랍니다'] -> [Nối ngay lập tức vào manh mối phá án tiếp theo].\n   - Hình & Âm: Chỉ bật pop-up/badge góc dưới màn hình nhỏ gọn (mid_roll_soft_cta), giữ nguyên cảnh phim và nhạc nền căng thẳng.\n4. ĐIỂM CHẠM 2 — CTA CHỐT HẠ TRƯỚC KHI KẾT THÚC + BẮC CẦU END SCREEN (Pre-Signoff Value-Driven Hard CTA · 30–45 giây trước khi hết video · Đầu Hồi 5 NGAY SAU khi tuyên án/kết cục hung thủ, TRƯỚC câu chào tạm biệt):\n   - Bước A (8–10s · Đúc kết bài học/dư âm riêng của vụ án): Khái quát giá trị pháp y hoặc góc khuất tâm lý đặc thù của vụ án vừa khép lại.\n   - Bước B (8–10s · Kêu gọi Đăng ký & Chuông thông báo dựa trên giá trị kênh): Kêu gọi khán giả yêu thích hồ sơ điều tra thực tế nhấn Đăng ký & Bật chuông thông báo (구독과 알림 설정) để nhận hồ sơ trọng án tiếp theo.\n   - Bước C (8–10s · Bắc cầu sang Video gợi ý trên End Screen): Dựa trên mô-típ của vụ án vừa xem (ẩn danh lâu năm / mất tích bí ẩn / pháp y giải mã), dẫn dắt tự nhiên sang hồ sơ vụ án tương đồng đang hiển thị trên màn hình kết thúc (end_screen_cta_bridge) trước khi nói câu chào cuối cùng.",
+    cta_strategy: "ROLE KỂ CHUYỆN & CTA LINH HOẠT THEO TRUYỆN — KHÔNG BAO GIỜ LẶP LẠI CTA Ở BẤT KỲ ĐÂU:\n1. NGUYÊN TẮC CỐT LÕI (ZERO CTA REPETITION ANYWHERE): Tuyệt đối KHÔNG BAO GIỜ đặt 2 lần CTA trong cùng một tập (cấm vừa có CTA giữa bài vừa có CTA cuối bài) và KHÔNG BAO GIỜ lặp lại từ ngữ hay cấu trúc ngữ pháp câu CTA giữa các tập. Cấm tuyệt đối CTA trong 2 phút đầu (00:00–02:00).\n2. VỊ TRÍ & SỰ XUẤT HIỆN DO CÂU CHUYỆN QUYẾT ĐỊNH: Toàn bài chỉ có tối đa 0 hoặc 1 nhịp kết nối khán giả duy nhất đặt ở điểm lặng tự nhiên nhất của câu chuyện đó (hoặc giữ 100% thuần phóng sự 0 khẩu lệnh nút bấm như SBS 그것이 알고싶다 / 꼬꼬무). Tuyệt đối không đóng đinh CTA chặn ngang cuối Hồi 2 hay dựng 4 câu quảng cáo End Screen cuối bài.\n3. ĐA DẠNG CẤU TRÚC CÂU CTA KHÉO LÉO KHÁC HẲN NHAU: CẤM TUYỆT ĐỐI khung câu công nghiệp '[~하시려면 / ~궁금하시다면] + [구독과 좋아요/알림 설정을 눌러 주시기 바랍니다]'. Luân phiên biến hóa cấu trúc câu tự nhiên: câu hỏi mở đặt khán giả vào tình huống (?), lời ghi chú trầm tĩnh khi khép hồ sơ, câu kể đối chiếu vật chứng, hoặc đoản ngữ danh từ tiết chế.",
   },
   editing_dna: {
     version: 1,
@@ -2106,19 +2352,24 @@ function setCreateDiscoveryMode(mode, { triggerDiscover = false } = {}) {
   const headline = $("#createDiscoveryHeadline");
   const status = $("#createTopicDiscoveryStatus");
   if (resolved === "dna_strict") {
-    if (eyebrow) eyebrow.textContent = "LUỒNG 1 · CHẠY THUẦN THEO DNA & BỘ LỌC KÊNH CỐ ĐỊNH (ĐỘC LẬP RADAR)";
-    if (headline) headline.textContent = "Bộ lọc Chỉ chọn & Cấm tuyệt đối → Ngôi kể Xanh tiền → Đề xuất Đề tài chuẩn DNA Kênh";
-    if (btn && !btn.disabled) btn.textContent = "⚡ Đề xuất đề tài mới theo DNA";
+    if (eyebrow) eyebrow.textContent = "RESEARCH CHỦ ĐỀ MỚI THEO DNA KÊNH (ĐỘC LẬP RADAR · CHỐNG LẶP 100%)";
+    if (headline) headline.textContent = "2 Luồng Chủ Đạo (💰 Tội phạm Tài chính · 🚨 Vụ án Đặc biệt Nguy hiểm) → Research Hồ Sơ Thật → Ngôi Kể Xanh Tiền";
+    if (btn && !btn.disabled) btn.textContent = "🔍 Research đề tài mới theo DNA";
     if (status && !state.createTopicSuggestions?.length) {
-      status.textContent = "Đang khóa theo Bộ lọc Đề tài cố định của đúng Hồ sơ Kênh đang chọn (Bỏ qua hoàn toàn Radar 48h để không lệch sang chủ đề khác).";
+      status.textContent = "Đang khóa theo Bộ lọc DNA 2 Luồng của Hồ sơ Kênh đang chọn (Research hồ sơ vụ án thật, chống gợi ý lặp lại).";
     }
   } else {
-    if (eyebrow) eyebrow.textContent = "LUỒNG 2 · QUÉT TÍN HIỆU RADAR 48H & ĐỐI THỦ (TUBERADAR)";
+    if (eyebrow) eyebrow.textContent = "QUÉT TÍN HIỆU RADAR 48H & ĐỐI THỦ (TUBERADAR)";
     if (headline) headline.textContent = "Kênh mình → Kênh đối thủ → Trend 48h → Chủ đề đề xuất";
     if (btn && !btn.disabled) btn.textContent = "📡 Quét Radar 48h & tìm chủ đề";
     if (status && !state.createTopicSuggestions?.length) {
       status.textContent = "Chế độ Radar: Quét tín hiệu 48h từ kênh mình và kênh đối thủ.";
     }
+  }
+  const activeProfile = state.channelProfiles.find(item => item.id === (String($("#jobForm")?.elements?.channel_profile_id?.value || state.selectedChannelProfileId || "").trim())) || null;
+  const streamBar = $("#createTopicStreamBar");
+  if (streamBar) {
+    streamBar.classList.toggle("hidden", !(resolved === "dna_strict" && isTwoStreamTrueCrimeProfile(activeProfile)));
   }
   if (triggerDiscover) {
     discoverCreateTopics({ forceRefresh: false }).catch(err => toast(err.message, true));
@@ -2168,52 +2419,75 @@ function renderCreateProfileDnaSummary(profile) {
     helpEl.textContent = `Đã khóa theo hồ sơ "${profile.label || profile.id}": Thị trường ${profile.market || "KR"} (${dna.language}), Thời lượng ${durationMinutes} phút, Chiến lược ${dna.visualStrategy}, Nhịp dựng ${pacingSec}s/beat và Bộ lọc Đề tài Xanh tiền riêng biệt.`;
   }
 
+  const vSig = profile.voice_signature || {};
+  const rDna = profile.rhythm_dna || {};
+  const wCad = rDna.writing_cadence || {};
+  const vCad = rDna.vocal_cadence || {};
+  const eCad = rDna.editing_cadence || {};
+  const vColor = rDna.voice_color_spec || vSig.voice_color_spec || {};
+  const lockedVoiceName = vSig.voice_name || (profile.voice_id ? `Voice ID ${String(profile.voice_id).slice(0, 8)}` : "Tự động thiết kế từ giọng mẫu sạch K1");
+  const wAvgChars = Array.isArray(wCad.target_avg_sentence_chars) ? wCad.target_avg_sentence_chars.join("–") : (wCad.target_avg_sentence_chars || "28–45");
+  const wPunchRatio = Array.isArray(wCad.short_punch_ratio_target)
+    ? `${wCad.short_punch_ratio_target.map(x => Math.round(Number(x || 0) * 100)).join("–")}%`
+    : `${Math.round(Number(wCad.short_punch_ratio_target || 0.22) * 100)}%`;
+  const vSpsText = Array.isArray(vCad.target_sps_range)
+    ? `${vCad.target_sps_range[0]}–${vCad.target_sps_range[vCad.target_sps_range.length - 1]}`
+    : "4.0–5.0";
+  const eHoldThr = Number(eCad.dramatic_pause_hold_threshold_sec || eCad.hold_through_silence_threshold_sec || 1.15).toFixed(2);
+  const rhythmLockLine = (wCad.target_avg_sentence_chars || vCad.target_sps_range || eCad.editor_feel_title_vi)
+    ? `<li><b>🎙️ Voice 1-of-1 &amp; Đồng Bộ Nhịp 3 Tầng:</b> <code>${escapeHtml(lockedVoiceName)}</code>${vColor.color_label_vi ? ` (${escapeHtml(vColor.color_label_vi)})` : ""} · <b>[Nhịp Viết]</b> ${escapeHtml(String(wAvgChars))} ký tự/câu, phanh ngắn ${escapeHtml(wPunchRatio)} · <b>[Nhịp Đọc]</b> ${escapeHtml(vSpsText)} âm tiết/s, nghỉ cảm xúc 7 tầng · <b>[Nhịp Dựng @edit]</b> ${escapeHtml(eCad.editor_feel_title_vi || `Neo hình qua khoảng lặng >= ${eHoldThr}s`)}</li>`
+    : `<li><b>🎙️ Voice Độc Bản Kênh:</b> <code>${escapeHtml(lockedVoiceName)}</code></li>`;
+
+  const fullDnaRulebookPopupHtml = `
+    <div class="inspector-dossier-grid" style="margin-bottom:14px;">
+      <div class="inspector-dossier-card">
+        <h4>🧬 Định danh, Thời lượng &amp; Lối Edit Riêng của Kênh</h4>
+        <ul>
+          <li><b>Thị trường &amp; Ngôn ngữ:</b> ${escapeHtml(dna.voiceAndStructure || `${langLabel} — Phóng sự tài liệu chuyên sâu`)}</li>
+          <li><b>Thời lượng mặc định:</b> ${durationMinutes} phút (${escapeHtml(structureHint)})</li>
+          <li><b>Chiến lược Hình ảnh:</b> ${escapeHtml(dna.referenceImagePolicy || strategyLabel)}</li>
+          <li><b>Lối Edit &amp; Remotion DNA:</b> Nhịp cắt <b>${pacingSec}s/beat</b> · Tỷ lệ (<b>${escapeHtml(mixSummary)}</b>) · Tone màu <code>${escapeHtml(colorGrade)}</code></li>
+          ${rhythmLockLine}
+          <li><b>✂️ Luật Sắt Dựng &amp; Footage:</b> Footage <b>3–6s/cut</b> (<code>max_uses=1</code>) · Xóa/crop sạch 100% logo &amp; text kênh khác · Không lấy MC/host · Mỗi cảnh Vox độc nhất theo câu voice</li>
+          <li><b>🎯 Chuẩn Khán Giả &amp; Kết Phim:</b> Nguyên tắc <i>Chekhov's Gun</i>, chuẩn hóa số đếm TTS, đọc 7 cung bậc cảm xúc, câu kết trọn vẹn + dư <b>3.8s</b> fade-out</li>
+        </ul>
+      </div>
+      <div class="inspector-dossier-card">
+        <h4>🛡️ Bộ lọc Đề tài &amp; An toàn Kiếm tiền (100% Green)</h4>
+        <ul>
+          ${dna.allowedTopics ? `<li><span class="dna-pill allow">Chỉ chọn</span> ${escapeHtml(dna.allowedTopics)}</li>` : ""}
+          ${dna.forbiddenTopics ? `<li><span class="dna-pill forbid">Cấm tuyệt đối</span> ${escapeHtml(dna.forbiddenTopics)}</li>` : ""}
+          ${dna.monetizationSafetyPolicy ? `<li><span class="dna-pill green">Ngôi kể &amp; Xanh tiền</span> ${escapeHtml(dna.monetizationSafetyPolicy)}</li>` : ""}
+          ${dna.ctaStrategy ? `<li><span class="dna-pill allow">Role CTA Không Lặp</span> ${escapeHtml(dna.ctaStrategy)}</li>` : ""}
+        </ul>
+      </div>
+    </div>
+    <div class="dna-lock-channel-bar" style="padding:12px 14px;border-radius:11px;background:rgba(15,28,46,0.85);border:1px solid rgba(56,189,248,0.28);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <div class="dna-lock-channel-info" style="font-size:12.5px;">
+        <span>🔗 <b>Link Kênh YouTube của bạn:</b> </span>
+        ${ownRef
+          ? `<strong>${ownUrl ? `<a href="${escapeHtml(ownUrl)}" target="_blank" rel="noreferrer">${escapeHtml(ownTitle)} ↗</a>` : escapeHtml(ownTitle)}</strong>`
+          : `<em class="dna-channel-empty" style="color:#94a3b8;">Chưa gắn link kênh (Chạy độc lập 100% theo DNA cố định)</em>`}
+      </div>
+      <div class="dna-lock-channel-QuickEdit" style="display:flex;gap:8px;align-items:center;flex:1;min-width:260px;max-width:440px;">
+        <input type="text" id="quickOwnChannelInput" value="${escapeHtml(ownRef)}" placeholder="Dán link kênh YouTube (@handle hoặc URL)…" style="flex:1;" />
+        <button type="button" class="primary compact" id="quickSaveOwnChannelBtn">Lưu link kênh</button>
+      </div>
+    </div>
+  `;
+
   box.innerHTML = `
-    <div class="dna-lock-card">
-      <div class="dna-lock-card-head">
-        <div>
-          <span class="dna-lock-badge">${dna.dnaMode === "custom_dna_only" ? "🔒 ĐÃ KHÓA ĐỊNH DANH & QUY CHUẨN CỐ ĐỊNH" : "📡 HỒ SƠ KÊNH & QUY CHUẨN DNA RIÊNG BIỆT"}</span>
-          <h4>${escapeHtml(profile.label || profile.id)}</h4>
-        </div>
-        <div class="dna-lock-actions">
-          <button type="button" class="ghost compact" id="jumpEditProfileStep1Btn">✎ Sửa quy chuẩn ở Bước 1</button>
-        </div>
+    <div class="dna-compact-strip">
+      <div class="dna-compact-strip-left">
+        <span class="dna-compact-pill emerald">${dna.dnaMode === "custom_dna_only" ? "🔒 DNA Cố định" : "📡 DNA Kênh"} · ${escapeHtml(profile.label || profile.id)}</span>
+        <span class="dna-compact-pill cyan">${escapeHtml(profile.market || "KR")} (${escapeHtml(dna.language)}) · ${durationMinutes}p · ${escapeHtml(dna.visualStrategy)}</span>
+        <span class="dna-compact-pill">🎙️ ${escapeHtml(lockedVoiceName)} · ${pacingSec}s/beat</span>
+        <span class="dna-compact-pill emerald">💚 Xanh tiền 100%</span>
+        <span class="dna-compact-pill">${ownRef ? `🔗 ${escapeHtml(ownTitle)}` : "🔗 Độc lập (Chưa gắn kênh)"}</span>
       </div>
-
-      <div class="dna-lock-grid">
-        <div class="dna-lock-col">
-          <div class="dna-lock-section-title">Định danh, Thời lượng &amp; Lối Edit Riêng của Kênh</div>
-          <ul class="dna-lock-list">
-            <li><b>Thị trường &amp; Ngôn ngữ:</b> ${escapeHtml(dna.voiceAndStructure || `${langLabel} — Phóng sự tài liệu chuyên sâu`)}</li>
-            <li><b>Thời lượng mặc định:</b> ${durationMinutes} phút (${escapeHtml(structureHint)})</li>
-            <li><b>Chiến lược Hình ảnh:</b> ${escapeHtml(dna.referenceImagePolicy || strategyLabel)}</li>
-            <li><b>Lối Edit &amp; Remotion DNA:</b> Nhịp cắt <b>${pacingSec}s/beat</b> · Tỷ lệ (<b>${escapeHtml(mixSummary)}</b>) · Tone màu <code>${escapeHtml(colorGrade)}</code></li>
-            <li><b>✂️ Role Edit (Luật Sắt Dựng &amp; Footage):</b> Footage lấy từ <b>3–6s/cut</b> (beat dài ghép 2 cắt Part A+B, <code>max_uses=1</code>) · <b>Bắt buộc xóa/crop sạch 100% logo &amp; text Trung của bên khác</b> (cần thiết thì crop hết hình ảnh có nguồn bên khác) · <b>Không lấy video dẫn chương trình có mặt người dẫn (MC) hoặc chủ kênh khác</b>, chỉ lấy đúng footage cần · <b>Mỗi cảnh Vox độc nhất 100%</b> theo từng câu voice</li>
-            <li><b>🎯 Chuẩn Khán Giả Góp Ý &amp; Checklist Xuất Bản (True Crime):</b> <b>[Kịch bản]</b> Nguyên tắc <i>Chiếc súng của Chekhov</i> (mọi nhân vật mở màn phải có kết cục rõ ràng; nếu nhạy cảm thêm 1–2 câu tóm lược nhẹ nhàng) &amp; xưng hô chuẩn văn hóa Hàn (cấm gọi 58–62 tuổi là <code>노부부</code>, dùng <code>여관 주인 부부</code>/<code>50대 후반 부부</code>) · <b>[Giọng đọc]</b> Tông trầm ấm đêm khuya êm tai (<code>K1 - Trầm Sâu Đêm Khuya SBS Style</code>), chuẩn hóa số đếm TTS (<code>19년</code>=<code>십구 년</code>, cấm <code>열아홉 년</code>) không đọc vấp · <b>[Phần kết]</b> Câu chào cuối trọn vẹn 100% không cắt ngang + dư <b>3.8s</b> nhạc nền fade-out</li>
-          </ul>
-        </div>
-        <div class="dna-lock-col">
-          <div class="dna-lock-section-title">Bộ lọc Đề tài &amp; An toàn Kiếm tiền (100% Green Monetization)</div>
-          <ul class="dna-lock-list">
-            ${dna.allowedTopics ? `<li><span class="dna-pill allow">Chỉ chọn</span> ${escapeHtml(dna.allowedTopics)}</li>` : ""}
-            ${dna.forbiddenTopics ? `<li><span class="dna-pill forbid">Cấm tuyệt đối</span> ${escapeHtml(dna.forbiddenTopics)}</li>` : ""}
-            ${dna.monetizationSafetyPolicy ? `<li><span class="dna-pill green">Ngôi kể &amp; Góc kể Xanh tiền</span> ${escapeHtml(dna.monetizationSafetyPolicy)}</li>` : ""}
-            ${dna.ctaStrategy ? `<li><span class="dna-pill allow">Chiến lược CTA 2 điểm chạm (Linh hoạt)</span> ${escapeHtml(dna.ctaStrategy)}</li>` : ""}
-          </ul>
-        </div>
-      </div>
-
-      <div class="dna-lock-channel-bar">
-        <div class="dna-lock-channel-info">
-          <span>🔗 <b>Link Kênh YouTube của bạn:</b></span>
-          ${ownRef
-            ? `<strong>${ownUrl ? `<a href="${escapeHtml(ownUrl)}" target="_blank" rel="noreferrer">${escapeHtml(ownTitle)} ↗</a>` : escapeHtml(ownTitle)}</strong>`
-            : `<em class="dna-channel-empty">Chưa gắn link kênh (Hồ sơ vẫn chạy độc lập 100% theo DNA cố định — bạn có thể dán link kênh vào bất cứ lúc nào)</em>`}
-        </div>
-        <div class="dna-lock-channel-QuickEdit">
-          <input type="text" id="quickOwnChannelInput" value="${escapeHtml(ownRef)}" placeholder="Dán link kênh YouTube của bạn (@handle hoặc URL)…" />
-          <button type="button" class="ghost compact" id="quickSaveOwnChannelBtn">Lưu link kênh</button>
-        </div>
+      <div class="dna-compact-actions">
+        <button type="button" class="ghost compact" id="openProfileDnaRulebookPopupBtn">📜 Quy chuẩn DNA &amp; Gắn kênh</button>
+        <button type="button" class="ghost compact" id="jumpEditProfileStep1Btn">✎ Sửa DNA</button>
       </div>
     </div>
   `;
@@ -2221,46 +2495,53 @@ function renderCreateProfileDnaSummary(profile) {
 
   $("#jumpEditProfileStep1Btn")?.addEventListener("click", async () => {
     await selectChannelProfile(profile.id);
-    setAppTab("radar");
-    const form = $("#channelProfileForm");
-    form?.scrollIntoView({ behavior: "smooth", block: "start" });
+    openDnaStudioModal("identity");
   });
 
-  $("#quickSaveOwnChannelBtn")?.addEventListener("click", async () => {
-    const input = $("#quickOwnChannelInput");
-    const btn = $("#quickSaveOwnChannelBtn");
-    const newRef = String(input?.value || "").trim();
-    if (!btn) return;
-    try {
-      btn.disabled = true;
-      btn.textContent = "Đang lưu…";
-      const saved = await api(`/api/radar/channel-profiles/${encodeURIComponent(profile.id)}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          label: profile.label,
-          own_channel_ref: newRef,
-          competitor_refs: profile.competitor_refs || [],
-          market: profile.market || "KR",
-          default_duration_minutes: profile.default_duration_minutes || 20,
-          default_language: dna.language,
-          default_visual_strategy: dna.visualStrategy,
-          dna_mode: dna.dnaMode,
-          voice_and_structure: dna.voiceAndStructure,
-          reference_image_policy: dna.referenceImagePolicy,
-          allowed_topics: dna.allowedTopics,
-          forbidden_topics: dna.forbiddenTopics,
-          monetization_safety_policy: dna.monetizationSafetyPolicy,
-          cta_strategy: dna.ctaStrategy,
-        }),
-      });
-      await loadChannelProfiles({ selectId: saved.id, loadPlan: false });
-      toast(newRef ? "Đã gắn link kênh YouTube vào Hồ sơ DNA thành công!" : "Đã cập nhật Hồ sơ DNA.");
-    } catch (err) {
-      toast(err.message, true);
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Lưu link kênh";
-    }
+  $("#openProfileDnaRulebookPopupBtn")?.addEventListener("click", () => {
+    openStudioInspectorModal({
+      badge: "🧬",
+      title: profile.label || profile.id,
+      subtitle: "Quy chuẩn DNA cố định · Bộ lọc Xanh tiền & Gắn kênh YouTube",
+      html: fullDnaRulebookPopupHtml,
+      onOpen: modalBody => {
+        const saveBtn = modalBody.querySelector("#quickSaveOwnChannelBtn");
+        const input = modalBody.querySelector("#quickOwnChannelInput");
+        saveBtn?.addEventListener("click", async () => {
+          const newRef = String(input?.value || "").trim();
+          try {
+            saveBtn.disabled = true;
+            saveBtn.textContent = "Đang lưu…";
+            const saved = await api(`/api/radar/channel-profiles/${encodeURIComponent(profile.id)}`, {
+              method: "PATCH",
+              body: JSON.stringify({
+                label: profile.label,
+                own_channel_ref: newRef,
+                competitor_refs: profile.competitor_refs || [],
+                market: profile.market || "KR",
+                default_duration_minutes: profile.default_duration_minutes || 20,
+                default_language: dna.language,
+                default_visual_strategy: dna.visualStrategy,
+                dna_mode: dna.dnaMode,
+                voice_and_structure: dna.voiceAndStructure,
+                reference_image_policy: dna.referenceImagePolicy,
+                allowed_topics: dna.allowedTopics,
+                forbidden_topics: dna.forbiddenTopics,
+                monetization_safety_policy: dna.monetizationSafetyPolicy,
+                cta_strategy: dna.ctaStrategy,
+              }),
+            });
+            await loadChannelProfiles({ selectId: saved.id, loadPlan: false });
+            toast(newRef ? "Đã gắn link kênh YouTube vào Hồ sơ DNA thành công!" : "Đã cập nhật Hồ sơ DNA.");
+          } catch (err) {
+            toast(err.message, true);
+          } finally {
+            saveBtn.disabled = false;
+            saveBtn.textContent = "Lưu link kênh";
+          }
+        });
+      },
+    });
   });
 }
 
@@ -2268,16 +2549,18 @@ async function renderCreatePreflightSummary(profileId, topic = "", title = "") {
   const box = $("#createPreflightSummaryBox");
   const content = $("#preflightSummaryContent");
   const headline = $("#preflightStatusHeadline");
+  const popupBtn = $("#openPreflightPopupBtn");
   if (!box || !content) return;
 
   if (!profileId) {
-    content.innerHTML = `<div class="empty-state" style="padding:10px 0;font-size:12.5px;color:#94a3b8;">Hãy chọn một Hồ sơ Kênh để kích hoạt Channel-DNA Pre-Flight Check.</div>`;
+    content.innerHTML = `<div class="empty-state" style="padding:4px 0;font-size:11.8px;color:#94a3b8;">Chọn một Hồ sơ Kênh để kích hoạt Channel-DNA Pre-Flight Check.</div>`;
     if (headline) headline.textContent = "Chưa chọn hồ sơ kênh";
+    popupBtn?.classList.add("hidden");
     return;
   }
 
   const candidateTopic = String(topic || title || $("#createManualTitleInput")?.value || "").trim();
-  content.innerHTML = `<div style="font-size:12.5px;color:#94a3b8;">⏳ Đang đối chiếu DNA Kênh, kiểm tra trùng lặp và từ khóa thắng thế…</div>`;
+  content.innerHTML = `<div style="font-size:11.8px;color:#94a3b8;">⏳ Đang đối chiếu DNA Kênh, kiểm tra trùng lặp và từ khóa thắng thế…</div>`;
 
   try {
     const res = await api(`/api/radar/channel-profiles/${encodeURIComponent(profileId)}/preflight-check?stage=topic&topic=${encodeURIComponent(candidateTopic)}&title=${encodeURIComponent(title || candidateTopic)}`);
@@ -2299,42 +2582,69 @@ async function renderCreatePreflightSummary(profileId, topic = "", title = "") {
     }
 
     if (headline) {
-      headline.innerHTML = `Kết quả Pre-Flight: <span class="dna-pill ${badgeClass}" style="margin-left:8px;font-size:12px;">${badgeText}</span>`;
+      headline.innerHTML = `Pre-Flight: <span class="dna-pill ${badgeClass}" style="margin-left:6px;font-size:11px;">${badgeText}</span>`;
     }
 
     const patternPills = patterns.length
-      ? patterns.map(p => `<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:rgba(0,200,255,0.15);border:1px solid rgba(0,200,255,0.3);color:#7dd3fc;font-size:11.5px;font-weight:600;margin-right:6px;">★ ${escapeHtml(p)}</span>`).join("")
-      : `<span class="muted" style="font-size:12px;">Chưa khớp cụm từ khóa Outlier mẫu (khuyên dùng thêm số liệu hoặc từ khóa điều tra).</span>`;
-
-    const recsHtml = recs.length
-      ? `<div style="margin-top:8px;padding:8px 12px;background:${isDup || !passed ? 'rgba(255,77,94,0.08)' : 'rgba(251,191,36,0.08)'};border-radius:6px;border:1px solid ${isDup || !passed ? 'rgba(255,77,94,0.3)' : 'rgba(251,191,36,0.25)'};font-size:12px;line-height:1.45;">
-          <strong style="color:${isDup || !passed ? '#ff6475' : '#fbbf24'};">Khuyến nghị &amp; Cảnh báo:</strong>
-          <ul style="margin:4px 0 0;padding-left:18px;">${recs.map(r => `<li>${escapeHtml(r)}</li>`).join("")}</ul>
-        </div>`
-      : `<div style="margin-top:6px;font-size:12px;color:#10b981;">✓ Không phát hiện vi phạm hoặc rủi ro trùng lặp. Đề tài sẵn sàng đưa vào sản xuất!</div>`;
+      ? patterns.map(p => `<span style="display:inline-block;padding:2px 8px;border-radius:12px;background:rgba(0,200,255,0.15);border:1px solid rgba(0,200,255,0.3);color:#7dd3fc;font-size:11px;font-weight:600;margin-right:5px;">★ ${escapeHtml(p)}</span>`).join("")
+      : `<span class="muted" style="font-size:11.5px;">Chưa khớp cụm Outlier mẫu</span>`;
 
     const chCheck = summary.channel_history_check || {};
     const memCheck = summary.profile_memory_check || {};
     const pass1Html = chCheck.duplicate_found
-      ? `<div style="font-size:12px;color:#f87171;">✕ <b>Pass 1 (YouTube Kênh):</b> Trùng video đã đăng: "${escapeHtml(chCheck.matched_title || "")}"</div>`
-      : `<div style="font-size:12px;color:#34d399;">✓ <b>Pass 1 (YouTube Kênh):</b> Chưa có video trùng trên kênh</div>`;
+      ? `<span style="font-size:11.5px;color:#f87171;">✕ <b>Pass 1 (YouTube Kênh):</b> Trùng "${escapeHtml(chCheck.matched_title || "")}"</span>`
+      : `<span style="font-size:11.5px;color:#34d399;">✓ <b>Pass 1 (YouTube Kênh):</b> Sạch</span>`;
     const pass2Html = memCheck.duplicate_found
-      ? `<div style="font-size:12px;color:#f87171;">✕ <b>Pass 2 (Bộ nhớ Hồ sơ):</b> Đã sản xuất trong Job [${escapeHtml(memCheck.matched_job_id || "")}]: "${escapeHtml(memCheck.matched_title || "")}"</div>`
-      : `<div style="font-size:12px;color:#34d399;">✓ <b>Pass 2 (Bộ nhớ Hồ sơ):</b> Đề tài mới, chưa từng sản xuất trong bộ nhớ</div>`;
+      ? `<span style="font-size:11.5px;color:#f87171;">✕ <b>Pass 2 (Bộ nhớ Hồ sơ):</b> Trùng [${escapeHtml(memCheck.matched_job_id || "")}]</span>`
+      : `<span style="font-size:11.5px;color:#34d399;">✓ <b>Pass 2 (Bộ nhớ Hồ sơ):</b> Đề tài mới</span>`;
+
+    const compactAlertHtml = (isDup || !passed) && recs.length
+      ? `<div style="font-size:11.5px;color:#fca5a5;margin-top:3px;">⚠ ${escapeHtml(recs[0])}</div>`
+      : "";
 
     content.innerHTML = `
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        <div style="font-size:13px;color:#f1f5f9;"><b>Đề tài kiểm tra:</b> ${escapeHtml(candidateTopic || "(Chưa nhập tiêu đề cụ thể — đang dùng quy chuẩn kênh)")}</div>
-        <div style="display:flex;flex-direction:column;gap:3px;padding:6px 10px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);border-radius:6px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
           ${pass1Html}
+          <span style="color:#475569;">|</span>
           ${pass2Html}
         </div>
-        <div style="font-size:12.5px;"><b>Pattern thắng thế đã khớp:</b> ${patternPills}</div>
-        ${recsHtml}
+        <div style="font-size:11.5px;">${patternPills}</div>
+      </div>
+      ${compactAlertHtml}
+    `;
+
+    const fullPreflightHtml = `
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="inspector-dossier-card">
+          <h4>✈ Đề tài đang kiểm tra</h4>
+          <div style="font-size:14px;font-weight:700;color:#f8fafc;">${escapeHtml(candidateTopic || "(Chưa nhập tiêu đề cụ thể — đang dùng quy chuẩn kênh)")}</div>
+          <div style="margin-top:10px;display:flex;flex-direction:column;gap:6px;">
+            <div>${pass1Html}</div>
+            <div>${pass2Html}</div>
+          </div>
+        </div>
+        <div class="inspector-dossier-card">
+          <h4>★ Cụm từ khóa Outlier đã khớp</h4>
+          <div>${patternPills}</div>
+        </div>
+        <div class="inspector-dossier-card">
+          <h4>📋 Khuyến nghị &amp; Cảnh báo Pre-Flight</h4>
+          ${recs.length ? `<ul>${recs.map(r => `<li>${escapeHtml(r)}</li>`).join("")}</ul>` : `<div style="color:#34d399;font-size:13px;">✓ Không phát hiện vi phạm hoặc rủi ro trùng lặp. Đề tài sẵn sàng đưa vào sản xuất!</div>`}
+        </div>
       </div>
     `;
+    if (popupBtn) {
+      popupBtn.classList.remove("hidden");
+      popupBtn.onclick = () => openStudioInspectorModal({
+        badge: "✈",
+        title: "BÁO CÁO PRE-FLIGHT DNA CHI TIẾT",
+        subtitle: badgeText,
+        html: fullPreflightHtml,
+      });
+    }
   } catch (err) {
-    content.innerHTML = `<div style="font-size:12.5px;color:#ff6475;">Lỗi kiểm tra Pre-Flight: ${escapeHtml(err.message)}</div>`;
+    content.innerHTML = `<div style="font-size:12px;color:#ff6475;">Lỗi kiểm tra Pre-Flight: ${escapeHtml(err.message)}</div>`;
   }
 }
 
@@ -2498,6 +2808,31 @@ async function renderSelfLearningReportForProfile(profileId) {
   }
 }
 
+function isTwoStreamTrueCrimeProfile(profile) {
+  if (!profile) return false;
+  if (Array.isArray(profile.topic_streams) && profile.topic_streams.length >= 1) return true;
+  if (Array.isArray(profile.editorial_dna?.topic_streams) && profile.editorial_dna.topic_streams.length >= 1) return true;
+  const pid = String(profile.id || "").toLowerCase();
+  if (pid === "channel-kr-truecrime-director-v2" || pid === "channel-kr-financial-fugitive-director-v2" || pid === "channel-e544a64b7c") return true;
+  const blob = `${profile.label || ""} ${profile.allowed_topics || ""} ${profile.editorial_dna?.allowed_topics || ""}`.toLowerCase();
+  return blob.includes("특급수배록") || blob.includes("true crime") || blob.includes("강력범죄") || blob.includes("trọng án");
+}
+
+function classifyClientTopicStream(item) {
+  const raw = item?.raw || item || {};
+  const blob = `${item?.title || ""} ${item?.titleVi || ""} ${raw.case_real_name_zh || ""} ${raw.winner_cluster || ""} ${item?.note || ""}`.toLowerCase();
+  // Hard-route all vault break-ins, safe-cracking, bank robberies, armored cash-in-transit & gold/jewelry/museum heists to Stream 1
+  if (/(금고\s*털이|금고\s*절단|금고\s*개방|대형\s*금고|기업\s*금고|은행\s*금고|청진기\s*하나로|산소절단기|현금수송차|현금\s*수송차|수송차\s*탈취|수송차\s*털|수송차\s*습격|현금\s*3,500만|은행\s*털|은행을\s*털|은행\s*방탄유리|저축소|보석상|순금\s*48kg|선양\s*3·8|고궁박물원|카이펑\s*박물관|쓰촨\s*박물관|도굴\s*대사건|đột nhập kho bạc|mở két|phá két|cắt két|trộm két|cướp tiền|cướp ngân hàng|cướp xe chở tiền|cướp tiệm vàng|金库被盗|切割金库|开启金库|技术开启|运钞车|银行劫案|储蓄所|绿洲珠宝行|48公斤黄金|沈阳3·8|故宫博物院|开封博物馆)/i.test(blob)) {
+    return "financial_crime";
+  }
+  const explicit = String(item?.topicStream || raw.topic_stream || "").trim().toLowerCase();
+  if (explicit === "financial_crime" || explicit === "major_violent_crime") return explicit;
+  if (/(국채|증권|은행|금고|예금|금융|위조|공금|자산|집자|불법\s*모금|선물\s*거래|tài chính|ngân hàng|công trái|chứng khoán|két sắt|tiền gửi|tín dụng|hối phiếu|国债|证券|银行|金库|存款|集资|票据|猎狐|经侦)/i.test(blob)) {
+    return "financial_crime";
+  }
+  return "major_violent_crime";
+}
+
 function selectCreateTopic(item, index = 0) {
   if (!item) return;
   state.selectedCreateTopic = item;
@@ -2507,15 +2842,35 @@ function selectCreateTopic(item, index = 0) {
   if (!form) return;
   form.elements.title.value = item.title || "";
   if (item.url && form.elements.source_url) form.elements.source_url.value = item.url;
-  if (item.note && form.elements.notes) form.elements.notes.value = item.note;
+  const raw = item.raw || {};
+  const streamKey = classifyClientTopicStream(item);
+  const streamHeader = streamKey === "financial_crime"
+    ? "[LUỒNG 1 · ĐẠI ÁN TÀI CHÍNH, KHO BẠC, MỞ KÉT & CƯỚP TIỀN ĐÀO TẨU]"
+    : "[LUỒNG 2 · TRỌNG ÁN HÌNH SỰ, ÁN LẠNH PHÁP Y & TRUY NÃ CẤP A]";
+  const realZh = String(item.caseRealNameZh || raw.case_real_name_zh || "").trim();
+  const archivalKws = Array.isArray(item.archivalSearchKeywordsZh) && item.archivalSearchKeywordsZh.length
+    ? item.archivalSearchKeywordsZh
+    : (Array.isArray(raw.archival_search_keywords_zh) ? raw.archival_search_keywords_zh : []);
+  const voxVerbs = Array.isArray(item.recommendedVoxVerbs) && item.recommendedVoxVerbs.length
+    ? item.recommendedVoxVerbs
+    : (Array.isArray(raw.recommended_vox_verbs) ? raw.recommended_vox_verbs : []);
+  const noteParts = [];
+  if (realZh) noteParts.push(`${streamHeader} Hồ sơ gốc xác thực 100%: ${realZh}`);
+  if (archivalKws.length) noteParts.push(`[TỪ KHÓA TƯ LIỆU GỐC CCTV/CÔNG AN]: ${archivalKws.join(" | ")}`);
+  if (voxVerbs.length) noteParts.push(`[ĐỘNG TỪ THỊ GIÁC VOX LEGO V13 GỢI Ý]: ${voxVerbs.join(", ")}`);
+  if (item.note) noteParts.push(item.note);
+  const fullNote = noteParts.join("\n");
+  if (fullNote && form.elements.notes) form.elements.notes.value = fullNote;
+  if (fullNote && $("#createNotesTextarea")) $("#createNotesTextarea").value = fullNote;
   if (item.profileId && form.elements.channel_profile_id) form.elements.channel_profile_id.value = item.profileId;
   // Do NOT overwrite user's chosen target_duration_minutes when clicking a topic card
-  const raw = item.raw || {};
   if (raw.opening_hook && form.elements.opening_hook) {
     form.elements.opening_hook.value = String(raw.opening_hook);
   }
   const badge = $("#selectedTopicBadge");
-  const modeTag = state.createDiscoveryMode === "dna_strict" ? `CHUẨN DNA #${index + 1}` : `RADAR #${index + 1}`;
+  const modeTag = state.createDiscoveryMode === "dna_strict"
+    ? (streamKey === "financial_crime" ? `💰 TÀI CHÍNH #${index + 1}` : `🚨 ĐẶC BIỆT NGUY HIỂM #${index + 1}`)
+    : `RADAR #${index + 1}`;
   badge.classList.remove("hidden");
   badge.innerHTML = `<span>${escapeHtml(modeTag)}</span><strong>${escapeHtml(item.title)}</strong><button type="button" id="clearTopicBtn">×</button>`;
   $("#clearTopicBtn")?.addEventListener("click", () => {
@@ -2525,7 +2880,7 @@ function selectCreateTopic(item, index = 0) {
   $$("[data-create-topic-index]").forEach(button => {
     const selected = Number(button.dataset.createTopicIndex) === Number(index);
     button.closest(".create-topic-option")?.classList.toggle("selected", selected);
-    button.textContent = selected ? "Đã chọn ✓" : "Chọn đề tài này";
+    button.textContent = selected ? "✓ Đã chọn" : "Chọn";
   });
 
   // Run Pre-Flight check on selected topic
@@ -2537,48 +2892,233 @@ function selectCreateTopic(item, index = 0) {
 
 function isTopicInProfileMemory(item, profile) {
   if (!item || !profile) return false;
+  if (item.raw?.already_produced === true) return true;
   const stripSeo = s => String(s || "")
-    .replace(/\[중국\s*실화\s*사건\]|\[중국\s*사기\s*실화\]|\[중국\s*인프라의\s*이면\]|\[하나님의\s*말씀\]|\[vụ\s*án\s*có\s*thật\s*ở\s*trung\s*quốc\]|\[vụ\s*lừa\s*đảo\s*có\s*thật\s*ở\s*trung\s*quốc\]/gi, "")
+    .replace(/\[중국\s*실화\s*사건\]|\[중국\s*첨단사기\s*실화\s*사건\]|\[중국\s*사기\s*실화\]|\[중국\s*인프라의\s*이면\]|\[하나님의\s*말씀\]|\[vụ\s*án\s*có\s*thật\s*ở\s*trung\s*quốc\]|\[vụ\s*lừa\s*đảo\s*có\s*thật\s*ở\s*trung\s*quốc\]/gi, "")
+    .replace(/(?<=\d),(?=\d{3}(?!\d))/g, "")
     .trim()
     .toLowerCase();
   const candTitle = stripSeo(item.titleTarget || item.raw?.title_target || item.title || "");
   if (!candTitle) return false;
+  const candZh = String(item.caseRealNameZh || item.raw?.case_real_name_zh || "").trim();
   const genericTokens = new Set([
-    "수배범", "사건", "실화", "중국", "미제사건", "미제", "범인은", "진범", "용의자", "1급",
-    "도주", "추적", "프로파일링", "노후", "자금", "퇴직금", "퇴직금을", "평생", "모은", "사기",
-    "vụ án có", "vụ lừa đảo có", "thật ở trung quốc", "trung quốc",
+    "수배범", "수배범이", "수배범의", "수배범을", "사건", "실화", "중국", "미제사건", "미제", "범인은", "진범", "용의자", "1급",
+    "도주", "도주극", "도망친", "추적", "추격", "추격전", "프로파일링", "노후", "자금", "퇴직금", "퇴직금을", "평생", "모은", "사기", "사기극",
+    "비자금", "거액", "횡령", "은행", "금고", "국채", "증권", "증권사", "살인", "연쇄", "형사", "공안", "단서", "지문", "위장", "신분", "잠적",
+    "수송차", "현금수송차", "세탁한", "역추적", "증발한", "경찰서", "사법부를", "뒤흔든", "이름으로", "살아온", "숨어", "찾아낸", "드러난", "완벽한", "사라진",
+    "유전자", "족보", "가계도", "지점장", "회장", "억대", "자산가", "부호", "최후", "두 얼굴", "정체", "이유", "사연", "전말", "미스터리",
+    "베이징", "상하이", "광저우", "선전", "충칭", "청두", "우한", "항저우", "난징", "시안", "정저우", "창사", "선양", "하얼빈", "다롄", "칭다오", "원저우", "닝보", "쿤밍", "구이양",
+    "생명을", "생명", "앗아간", "앗아가고", "앗아가며", "운명을", "목숨을", "사람의", "청춘의", "교도관", "교도관의", "수감자들", "경비원", "경비원의", "지명수배범",
+    "vụ án có", "vụ lừa đảo có", "thật ở trung quốc", "trung quốc", "hồ sơ vụ án",
   ]);
-  const memList = Array.isArray(profile.topic_memory) ? profile.topic_memory : [];
+  const genericHanzi = new Set([
+    "中国", "特大", "案件", "真实", "侦破", "侦破纪实", "破案", "潜逃", "潜逃案", "挪用公款", "挪用", "非法集资", "集资诈骗",
+    "通缉令", "通缉犯", "逃犯", "主犯", "嫌犯", "追捕", "围捕", "抓捕", "落网", "归案", "悬案", "积案", "命案", "重案", "运钞车", "金库",
+    "北京", "上海", "广东", "深圳", "广州", "浙江", "杭州", "宁波", "温州", "江苏", "南京", "河南", "郑州", "湖南", "长沙", "湖北", "武汉",
+    "四川", "成都", "重庆", "陕西", "西安", "山东", "辽宁", "沈阳", "大连", "黑龙江", "哈尔滨", "吉林", "云南", "昆明", "贵州", "贵阳", "福建", "江西", "安徽", "河北", "山西", "广西",
+  ]);
+  const memList = Array.isArray(profile.topic_memory) ? [...profile.topic_memory] : [];
+  const winnerTitles = Array.isArray(profile?.own_channel?.dna?.winner_titles) ? profile.own_channel.dna.winner_titles : [];
+  for (const wt of winnerTitles) {
+    const wtStr = typeof wt === "object" ? wt?.title : wt;
+    if (wtStr) memList.push({ title: String(wtStr), topic: String(wtStr), tags: [], anchors: [] });
+  }
+  const ownVideos = Array.isArray(profile?.own_channel?.videos) ? profile.own_channel.videos : [];
+  for (const v of ownVideos) {
+    if (v?.title) memList.push({ title: String(v.title), topic: String(v.title), tags: [], anchors: [] });
+  }
+  const backendVerifiedClean = (
+    item.raw?.already_produced === false &&
+    (item.raw?.trend_source === "live_two_stream_dna_research" || item.raw?.trend_source === "strict_channel_dna" || Boolean(item.raw?.case_real_name_zh))
+  );
   for (const m of memList) {
     const mTitle = stripSeo(m?.title || "");
+    const mTopic = stripSeo(m?.topic || "");
     if (!mTitle) continue;
     if (mTitle === candTitle || (candTitle.length >= 14 && mTitle.includes(candTitle)) || (mTitle.length >= 14 && candTitle.includes(mTitle))) {
       return true;
     }
-    const anchors = [...(Array.isArray(m?.tags) ? m.tags : []), ...(Array.isArray(m?.anchors) ? m.anchors : [])];
+    if (backendVerifiedClean) {
+      // Backend already ran full trilingual case_similarity against topic_memory
+      continue;
+    }
+    if (candZh) {
+      const zhTokens = candZh.match(/[\u4e00-\u9fff]{2,8}/g) || [];
+      for (const zt of zhTokens) {
+        if (!genericHanzi.has(zt) && (`${m?.title || ""} ${m?.topic || ""}`).includes(zt)) {
+          return true;
+        }
+      }
+    }
+    const rawAnchors = [...(Array.isArray(m?.tags) ? m.tags : []), ...(Array.isArray(m?.anchors) ? m.anchors : [])];
+    const uniqueAnchors = new Set(
+      rawAnchors
+        .map(a => String(a || "").replace(/(?<=\d),(?=\d{3}(?!\d))/g, "").trim().toLowerCase())
+        .filter(Boolean)
+    );
     let specificHits = 0;
-    for (const a of anchors) {
-      const aNorm = String(a || "").trim().toLowerCase();
+    for (const aNorm of uniqueAnchors) {
       if (
         aNorm.length >= 3 &&
         !genericTokens.has(aNorm) &&
+        !aNorm.startsWith("place_") &&
+        !aNorm.startsWith("person_") &&
+        !aNorm.startsWith("org_") &&
         !/^\d+[\.,]?\d*\s*(년간|년|일|개월|시간|km|미터|억|조|만|%|năm|tỷ)?$/i.test(aNorm) &&
         !aNorm.includes("vụ án") &&
         !aNorm.includes("vụ lừa đảo") &&
         candTitle.includes(aNorm) &&
-        mTitle.includes(aNorm)
+        (mTitle.includes(aNorm) || mTopic.includes(aNorm))
       ) {
         specificHits += 1;
       }
     }
-    if (specificHits >= 2) return true;
+    if (specificHits >= 3) return true;
   }
   return false;
+}
+
+function openTopicDossierPopup(index) {
+  const item = state.createTopicSuggestions?.[index];
+  if (!item) return;
+  const raw = item.raw || {};
+  const targetTitle = item.titleTarget || raw.title_target || item.title || "";
+  const viTitle = item.titleVi || raw.title_vi || "";
+  const realZh = String(item.caseRealNameZh || raw.case_real_name_zh || "").trim();
+  const streamKey = classifyClientTopicStream(item);
+  const streamLabel = streamKey === "financial_crime"
+    ? "💰 Luồng 1 · Đại Án Tài Chính, Kho Bạc, Mở Két & Cướp Tiền Đào Tẩu"
+    : "🚨 Luồng 2 · Trọng Án Hình Sự, Án Lạnh Pháp Y & Truy Nã Cấp A";
+  const voxVerbs = Array.isArray(item.recommendedVoxVerbs) && item.recommendedVoxVerbs.length
+    ? item.recommendedVoxVerbs
+    : (Array.isArray(raw.recommended_vox_verbs) ? raw.recommended_vox_verbs : []);
+  const archivalKws = Array.isArray(item.archivalSearchKeywordsZh) && item.archivalSearchKeywordsZh.length
+    ? item.archivalSearchKeywordsZh
+    : (Array.isArray(raw.archival_search_keywords_zh) ? raw.archival_search_keywords_zh : []);
+  const hookText = raw.opening_hook || item.openingHook || "AI sẽ tự động thiết kế Hook mở màn 00:00–00:30 theo mâu thuẫn cốt lõi của vụ án.";
+  const rawCaseNote = String(item.caseNote || raw.note || raw.production_brief || raw.summary_vi || item.note || "").trim();
+  let classificationTag = "";
+  let cleanCaseStory = rawCaseNote.replace(/^📋\s*/, "").trim();
+  const bracketMatch = cleanCaseStory.match(/^【([^】]+)】\s*(.*)$/s);
+  if (bracketMatch) {
+    classificationTag = bracketMatch[1].trim();
+    cleanCaseStory = bracketMatch[2].trim();
+  }
+  const codexAngle = String(raw.codex_angle || "").trim();
+  const winnerCluster = String(item.winnerCluster || raw.winner_cluster || "").trim();
+  const accentColor = streamKey === "financial_crime" ? "#f59e0b" : "#ef4444";
+  const accentBg = streamKey === "financial_crime" ? "rgba(245,158,11,0.14)" : "rgba(239,68,68,0.14)";
+  const accentBorder = streamKey === "financial_crime" ? "rgba(245,158,11,0.38)" : "rgba(239,68,68,0.38)";
+
+  const html = `
+    <div style="display:flex;flex-direction:column;gap:14px;">
+      <div class="inspector-dossier-card" style="padding:15px 18px;">
+        <h4>📌 Tiêu đề Gốc &amp; Bản dịch Tiếng Việt Đầy đủ</h4>
+        <div style="font-size:16px;font-weight:800;color:#f8fafc;line-height:1.48;">${escapeHtml(targetTitle)}</div>
+        ${viTitle ? `<div style="font-size:14px;font-weight:600;color:#93c5fd;margin-top:8px;padding:8px 12px;background:rgba(15,23,42,0.75);border-left:3px solid #38bdf8;border-radius:6px;line-height:1.48;">🇻🇳 ${escapeHtml(viTitle)}</div>` : ""}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:11px;font-size:12px;">
+          <span class="dna-compact-pill cyan">${escapeHtml(streamLabel)}</span>
+          ${realZh ? `<span class="dna-compact-pill emerald">📂 Hồ sơ gốc: ${escapeHtml(realZh)}</span>` : ""}
+          ${item.codexScore != null ? `<span class="dna-compact-pill">Điểm khớp DNA: ${Number(item.codexScore).toFixed(0)}/100</span>` : ""}
+        </div>
+      </div>
+
+      <div class="inspector-dossier-card" style="padding:15px 18px;border-color:${accentBorder};">
+        <h4>📋 Giải thích Chi tiết Hồ sơ Vụ án &amp; Tội danh</h4>
+        ${classificationTag ? `<div style="margin-bottom:10px;padding:8px 12px;border-radius:8px;background:${accentBg};border-left:4px solid ${accentColor};color:#fef2f2;font-size:13px;font-weight:700;line-height:1.48;">🚨 ${escapeHtml(classificationTag)}</div>` : ""}
+        <p style="margin:0;font-size:13.8px;line-height:1.68;color:#f1f5f9;">${escapeHtml(cleanCaseStory || "Hồ sơ vụ án thật có đầy đủ tình tiết điều tra, mốc năm và chứng cứ số liệu để triển khai.")}</p>
+        ${(winnerCluster || codexAngle) ? `
+          <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(148,163,184,0.16);display:flex;flex-direction:column;gap:5px;font-size:12.4px;color:#cbd5e1;">
+            ${winnerCluster ? `<div><strong style="color:#7dd3fc;">🏆 Cụm DNA thắng thế:</strong> ${escapeHtml(winnerCluster)}</div>` : ""}
+            ${codexAngle ? `<div><strong style="color:#34d399;">🎯 Góc khai thác:</strong> ${escapeHtml(codexAngle)}</div>` : ""}
+          </div>
+        ` : ""}
+      </div>
+
+      <div class="inspector-dossier-grid">
+        <div class="inspector-dossier-card">
+          <h4>⚡ Hook mở màn (00:00 – 00:30)</h4>
+          <p style="margin:0;font-size:13.2px;line-height:1.62;color:#e2e8f0;">${escapeHtml(hookText)}</p>
+        </div>
+        <div class="inspector-dossier-card">
+          <h4>🎬 Động từ Thị giác Vox &amp; Từ khóa Tư liệu Gốc</h4>
+          ${voxVerbs.length ? `<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:9px;">${voxVerbs.map(v => `<span class="dna-compact-pill cyan">🎬 ${escapeHtml(v)}</span>`).join("")}</div>` : ""}
+          ${archivalKws.length ? `<div style="font-size:12.3px;line-height:1.55;color:#cbd5e1;"><strong style="color:#93c5fd;">🔍 Từ khóa CCTV / Công an:</strong><br/>${archivalKws.map(k => `<code style="display:inline-block;margin:3px 4px 0 0;padding:2px 7px;border-radius:5px;background:rgba(15,23,42,0.85);border:1px solid rgba(148,163,184,0.2);color:#e2e8f0;">${escapeHtml(k)}</code>`).join("")}</div>` : `<p style="margin:0;font-size:12.6px;color:#94a3b8;">Tự động truy xuất tư liệu đài truyền hình trung ương &amp; hồ sơ tòa án theo tên vụ án gốc.</p>`}
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;padding-top:4px;">
+        <button type="button" class="primary compact" id="popupConfirmSelectTopicBtn">✓ Chọn đề tài này để sản xuất</button>
+      </div>
+    </div>
+  `;
+  openStudioInspectorModal({
+    badge: streamKey === "financial_crime" ? "💰" : "🚨",
+    title: `CHI TIẾT HỒ SƠ VỤ ÁN #${String(index + 1).padStart(2, "0")}`,
+    subtitle: realZh ? `Hồ sơ xác thực: ${realZh}` : streamLabel,
+    html,
+    rawText: `${targetTitle}\n${viTitle}\n${realZh}\n${classificationTag}\n${cleanCaseStory}\nHook: ${hookText}`,
+    onOpen: modalBody => {
+      modalBody.querySelector("#popupConfirmSelectTopicBtn")?.addEventListener("click", () => {
+        selectCreateTopic(item, index);
+        closeStudioDialogById("studioInspectorDialog");
+        toast(`Đã chọn đề tài #${String(index + 1).padStart(2, "0")} để sản xuất.`);
+      });
+    },
+  });
+}
+
+function renderSingleCreateTopicCard(item, globalIndex, { activeProfile = null, isDnaStrict = true, isTwoStream = false } = {}) {
+  const raw = item.raw || {};
+  const targetTitle = item.titleTarget || raw.title_target || item.title;
+  const viTitle = item.titleVi || raw.title_vi || "";
+  const seoDna = item.seoKeywordDna || raw.seo_keyword_dna || activeProfile?.seo_keyword_dna || null;
+  const primaryKw = seoDna?.primary_title_keyword || "";
+  const streamKey = classifyClientTopicStream(item);
+  const streamBadgeHtml = streamKey === "financial_crime"
+    ? `<span class="badge" style="background:rgba(245,158,11,0.16);color:#fbbf24;border:1px solid rgba(245,158,11,0.35);font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:700;">💰 Đại án Tài chính</span>`
+    : `<span class="badge" style="background:rgba(239,68,68,0.16);color:#f87171;border:1px solid rgba(239,68,68,0.35);font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:700;">🚨 Trọng án Cấp A</span>`;
+  const originStr = String(item.researchOrigin || raw.research_origin || "");
+  const researchOriginHtml = originStr === "live_ai_web_research"
+    ? `<span class="badge" style="background:rgba(16,185,129,0.14);color:#34d399;border:1px solid rgba(16,185,129,0.3);font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:700;">🌐 Mới</span>`
+    : (raw.case_real_name_zh
+        ? `<span class="badge" style="background:rgba(56,189,248,0.12);color:#7dd3fc;border:1px solid rgba(56,189,248,0.28);font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:700;">✓ Xác thực</span>`
+        : "");
+  const seoDnaBadgeHtml = primaryKw
+    ? `<span class="badge" style="background:rgba(234,179,8,0.13);color:#facc15;border:1px solid rgba(234,179,8,0.28);font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:700;">🔑 [${escapeHtml(primaryKw)}]</span>`
+    : "";
+  const scoreBadgeHtml = item.codexScore != null
+    ? `<span class="badge" style="background:rgba(148,163,184,0.14);color:#cbd5e1;border:1px solid rgba(148,163,184,0.26);font-size:10.5px;padding:2px 7px;border-radius:6px;font-weight:700;">DNA ${Number(item.codexScore).toFixed(0)}/100</span>`
+    : (!isDnaStrict && item.vph != null ? `<span class="badge" style="background:rgba(148,163,184,0.14);color:#cbd5e1;font-size:10.5px;padding:2px 7px;border-radius:6px;">${Math.round(Number(item.vph)).toLocaleString("vi-VN")} VPH</span>` : "");
+
+  return `<article class="create-topic-option">
+    <div class="topic-card-header-bar">
+      <div class="topic-card-badges">
+        <span class="create-topic-option-rank">#${String(globalIndex + 1).padStart(2, "0")}</span>
+        ${streamBadgeHtml}
+        ${researchOriginHtml}
+        ${seoDnaBadgeHtml}
+        ${scoreBadgeHtml}
+      </div>
+      <div class="topic-card-btn-col">
+        <button class="ghost compact" type="button" data-inspect-topic-index="${globalIndex}" title="Mở Popup xem giải thích chi tiết vụ án, tội danh &amp; Hook mở màn">📖 Giải thích vụ án</button>
+        <button class="primary compact" type="button" data-create-topic-index="${globalIndex}">Chọn</button>
+      </div>
+    </div>
+    <div class="create-topic-option-body">
+      <div class="topic-title-dual">
+        <div class="topic-title-target">${escapeHtml(targetTitle)}</div>
+        ${viTitle ? `<div class="topic-title-vi">🇻🇳 ${escapeHtml(viTitle)}</div>` : ""}
+      </div>
+    </div>
+  </article>`;
 }
 
 function renderCreateTopicSuggestions(result) {
   const root = $("#createTopicSuggestions");
   const status = $("#createTopicDiscoveryStatus");
+  const streamBar = $("#createTopicStreamBar");
+  const researchMetaEl = $("#createTopicResearchMeta");
   if (!root) return;
   const form = $("#jobForm");
   const activeProfileId = String(form?.elements?.channel_profile_id?.value || state.selectedChannelProfileId || "").trim();
@@ -2590,74 +3130,133 @@ function renderCreateTopicSuggestions(result) {
   const profileName = activeProfile?.label || result?.profile_id || "Hồ sơ đang chọn";
   const rawItems = Array.isArray(result?.today) ? [...result.today] : [];
   const isDnaStrict = result?.discovery_mode === "dna_strict" || result?.source_mode === "custom_dna_only" || state.createDiscoveryMode === "dna_strict";
-  if (isDnaStrict && activeProfile) {
-    const extPool = Array.isArray(activeProfile.dna_extended_pool) ? activeProfile.dna_extended_pool : (window.__dnaTopicPools?.[activeProfile.id] || []);
-    const seenKeys = new Set(rawItems.map(x => String(x?.title_target || x?.title || "").trim().toLowerCase()));
-    for (const ext of extPool) {
-      const k = String(ext?.title_target || ext?.title || "").trim().toLowerCase();
-      if (k && !seenKeys.has(k)) {
-        seenKeys.add(k);
-        rawItems.push(ext);
-      }
-    }
+  const lockedSingle = String(result?.locked_single_stream || activeProfile?.locked_single_stream || "").trim().toLowerCase();
+  const isTwoStream = !lockedSingle && (Boolean(result?.is_two_stream_profile) || isTwoStreamTrueCrimeProfile(activeProfile));
+  const isStreamManaged = Boolean(lockedSingle) || isTwoStream;
+
+  if (streamBar) {
+    streamBar.classList.toggle("hidden", !(isDnaStrict && isTwoStream));
   }
-  state.createTopicSuggestions = rawItems
+  const chosenStream = lockedSingle || (isTwoStream ? (state.selectedTopicStream || "all") : "all");
+  $$("#createTopicStreamBar [data-topic-stream]").forEach(pill => {
+    pill.classList.toggle("active", pill.dataset.topicStream === chosenStream);
+  });
+
+  const seenBatchKeys = new Set();
+  const normalized = rawItems
     .map(item => normalizeTopic(item, {
       market: result?.market || activeProfile?.market || "KR",
       scanId: result?.scan_id || null,
       profileId: result?.profile_id || activeProfileId || null,
       targetDurationMinutes: result?.target_duration_minutes || activeProfile?.default_duration_minutes || null,
     }))
-    .filter(item => !isTopicInProfileMemory(item, activeProfile));
+    .filter(item => {
+      if (isTopicInProfileMemory(item, activeProfile)) return false;
+      const tNorm = String(item.titleTarget || item.title || "").trim().toLowerCase();
+      const zhNorm = String(item.caseRealNameZh || item.raw?.case_real_name_zh || "").trim().toLowerCase();
+      const pipeTail = tNorm.includes("|") ? tNorm.split("|").pop().trim() : "";
+      if (!tNorm) return false;
+      if (seenBatchKeys.has(tNorm) || (zhNorm && seenBatchKeys.has(`zh:${zhNorm}`)) || (pipeTail.length >= 5 && seenBatchKeys.has(`pipe:${pipeTail}`))) {
+        return false;
+      }
+      seenBatchKeys.add(tNorm);
+      if (zhNorm) seenBatchKeys.add(`zh:${zhNorm}`);
+      if (pipeTail.length >= 5) seenBatchKeys.add(`pipe:${pipeTail}`);
+      return true;
+    });
+
+  const streamFiltered = (isStreamManaged && chosenStream !== "all")
+    ? normalized.filter(item => classifyClientTopicStream(item) === chosenStream)
+    : normalized;
+
+  state.createTopicSuggestions = streamFiltered;
+  if (result?.history_cycle_reset && activeProfileId && state.sessionSuggestedTopicKeys[activeProfileId]) {
+    state.sessionSuggestedTopicKeys[activeProfileId] = new Set();
+  }
+  const producedCount = Array.isArray(activeProfile?.topic_memory) ? activeProfile.topic_memory.length : 0;
+  const histCount = Number(result?.suggested_history_count ?? activeProfile?.suggested_topic_history?.length ?? 0);
+  const vaultInfo = result?.dna_vault_status || activeProfile?.latest_today?.dna_vault_status || null;
+  const replenishedCount = Number(vaultInfo?.replenished_total ?? Math.max(producedCount * 2, 52));
+  const availableUnproduced = Number(vaultInfo?.available_unproduced_total ?? 0);
+  if (researchMetaEl && isStreamManaged) {
+    const finCount = streamFiltered.filter(x => classifyClientTopicStream(x) === "financial_crime").length;
+    const vioCount = streamFiltered.filter(x => classifyClientTopicStream(x) === "major_violent_crime").length;
+    const vaultBadge = availableUnproduced > 0
+      ? ` · <span style="color:#34d399;font-weight:700;" title="Mỗi khi làm xong 1 video lưu vào bộ nhớ, hệ thống tự động bù >=2 vụ án thật mới vào kho DNA">🔄 Đã bù +${replenishedCount} vụ án mới (Kho sẵn: ${availableUnproduced} vụ án)</span>`
+      : ` · <span style="color:#34d399;font-weight:700;">🔄 Đã bù +${replenishedCount} vụ án mới cho ${producedCount} bài đã làm</span>`;
+    researchMetaEl.innerHTML = `<span>🛡️ Chống lặp: <b>${producedCount}</b> bài đã làm${vaultBadge} · <b>${histCount}</b> chủ đề đã gợi ý</span><span>· Hiển thị: <b>💰 ${finCount}</b> Tài chính / <b>🚨 ${vioCount}</b> Trọng án</span>`;
+  }
+
   if (!state.createTopicSuggestions.length) {
-    root.innerHTML = `<div class="empty-state">Chưa có đề tài phù hợp cho "${escapeHtml(profileName)}". Bấm nút bên trên để AI đề xuất danh sách mới.</div>`;
-    if (status) status.textContent = "Chưa có đề tài phù hợp.";
+    root.classList.remove("two-stream-grid");
+    root.innerHTML = `<div class="empty-state">Chưa có đề tài phù hợp cho luồng đang chọn của "${escapeHtml(profileName)}". Bấm <b>"🔍 Research đề tài mới theo DNA"</b> để tìm hồ sơ vụ án thật mới.</div>`;
+    if (status) status.textContent = "Chưa có đề tài phù hợp cho bộ lọc hiện tại — bấm Research để tìm hồ sơ mới.";
     return;
   }
-  root.innerHTML = state.createTopicSuggestions.slice(0, 15).map((item, index) => {
-    const raw = item.raw || {};
-    const targetTitle = item.titleTarget || raw.title_target || item.title;
-    const viTitle = item.titleVi || raw.title_vi || "";
-    const seoDna = item.seoKeywordDna || raw.seo_keyword_dna || activeProfile?.seo_keyword_dna || null;
-    const primaryKw = seoDna?.primary_title_keyword || "";
-    const meaningVi = seoDna?.primary_title_keyword_meaning_vi || "";
-    const seoDnaBadgeHtml = primaryKw ? `
-      <div class="topic-seo-badge-row" style="margin-bottom:6px;">
-        <span class="badge" style="background:rgba(234,179,8,0.15);color:#facc15;border:1px solid rgba(234,179,8,0.3);font-size:11px;padding:2px 8px;border-radius:6px;font-weight:700;">
-          🔑 SEO DNA: [${escapeHtml(primaryKw)}]${meaningVi ? ` · ${escapeHtml(meaningVi)}` : ""}
-        </span>
-      </div>` : "";
-    const detail = [
-      item.winnerCluster ? `Cụm chủ đề: ${item.winnerCluster}` : "",
-      item.codexScore != null ? `Điểm khớp DNA ${Number(item.codexScore).toFixed(0)}/100` : "",
-      !isDnaStrict && item.radarProfileScore != null ? `Radar ${Number(item.radarProfileScore).toFixed(0)}` : "",
-      !isDnaStrict && item.competitorSupportCount != null ? `${Number(item.competitorSupportCount)} kênh mẫu khớp` : "",
-      !isDnaStrict && item.vph != null ? `${Math.round(Number(item.vph)).toLocaleString("vi-VN")} VPH` : "",
-      !isDnaStrict && item.outlier != null ? `${Number(item.outlier).toFixed(1)}× outlier` : "",
-    ].filter(Boolean).join(" · ");
-    const hookPreview = raw.opening_hook ? `<div class="topic-hook-preview"><b>Hook mở màn (00:00):</b> ${escapeHtml(raw.opening_hook)}</div>` : "";
-    return `<article class="create-topic-option">
-      <div class="create-topic-option-rank">${String(index + 1).padStart(2, "0")}</div>
-      <div class="create-topic-option-body">
-        ${seoDnaBadgeHtml}
-        <div class="topic-title-dual" style="margin-bottom:4px;">
-          <div class="topic-title-target" style="font-size:14px;font-weight:700;line-height:1.4;">${escapeHtml(targetTitle)}</div>
-          ${viTitle ? `<div class="topic-title-vi" style="font-size:12px;color:var(--text-muted,#94a3b8);margin-top:2px;">🇻🇳 <i>${escapeHtml(viTitle)}</i></div>` : ""}
+
+  const displayed = state.createTopicSuggestions.slice(0, 14);
+  if (isDnaStrict && isTwoStream && chosenStream === "all") {
+    root.classList.add("two-stream-grid");
+    const finEntries = [];
+    const vioEntries = [];
+    displayed.forEach((item, idx) => {
+      if (classifyClientTopicStream(item) === "financial_crime") finEntries.push({ item, idx });
+      else vioEntries.push({ item, idx });
+    });
+    const finColHtml = `
+      <div class="topic-stream-column stream-col-fin">
+        <div class="topic-stream-column-head">
+          <div>
+            <h5>💰 LUỒNG 1 · TỘI PHẠM TÀI CHÍNH &amp; ĐẠI ÁN KINH TẾ</h5>
+            <small>Ngân hàng · Công trái · Két sắt kho bạc · Tẩy trắng thân phận đào tẩu 10–25 năm</small>
+          </div>
+          <span class="badge" style="background:rgba(245,158,11,0.18);color:#fbbf24;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700;">${finEntries.length} hồ sơ</span>
         </div>
-        ${detail ? `<div class="topic-metrics"><span>${escapeHtml(detail)}</span></div>` : ""}
-        ${hookPreview}
-        ${item.note ? `<span>${escapeHtml(item.note)}</span>` : ""}
-      </div>
-      <button class="ghost compact" type="button" data-create-topic-index="${index}">Chọn đề tài này</button>
-    </article>`;
-  }).join("");
+        ${finEntries.length
+          ? finEntries.map(({ item, idx }) => renderSingleCreateTopicCard(item, idx, { activeProfile, isDnaStrict, isTwoStream })).join("")
+          : `<div class="empty-state" style="padding:12px;">Bấm "🔍 Research đề tài mới theo DNA" để nạp thêm đại án tài chính mới.</div>`}
+      </div>`;
+    const vioColHtml = `
+      <div class="topic-stream-column stream-col-vio">
+        <div class="topic-stream-column-head">
+          <div>
+            <h5>🚨 LUỒNG 2 · VỤ ÁN ĐẶC BIỆT NGUY HIỂM &amp; TRUY NÃ CẤP A</h5>
+            <small>Hung thủ IQ cao xóa dấu vết · Kẻ thủ ác hai mặt 10–30 năm · Pháp y ADN &amp; Thẩm vấn</small>
+          </div>
+          <span class="badge" style="background:rgba(239,68,68,0.18);color:#f87171;font-size:11px;padding:2px 8px;border-radius:10px;font-weight:700;">${vioEntries.length} hồ sơ</span>
+        </div>
+        ${vioEntries.length
+          ? vioEntries.map(({ item, idx }) => renderSingleCreateTopicCard(item, idx, { activeProfile, isDnaStrict, isTwoStream })).join("")
+          : `<div class="empty-state" style="padding:12px;">Bấm "🔍 Research đề tài mới theo DNA" để nạp thêm trọng án đặc biệt nguy hiểm mới.</div>`}
+      </div>`;
+    root.innerHTML = finColHtml + vioColHtml;
+  } else {
+    root.classList.remove("two-stream-grid");
+    root.innerHTML = displayed
+      .map((item, index) => renderSingleCreateTopicCard(item, index, { activeProfile, isDnaStrict, isTwoStream }))
+      .join("");
+  }
+
   $$("[data-create-topic-index]").forEach(button => button.addEventListener("click", () => {
     const index = Number(button.dataset.createTopicIndex);
     selectCreateTopic(state.createTopicSuggestions[index], index);
   }));
+  $$("[data-inspect-topic-index]").forEach(button => button.addEventListener("click", () => {
+    const index = Number(button.dataset.inspectTopicIndex);
+    openTopicDossierPopup(index);
+  }));
   if (status) {
     if (isDnaStrict) {
-      status.textContent = `🔒 Luồng Thuần DNA Cố định [${profileName}] · Đã lọc ${state.createTopicSuggestions.length} đề tài khớp 100% Bộ lọc Chỉ chọn & Cấm tuyệt đối (Bỏ qua Radar 48h · 100% Xanh tiền YouTube). Đã chọn sẵn đề tài #01.`;
+      const streamTag = !isTwoStream
+        ? "Chuẩn DNA Kênh"
+        : (chosenStream === "financial_crime"
+            ? "💰 Luồng 1: Tội phạm Tài chính"
+            : chosenStream === "major_violent_crime"
+              ? "🚨 Luồng 2: Vụ án Đặc biệt Nguy hiểm"
+              : "⚖️ Cân bằng 2 Luồng Tài chính + Đặc biệt Nguy hiểm");
+      const webCount = Number(result?.web_leads_count || 0);
+      const webNote = webCount > 0 ? ` · Đã quét ${webCount} nguồn tư liệu gốc mới` : "";
+      status.textContent = `🔒 [${profileName}] · ${streamTag} · ${state.createTopicSuggestions.length} hồ sơ vụ án thật chưa từng sản xuất${webNote} (100% Xanh tiền YouTube). Đã chọn sẵn #01.`;
     } else {
       const engine = result?.decision_engine === "codex_plus_radar" ? "Codex + Radar" : "Radar fallback";
       status.textContent = `📡 Luồng Radar 48h (${engine}) [${profileName}] · Còn ${state.createTopicSuggestions.length} chủ đề sau khi đối chiếu kênh mình + đối thủ + tín hiệu ${Number(result?.hours || 48)}h.`;
@@ -2666,7 +3265,7 @@ function renderCreateTopicSuggestions(result) {
   selectCreateTopic(state.createTopicSuggestions[0], 0);
 }
 
-async function discoverCreateTopics({ forceRefresh = false } = {}) {
+async function discoverCreateTopics({ forceRefresh = false, topicStream = null, resetHistory = false } = {}) {
   const form = $("#jobForm");
   const button = $("#discoverCreateTopicsBtn");
   const status = $("#createTopicDiscoveryStatus");
@@ -2678,56 +3277,57 @@ async function discoverCreateTopics({ forceRefresh = false } = {}) {
     : Number(form.elements.target_duration_minutes?.value || 30);
   const profile = state.channelProfiles.find(item => item.id === profileId);
   const discoveryMode = state.createDiscoveryMode || (isCustomDnaProfile(profile) ? "dna_strict" : "radar_trend");
+  const activeStream = topicStream || state.selectedTopicStream || "all";
+
+  if (!state.sessionSuggestedTopicKeys[profileId] || resetHistory) {
+    state.sessionSuggestedTopicKeys[profileId] = new Set();
+  }
+  const currentBatchExcludes = [];
+  if (forceRefresh && !resetHistory && Array.isArray(state.createTopicSuggestions)) {
+    for (const prev of state.createTopicSuggestions) {
+      const t = String(prev?.title || "").trim();
+      const zh = String(prev?.caseRealNameZh || prev?.raw?.case_real_name_zh || "").trim();
+      if (t) currentBatchExcludes.push(t);
+      if (zh) currentBatchExcludes.push(zh);
+    }
+  }
+  const excludeTitles = forceRefresh ? currentBatchExcludes.slice(0, 24) : [];
 
   if (button) {
     button.disabled = true;
-    button.textContent = discoveryMode === "dna_strict" ? "Đang lọc/sinh đề tài theo DNA…" : "Đang quét Radar 48h…";
+    button.textContent = discoveryMode === "dna_strict"
+      ? (forceRefresh ? "🔍 Đang research hồ sơ vụ án thật mới…" : "Đang nạp hồ sơ DNA…")
+      : "Đang quét Radar 48h…";
   }
   if (status) {
     status.textContent = discoveryMode === "dna_strict"
       ? (forceRefresh
-          ? `AI đang đối chiếu Bộ lọc Đề tài (Chỉ chọn & Cấm tuyệt đối) của "${profile?.label || profileId}" và đề xuất đề tài mới chưa từng sản xuất…`
-          : `Đang nạp danh sách đề tài chuẩn DNA của "${profile?.label || profileId}" (chặn tuyệt đối chủ đề của kênh khác)…`)
+          ? `🔍 Đang truy vết kho hồ sơ thật (CCTV/법원/天网/今日说法) & AI đối chiếu chống lặp cho "${profile?.label || profileId}"…`
+          : `Đang nạp danh sách hồ sơ chuẩn DNA 2 Luồng của "${profile?.label || profileId}"…`)
       : "Radar đang cập nhật dữ liệu kênh/đối thủ 48h, sau đó Codex phân tích và xếp hạng chủ đề…";
   }
   try {
-    if (!window.__dnaTopicPools) {
-      try {
-        const poolRes = await fetch(`/static/dna_topic_pools.json?t=${Date.now()}`, { cache: "no-store" });
-        if (poolRes.ok) window.__dnaTopicPools = await poolRes.json();
-      } catch (_) {}
-    }
-    if (forceRefresh && discoveryMode === "dna_strict") {
-      state._dnaRotateOffset = (state._dnaRotateOffset || 0) + 4;
-      const fastPool = window.__dnaTopicPools?.[profileId] || profile?.dna_extended_pool || [];
-      if (fastPool.length >= 8) {
-        const off = state._dnaRotateOffset % fastPool.length;
-        const rotated = [...fastPool.slice(off), ...fastPool.slice(0, off)];
-        const fastResult = {
-          today: rotated,
-          candidates: rotated,
-          market: profile?.market || "KR",
-          discovery_mode: "dna_strict",
-          source_mode: "custom_dna_only",
-          profile_id: profileId,
-          target_duration_minutes: targetDurationMinutes,
-        };
-        renderCreateTopicSuggestions(fastResult);
-        return fastResult;
-      }
-    }
     const query = new URLSearchParams({
       target_duration_minutes: String(targetDurationMinutes),
       discovery_mode: discoveryMode,
       force_refresh: forceRefresh ? "true" : "false",
+      topic_stream: activeStream,
+      reset_history: resetHistory ? "true" : "false",
     });
-    const result = await api(`/api/radar/channel-profiles/${encodeURIComponent(profileId)}/today?${query.toString()}`, { method: "POST" });
+    const result = await api(`/api/radar/channel-profiles/${encodeURIComponent(profileId)}/today?${query.toString()}`, {
+      method: "POST",
+      body: JSON.stringify({
+        exclude_titles: excludeTitles,
+        topic_stream: activeStream,
+        reset_history: resetHistory,
+      }),
+    });
     renderCreateTopicSuggestions(result);
     return result;
   } finally {
     if (button) {
       button.disabled = false;
-      button.textContent = discoveryMode === "dna_strict" ? "⚡ Đề xuất thêm đề tài mới theo DNA" : "📡 Quét lại Radar 48h";
+      button.textContent = discoveryMode === "dna_strict" ? "🔍 Research đề tài mới theo DNA" : "📡 Quét lại Radar 48h";
     }
   }
 }
@@ -2750,6 +3350,7 @@ $("#marketScanForm").addEventListener("submit", async event => {
   data.content_type = "factual_documentary";
   data.seeds = String(data.seeds || "").split(",").map(x => x.trim()).filter(Boolean);
   try {
+    closeStudioDialogById("marketScanDialog");
     $("#radarResultHint").textContent = `Đang tìm micro-niche bền · ${data.days} ngày · ≥${data.min_proof_channels} kênh nhỏ · ≥${data.min_breakout_videos} video nổ…`;
     $("#radarResults").innerHTML = `<div class="feed-empty feed-empty-rich"><b>Đang quét lượt mới</b><span>Đã ẩn kết quả cũ để không nhầm bộ lọc của scan trước với cấu hình đang chạy.</span></div>`;
     const result = await api("/api/radar/scans/market", { method: "POST", body: JSON.stringify(data) });
@@ -2837,6 +3438,7 @@ $("#presetTrueCrimeCnBtn")?.addEventListener("click", () => {
   updateChannelProfileFormMode(null);
   const saveLabel = $("#saveChannelProfileLabel");
   if (saveLabel) saveLabel.textContent = "＋ Tạo Hồ sơ từ Preset";
+  openDnaStudioModal("identity");
   toast("Đã nạp preset True Crime TQ (KR · 30p) ở chế độ Tạo mới độc lập. Bấm 'Tạo Hồ sơ mới' để lưu thành profile riêng mà không ghi đè hồ sơ cũ!");
 });
 
@@ -2904,10 +3506,10 @@ function renderChannelProfileCards() {
     try {
       closeChannelProfileDialog();
       await selectChannelProfile(profileId);
+      openDnaStudioModal("identity");
       const form = $("#channelProfileForm");
-      form?.scrollIntoView({ behavior: "smooth", block: "start" });
       form?.elements?.own_channel_ref?.focus();
-      toast("Đang mở Hồ sơ DNA. Bạn có thể chỉnh sửa quy chuẩn hoặc dán thêm link kênh YouTube của mình rồi bấm Cập nhật Hồ sơ DNA.");
+      toast("Đang mở Xưởng Cấu hình DNA Kênh (Popup 5 tầng).");
     } catch (err) { toast(err.message, true); }
   }));
   $$('[data-action="delete-channel-profile"]').forEach(button => button.addEventListener("click", async () => {
@@ -3094,6 +3696,26 @@ function channelProfileWorkingText(profile, action = "save", competitorCount = 0
       : `Đang đọc DNA kênh mình và ${competitorCount || profile?.competitor_refs?.length || 0} kênh mẫu…`;
 }
 
+function renderChannelPlan(plan) {
+  const root = $("#channelPlanPreview");
+  if (!root) return;
+  if (!plan || !Array.isArray(plan.items) || !plan.items.length) {
+    root.classList.add("hidden");
+    root.innerHTML = "";
+    return;
+  }
+  root.classList.remove("hidden");
+  const items = plan.items.slice(0, 10);
+  root.innerHTML = `
+    <div style="padding:10px 12px;border-radius:9px;background:rgba(15,28,46,0.85);border:1px solid rgba(56,189,248,0.25);">
+      <div style="font-size:12px;font-weight:800;color:#7dd3fc;margin-bottom:6px;">📅 KẾ HOẠCH 30 NGÀY (#${escapeHtml(plan.plan_id || "")}) · Đã hoàn thành ${Number(plan.completed || 0)}/${Number(plan.total || items.length)}</div>
+      <div style="display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto;">
+        ${items.map((it, idx) => `<div style="font-size:12px;color:#e2e8f0;padding:4px 8px;border-radius:6px;background:rgba(8,16,28,0.75);"><b>#${String(idx + 1).padStart(2, "0")}</b> ${escapeHtml(it.title || it.topic || "")}</div>`).join("")}
+      </div>
+    </div>
+  `;
+}
+
 function renderChannelProfileSummary(profile) {
   const root = $("#channelProfileSummary");
   const actions = $("#channelProfileActions");
@@ -3119,20 +3741,204 @@ function renderChannelProfileSummary(profile) {
     : `<div class="channel-profile-stat"><b>${ownRef ? escapeHtml(ownRef) : "Chưa gắn link kênh YouTube"}</b><span>${ownRef ? "Đã lưu liên kết kênh vào hồ sơ" : "Có thể thêm link kênh bất cứ lúc nào ở Bước 1 hoặc Bước 2"}</span></div>
        <div class="channel-profile-stat"><b>${escapeHtml(modeText)}</b><span>Độc lập hoàn toàn với Radar đối thủ</span></div>`;
 
+  const vSig = profile.voice_signature || {};
+  const rDna = profile.rhythm_dna || {};
+  const vCad = rDna.vocal_cadence || {};
+  const eCad = rDna.editing_cadence || {};
+  const voiceSummarySps = Array.isArray(vCad.target_sps_range)
+    ? `${vCad.target_sps_range[0]}–${vCad.target_sps_range[vCad.target_sps_range.length - 1]}`
+    : "4.0–5.0";
+  const voiceSummaryNote = (vSig.voice_name || profile.voice_id || eCad.editor_feel_title_vi)
+    ? `<div class="channel-profile-note"><b>🎙️ MÀU GIỌNG 1-OF-1 &amp; CẢM NHẬN NHỊP KÊNH:</b> <code>${escapeHtml(vSig.voice_name || profile.voice_id || "Đang chờ khóa")}</code>${vSig.base_voice_name ? ` (gốc sạch: ${escapeHtml(vSig.base_voice_name)})` : ""} · Nhịp đọc <b>${escapeHtml(voiceSummarySps)} âm tiết/s</b> · Nhịp dựng Editor: <b>${escapeHtml(eCad.editor_feel_title_vi || "Đồng bộ theo hơi thở & khoảng lặng giọng kể")}</b></div>`
+    : "";
+
   root.innerHTML = `<div class="channel-profile-summary-grid">
     ${ownCard}
     <div class="channel-profile-stat"><b>${Number(profile.default_duration_minutes || 20)} phút · ${escapeHtml(profile.market || "KR")}</b><span>Chiến lược: ${escapeHtml(dna.visualStrategy.toUpperCase())}</span></div>
   </div>
+  ${voiceSummaryNote}
   ${dna.voiceAndStructure ? `<div class="channel-profile-note"><b>Thị trường &amp; Giọng kể:</b> ${escapeHtml(dna.voiceAndStructure)}</div>` : ""}
   ${dna.referenceImagePolicy ? `<div class="channel-profile-note"><b>Chiến lược Hình ảnh:</b> ${escapeHtml(dna.referenceImagePolicy)}</div>` : ""}
   <div class="channel-profile-note"><b>✂️ ROLE EDIT (LUẬT SẮT DỰNG &amp; FOOTAGE):</b> Footage lấy từ <b>3–6s/cut</b> (beat dài ghép 2 đoạn 3–6s Part A+B, <code>max_uses=1</code>) · <b>Bắt buộc xóa/crop sạch 100% logo và text Trung của bên khác</b> (cần thiết thì crop hết hình ảnh có nguồn bên khác) · <b>Không lấy video dẫn chương trình có mặt người dẫn (MC) hoặc chủ kênh khác</b>, chỉ lấy đúng footage cần thiết · <b>Mỗi cảnh Vox độc nhất 100%</b> theo từng câu voice (cấm khung chung lặp lại chỉ thay chữ).</div>
   ${dna.allowedTopics ? `<div class="channel-profile-note"><b>✅ CHỈ CHỌN:</b> ${escapeHtml(dna.allowedTopics)}</div>` : ""}
   ${dna.forbiddenTopics ? `<div class="channel-profile-note"><b>🚫 CẤM TUYỆT ĐỐI:</b> ${escapeHtml(dna.forbiddenTopics)}</div>` : ""}
   ${dna.monetizationSafetyPolicy ? `<div class="channel-profile-note"><b>💚 NGÔI KỂ &amp; GÓC KỂ XANH TIỀN:</b> ${escapeHtml(dna.monetizationSafetyPolicy)}</div>` : ""}
-  ${dna.ctaStrategy ? `<div class="channel-profile-note"><b>🎯 CHIẾN LƯỢC CTA 2 ĐIỂM CHẠM (LINH HOẠT THEO VỤ ÁN):</b> ${escapeHtml(dna.ctaStrategy)}</div>` : ""}
+  ${dna.ctaStrategy ? `<div class="channel-profile-note"><b>🎯 ROLE CTA LINH HOẠT THEO CÂU CHUYỆN (KHÔNG BAO GIỜ LẶP LẠI CTA):</b> ${escapeHtml(dna.ctaStrategy)}</div>` : ""}
   ${!isCustomDnaProfile(profile) && validCompetitors.length ? `<div class="channel-profile-note"><b>Kênh mẫu tham khảo:</b> ${validCompetitors.length} kênh</div>` : ""}`;
   root.classList.remove("hidden");
   actions.classList.remove("hidden");
+}
+
+function defaultCleanMasterVoiceForMarket(market = "KR", lang = "ko") {
+  const l = String(lang || "").trim().toLowerCase();
+  const m = String(market || "").trim().toUpperCase();
+  if (l.startsWith("ko") || m === "KR") return "09c70cc1-cc86-4905-b65b-3967209c3175"; // K1 clean master
+  if (l.startsWith("vi") || m === "VN") return "262cf97e-c145-44ba-92a6-2dd36db1146e"; // PC Nam clean master
+  if (l.startsWith("ja") || m === "JP") return "f0670e81-6361-4567-b93c-2685b98c9a4e"; // Nhat clean master
+  if (l.startsWith("en") || m === "US") return "b4c2376b-3d63-461a-a849-367e37261e4a"; // Jon clean master
+  return "09c70cc1-cc86-4905-b65b-3967209c3175";
+}
+
+function syncVoiceSourceModeUI() {
+  const mode = String($("#channelVoiceSourceMode")?.value || "base_voice");
+  const uploadRow = $("#channelVoiceSampleUploadRow");
+  const baseField = $("#channelBaseMasterVoiceField");
+  if (uploadRow) uploadRow.classList.toggle("hidden", mode !== "user_sample");
+  if (baseField) baseField.style.opacity = mode === "user_sample" ? "0.45" : "1";
+}
+
+function renderProfileVoiceRhythmStudio(profile, rhythmOverride = null) {
+  const badge = $("#channelVoiceSignatureBadge");
+  const audioWrap = $("#channelVoiceSignatureAudioWrap");
+  const audioEl = $("#channelVoiceSignatureAudio");
+  const metaEl = $("#channelVoiceSignatureMeta");
+  const cardsBox = $("#channelRhythmDnaCards");
+
+  const sig = profile?.voice_signature || {};
+  const voiceId = String(sig.voice_id || profile?.voice_id || profile?.default_voice_id || "").trim();
+  const rhythm = rhythmOverride || profile?.rhythm_dna || null;
+  const colorSpec = rhythm?.voice_color_spec || sig.voice_color_spec || {};
+
+  if (badge) {
+    if (voiceId) {
+      const vName = sig.voice_name || `Voice ${voiceId.slice(0, 8)}`;
+      badge.textContent = `🔒 Voice 1-of-1: ${vName}`;
+      badge.classList.add("locked");
+    } else {
+      badge.textContent = "Chưa khóa màu giọng riêng (Sẽ tự tạo khi Lưu)";
+      badge.classList.remove("locked");
+    }
+  }
+
+  if (audioWrap && audioEl) {
+    if (voiceId) {
+      audioWrap.classList.remove("hidden");
+      const nextSrc = `/api/voice/preview-audio/${encodeURIComponent(voiceId)}?v=${encodeURIComponent(sig.designed_at || "1")}`;
+      if (audioEl.dataset.voiceSrc !== nextSrc) {
+        audioEl.src = nextSrc;
+        audioEl.dataset.voiceSrc = nextSrc;
+      }
+      if (metaEl) {
+        metaEl.textContent = sig.voice_name
+          ? `${sig.voice_name}${colorSpec.color_label_vi ? ` · ${colorSpec.color_label_vi}` : ""}`
+          : `Giọng độc bản (${voiceId.slice(0, 8)})`;
+      }
+    } else {
+      audioWrap.classList.add("hidden");
+      audioEl.removeAttribute("src");
+      audioEl.dataset.voiceSrc = "";
+    }
+  }
+
+  if (!cardsBox) return;
+  if (!rhythm || (!rhythm.writing_cadence && !rhythm.vocal_cadence && !rhythm.editing_cadence)) {
+    cardsBox.innerHTML = `<div class="rhythm-dna-empty">Điền phong cách kênh rồi bấm <b>🧠 Phân Tích Thể Loại &amp; Nhịp 3 Tầng</b> (hoặc bấm Lưu hồ sơ để Chuyên gia tự động phân tích &amp; khóa màu giọng riêng từ mẫu sạch <b>K1</b>).</div>`;
+    return;
+  }
+
+  const w = rhythm.writing_cadence || {};
+  const v = rhythm.vocal_cadence || {};
+  const e = rhythm.editing_cadence || {};
+  const pauses = v.pause_tiers_sec || {};
+  const spsRange = Array.isArray(v.target_sps_range)
+    ? `${v.target_sps_range[0]}–${v.target_sps_range[v.target_sps_range.length - 1]}`
+    : "4.0–5.0";
+  const avgCharsText = Array.isArray(w.target_avg_sentence_chars)
+    ? w.target_avg_sentence_chars.join("–")
+    : String(w.target_avg_sentence_chars || "28–45");
+  const punchRatioText = Array.isArray(w.short_punch_ratio_target)
+    ? `${w.short_punch_ratio_target.map(x => Math.round(Number(x || 0) * 100)).join("–")}%`
+    : `${Math.round(Number(w.short_punch_ratio_target || 0.22) * 100)}%`;
+  const paraSpanText = Array.isArray(w.paragraph_sentence_span)
+    ? `${w.paragraph_sentence_span.join("–")} câu`
+    : String(w.paragraph_breath_sentences || "2–4 câu");
+  const shotPacing = e.shot_pacing_sec || {};
+  const urgentCutSec = Number(shotPacing.urgent_max_sec || shotPacing.urgent_action_max_cut_sec || 3.4).toFixed(1);
+  const stdAvgSec = Number(shotPacing.standard_avg_sec || 4.8).toFixed(1);
+  const holdThrSec = Number(e.dramatic_pause_hold_threshold_sec || e.hold_through_silence_threshold_sec || 1.15).toFixed(2);
+  const dramaticPauseSec = Number(pauses.dramatic_landing || pauses.dramatic_turn || 1.45).toFixed(2);
+  const curtainPauseSec = Number(pauses.act_curtain || pauses.cliffhanger_punch || 1.85).toFixed(2);
+  const pitchSt = Number(colorSpec.pitch_semitones || 0);
+  const pitchText = pitchSt === 0 ? "0.0st (Chuẩn gốc)" : `${pitchSt > 0 ? "+" : ""}${pitchSt.toFixed(2)}st`;
+
+  cardsBox.innerHTML = `
+    <div class="rhythm-dna-card script-layer">
+      <div class="rhythm-dna-card-head">
+        <span>🖋️ Tầng 1 · Nhịp Viết (@script)</span>
+        <span class="rhythm-dna-pill">${escapeHtml(rhythm.archetype_label_vi || rhythm.archetype_id || "Custom DNA")}</span>
+      </div>
+      <div class="rhythm-dna-metrics">
+        <span class="rhythm-dna-metric">Độ dài câu: <b>${escapeHtml(avgCharsText)} ký tự</b></span>
+        <span class="rhythm-dna-metric">Câu phanh ngắn: <b>${escapeHtml(punchRatioText)}</b></span>
+        <span class="rhythm-dna-metric">Đoạn thở: <b>${escapeHtml(paraSpanText)}</b></span>
+      </div>
+      <p class="rhythm-dna-desc">${escapeHtml(w.writer_rhythm_directive_vi || "Biến thiên độ dài câu có chủ đích để mở đường cho giọng đọc và điểm rơi cắt cảnh.")}</p>
+    </div>
+
+    <div class="rhythm-dna-card voice-layer">
+      <div class="rhythm-dna-card-head">
+        <span>🎙️ Tầng 2 · Màu Giọng &amp; Nhịp Đọc (@voice)</span>
+        <span class="rhythm-dna-pill">${escapeHtml(spsRange)} âm tiết/s</span>
+      </div>
+      <div class="rhythm-dna-metrics">
+        <span class="rhythm-dna-metric">Màu: <b>${escapeHtml(colorSpec.color_label_vi || "Điêu khắc từ K1")}</b></span>
+        <span class="rhythm-dna-metric">Pitch: <b>${escapeHtml(pitchText)}</b></span>
+        <span class="rhythm-dna-metric">Nghỉ điểm rơi/chương: <b>${dramaticPauseSec}s / ${curtainPauseSec}s</b></span>
+      </div>
+      <p class="rhythm-dna-desc">${escapeHtml(rhythm.specialist_summary_vi || v.vocal_rhythm_directive_vi || "Chia 7 tầng khoảng nghỉ cảm xúc bất đối xứng, dứt khoát không đọc đều đều máy móc.")}</p>
+    </div>
+
+    <div class="rhythm-dna-card edit-layer">
+      <div class="rhythm-dna-card-head">
+        <span>✂️ Tầng 3 · Cảm Nhận Nhịp Dựng (@edit)</span>
+        <span class="rhythm-dna-pill">${escapeHtml(e.cut_style || "Dựng theo hơi thở")}</span>
+      </div>
+      <div class="rhythm-dna-metrics">
+        <span class="rhythm-dna-metric">Cắt nhanh/chuẩn: <b>${urgentCutSec}s / ${stdAvgSec}s</b></span>
+        <span class="rhythm-dna-metric">Neo lặng &ge; <b>${holdThrSec}s</b></span>
+        <span class="rhythm-dna-metric">BGM dâng ở khoảng nghỉ: <b>+${Number(e.bgm_silence_swell_db || 2.2).toFixed(1)}dB</b></span>
+      </div>
+      <p class="rhythm-dna-desc">${escapeHtml(e.editor_rhythm_directive_vi || "Editor cắt dồn khi cao trào và bắt buộc giữ khung hình thở trọn qua các khoảng lặng cảm xúc, cấm cắt giữa khoảng nghỉ.")}</p>
+    </div>
+  `;
+}
+
+function readFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(new Error("Không đọc được file mẫu giọng."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function collectDraftProfileForVoiceAnalysis() {
+  const form = $("#channelProfileForm");
+  if (!form) return {};
+  const market = String(form.elements.market?.value || "KR").toUpperCase();
+  const lang = String(form.elements.default_language?.value || form.elements.language?.value || "ko").trim();
+  const customProfDur = Number($("#profileCustomDurationInput")?.value || 0);
+  const duration = (Number.isFinite(customProfDur) && customProfDur >= 2)
+    ? Math.min(180, customProfDur)
+    : Number(form.elements.default_duration_minutes?.value || 20);
+  return {
+    id: state.selectedChannelProfileId || "draft-profile",
+    label: String(form.elements.label?.value || "Hồ sơ Kênh Mới").trim(),
+    market,
+    default_language: lang,
+    default_duration_minutes: duration,
+    default_visual_strategy: String(form.elements.default_visual_strategy?.value || "full_ai").trim(),
+    voice_and_structure: String(form.elements.voice_and_structure?.value || "").trim(),
+    allowed_topics: String(form.elements.allowed_topics?.value || "").trim(),
+    monetization_safety_policy: String(form.elements.monetization_safety_policy?.value || "").trim(),
+    default_creative_brief: {
+      narrative_angle: String(form.elements.narrative_angle?.value || "").trim(),
+      writing_style: String(form.elements.writing_style?.value || "").trim(),
+      hook_archetype: String(form.elements.hook_archetype?.value || "").trim(),
+      notes: String(form.elements.notes?.value || "").trim(),
+    },
+    custom_direction: String($("#channelVoiceCustomDirection")?.value || "").trim(),
+  };
 }
 
 function resetChannelProfileForm() {
@@ -3191,6 +3997,14 @@ function resetChannelProfileForm() {
   if ($("#channelThumbnailFontFamily")) $("#channelThumbnailFontFamily").value = "";
   if ($("#channelThumbnailMascotLock")) $("#channelThumbnailMascotLock").value = "false";
   if ($("#channelThumbnailRefCharPath")) $("#channelThumbnailRefCharPath").value = "";
+  if ($("#channelAutoDesignVoiceToggle")) $("#channelAutoDesignVoiceToggle").checked = true;
+  if ($("#channelVoiceSourceMode")) $("#channelVoiceSourceMode").value = "base_voice";
+  if ($("#channelBaseMasterVoiceSelect")) $("#channelBaseMasterVoiceSelect").value = "09c70cc1-cc86-4905-b65b-3967209c3175";
+  if ($("#channelVoiceCustomDirection")) $("#channelVoiceCustomDirection").value = "";
+  if ($("#channelVoiceSampleFile")) $("#channelVoiceSampleFile").value = "";
+  if ($("#channelVoiceSampleRefText")) $("#channelVoiceSampleRefText").value = "";
+  syncVoiceSourceModeUI();
+  renderProfileVoiceRhythmStudio(null);
   if ($("#profileTodayDuration")) setComboDurationValue($("#profileTodayDuration"), $("#profileTodayCustomDurationInput"), 20, "");
   setCompetitorInputs([]);
   renderChannelProfileSummary(null);
@@ -3344,6 +4158,27 @@ function fillChannelProfileForm(profile) {
   if ($("#channelThumbnailMascotLock")) $("#channelThumbnailMascotLock").value = thumbDna.mascot_lock ? "true" : "false";
   if ($("#channelThumbnailRefCharPath")) $("#channelThumbnailRefCharPath").value = thumbDna.reference_character_path || "";
 
+  // Populate Voice & Rhythm Specialist Studio
+  const voiceSig = profile.voice_signature || {};
+  const hasLockedVoice = Boolean(profile.voice_id || voiceSig.voice_id);
+  if ($("#channelAutoDesignVoiceToggle")) $("#channelAutoDesignVoiceToggle").checked = !hasLockedVoice;
+  if ($("#channelVoiceSourceMode")) {
+    $("#channelVoiceSourceMode").value = voiceSig.source_mode === "user_sample" ? "user_sample" : "base_voice";
+  }
+  if ($("#channelBaseMasterVoiceSelect")) {
+    const preferredMaster = voiceSig.base_voice_id || defaultCleanMasterVoiceForMarket(profile.market, lang);
+    if ([...$("#channelBaseMasterVoiceSelect").options].some(opt => opt.value === preferredMaster)) {
+      $("#channelBaseMasterVoiceSelect").value = preferredMaster;
+    } else {
+      $("#channelBaseMasterVoiceSelect").value = defaultCleanMasterVoiceForMarket(profile.market, lang);
+    }
+  }
+  if ($("#channelVoiceCustomDirection")) $("#channelVoiceCustomDirection").value = voiceSig.custom_direction || "";
+  if ($("#channelVoiceSampleFile")) $("#channelVoiceSampleFile").value = "";
+  if ($("#channelVoiceSampleRefText")) $("#channelVoiceSampleRefText").value = "";
+  syncVoiceSourceModeUI();
+  renderProfileVoiceRhythmStudio(profile);
+
   setCompetitorInputs(profile.competitor_refs || (profile.competitors || []).map(item => item.ref).filter(Boolean));
   renderChannelProfileSummary(profile);
   updateChannelProfileFormMode(profile);
@@ -3461,13 +4296,20 @@ async function applySelectedProfileToCreateStep(profile, { autoDiscover = true }
     form.elements.notes.value = notesText ? String(notesText).trim() : "";
   }
 
-  // Default Voice ID from profile (e.g. K1 - Trầm Sâu Đêm Khuya SBS Style for True Crime)
-  const defaultVoiceId = String(profile.default_voice_id || edDna.default_voice_id || "").trim();
+  // Dedicated 1-of-1 Voice ID locked on profile
+  const defaultVoiceId = String(profile.voice_id || profile.default_voice_id || profile.voice_signature?.voice_id || edDna.default_voice_id || "").trim();
   const voiceSelectEl = $("#voiceSelect");
   if (voiceSelectEl && defaultVoiceId) {
-    if ([...voiceSelectEl.options].some(opt => opt.value === defaultVoiceId)) {
-      voiceSelectEl.value = defaultVoiceId;
+    if (![...voiceSelectEl.options].some(opt => opt.value === defaultVoiceId)) {
+      try { await loadVoices(); } catch (_) {}
     }
+    if (![...voiceSelectEl.options].some(opt => opt.value === defaultVoiceId)) {
+      const opt = document.createElement("option");
+      opt.value = defaultVoiceId;
+      opt.textContent = `${profile.voice_signature?.voice_name || `Voice riêng (${defaultVoiceId.slice(0, 8)})`} · ${lang}`;
+      voiceSelectEl.appendChild(opt);
+    }
+    voiceSelectEl.value = defaultVoiceId;
   }
 
   // Editing DNA
@@ -3477,6 +4319,13 @@ async function applySelectedProfileToCreateStep(profile, { autoDiscover = true }
   }
 
   syncCreativeQuickChipsState();
+
+  const defaultStream = String(profile.default_topic_stream || profile.locked_single_stream || "").trim();
+  if (defaultStream === "financial_crime" || defaultStream === "major_violent_crime") {
+    state.selectedTopicStream = defaultStream;
+  } else {
+    state.selectedTopicStream = "all";
+  }
 
   setCreateDiscoveryMode(dna.dnaMode === "custom_dna_only" ? "dna_strict" : "radar_trend", { triggerDiscover: false });
   if (profile) {
@@ -3496,9 +4345,10 @@ async function loadChannelProfiles({ selectId = null, loadPlan = true } = {}) {
   if (state.selectedChannelProfileId && !state.channelProfiles.some(profile => profile.id === state.selectedChannelProfileId)) {
     state.selectedChannelProfileId = null;
   }
-  // Auto-select the Fixed DNA profile (e.g. True Crime CN KR 30m) by default if none selected
+  // Auto-select the Fixed DNA profile (Director V2 True Crime 2-Stream first) by default if none selected
   if (!state.selectedChannelProfileId && state.channelProfiles.length) {
-    const preferred = state.channelProfiles.find(item => item.id === "channel-e544a64b7c")
+    const preferred = state.channelProfiles.find(item => item.id === "channel-kr-truecrime-director-v2")
+      || state.channelProfiles.find(item => item.id === "channel-e544a64b7c")
       || state.channelProfiles.find(item => isCustomDnaProfile(item))
       || state.channelProfiles[0];
     if (preferred) state.selectedChannelProfileId = preferred.id;
@@ -3616,6 +4466,7 @@ function prepareCreateNewChannelProfile() {
   if (select) select.value = "";
   fillChannelProfileForm(null);
   updateChannelProfileFormMode(null);
+  openDnaStudioModal("identity");
   const labelInput = $("#channelProfileForm")?.elements?.label;
   if (labelInput) {
     labelInput.focus();
@@ -3623,7 +4474,7 @@ function prepareCreateNewChannelProfile() {
   }
   const saveLabel = $("#saveChannelProfileLabel");
   if (saveLabel) saveLabel.textContent = "＋ Tạo Hồ sơ Kênh mới";
-  toast("Đã chuyển sang chế độ Tạo Hồ sơ Kênh mới. Hãy điền thông tin và bấm '＋ Tạo Hồ sơ Kênh mới'.");
+  toast("Đã mở Xưởng Tạo Hồ sơ Kênh mới (5 tầng DNA).");
 }
 
 $("#newChannelProfileBtn")?.addEventListener("click", prepareCreateNewChannelProfile);
@@ -3883,6 +4734,33 @@ $("#channelProfileForm").addEventListener("submit", async event => {
     mascot_lock: tMascotLock,
   };
 
+  // Voice & Rhythm Specialist Studio payload
+  const autoDesignVoice = Boolean($("#channelAutoDesignVoiceToggle")?.checked);
+  const voiceSourceMode = String($("#channelVoiceSourceMode")?.value || "base_voice").trim();
+  const baseMasterVoiceId = String($("#channelBaseMasterVoiceSelect")?.value || defaultCleanMasterVoiceForMarket(market, default_lang)).trim();
+  const voiceCustomDirection = String($("#channelVoiceCustomDirection")?.value || "").trim();
+  const sampleFileEl = $("#channelVoiceSampleFile");
+  const sampleFile = sampleFileEl?.files?.[0] || null;
+  const sampleRefText = String($("#channelVoiceSampleRefText")?.value || "").trim();
+
+  if (voiceSourceMode === "user_sample" && autoDesignVoice && !sampleFile && !state.selectedChannelProfileId) {
+    return toast("Bạn đang chọn chế độ Clone từ file mẫu riêng — vui lòng chọn file âm thanh (WAV/MP3/M4A) hoặc chuyển sang Điêu khắc từ Giọng Mẫu Sạch K1.", true);
+  }
+
+  payload.auto_design_voice = autoDesignVoice || Boolean(sampleFile);
+  payload.voice_source_mode = sampleFile ? "user_sample" : voiceSourceMode;
+  payload.base_voice_id = baseMasterVoiceId;
+  payload.voice_custom_direction = voiceCustomDirection;
+  if (sampleFile) {
+    try {
+      payload.voice_sample_base64 = await readFileAsDataUrl(sampleFile);
+      payload.voice_sample_filename = sampleFile.name;
+      payload.voice_sample_ref_text = sampleRefText;
+    } catch (readErr) {
+      return toast(readErr.message || "Không đọc được file mẫu giọng.", true);
+    }
+  }
+
   const profileId = state.selectedChannelProfileId;
   const isUpdate = Boolean(profileId);
   const url = isUpdate ? `/api/radar/channel-profiles/${encodeURIComponent(profileId)}` : "/api/radar/channel-profiles";
@@ -3890,10 +4768,15 @@ $("#channelProfileForm").addEventListener("submit", async event => {
 
   try {
     $("#saveChannelProfileBtn").disabled = true;
-    $("#radarResultHint").textContent = dnaMode === "custom_dna_only"
-      ? (ownRef ? "Đang lưu Quy chuẩn DNA cố định và liên kết kênh YouTube của bạn…" : "Đang khóa cứng Định danh & Bộ lọc Đề tài Xanh tiền cho hồ sơ…")
-      : (ownRef ? "Đang đọc DNA kênh mình…" : `Đang đọc ${competitorRefs.length} kênh mẫu…`);
+    $("#radarResultHint").textContent = payload.auto_design_voice
+      ? "Chuyên gia đang phân tích thể loại, thiết kế màu giọng 1-of-1 và đồng bộ nhịp 3 tầng cho hồ sơ…"
+      : (dnaMode === "custom_dna_only"
+        ? (ownRef ? "Đang lưu Quy chuẩn DNA cố định và liên kết kênh YouTube của bạn…" : "Đang khóa cứng Định danh & Bộ lọc Đề tài Xanh tiền cho hồ sơ…")
+        : (ownRef ? "Đang đọc DNA kênh mình…" : `Đang đọc ${competitorRefs.length} kênh mẫu…`));
     const saved = await api(url, { method, body: JSON.stringify(payload) });
+    if (payload.auto_design_voice) {
+      try { await loadVoices(); } catch (_) {}
+    }
     state.selectedChannelProfileId = saved.id;
     await loadChannelProfiles({ selectId: saved.id });
     const createSelect = $("#createChannelProfileSelect");
@@ -3901,9 +4784,115 @@ $("#channelProfileForm").addEventListener("submit", async event => {
       await applySelectedProfileToCreateStep(saved, { autoDiscover: true });
     }
     $("#radarResultHint").textContent = `${saved.label} · ${channelProfileModeText(saved)}`;
-    toast(isUpdate ? `Đã cập nhật Hồ sơ "${saved.label}" thành công!` : `Đã tạo Hồ sơ "${saved.label}" thành công!`);
+    const voiceNote = saved.voice_signature?.voice_name ? ` (Đã khóa Voice riêng: ${saved.voice_signature.voice_name})` : "";
+    toast(isUpdate ? `Đã cập nhật Hồ sơ "${saved.label}"${voiceNote}!` : `Đã tạo Hồ sơ "${saved.label}"${voiceNote}!`);
   } catch (err) { toast(err.message, true); }
   finally { $("#saveChannelProfileBtn").disabled = false; }
+});
+
+$("#channelVoiceSourceMode")?.addEventListener("change", () => {
+  syncVoiceSourceModeUI();
+  if ($("#channelVoiceSourceMode")?.value === "user_sample" && $("#channelAutoDesignVoiceToggle")) {
+    $("#channelAutoDesignVoiceToggle").checked = true;
+  }
+});
+
+$("#channelVoiceSampleFile")?.addEventListener("change", () => {
+  if ($("#channelVoiceSampleFile")?.files?.length && $("#channelAutoDesignVoiceToggle")) {
+    $("#channelAutoDesignVoiceToggle").checked = true;
+  }
+});
+
+$("#channelProfileForm [name='market']")?.addEventListener("change", event => {
+  if (!state.selectedChannelProfileId && $("#channelBaseMasterVoiceSelect")) {
+    const m = String(event.target.value || "KR").toUpperCase();
+    const l = String($("#channelProfileForm")?.elements?.default_language?.value || "").trim();
+    $("#channelBaseMasterVoiceSelect").value = defaultCleanMasterVoiceForMarket(m, l);
+  }
+});
+
+$("#analyzeChannelVoiceRhythmBtn")?.addEventListener("click", async () => {
+  const btn = $("#analyzeChannelVoiceRhythmBtn");
+  const prevText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Đang phân tích nhịp 3 tầng…";
+  }
+  try {
+    const draft = collectDraftProfileForVoiceAnalysis();
+    const res = await api("/api/voice-specialist/analyze", {
+      method: "POST",
+      body: JSON.stringify({ profile: draft, custom_direction: draft.custom_direction || "" }),
+    });
+    const current = currentChannelProfile();
+    renderProfileVoiceRhythmStudio(current, res.rhythm_dna || res);
+    toast(`✓ Đã phân tích thể loại "${(res.rhythm_dna || res)?.archetype_label_vi || "Custom"}" — đồng bộ xong Nhịp Viết · Màu Giọng · Cảm Nhận Nhịp Dựng!`);
+  } catch (err) {
+    toast(`Lỗi phân tích nhịp: ${err.message}`, true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = prevText;
+    }
+  }
+});
+
+$("#designChannelVoiceNowBtn")?.addEventListener("click", async () => {
+  const profileId = state.selectedChannelProfileId;
+  if (!profileId) {
+    if ($("#channelAutoDesignVoiceToggle")) $("#channelAutoDesignVoiceToggle").checked = true;
+    const form = $("#channelProfileForm");
+    if (form) form.requestSubmit();
+    return;
+  }
+  const sourceMode = String($("#channelVoiceSourceMode")?.value || "base_voice").trim();
+  const baseVoiceId = String($("#channelBaseMasterVoiceSelect")?.value || "09c70cc1-cc86-4905-b65b-3967209c3175").trim();
+  const customDirection = String($("#channelVoiceCustomDirection")?.value || "").trim();
+  const sampleFile = $("#channelVoiceSampleFile")?.files?.[0] || null;
+  const sampleRefText = String($("#channelVoiceSampleRefText")?.value || "").trim();
+
+  if (sourceMode === "user_sample" && !sampleFile) {
+    return toast("Vui lòng chọn file âm thanh mẫu (WAV/MP3/M4A) để Clone màu giọng riêng cho hồ sơ.", true);
+  }
+
+  const btn = $("#designChannelVoiceNowBtn");
+  const prevText = btn ? btn.textContent : "";
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = "⏳ Đang điêu khắc & thu mẫu Voice riêng…";
+  }
+  try {
+    const reqBody = {
+      source_mode: sampleFile ? "user_sample" : sourceMode,
+      base_voice_id: baseVoiceId,
+      custom_direction: customDirection,
+      synthesize_preview: true,
+    };
+    if (sampleFile) {
+      reqBody.sample_audio_base64 = await readFileAsDataUrl(sampleFile);
+      reqBody.sample_filename = sampleFile.name;
+      reqBody.sample_ref_text = sampleRefText;
+    }
+    const res = await api(`/api/radar/channel-profiles/${encodeURIComponent(profileId)}/design-voice-rhythm`, {
+      method: "POST",
+      body: JSON.stringify(reqBody),
+    });
+    await loadVoices();
+    await loadChannelProfiles({ selectId: profileId, loadPlan: false });
+    const audioEl = $("#channelVoiceSignatureAudio");
+    if (audioEl && audioEl.src) {
+      audioEl.load();
+    }
+    const vName = res.voice_signature?.voice_name || res.profile?.voice_signature?.voice_name || "Voice 1-of-1";
+    toast(`✓ Đã thiết kế & khóa màu giọng độc bản "${vName}" cùng nhịp dựng 3 tầng cho hồ sơ!`);
+  } catch (err) {
+    toast(`Lỗi thiết kế Voice riêng: ${err.message}`, true);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = prevText;
+    }
+  }
 });
 
 $("#channelProfileLockThumbnailDnaBtn")?.addEventListener("click", async () => {
@@ -3984,7 +4973,21 @@ $("#profileTodayBtn").addEventListener("click", async () => {
       ? Math.min(180, customTodayDur)
       : Number($("#profileTodayDuration")?.value || current?.default_duration_minutes || 20);
     const discoveryMode = isCustomDnaProfile(current) ? "dna_strict" : "radar_trend";
-    const result = await runWithChannelProfileActivity(profileId, "today", () => api(`/api/radar/channel-profiles/${encodeURIComponent(profileId)}/today?target_duration_minutes=${encodeURIComponent(targetDurationMinutes)}&discovery_mode=${encodeURIComponent(discoveryMode)}`, { method: "POST" }));
+    const activeStream = state.selectedTopicStream || "all";
+    if (!state.sessionSuggestedTopicKeys[profileId]) {
+      state.sessionSuggestedTopicKeys[profileId] = new Set();
+    }
+    const sessionExcluded = Array.from(state.sessionSuggestedTopicKeys[profileId]);
+    const result = await runWithChannelProfileActivity(profileId, "today", () => api(`/api/radar/channel-profiles/${encodeURIComponent(profileId)}/today?target_duration_minutes=${encodeURIComponent(targetDurationMinutes)}&discovery_mode=${encodeURIComponent(discoveryMode)}&force_refresh=true&topic_stream=${encodeURIComponent(activeStream)}`, {
+      method: "POST",
+      body: JSON.stringify({ exclude_titles: sessionExcluded }),
+    }));
+    if (Array.isArray(result?.today)) {
+      for (const item of result.today) {
+        const k = String(item?.case_real_name_zh || item?.title_target || item?.title || "").trim();
+        if (k) state.sessionSuggestedTopicKeys[profileId].add(k);
+      }
+    }
     renderRadarResults(result.today || [], { market: result.market || current?.market || "KR", scanId: result.scan_id, profileId, targetDurationMinutes });
     await loadChannelProfiles({ selectId: profileId, loadPlan: false });
     const engine = discoveryMode === "dna_strict" ? "Chuẩn DNA Cố định" : (result.decision_engine === "codex_plus_radar" ? "Codex + Radar" : "Radar fallback");
@@ -4018,13 +5021,22 @@ async function loadCreateAiStylePresets() {
   const select = $("#createAiStylePreset");
   if (!select) return;
   const status = $("#createAiStylePresetStatus");
-  const previous = String(select.value || "");
+  const activeProfile = currentChannelProfile();
+  const profilePreset = String(
+    activeProfile?.default_ai_style_preset ||
+    activeProfile?.editorial_dna?.default_ai_style_preset ||
+    ""
+  ).trim();
+  const previous = String(select.value || profilePreset || "");
   try {
     const presets = await api("/api/ai-visual/style-presets");
     const items = Array.isArray(presets) ? presets.filter(item => String(item?.name || "").trim()) : [];
     if (items.length) {
       select.innerHTML = `<option value="" disabled>Chọn preset…</option>${items.map(item => `<option value="${escapeHtml(item.name || "")}">${escapeHtml(item.name || "Preset")}</option>`).join("")}`;
-      if (previous && items.some(item => String(item.name || "") === previous)) select.value = previous;
+      const targetPreset = (profilePreset && items.some(item => String(item.name || "") === profilePreset))
+        ? profilePreset
+        : previous;
+      if (targetPreset && items.some(item => String(item.name || "") === targetPreset)) select.value = targetPreset;
       if (!select.value && String($("#createAiStyleMode")?.value || "") === "preset") select.value = String(items[0].name || "");
       if (status) status.textContent = `${items.length} preset tích hợp từ SRT-To-Prompt`;
       return;
@@ -4046,11 +5058,11 @@ function updateCreatePipelineFlow() {
   if (!flow) return;
   const paths = {
     full_ai: ["Kịch bản", "Voice + SRT", "Visuals / STP", "AI Visual", "Edit", "SEO", "QC"],
-    edit_direct_footage: ["Kịch bản", "Voice + SRT", "Visuals / STP", "AI Visual (Vài ảnh điểm nhấn)", "Edit (AI tự tải Footage + Dựng)", "SEO", "QC"],
-    full_footage: ["Kịch bản", "Voice + SRT", "Visuals", "Footage", "Edit", "SEO", "QC"],
-    hybrid: ["Kịch bản", "Voice + SRT", "Visuals / STP", "Footage", "AI Visual", "Edit", "SEO", "QC"],
-    evidence_footage: ["Kịch bản", "Voice + SRT", "Visuals / STP", "Footage (Bằng chứng)", "AI Visual", "Edit", "SEO", "QC"],
-    selective_footage: ["Kịch bản", "Voice + SRT", "Visuals / STP", "Footage (Bằng chứng)", "AI Visual", "Edit", "SEO", "QC"],
+    edit_direct_footage: ["Kịch bản", "Voice + SRT", "Visuals / STP", "AI Visual (Vài ảnh điểm nhấn)", "Edit (@footage AI Agent duyệt bằng mắt + Dựng)", "SEO", "QC"],
+    full_footage: ["Kịch bản", "Voice + SRT", "Visuals", "Edit (@footage AI Agent duyệt bằng mắt + Dựng)", "SEO", "QC"],
+    hybrid: ["Kịch bản", "Voice + SRT", "Visuals / STP", "AI Visual", "Edit (@footage AI Agent duyệt bằng mắt + Dựng)", "SEO", "QC"],
+    evidence_footage: ["Kịch bản", "Voice + SRT", "Visuals / STP", "AI Visual", "Edit (@footage AI Agent duyệt bằng mắt + Dựng)", "SEO", "QC"],
+    selective_footage: ["Kịch bản", "Voice + SRT", "Visuals / STP", "AI Visual", "Edit (@footage AI Agent duyệt bằng mắt + Dựng)", "SEO", "QC"],
   };
   const labels = paths[strategy] || paths.full_footage;
   const strategyTag = strategy === "full_ai" ? "FULL AI" : strategy === "edit_direct_footage" ? "BÁN CONTENT (SKIP BƯỚC 4)" : strategy === "hybrid" ? "KẾT HỢP" : (strategy === "evidence_footage" || strategy === "selective_footage") ? "BẰNG CHỨNG + AI" : "FULL FOOTAGE";
@@ -4070,6 +5082,9 @@ function updateCreateStyleFields() {
   const custom = $("#createAiCustomStyle");
   if (preset) preset.disabled = false;
   if (custom) custom.disabled = mode !== "custom";
+  if (mode === "custom" && $("#createAiCustomDrawer")) {
+    $("#createAiCustomDrawer").open = true;
+  }
   if (mode === "preset" && preset && !preset.value) {
     const firstPreset = [...preset.options].find(option => option.value);
     if (firstPreset) preset.value = firstPreset.value;
@@ -4103,8 +5118,37 @@ async function uploadCreateStyleReference(jobId) {
 }
 
 $("#discoverCreateTopicsBtn")?.addEventListener("click", async () => {
-  try { await discoverCreateTopics({ forceRefresh: Boolean(state.createTopicSuggestions?.length) }); }
+  try { await discoverCreateTopics({ forceRefresh: true, topicStream: state.selectedTopicStream || "all" }); }
   catch (err) { toast(err.message, true); }
+});
+
+$$("#createTopicStreamBar [data-topic-stream]").forEach(pill => {
+  pill.addEventListener("click", async () => {
+    const nextStream = String(pill.dataset.topicStream || "all");
+    state.selectedTopicStream = nextStream;
+    $$("#createTopicStreamBar [data-topic-stream]").forEach(p => p.classList.toggle("active", p.dataset.topicStream === nextStream));
+    try {
+      await discoverCreateTopics({ forceRefresh: false, topicStream: nextStream });
+    } catch (err) {
+      toast(err.message, true);
+    }
+  });
+});
+
+$("#clearSuggestedHistoryBtn")?.addEventListener("click", async () => {
+  const form = $("#jobForm");
+  const profileId = String(form?.elements?.channel_profile_id?.value || state.selectedChannelProfileId || "").trim();
+  if (!profileId) return toast("Hãy chọn hồ sơ kênh trước.", true);
+  try {
+    state.sessionSuggestedTopicKeys[profileId] = new Set();
+    try {
+      await api(`/api/radar/channel-profiles/${encodeURIComponent(profileId)}/suggested-topic-history`, { method: "DELETE" });
+    } catch (_) {}
+    toast("Đã xóa lịch sử chủ đề từng gợi ý (Bộ nhớ 26+ bài đã sản xuất vẫn được khóa bảo vệ 100%). Đang research danh sách mới…");
+    await discoverCreateTopics({ forceRefresh: true, topicStream: state.selectedTopicStream || "all", resetHistory: true });
+  } catch (err) {
+    toast(err.message, true);
+  }
 });
 
 let preflightInputDebounceTimer = null;
@@ -4682,6 +5726,7 @@ $("#createStyleReferenceInput")?.addEventListener("change", event => {
     if (img) img.src = currentCreateStyleReferenceDataUrl;
     if (nameEl) nameEl.textContent = file.name;
     if (container) container.classList.remove("hidden");
+    if ($("#createAiCustomDrawer")) $("#createAiCustomDrawer").open = true;
     toast(`Đã nhận ảnh tham chiếu: ${file.name}`);
   };
   reader.readAsDataURL(file);
@@ -4784,33 +5829,50 @@ function updateSidebarPhaseVisibility(job) {
   Object.entries(tabPhaseMap).forEach(([tab, phase]) => {
     const btn = document.querySelector(`.nav-item[data-app-tab="${tab}"]`);
     if (!btn) return;
+    if (!btn.dataset.defaultTitle) {
+      btn.dataset.defaultTitle = btn.getAttribute("title") || btn.textContent.replace(/\s+/g, " ").trim();
+    }
     const skipped = Boolean(active && !active.has(phase));
     btn.classList.toggle("nav-item-skipped", skipped);
     if (skipped) {
-      btn.setAttribute("title", "Bước này được bỏ qua theo chiến lược hình ảnh của dự án đang chọn");
+      btn.setAttribute("title", `${btn.dataset.defaultTitle} — Bước này được bỏ qua theo chiến lược hình ảnh`);
     } else {
-      btn.removeAttribute("title");
+      btn.setAttribute("title", btn.dataset.defaultTitle);
     }
   });
 }
 
-async function loadJobs(keepSelection = true) {
-  state.jobs = await api("/api/jobs");
+async function loadJobs(keepSelection = true, { summary = false } = {}) {
+  const prevSelectedId = state.selectedId;
+  state.jobs = await api(summary ? "/api/jobs?summary=1" : "/api/jobs");
+  if (!state.selectedId) {
+    try {
+      const savedId = localStorage.getItem("cofi-selected-job-id");
+      if (savedId && state.jobs.some(j => j.id === savedId)) state.selectedId = savedId;
+    } catch (_) {}
+  }
   if ((!keepSelection || !state.selectedId || !state.jobs.some(j => j.id === state.selectedId)) && state.jobs.length) state.selectedId = state.jobs[0].id;
+  if (state.selectedId) {
+    try { localStorage.setItem("cofi-selected-job-id", state.selectedId); } catch (_) {}
+  }
   $("#jobCount").textContent = state.jobs.length;
   const activeJobs = state.jobs.filter(job => ["running", "queued"].includes(job.status)).length;
   const readyJobs = state.jobs.filter(job => job.status === "ready").length;
   const selectedJob = state.jobs.find(job => job.id === state.selectedId);
   const globalSelect = $("#globalProjectSelect");
-  if (globalSelect) {
-    globalSelect.innerHTML = state.jobs.length
+  if (globalSelect && document.activeElement !== globalSelect) {
+    const nextSelectHtml = state.jobs.length
       ? state.jobs.map(job => {
           const done = completedPhaseCount(job);
           const total = effectivePhases(job).length;
           return `<option value="${escapeHtml(job.id)}" ${job.id === state.selectedId ? "selected" : ""}>${escapeHtml(job.market || "—")} · ${escapeHtml(job.title)} (${done}/${total})</option>`;
         }).join("")
       : `<option value="">Chưa có dự án</option>`;
-    globalSelect.value = state.selectedId || "";
+    if (state.lastGlobalSelectHtml !== nextSelectHtml) {
+      state.lastGlobalSelectHtml = nextSelectHtml;
+      globalSelect.innerHTML = nextSelectHtml;
+    }
+    if (globalSelect.value !== (state.selectedId || "")) globalSelect.value = state.selectedId || "";
   }
   updateSidebarPhaseVisibility(selectedJob);
   if ($("#dashboardTotalJobs")) $("#dashboardTotalJobs").textContent = state.jobs.length;
@@ -4862,6 +5924,9 @@ async function loadJobs(keepSelection = true) {
     }));
   }
   renderOverviewCommandDeck(selectedJob);
+  if (!prevSelectedId && state.selectedId && ["script", "voice", "visuals", "footage", "ai_visual", "edit", "seo", "qc"].includes(state.appTab)) {
+    renderFunctionWorkspaces().catch(() => {});
+  }
 }
 
 function renderOverviewCommandDeck(selectedJob) {
@@ -4965,6 +6030,7 @@ function renderOverviewCommandDeck(selectedJob) {
         <div class="overview-console-actions">
           ${canResume ? `<button class="primary" type="button" id="overviewRunFullBtn">⚡ Chạy tự động Full Video</button>` : ""}
           ${canResume ? `<button class="ghost compact" type="button" id="overviewResumeJobBtn">▶ ${escapeHtml(continueButtonLabel(job))}</button>` : ""}
+          <button class="ghost compact" type="button" data-open-agent-office="true" title="Mở 🏛️ 15 Phòng Ban Chuyên Môn (15 Tổ trưởng · 15 Tổ phó · 62 Chuyên viên Mini-Agents)">🏛️ 15 Phòng Ban (92 NS)</button>
           <button class="ghost compact" type="button" data-overview-open-tab="${escapeHtml(currentTab)}">Mở bước hiện tại</button>
           <button class="ghost compact" type="button" data-overview-open-tab="projects">Chi tiết & Nhật ký</button>
         </div>
@@ -5128,7 +6194,20 @@ async function liveFootage(jobId) {
 }
 
 function codeViewer(title, content, empty = "Chưa có dữ liệu ở bước này.") {
-  return `<section class="artifact-card"><div class="artifact-head"><strong>${escapeHtml(title)}</strong></div><pre>${content ? escapeHtml(content) : escapeHtml(empty)}</pre></section>`;
+  const hasContent = Boolean(content && String(content).trim().length > 0);
+  const readerBtnHtml = hasContent
+    ? (() => {
+        const key = registerStudioReaderPayload({
+          badge: "🗂️",
+          title: String(title || "Tài liệu kỹ thuật"),
+          subtitle: "Chế độ đọc tập trung · 15 Phòng Ban Chuyên Môn",
+          rawText: String(content),
+          isCode: /\.(json|srt|vtt)$/i.test(String(title || "")) || /manifest|json/i.test(String(title || "")),
+        });
+        return `<div class="artifact-head-actions"><button type="button" class="ghost compact" data-studio-reader-key="${key}">🗗 Đọc Popup</button></div>`;
+      })()
+    : "";
+  return `<section class="artifact-card"><div class="artifact-head"><strong>${escapeHtml(title)}</strong>${readerBtnHtml}</div><pre>${hasContent ? escapeHtml(content) : escapeHtml(empty)}</pre></section>`;
 }
 
 const voiceLocales = {
@@ -5204,12 +6283,67 @@ function selectedAiLabel() {
   return humanizeAntigravityModel(modelId);
 }
 
+function shortenAntigravityPathLabel(rawLabel = "", maxLen = 36) {
+  const clean = String(rawLabel || "").trim();
+  if (!clean) return "";
+  const normalized = clean.replace(/\\/g, "/");
+  if (!normalized.includes("/")) return clean;
+  if (clean.length <= maxLen) return clean;
+  const parts = normalized.split("/").filter(Boolean);
+  if (!parts.length) return clean;
+  const tail2 = parts.slice(-2).join("/");
+  if (tail2.length <= maxLen) return parts.length > 2 ? `…/${tail2}` : tail2;
+  return parts[parts.length - 1];
+}
+
 function formatInlineAntigravityMarkdown(escapedText) {
   let out = String(escapedText || "");
-  out = out.replace(/`([^`\n]+)`/g, '<code class="agy-inline-code">$1</code>');
+  const linkPlaceholders = [];
+
+  out = out.replace(/\[([^\]]+)\]\(((?:https?:\/\/|\/|file:\/\/\/)[^\s)]+)\)/g, (_, rawLabel, rawHref) => {
+    const idx = linkPlaceholders.length;
+    const strippedLabel = String(rawLabel || "").replace(/^`+|`+$/g, "").trim();
+    const isFileLink = /^file:\/\/\//i.test(rawHref)
+      || rawHref.startsWith("/")
+      || /\.[a-z0-9]{1,6}(?:#L\d+(?:-L?\d+)?)?$/i.test(strippedLabel);
+    if (isFileLink) {
+      let fullTitle = rawHref
+        .replace(/&amp;/g, "&")
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'");
+      try {
+        fullTitle = decodeURIComponent(fullTitle.replace(/^file:\/\/\/?/i, ""));
+      } catch (_) {}
+      const lineAnchor = (rawHref.match(/#L(\d+(?:-L?\d+)?)$/i) || [])[1] || "";
+      const baseDisplay = shortenAntigravityPathLabel(strippedLabel, 34);
+      const hasLineInLabel = /(?:#L|:)\d+/i.test(baseDisplay);
+      const displayLabel = lineAnchor && !hasLineInLabel
+        ? `${baseDisplay}:${lineAnchor.replace(/L/gi, "")}`
+        : baseDisplay;
+      linkPlaceholders.push(
+        `<a href="${rawHref}" target="_blank" rel="noopener noreferrer" class="agy-md-link agy-file-chip" title="${escapeHtml(fullTitle)}">${displayLabel}</a>`
+      );
+    } else {
+      linkPlaceholders.push(
+        `<a href="${rawHref}" target="_blank" rel="noopener noreferrer" class="agy-md-link">${strippedLabel}</a>`
+      );
+    }
+    return `@@AGY_INLINE_LINK_${idx}@@`;
+  });
+
+  out = out.replace(/`([^`\n]+)`/g, (_, rawCode) => {
+    const trimmedCode = String(rawCode || "").trim();
+    const looksLikeLongPath = trimmedCode.length > 38 && (trimmedCode.includes("/") || trimmedCode.includes("\\"));
+    if (looksLikeLongPath) {
+      const shortPath = shortenAntigravityPathLabel(trimmedCode, 34);
+      return `<code class="agy-inline-code is-path" title="${trimmedCode}">${shortPath}</code>`;
+    }
+    return `<code class="agy-inline-code">${rawCode}</code>`;
+  });
+
   out = out.replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>");
   out = out.replace(/(^|[\s(])\*([^*\n]+)\*(?=[\s).,!?:;]|$)/g, "$1<em>$2</em>");
-  out = out.replace(/\[([^\]]+)\]\(((?:https?:\/\/|\/|file:\/\/\/)[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="agy-md-link">$1</a>');
+  out = out.replace(/@@AGY_INLINE_LINK_(\d+)@@/g, (_, idx) => linkPlaceholders[Number(idx)] || "");
   return out;
 }
 
@@ -5274,6 +6408,13 @@ function renderCofiProposalCardHtml(proposal = {}) {
   </div>`;
 }
 
+function splitAntigravityMarkdownTableRow(rowLine = "") {
+  let clean = String(rowLine || "").trim();
+  if (clean.startsWith("|")) clean = clean.slice(1);
+  if (clean.endsWith("|")) clean = clean.slice(0, -1);
+  return clean.split("|").map(cell => cell.trim());
+}
+
 function renderAntigravityMarkdown(rawText = "") {
   const source = String(rawText || "").replace(/\r\n/g, "\n").trim();
   if (!source) return "";
@@ -5303,7 +6444,11 @@ function renderAntigravityMarkdown(rawText = "") {
   let paragraphLines = [];
 
   const flushList = () => {
-    if (!listType || !listItems.length) return;
+    if (!listType || !listItems.length) {
+      listType = null;
+      listItems = [];
+      return;
+    }
     blocks.push(`<${listType} class="agy-md-list">${listItems.join("")}</${listType}>`);
     listType = null;
     listItems = [];
@@ -5313,8 +6458,15 @@ function renderAntigravityMarkdown(rawText = "") {
     blocks.push(`<p>${paragraphLines.map(line => formatInlineAntigravityMarkdown(escapeHtml(line))).join("<br>")}</p>`);
     paragraphLines = [];
   };
+  const nextNonEmptyLine = (startIndex) => {
+    for (let k = startIndex; k < lines.length; k++) {
+      if (lines[k].trim()) return lines[k];
+    }
+    return "";
+  };
 
-  for (const rawLine of lines) {
+  for (let i = 0; i < lines.length; i++) {
+    const rawLine = lines[i];
     const trimmed = rawLine.trim();
     const codeMatch = trimmed.match(/^@@AGY_CODE_BLOCK_(\d+)@@$/);
     if (codeMatch) {
@@ -5325,31 +6477,128 @@ function renderAntigravityMarkdown(rawText = "") {
     }
     if (!trimmed) {
       flushParagraph();
-      flushList();
+      if (listType) {
+        const upcoming = nextNonEmptyLine(i + 1);
+        const upcomingIsList = /^\s*(?:[-*•]|\d+[.)])\s+/.test(upcoming);
+        if (!upcomingIsList) flushList();
+      }
       continue;
     }
+
+    // Markdown Table block: Header row | ... | followed by | --- | --- |
+    if (
+      trimmed.includes("|")
+      && i + 1 < lines.length
+      && /^\s*\|?\s*:?-{2,}:?(?:\s*\|\s*:?-{2,}:?)+\s*\|?\s*$/.test(lines[i + 1])
+    ) {
+      flushParagraph();
+      flushList();
+      const headers = splitAntigravityMarkdownTableRow(trimmed);
+      i += 2;
+      const bodyRows = [];
+      while (i < lines.length) {
+        const rowTrim = lines[i].trim();
+        if (!rowTrim || !rowTrim.includes("|") || /^@@AGY_CODE_BLOCK_\d+@@$/.test(rowTrim)) break;
+        bodyRows.push(splitAntigravityMarkdownTableRow(rowTrim));
+        i += 1;
+      }
+      i -= 1;
+      const colCount = Math.max(headers.length, 1);
+      const theadHtml = `<thead><tr>${headers.map(h => `<th>${formatInlineAntigravityMarkdown(escapeHtml(h))}</th>`).join("")}</tr></thead>`;
+      const tbodyHtml = bodyRows.length
+        ? `<tbody>${bodyRows.map(cols => {
+            const padded = Array.from({ length: colCount }, (_, cIdx) => cols[cIdx] ?? "");
+            return `<tr>${padded.map(cell => `<td>${formatInlineAntigravityMarkdown(escapeHtml(cell))}</td>`).join("")}</tr>`;
+          }).join("")}</tbody>`
+        : "";
+      blocks.push(`<div class="agy-md-table-wrap"><table class="agy-md-table">${theadHtml}${tbodyHtml}</table></div>`);
+      continue;
+    }
+
     const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
     if (headingMatch) {
       flushParagraph();
       flushList();
       const level = Math.min(4, headingMatch[1].length + 1);
-      blocks.push(`<h${level} class="agy-md-heading">${formatInlineAntigravityMarkdown(escapeHtml(headingMatch[2]))}</h${level}>`);
+      blocks.push(`<h${level} class="agy-md-heading agy-h${level}">${formatInlineAntigravityMarkdown(escapeHtml(headingMatch[2]))}</h${level}>`);
       continue;
     }
+
+    // Promote standalone bold numbered headers (e.g., "**1. Tiêu đề mục**") into crisp section headings
+    const boldNumHeadingMatch = trimmed.match(/^\*\*(\d+[\.\)]\s+[^*\n]+?)\*\*:?$/);
+    if (boldNumHeadingMatch) {
+      flushParagraph();
+      flushList();
+      blocks.push(`<h3 class="agy-md-heading agy-h3">${formatInlineAntigravityMarkdown(escapeHtml(boldNumHeadingMatch[1]))}</h3>`);
+      continue;
+    }
+
     if (/^---+$/.test(trimmed)) {
       flushParagraph();
       flushList();
       blocks.push('<hr class="agy-md-hr">');
       continue;
     }
+
+    // Multi-line Blockquote & Callouts (> [!NOTE], > [!IMPORTANT], > [!WARNING], > [!TIP])
     const quoteMatch = trimmed.match(/^>\s?(.*)$/);
     if (quoteMatch) {
       flushParagraph();
       flushList();
-      blocks.push(`<blockquote class="agy-md-quote">${formatInlineAntigravityMarkdown(escapeHtml(quoteMatch[1]))}</blockquote>`);
+      const quoteLines = [quoteMatch[1]];
+      while (i + 1 < lines.length) {
+        const nextQm = lines[i + 1].trim().match(/^>\s?(.*)$/);
+        if (!nextQm) break;
+        quoteLines.push(nextQm[1]);
+        i += 1;
+      }
+      const alertMatch = (quoteLines[0] || "").match(/^\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]\s*(.*)$/i);
+      if (alertMatch) {
+        const kind = alertMatch[1].toLowerCase();
+        const alertLabels = {
+          note: "Ghi chú",
+          tip: "Mẹo tối ưu",
+          important: "Quan trọng",
+          warning: "Lưu ý",
+          caution: "Cảnh báo",
+        };
+        const inlineRemainder = (alertMatch[2] || "").trim();
+        const restLines = quoteLines.slice(1).filter(Boolean);
+        let titleTail = "";
+        let bodyLines = restLines;
+        if (inlineRemainder) {
+          if (restLines.length > 0 && inlineRemainder.length <= 48) {
+            titleTail = ` · ${formatInlineAntigravityMarkdown(escapeHtml(inlineRemainder))}`;
+          } else {
+            bodyLines = [inlineRemainder, ...restLines];
+          }
+        }
+        const bodyHtml = bodyLines.length
+          ? `<div class="agy-callout-body">${bodyLines.map(ql => formatInlineAntigravityMarkdown(escapeHtml(ql))).join("<br>")}</div>`
+          : "";
+        blocks.push(
+          `<blockquote class="agy-md-quote is-callout is-${kind}"><div class="agy-callout-title">${escapeHtml(alertLabels[kind] || alertMatch[1])}${titleTail}</div>${bodyHtml}</blockquote>`
+        );
+      } else {
+        const quoteHtml = quoteLines
+          .map(ql => (ql.trim() ? formatInlineAntigravityMarkdown(escapeHtml(ql)) : ""))
+          .filter(Boolean)
+          .join("<br>");
+        blocks.push(`<blockquote class="agy-md-quote">${quoteHtml}</blockquote>`);
+      }
       continue;
     }
+
+    const indent = (rawLine.match(/^(\s*)/)?.[1] || "").replace(/\t/g, "  ").length;
     const ulMatch = rawLine.match(/^\s*[-*•]\s+(.+)$/);
+    const olMatch = rawLine.match(/^\s*(\d+)[.)]\s+(.+)$/);
+
+    if ((ulMatch || olMatch) && indent >= 2 && listType) {
+      flushParagraph();
+      const subBody = ulMatch ? ulMatch[1] : olMatch[2];
+      listItems.push(`<li class="agy-sub-li">${formatInlineAntigravityMarkdown(escapeHtml(subBody))}</li>`);
+      continue;
+    }
     if (ulMatch) {
       flushParagraph();
       if (listType && listType !== "ul") flushList();
@@ -5357,12 +6606,12 @@ function renderAntigravityMarkdown(rawText = "") {
       listItems.push(`<li>${formatInlineAntigravityMarkdown(escapeHtml(ulMatch[1]))}</li>`);
       continue;
     }
-    const olMatch = rawLine.match(/^\s*\d+[.)]\s+(.+)$/);
     if (olMatch) {
       flushParagraph();
       if (listType && listType !== "ol") flushList();
       listType = "ol";
-      listItems.push(`<li>${formatInlineAntigravityMarkdown(escapeHtml(olMatch[1]))}</li>`);
+      const itemNum = Number(olMatch[1]) || (listItems.length + 1);
+      listItems.push(`<li value="${itemNum}">${formatInlineAntigravityMarkdown(escapeHtml(olMatch[2]))}</li>`);
       continue;
     }
     flushList();
@@ -5479,6 +6728,26 @@ function buildAntigravityStepEntries(steps = [], { live = false } = {}) {
   return { entries, totalDur, toolCount, thoughtCount, lastActiveTitle };
 }
 
+const agyTurnReaderStore = new Map();
+
+function extractAntigravityTurnHeadline(rawContent = "") {
+  const lines = String(rawContent || "").replace(/\r\n/g, "\n").split("\n");
+  for (const line of lines) {
+    const t = line.trim();
+    if (!t || t.startsWith("```") || t.startsWith("|") || t === "---") continue;
+    const cleaned = t
+      .replace(/^#{1,5}\s+/, "")
+      .replace(/^\*\*([^*]+)\*\*:?$/, "$1")
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+      .replace(/[*`>_]/g, "")
+      .trim();
+    if (cleaned.length >= 4) {
+      return cleaned.length > 72 ? `${cleaned.slice(0, 70)}…` : cleaned;
+    }
+  }
+  return "Phản hồi chi tiết từ Antigravity";
+}
+
 function renderAntigravityStepsHtml(steps = [], { live = false } = {}) {
   const { entries, totalDur, toolCount, lastActiveTitle } = buildAntigravityStepEntries(steps, { live });
   if (!entries.length) return "";
@@ -5487,9 +6756,10 @@ function renderAntigravityStepsHtml(steps = [], { live = false } = {}) {
   const groupTitle = live
     ? (lastActiveTitle ? `Đang chạy: ${lastActiveTitle}` : `Đang thực thi (${totalCount} bước)…`)
     : `Đã thực hiện ${totalCount} bước${toolCount ? ` (${toolCount} tác vụ)` : ""}`;
-  const openAttr = live || totalCount <= 2 ? " open" : "";
+  const openAttr = live ? " open" : "";
   return `<details class="agy-step-group ${live ? "is-live" : "is-done"}"${openAttr}>
     <summary class="agy-step-group-summary">
+      ${live ? '<i class="agy-pulse-dot agy-step-live-dot"></i>' : ""}
       <span class="agy-step-group-chevron">▸</span>
       <span class="agy-step-group-title">${escapeHtml(groupTitle)}</span>
       <span class="agy-step-group-meta"${durText ? "" : ' style="display:none"'}>${escapeHtml(durText)}</span>
@@ -5514,7 +6784,7 @@ function producerChatMessagesHtml(history = []) {
       </div>
     </div>`;
   }
-  return history.map(item => {
+  return history.map((item, idx) => {
     const isUser = item.role === "user";
     if (isUser) {
       return `<div class="producer-codex-message user agy-msg-user">
@@ -5525,8 +6795,28 @@ function producerChatMessagesHtml(history = []) {
     const itemModelLabel = item.model ? humanizeAntigravityModel(item.model) : modelLabel;
     const itemMode = item.mode === "goal" ? "Goal" : "Agent";
     const stepsHtml = renderAntigravityStepsHtml(item.steps || [], { live: false });
-    const markdownHtml = item.content ? `<div class="agy-markdown-body">${renderAntigravityMarkdown(item.content)}</div>` : "";
-    return `<div class="producer-codex-message assistant agy-msg-assistant">
+    const rawContent = String(item.content || "");
+    const markdownHtml = rawContent ? `<div class="agy-markdown-body">${renderAntigravityMarkdown(rawContent)}</div>` : "";
+    let footerHtml = "";
+    if (rawContent.trim()) {
+      const turnKey = `agy-turn-${idx}-${rawContent.length}`;
+      if (agyTurnReaderStore.size > 240) {
+        const oldest = agyTurnReaderStore.keys().next().value;
+        if (oldest) agyTurnReaderStore.delete(oldest);
+      }
+      agyTurnReaderStore.set(turnKey, {
+        rawContent,
+        modelLabel: itemModelLabel,
+        mode: itemMode,
+        stepCount: Array.isArray(item.steps) ? item.steps.length : 0,
+      });
+      const showWideReader = rawContent.length >= 160 || rawContent.split("\n").length >= 4;
+      footerHtml = `<div class="agy-msg-footer">
+        <button type="button" class="agy-msg-action-btn" data-agy-copy-turn="${escapeHtml(turnKey)}" title="Sao chép toàn bộ nội dung phản hồi">Sao chép</button>
+        ${showWideReader ? `<button type="button" class="agy-msg-action-btn is-reader" data-agy-open-reader="${escapeHtml(turnKey)}" title="Mở chế độ đọc tập trung màn hình lớn">Đọc rộng ↗</button>` : ""}
+      </div>`;
+    }
+    return `<div class="producer-codex-message assistant agy-msg-assistant" data-agy-mode="${escapeHtml(itemMode.toLowerCase())}">
       <div class="agy-msg-head">
         <span class="agy-role-ai"><i class="agy-sparkle">✦</i> Antigravity</span>
         <span class="agy-msg-model-badge">${escapeHtml(itemModelLabel)}</span>
@@ -5535,6 +6825,7 @@ function producerChatMessagesHtml(history = []) {
       ${stepsHtml}
       ${markdownHtml}
       ${chatAttachmentGalleryHtml(item.attachments || [])}
+      ${footerHtml}
     </div>`;
   }).join("");
 }
@@ -5966,6 +7257,7 @@ function renderChatLiveProgress(node, provider, events = [], stage = "running", 
           const tempWrap = document.createElement("div");
           tempWrap.innerHTML = `<details class="agy-step-group is-live" open>
             <summary class="agy-step-group-summary">
+              <i class="agy-pulse-dot agy-step-live-dot"></i>
               <span class="agy-step-group-chevron">▸</span>
               <span class="agy-step-group-title">${escapeHtml(groupTitle)}</span>
               <span class="agy-step-group-meta"${durText ? "" : ' style="display:none"'}>${escapeHtml(durText)}</span>
@@ -6450,6 +7742,79 @@ function bindChatContainerInteractions(messagesNode, inputNode, formNode) {
       }
       return;
     }
+    const fileChip = event.target.closest("a.agy-file-chip");
+    if (fileChip) {
+      const href = fileChip.getAttribute("href") || "";
+      if (/^file:/i.test(href)) {
+        event.preventDefault();
+        let cleanPath = href.replace(/^file:\/\/\/?/i, "").replace(/#L\d+(?:-L?\d+)?$/i, "");
+        try {
+          cleanPath = decodeURIComponent(cleanPath);
+        } catch (_) {}
+        try {
+          await navigator.clipboard.writeText(cleanPath);
+          toast(`Đã chép đường dẫn: ${shortenAntigravityPathLabel(cleanPath, 42)}`);
+        } catch (_) {}
+        return;
+      }
+    }
+    const copyTurnBtn = event.target.closest("[data-agy-copy-turn]");
+    if (copyTurnBtn) {
+      const entry = agyTurnReaderStore.get(copyTurnBtn.dataset.agyCopyTurn || "");
+      if (entry?.rawContent) {
+        try {
+          await navigator.clipboard.writeText(entry.rawContent);
+          const orig = copyTurnBtn.textContent;
+          copyTurnBtn.textContent = "Đã chép ✓";
+          setTimeout(() => { copyTurnBtn.textContent = orig; }, 1500);
+        } catch (_) {}
+      }
+      return;
+    }
+    const openReaderBtn = event.target.closest("[data-agy-open-reader]");
+    if (openReaderBtn) {
+      const entry = agyTurnReaderStore.get(openReaderBtn.dataset.agyOpenReader || "");
+      if (entry?.rawContent) {
+        const stepSuffix = entry.stepCount ? ` · Đã chạy ${entry.stepCount} bước` : "";
+        openStudioInspectorModal({
+          badge: "✦",
+          title: extractAntigravityTurnHeadline(entry.rawContent),
+          subtitle: `Antigravity · ${entry.modelLabel}${stepSuffix} · Chế độ đọc tập trung`,
+          html: `<article class="agy-reader-article agy-markdown-body">${renderAntigravityMarkdown(entry.rawContent)}</article>`,
+          rawText: entry.rawContent,
+          onOpen: (bodyEl) => {
+            if (!bodyEl || bodyEl.dataset.agyReaderBound === "1") return;
+            bodyEl.dataset.agyReaderBound = "1";
+            bodyEl.addEventListener("click", async (ev) => {
+              const modalFileChip = ev.target.closest("a.agy-file-chip");
+              if (modalFileChip && /^file:/i.test(modalFileChip.getAttribute("href") || "")) {
+                ev.preventDefault();
+                let cp = (modalFileChip.getAttribute("href") || "").replace(/^file:\/\/\/?/i, "").replace(/#L\d+(?:-L?\d+)?$/i, "");
+                try { cp = decodeURIComponent(cp); } catch (_) {}
+                try {
+                  await navigator.clipboard.writeText(cp);
+                  toast(`Đã chép đường dẫn: ${shortenAntigravityPathLabel(cp, 42)}`);
+                } catch (_) {}
+                return;
+              }
+              const modalCopyCode = ev.target.closest("[data-copy-code]");
+              if (modalCopyCode) {
+                const codeEl = modalCopyCode.closest(".agy-code-block")?.querySelector("code");
+                if (codeEl) {
+                  try {
+                    await navigator.clipboard.writeText(codeEl.textContent || "");
+                    const orig = modalCopyCode.textContent;
+                    modalCopyCode.textContent = "Đã chép ✓";
+                    setTimeout(() => { modalCopyCode.textContent = orig; }, 1500);
+                  } catch (_) {}
+                }
+              }
+            });
+          },
+        });
+      }
+      return;
+    }
     const copyBtn = event.target.closest("[data-copy-code]");
     if (copyBtn) {
       const codeEl = copyBtn.closest(".agy-code-block")?.querySelector("code");
@@ -6633,9 +7998,13 @@ async function applyProducerUiActions(actions = []) {
     if (action.type === "select_job" && action.job_id) {
       const previousId = state.selectedId;
       state.selectedId = String(action.job_id);
+      state.userPinnedJobId = state.selectedId;
+      try { localStorage.setItem("cofi-selected-job-id", state.selectedId); } catch (_) {}
+      state.workspaceRenderKeys = {};
       state.detailTab = "tongquan";
       await loadJobs(true);
       await renderDetail();
+      await renderFunctionWorkspaces();
       if (previousId !== state.selectedId) await refreshProducerChatsForSelection();
       continue;
     }
@@ -6656,6 +8025,11 @@ async function applyProducerUiActions(actions = []) {
       action.type === "update_outline" ||
       action.type === "approve_step"
     ) {
+      if (action.job_id && state.jobs.some(j => j.id === String(action.job_id))) {
+        state.selectedId = String(action.job_id);
+        state.userPinnedJobId = state.selectedId;
+        try { localStorage.setItem("cofi-selected-job-id", state.selectedId); } catch (_) {}
+      }
       if (action.tab) delete state.workspaceRenderKeys[String(action.tab)];
       else state.workspaceRenderKeys = {};
       await loadJobs(true);
@@ -6907,10 +8281,14 @@ function phaseStepPanelHtml(job, phase, nextTab = null, hideActions = false) {
       guidance = previous ? `Hãy hoàn tất ${phaseLabels[previous]} trước.` : "Chưa sẵn sàng.";
     }
   }
+  const qcDone = job.phases?.qc?.status === "succeeded" || job.status === "succeeded" || job.status === "completed";
+  const saveVideoQuickHtml = qcDone
+    ? `<button type="button" class="primary compact" data-local-save-job="${escapeHtml(job.id)}" data-local-save-path="release/video.mp4" style="background:linear-gradient(135deg,#10b981,#059669);border-color:#34d399;color:#ffffff;font-weight:800;" title="Mở hộp thoại chọn thư mục (cho phép đổi tên) và chuyển thẳng video gốc sang thư mục chọn">💾 Lưu Video (.MP4)</button>`
+    : "";
   return `<section class="step-status-card ${escapeHtml(status)}">
     <div class="step-status-main"><span class="step-number">BƯỚC ${index + 1}</span><div><strong>${escapeHtml(phaseLabels[phase])}</strong><small>${escapeHtml(guidance)}</small></div><b>${escapeHtml(statusLabels[status] || status)}</b></div>
     ${info.error ? `<div class="step-error"><strong>Lỗi ở bước này</strong><p>${escapeHtml(info.error)}</p></div>` : ""}
-    ${!hideActions && (primary || secondary) ? `<div class="step-actions">${primary}${secondary}</div>` : ""}
+    ${!hideActions && (primary || secondary || saveVideoQuickHtml) ? `<div class="step-actions">${saveVideoQuickHtml}${primary}${secondary}</div>` : ""}
   </section>`;
 }
 
@@ -6920,14 +8298,24 @@ function safeJson(raw, fallback = {}) {
   try { return JSON.parse(raw); } catch (_) { return fallback; }
 }
 
+function jobMediaVersionToken(jobId) {
+  const job = state.jobs.find(j => j.id === jobId);
+  if (!job) return "";
+  const p = job.phases || {};
+  const live = state.realtimeLive?.job_id === jobId ? state.realtimeLive : {};
+  return [job.updated_at || "", p.voice?.finished_at || "", p.ai_visual?.finished_at || "", p.edit?.finished_at || "", p.qc?.finished_at || "", live.voice_mtime || "", live.live_edit_mtime || "", live.render_mtime || ""].filter(Boolean).join("_");
+}
+
 function mediaUrl(jobId, path) {
   if (!path) return "";
-  return `/api/jobs/${encodeURIComponent(jobId)}/media?path=${encodeURIComponent(path)}`;
+  const v = jobMediaVersionToken(jobId);
+  return `/api/jobs/${encodeURIComponent(jobId)}/media?path=${encodeURIComponent(path)}${v ? `&v=${encodeURIComponent(v)}` : ""}`;
 }
 
 function mediaPosterUrl(jobId, path) {
   if (!path) return "";
-  return `/api/jobs/${encodeURIComponent(jobId)}/media?path=${encodeURIComponent(path)}&poster=1`;
+  const v = jobMediaVersionToken(jobId);
+  return `/api/jobs/${encodeURIComponent(jobId)}/media?path=${encodeURIComponent(path)}&poster=1${v ? `&v=${encodeURIComponent(v)}` : ""}`;
 }
 
 async function runWorkspacePhase(job, phase) {
@@ -7166,7 +8554,9 @@ async function renderScriptWorkspace(job, { force = false } = {}) {
     root.dataset.scriptSignature = "";
     return root.innerHTML = `<div class="empty-state">Chọn một dự án ở tab Dự án để xem kịch bản.</div>`;
   }
-  if (!force && root.contains(document.activeElement) && ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement?.tagName || "")) {
+  const activeEl = document.activeElement;
+  const isEditingInput = !force && root.contains(activeEl) && ["INPUT", "TEXTAREA", "SELECT"].includes(activeEl?.tagName || "");
+  if (isEditingInput && (activeEl?.id !== "scriptDirectEditorTextarea" || activeEl?.dataset?.dirty === "1")) {
     return;
   }
   const [script, research, visual, outlineRes] = await Promise.all([
@@ -7175,6 +8565,15 @@ async function renderScriptWorkspace(job, { force = false } = {}) {
     artifact(job.id, "visual_manifest.json"),
     api(`/api/jobs/${encodeURIComponent(job.id)}/outline`).catch(() => ({ outline: job.outline || {}, creative_brief: job.creative_brief || {} })),
   ]);
+  if (isEditingInput && activeEl?.id === "scriptDirectEditorTextarea" && activeEl?.dataset?.dirty !== "1") {
+    const nextScript = String(script || "");
+    if (activeEl.value !== nextScript) {
+      const prevScrollTop = activeEl.scrollTop;
+      activeEl.value = nextScript;
+      activeEl.scrollTop = prevScrollTop;
+    }
+    return;
+  }
   const outlineObj = outlineRes?.outline || job.outline || {};
   const chapters = Array.isArray(outlineObj?.chapters) ? outlineObj.chapters : [];
   const brief = {
@@ -7207,7 +8606,7 @@ async function renderScriptWorkspace(job, { force = false } = {}) {
     customRules,
     chaptersCount: chapters.length,
     chaptersSig: chapters.map(c => `${c.title || ""}:${c.summary || ""}:${c.evidence_anchor || ""}`).join("|"),
-    scriptLen: String(script || "").length,
+    scriptText: String(script || ""),
     visualLen: String(visual || "").length,
     playbooksCount: (state.playbooks || []).length,
   });
@@ -7225,121 +8624,139 @@ async function renderScriptWorkspace(job, { force = false } = {}) {
   } catch {}
   const hasScriptText = Boolean(script && String(script).trim().length > 0);
   if (!state.scriptDrawerPrefs) state.scriptDrawerPrefs = {};
+  if (!state.scriptSubtabPrefs) state.scriptSubtabPrefs = {};
   const jobDrawerPref = state.scriptDrawerPrefs[job.id] || {};
-  const briefOpen = typeof jobDrawerPref.brief === "boolean" ? jobDrawerPref.brief : (!hasScriptText && job.phases?.plan?.status !== "running");
-  const outlineOpen = typeof jobDrawerPref.outline === "boolean" ? jobDrawerPref.outline : !hasScriptText;
+  const briefOpen = typeof jobDrawerPref.brief === "boolean" ? jobDrawerPref.brief : true;
+  const outlineOpen = typeof jobDrawerPref.outline === "boolean" ? jobDrawerPref.outline : true;
+  const activeScriptSubtab = state.scriptSubtabPrefs[job.id] || (hasScriptText ? "editor" : "blueprint");
 
   root.innerHTML = `${phaseStepPanelHtml(job, "plan", "voice")}
-    <div class="script-blueprint-summary-bar">
-      <div class="script-summary-pills">
-        <span class="script-summary-pill" title="${escapeHtml(activeAngleDisplay)}"><b>Góc nhìn:</b> ${escapeHtml(activeAngleDisplay.length > 46 ? activeAngleDisplay.slice(0, 46) + "…" : activeAngleDisplay)}</span>
-        <span class="script-summary-pill" title="${escapeHtml(activeStyleDisplay)}"><b>Văn phong:</b> ${escapeHtml(activeStyleDisplay.length > 42 ? activeStyleDisplay.slice(0, 42) + "…" : activeStyleDisplay)}</span>
-        <span class="script-summary-pill"><b>Dàn ý:</b> ${chapters.length} chương</span>
-        <span class="script-summary-pill ${hasScriptText ? "is-ready" : ""}"><b>Kịch bản:</b> ${hasScriptText ? `${String(script).length.toLocaleString("vi-VN")} ký tự` : "Đang chờ / Chưa tạo"}</span>
-        <span class="script-summary-pill ${beatCount > 0 ? "is-ready" : ""}"><b>Phân cảnh:</b> ${beatCount} cảnh</span>
+    <nav class="studio-subtabs-bar" aria-label="Chế độ xem Kịch bản & Phân cảnh">
+      <div class="studio-subtabs-group">
+        <button type="button" class="studio-subtab-btn ${activeScriptSubtab === "editor" ? "active" : ""}" data-script-subtab="editor">📝 Kịch bản (${hasScriptText ? `${String(script).length.toLocaleString("vi-VN")} ký tự` : "Soạn thảo"})</button>
+        <button type="button" class="studio-subtab-btn ${activeScriptSubtab === "storyboard" ? "active" : ""}" data-script-subtab="storyboard">🎬 Phân cảnh (${beatCount})</button>
+        <button type="button" class="studio-subtab-btn ${activeScriptSubtab === "blueprint" ? "active" : ""}" data-script-subtab="blueprint">🧭 Định hướng &amp; Dàn ý (${chapters.length})</button>
+        <button type="button" class="studio-subtab-btn ${activeScriptSubtab === "research" ? "active" : ""}" data-script-subtab="research">🔬 Nghiên cứu &amp; JSON</button>
       </div>
-      <div class="script-summary-actions">
-        <button type="button" class="ghost compact" id="scriptQuickToggleBriefBtn">${briefOpen ? "▾ Thu gọn Định hướng (1A)" : "▸ Mở Định hướng (1A)"}</button>
-        <button type="button" class="ghost compact" id="scriptQuickToggleOutlineBtn">${outlineOpen ? "▾ Thu gọn Dàn ý (1B)" : `▸ Mở Dàn ý ${chapters.length} chương (1B)`}</button>
+      <div class="studio-subtabs-group">
+        <button type="button" class="secondary compact" id="openScriptFullscreenReaderBtn">🗗 Mở Popup Đọc Kịch Bản</button>
       </div>
-    </div>
-    <section class="script-blueprint-studio">
-      <details class="script-brief-panel script-collapsible-panel" id="scriptBriefDetails" ${briefOpen ? "open" : ""}>
-        <summary class="script-studio-header">
-          <div class="script-header-title-wrap">
-            <span class="eyebrow"><span class="script-Format-chevron">▸</span> TẦNG 1A · ĐỊNH HƯỚNG SÁNG TẠO & PLAYBOOK DỰ ÁN (BẤM ĐỂ MỞ / THU GỌN)</span>
-            <strong>Góc nhìn Kể chuyện, Văn phong, Hook 30s & Ngữ pháp Dựng phim</strong>
-          </div>
-          <div class="script-studio-header-actions" onclick="event.stopPropagation()">
-            <button type="button" class="ghost compact" id="scriptExtractPlaybookBtn">🧬 Đúc kết thành Playbook</button>
-            <button type="button" class="primary compact" id="scriptSaveBriefBtn">💾 Lưu Định hướng</button>
-          </div>
-        </summary>
-        <div class="creative-brief-grid">
-          <label>
-            <span>Playbook Kênh (Channel DNA)</span>
-            <select id="scriptPlaybookSelect">
-              <option value="">✨ Tự do sáng tạo / Theo cuộc trò chuyện AI</option>
-              ${playbooks.map(pb => `<option value="${escapeHtml(pb.id)}" ${String(pb.id) === activePlaybookId ? "selected" : ""}>${pb.built_in ? "🏛️" : "🧬"} ${escapeHtml(pb.name)}</option>`).join("")}
-            </select>
-          </label>
-          <label>
-            <span>Góc nhìn kể chuyện (Narrative Angle — mở & linh hoạt)</span>
-            <input type="text" id="scriptNarrativeAngle" list="narrativeAngleSuggestions" value="${escapeHtml(activeAngleDisplay)}" placeholder="Nhập tự do hoặc nhắn bên Chat để AI đổi góc nhìn..." />
-          </label>
-          <label>
-            <span>Phong cách viết (Writing Style — mở & linh hoạt)</span>
-            <input type="text" id="scriptWritingStyle" list="writingStyleSuggestions" value="${escapeHtml(activeStyleDisplay)}" placeholder="Nhập tự do hoặc nhắn bên Chat để AI đổi văn phong..." />
-          </label>
-          <label>
-            <span>Cấu trúc Hook 30s đầu (linh hoạt)</span>
-            <input type="text" id="scriptHookArchetype" list="hookArchetypeSuggestions" value="${escapeHtml(activeHookDisplay)}" placeholder="Nhập tự do hoặc nhắn bên Chat..." />
-          </label>
-          <label class="full-span">
-            <span>Ngữ pháp Dựng phim & Visual Grammar (tự do kết hợp, phân tách bằng dấu phẩy)</span>
-            <input type="text" id="scriptEditingArchetypesInput" list="editingArchetypeSuggestions" value="${escapeHtml(activeArchetypesDisplay)}" placeholder="VD: Bảng bằng chứng chỉ đỏ, Sơ đồ kỹ thuật giải phẫu, Split-Screen đối chiếu lịch sử..." />
-          </label>
-          <label class="full-span">
-            <span>Hook mở đầu 30 giây đầu tiên (Opening Hook — khóa câu mở màn cho kịch bản)</span>
-            <textarea id="scriptOpeningHookInput" rows="2" placeholder="Nhập câu mở màn hoặc nhắn bên Chat để AI viết lại Hook 30s...">${escapeHtml(openingHook)}</textarea>
-          </label>
-          <label class="full-span">
-            <span>Chỉ dẫn đạo diễn / Luật riêng cho dự án (Custom Rules)</span>
-            <textarea id="scriptCustomRulesInput" rows="2" placeholder="VD: Mỗi chương phải mở đầu bằng 1 con số tài chính thật; Cấm mở bài kiểu Wikipedia...">${escapeHtml(customRules)}</textarea>
-          </label>
-        </div>
-      </details>
+    </nav>
 
-      <details class="script-outline-panel script-collapsible-panel" id="scriptOutlineDetails" ${outlineOpen ? "open" : ""}>
-        <summary class="script-studio-header">
-          <div class="script-header-title-wrap">
-            <span class="eyebrow"><span class="script-Format-chevron">▸</span> TẦNG 1B · DÀN Ý CHƯƠNG HỒI & BẰNG CHỨNG (BẤM ĐỂ MỞ / THU GỌN)</span>
-            <strong>${chapters.length ? `${chapters.length} chương đã định hình xương sống kịch bản` : "Chưa có dàn ý chương hồi — Bạn có thể nhắn bên Chat hoặc bấm tạo dàn ý"}</strong>
-          </div>
-          <div class="script-studio-header-actions" onclick="event.stopPropagation()">
-            <button type="button" class="ghost compact" id="scriptAiGenerateOutlineBtn">✨ AI Tạo lại Dàn ý</button>
-            <button type="button" class="ghost compact" id="scriptAddChapterBtn">+ Thêm chương</button>
-            <button type="button" class="primary compact" id="scriptSaveOutlineBtn">💾 Lưu Dàn ý</button>
-          </div>
-        </summary>
-        <div class="outline-chapters-list" id="scriptOutlineChaptersList">
-          ${chapters.length ? chapters.map((ch, idx) => `
-            <article class="outline-chapter-card" data-chapter-index="${idx}">
-              <div class="outline-chapter-head">
-                <span class="outline-chapter-badge">CHƯƠNG ${String(idx + 1).padStart(2, "0")}</span>
-                <input type="text" class="outline-chapter-title" value="${escapeHtml(ch.title || ch.chapter_title || `Chương ${idx + 1}`)}" placeholder="Tiêu đề chương..." />
-                <input type="number" class="outline-chapter-minutes" min="1" max="20" step="0.5" value="${escapeHtml(String(ch.estimated_minutes || ch.duration_minutes || 3))}" title="Thời lượng dự kiến (phút)" />
-                <span class="outline-min-unit">phút</span>
-                <div class="outline-chapter-move-btns">
-                  <button type="button" class="ghost compact" data-chapter-move="up" title="Đẩy lên">↑</button>
-                  <button type="button" class="ghost compact" data-chapter-move="down" title="Đẩy xuống">↓</button>
-                  <button type="button" class="ghost compact danger-text" data-chapter-delete="1" title="Xóa chương">✕</button>
-                </div>
-              </div>
-              <div class="outline-chapter-fields">
-                <label class="full-span">
-                  <span>Mục tiêu giữ chân / Tóm tắt nội dung chương & Cliffhanger</span>
-                  <textarea class="outline-chapter-summary" rows="2" placeholder="Chương này giải quyết câu hỏi gì, lật mở mâu thuẫn nào?">${escapeHtml(ch.summary || ch.goal_or_question || "")}</textarea>
-                </label>
-                <label>
-                  <span>Bằng chứng thật / Con số / Tài liệu khóa sổ (Evidence Anchor)</span>
-                  <input type="text" class="outline-chapter-evidence" value="${escapeHtml(ch.evidence_anchor || "")}" placeholder="VD: Báo cáo kiểm toán 2024, biên bản tòa án, con số 4.2 tỷ USD..." />
-                </label>
-                <label>
-                  <span>Định hướng Visual & Nhịp dựng cho chương (Visual Grammar)</span>
-                  <input type="text" class="outline-chapter-visual" value="${escapeHtml(ch.visual_note || ch.visual_direction || "")}" placeholder="VD: Bản đồ phóng to + Highlight tài liệu đỏ + Split-screen..." />
-                </label>
-              </div>
-              ${ch.ai_suggestion ? `<div class="outline-ai-suggestion"><span>💡 Đề xuất sáng tạo từ AI:</span> ${escapeHtml(ch.ai_suggestion)}</div>` : ""}
-            </article>
-          `).join("") : `
-            <div class="empty-state outline-empty-state">
-              <p>Chưa có Dàn ý Chương hồi cho dự án này. Bạn có thể nhắn bên Chat để bàn dàn ý với AI hoặc bấm <b>✨ AI Tạo lại Dàn ý</b>.</p>
+    <div class="script-subpane ${activeScriptSubtab === "blueprint" ? "" : "studio-subpane-hidden"}" data-script-subpane="blueprint">
+      <div class="script-blueprint-summary-bar">
+        <div class="script-summary-pills">
+          <span class="script-summary-pill" title="${escapeHtml(activeAngleDisplay)}"><b>Góc nhìn:</b> ${escapeHtml(activeAngleDisplay.length > 46 ? activeAngleDisplay.slice(0, 46) + "…" : activeAngleDisplay)}</span>
+          <span class="script-summary-pill" title="${escapeHtml(activeStyleDisplay)}"><b>Văn phong:</b> ${escapeHtml(activeStyleDisplay.length > 42 ? activeStyleDisplay.slice(0, 42) + "…" : activeStyleDisplay)}</span>
+          <span class="script-summary-pill"><b>Dàn ý:</b> ${chapters.length} chương</span>
+          <span class="script-summary-pill ${hasScriptText ? "is-ready" : ""}"><b>Kịch bản:</b> ${hasScriptText ? `${String(script).length.toLocaleString("vi-VN")} ký tự` : "Đang chờ / Chưa tạo"}</span>
+          <span class="script-summary-pill ${beatCount > 0 ? "is-ready" : ""}"><b>Phân cảnh:</b> ${beatCount} cảnh</span>
+        </div>
+        <div class="script-summary-actions">
+          <button type="button" class="ghost compact" id="scriptQuickToggleBriefBtn">${briefOpen ? "▾ Thu gọn Định hướng (1A)" : "▸ Mở Định hướng (1A)"}</button>
+          <button type="button" class="ghost compact" id="scriptQuickToggleOutlineBtn">${outlineOpen ? "▾ Thu gọn Dàn ý (1B)" : `▸ Mở Dàn ý ${chapters.length} chương (1B)`}</button>
+        </div>
+      </div>
+      <section class="script-blueprint-studio">
+        <details class="script-brief-panel script-collapsible-panel" id="scriptBriefDetails" ${briefOpen ? "open" : ""}>
+          <summary class="script-studio-header">
+            <div class="script-header-title-wrap">
+              <span class="eyebrow"><span class="script-Format-chevron">▸</span> TẦNG 1A · ĐỊNH HƯỚNG SÁNG TẠO & PLAYBOOK DỰ ÁN (BẤM ĐỂ MỞ / THU GỌN)</span>
+              <strong>Góc nhìn Kể chuyện, Văn phong, Hook 30s & Ngữ pháp Dựng phim</strong>
             </div>
-          `}
-        </div>
-      </details>
+            <div class="script-studio-header-actions" onclick="event.stopPropagation()">
+              <button type="button" class="ghost compact" id="scriptExtractPlaybookBtn">🧬 Đúc kết thành Playbook</button>
+              <button type="button" class="primary compact" id="scriptSaveBriefBtn">💾 Lưu Định hướng</button>
+            </div>
+          </summary>
+          <div class="creative-brief-grid">
+            <label>
+              <span>Playbook Kênh (Channel DNA)</span>
+              <select id="scriptPlaybookSelect">
+                <option value="">✨ Tự do sáng tạo / Theo cuộc trò chuyện AI</option>
+                ${playbooks.map(pb => `<option value="${escapeHtml(pb.id)}" ${String(pb.id) === activePlaybookId ? "selected" : ""}>${pb.built_in ? "🏛️" : "🧬"} ${escapeHtml(pb.name)}</option>`).join("")}
+              </select>
+            </label>
+            <label>
+              <span>Góc nhìn kể chuyện (Narrative Angle — mở & linh hoạt)</span>
+              <input type="text" id="scriptNarrativeAngle" list="narrativeAngleSuggestions" value="${escapeHtml(activeAngleDisplay)}" placeholder="Nhập tự do hoặc nhắn bên Chat để AI đổi góc nhìn..." />
+            </label>
+            <label>
+              <span>Phong cách viết (Writing Style — mở & linh hoạt)</span>
+              <input type="text" id="scriptWritingStyle" list="writingStyleSuggestions" value="${escapeHtml(activeStyleDisplay)}" placeholder="Nhập tự do hoặc nhắn bên Chat để AI đổi văn phong..." />
+            </label>
+            <label>
+              <span>Cấu trúc Hook 30s đầu (linh hoạt)</span>
+              <input type="text" id="scriptHookArchetype" list="hookArchetypeSuggestions" value="${escapeHtml(activeHookDisplay)}" placeholder="Nhập tự do hoặc nhắn bên Chat..." />
+            </label>
+            <label class="full-span">
+              <span>Ngữ pháp Dựng phim & Visual Grammar (tự do kết hợp, phân tách bằng dấu phẩy)</span>
+              <input type="text" id="scriptEditingArchetypesInput" list="editingArchetypeSuggestions" value="${escapeHtml(activeArchetypesDisplay)}" placeholder="VD: Bảng bằng chứng chỉ đỏ, Sơ đồ kỹ thuật giải phẫu, Split-Screen đối chiếu lịch sử..." />
+            </label>
+            <label class="full-span">
+              <span>Hook mở đầu 30 giây đầu tiên (Opening Hook — khóa câu mở màn cho kịch bản)</span>
+              <textarea id="scriptOpeningHookInput" rows="2" placeholder="Nhập câu mở màn hoặc nhắn bên Chat để AI viết lại Hook 30s...">${escapeHtml(openingHook)}</textarea>
+            </label>
+            <label class="full-span">
+              <span>Chỉ dẫn đạo diễn / Luật riêng cho dự án (Custom Rules)</span>
+              <textarea id="scriptCustomRulesInput" rows="2" placeholder="VD: Mỗi chương phải mở đầu bằng 1 con số tài chính thật; Cấm mở bài kiểu Wikipedia...">${escapeHtml(customRules)}</textarea>
+            </label>
+          </div>
+        </details>
 
+        <details class="script-outline-panel script-collapsible-panel" id="scriptOutlineDetails" ${outlineOpen ? "open" : ""}>
+          <summary class="script-studio-header">
+            <div class="script-header-title-wrap">
+              <span class="eyebrow"><span class="script-Format-chevron">▸</span> TẦNG 1B · DÀN Ý CHƯƠNG HỒI & BẰNG CHỨNG (BẤM ĐỂ MỞ / THU GỌN)</span>
+              <strong>${chapters.length ? `${chapters.length} chương đã định hình xương sống kịch bản` : "Chưa có dàn ý chương hồi — Bạn có thể nhắn bên Chat hoặc bấm tạo dàn ý"}</strong>
+            </div>
+            <div class="script-studio-header-actions" onclick="event.stopPropagation()">
+              <button type="button" class="ghost compact" id="scriptAiGenerateOutlineBtn">✨ AI Tạo lại Dàn ý</button>
+              <button type="button" class="ghost compact" id="scriptAddChapterBtn">+ Thêm chương</button>
+              <button type="button" class="primary compact" id="scriptSaveOutlineBtn">💾 Lưu Dàn ý</button>
+            </div>
+          </summary>
+          <div class="outline-chapters-list" id="scriptOutlineChaptersList">
+            ${chapters.length ? chapters.map((ch, idx) => `
+              <article class="outline-chapter-card" data-chapter-index="${idx}">
+                <div class="outline-chapter-head">
+                  <span class="outline-chapter-badge">CHƯƠNG ${String(idx + 1).padStart(2, "0")}</span>
+                  <input type="text" class="outline-chapter-title" value="${escapeHtml(ch.title || ch.chapter_title || `Chương ${idx + 1}`)}" placeholder="Tiêu đề chương..." />
+                  <input type="number" class="outline-chapter-minutes" min="1" max="20" step="0.5" value="${escapeHtml(String(ch.estimated_minutes || ch.duration_minutes || 3))}" title="Thời lượng dự kiến (phút)" />
+                  <span class="outline-min-unit">phút</span>
+                  <div class="outline-chapter-move-btns">
+                    <button type="button" class="ghost compact" data-chapter-move="up" title="Đẩy lên">↑</button>
+                    <button type="button" class="ghost compact" data-chapter-move="down" title="Đẩy xuống">↓</button>
+                    <button type="button" class="ghost compact danger-text" data-chapter-delete="1" title="Xóa chương">✕</button>
+                  </div>
+                </div>
+                <div class="outline-chapter-fields">
+                  <label class="full-span">
+                    <span>Mục tiêu giữ chân / Tóm tắt nội dung chương & Cliffhanger</span>
+                    <textarea class="outline-chapter-summary" rows="2" placeholder="Chương này giải quyết câu hỏi gì, lật mở mâu thuẫn nào?">${escapeHtml(ch.summary || ch.goal_or_question || "")}</textarea>
+                  </label>
+                  <label>
+                    <span>Bằng chứng thật / Con số / Tài liệu khóa sổ (Evidence Anchor)</span>
+                    <input type="text" class="outline-chapter-evidence" value="${escapeHtml(ch.evidence_anchor || "")}" placeholder="VD: Báo cáo kiểm toán 2024, biên bản tòa án, con số 4.2 tỷ USD..." />
+                  </label>
+                  <label>
+                    <span>Định hướng Visual & Nhịp dựng cho chương (Visual Grammar)</span>
+                    <input type="text" class="outline-chapter-visual" value="${escapeHtml(ch.visual_note || ch.visual_direction || "")}" placeholder="VD: Bản đồ phóng to + Highlight tài liệu đỏ + Split-screen..." />
+                  </label>
+                </div>
+                ${ch.ai_suggestion ? `<div class="outline-ai-suggestion"><span>💡 Đề xuất sáng tạo từ AI:</span> ${escapeHtml(ch.ai_suggestion)}</div>` : ""}
+              </article>
+            `).join("") : `
+              <div class="empty-state outline-empty-state">
+                <p>Chưa có Dàn ý Chương hồi cho dự án này. Bạn có thể nhắn bên Chat để bàn dàn ý với AI hoặc bấm <b>✨ AI Tạo lại Dàn ý</b>.</p>
+              </div>
+            `}
+          </div>
+        </details>
+      </section>
+    </div>
+
+    <div class="script-subpane ${activeScriptSubtab === "editor" ? "" : "studio-subpane-hidden"}" data-script-subpane="editor">
       <div class="script-editor-panel">
         <div class="script-studio-header">
           <div>
@@ -7350,13 +8767,40 @@ async function renderScriptWorkspace(job, { force = false } = {}) {
             <button type="button" class="primary compact" id="scriptSaveFullTextBtn">💾 Lưu Kịch bản (script.md)</button>
           </div>
         </div>
-        <textarea id="scriptDirectEditorTextarea" class="script-direct-editor" rows="16" placeholder="Kịch bản chi tiết (script.md) sẽ hiển thị tại đây sau khi chạy Bước 01 (Lập kế hoạch & Viết kịch bản), hoặc bạn có thể soạn/chỉnh sửa trực tiếp tại đây...">${escapeHtml(script || "")}</textarea>
+        <textarea id="scriptDirectEditorTextarea" class="script-direct-editor" rows="18" placeholder="Kịch bản chi tiết (script.md) sẽ hiển thị tại đây sau khi chạy Bước 01 (Lập kế hoạch & Viết kịch bản), hoặc bạn có thể soạn/chỉnh sửa trực tiếp tại đây...">${escapeHtml(script || "")}</textarea>
       </div>
-    </section>
-    ${storyboard}
-    <details class="technical-details"><summary>Chi tiết kỹ thuật · Hồ sơ Nghiên cứu (research.md) & Visual Manifest JSON</summary><div class="artifact-grid two-col">${codeViewer("Hồ sơ nghiên cứu (research.md)", research)}${codeViewer("Visual manifest", visual)}</div></details>`;
+    </div>
+
+    <div class="script-subpane ${activeScriptSubtab === "storyboard" ? "" : "studio-subpane-hidden"}" data-script-subpane="storyboard">
+      ${storyboard}
+    </div>
+
+    <div class="script-subpane ${activeScriptSubtab === "research" ? "" : "studio-subpane-hidden"}" data-script-subpane="research">
+      <details class="technical-details" open><summary>Chi tiết kỹ thuật · Hồ sơ Nghiên cứu (research.md) &amp; Visual Manifest JSON</summary><div class="artifact-grid two-col">${codeViewer("Hồ sơ nghiên cứu (research.md)", research)}${codeViewer("Visual manifest", visual)}</div></details>
+    </div>`;
 
   bindWorkspacePhaseButtons(job, root);
+
+  root.querySelectorAll("[data-script-subtab]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const targetSubtab = btn.dataset.scriptSubtab;
+      state.scriptSubtabPrefs[job.id] = targetSubtab;
+      root.querySelectorAll("[data-script-subtab]").forEach(b => b.classList.toggle("active", b.dataset.scriptSubtab === targetSubtab));
+      root.querySelectorAll("[data-script-subpane]").forEach(p => p.classList.toggle("studio-subpane-hidden", p.dataset.scriptSubpane !== targetSubtab));
+    });
+  });
+
+  root.querySelector("#openScriptFullscreenReaderBtn")?.addEventListener("click", () => {
+    const liveScript = String(root.querySelector("#scriptDirectEditorTextarea")?.value || script || "").trim();
+    const fallbackText = liveScript || String(research || "").trim() || "Chưa có kịch bản cho dự án này.";
+    openStudioInspectorModal({
+      badge: "📝",
+      title: job.title || "Kịch bản dự án",
+      subtitle: liveScript ? `Kịch bản chi tiết (script.md) · ${liveScript.length.toLocaleString("vi-VN")} ký tự` : "Hồ sơ nghiên cứu (research.md)",
+      rawText: fallbackText,
+      isCode: false,
+    });
+  });
 
   const briefDetailsEl = root.querySelector("#scriptBriefDetails");
   const outlineDetailsEl = root.querySelector("#scriptOutlineDetails");
@@ -7587,6 +9031,11 @@ async function renderScriptWorkspace(job, { force = false } = {}) {
     await renderScriptWorkspace(updatedJob, { force: true });
   });
 
+  const directEditorEl = $("#scriptDirectEditorTextarea");
+  directEditorEl?.addEventListener("input", () => {
+    directEditorEl.dataset.dirty = "1";
+  });
+
   $("#scriptSaveFullTextBtn")?.addEventListener("click", async ev => {
     const btn = ev.currentTarget;
     const content = String($("#scriptDirectEditorTextarea")?.value || "");
@@ -7600,6 +9049,7 @@ async function renderScriptWorkspace(job, { force = false } = {}) {
         method: "PUT",
         body: JSON.stringify({ script: content }),
       });
+      if (directEditorEl) directEditorEl.dataset.dirty = "0";
       toast("Đã lưu kịch bản (script.md). Bạn có thể chạy Bước 02 (Voice & SRT) hoặc Bước 03 (Visuals) ngay.");
     } catch (err) {
       toast(err.message, true);
@@ -7738,10 +9188,32 @@ function readFileAsDataUrl(file) {
   });
 }
 
-async function renderVoiceWorkspace(job) {
+async function renderVoiceWorkspace(job, { force = false } = {}) {
   $("#voiceProjectLabel").textContent = selectedProjectLabel(job);
   const root = $("#voiceWorkspace");
-  if (!job) return root.innerHTML = `<div class="empty-state">Chọn một dự án để cấu hình voice.</div>`;
+  if (!job) {
+    root.dataset.voiceJobKey = "";
+    return root.innerHTML = `<div class="empty-state">Chọn một dự án để cấu hình voice.</div>`;
+  }
+  const voicePhase = job.phases?.voice || {};
+  const voiceRunning = ["running", "queued"].includes(voicePhase.status);
+  const voiceJobKey = `${job.id}|${voicePhase.status || 'pending'}|${voicePhase.finished_at || ''}|${JSON.stringify(job.voice || {})}`;
+  if (!force && voiceRunning && root.dataset.voiceJobId === job.id && root.children.length > 0) {
+    const stepCard = root.querySelector(".step-status-card");
+    const wavCount = state.realtimeLive?.job_id === job.id ? (state.realtimeLive.voice_wav_count || 0) : 0;
+    if (stepCard) {
+      stepCard.outerHTML = phaseStepPanelHtml(job, "voice", "visuals");
+      const newCard = root.querySelector(".step-status-card small");
+      if (newCard && wavCount > 0) {
+        newCard.textContent = `🎙 Đang thu âm realtime: đã hoàn tất ${wavCount} file âm thanh trong dự án...`;
+      }
+      bindWorkspacePhaseButtons(job, root);
+    }
+    root.dataset.voiceJobKey = voiceJobKey;
+    return;
+  }
+  root.dataset.voiceJobId = job.id;
+  root.dataset.voiceJobKey = voiceJobKey;
   const [manifest, srt] = await Promise.all([artifact(job.id, "voice_manifest.json"), artifact(job.id, "subtitles.srt")]);
   const currentVoice = state.voices.find(v => String(v.id) === String(job.voice?.voice_id || ""));
   const voiceReady = Boolean(state.health?.cofi_voice?.ok);
@@ -7963,7 +9435,7 @@ async function renderVoiceWorkspace(job) {
 
   root.querySelectorAll("[data-voice-studio-tab]").forEach(btn => btn.addEventListener("click", event => {
     voiceStudioSubTab = event.currentTarget.dataset.voiceStudioTab || "clone";
-    renderVoiceWorkspace(job);
+    renderVoiceWorkspace(job, { force: true });
   }));
 
   root.querySelectorAll("[data-voice-country-pill]").forEach(btn => btn.addEventListener("click", event => {
@@ -8151,7 +9623,7 @@ function visualStrategyLabel(job) {
 
 function visualsNextTab(job) {
   const strategy = String(job?.visual_strategy || "full_footage").toLowerCase();
-  return ["full_ai", "edit_direct_footage", "semi_content", "ban_content", "edit_footage"].includes(strategy) ? "ai_visual" : "footage";
+  return strategy === "full_footage" ? "edit" : "ai_visual";
 }
 
 async function renderVisualsWorkspace(job) {
@@ -8165,9 +9637,21 @@ async function renderVisualsWorkspace(job) {
   const strategy = escapeHtml(visualStrategyLabel(job));
   const storyboard = storyboardTableHtml(visual, prompts);
   root.innerHTML = `${phaseStepPanelHtml(job, "visuals", visualsNextTab(job))}
-    <section class="workspace-toolbar visuals-route-toolbar"><div><strong>${strategy}</strong><small>Visuals/STP chia 100% narration thành các đoạn ngắn đủ nghĩa. Mỗi dòng là một prompt và giữ parent beat để truy ngược về voice/script.</small></div></section>
+    <section class="workspace-toolbar visuals-route-toolbar"><div><strong>${strategy}</strong></div></section>
     ${storyboard}
-    <div class="artifact-grid two-col">${codeViewer("Visual prompts · mỗi dòng một prompt", prompts)}${codeViewer("Visual manifest đã chia nhỏ", visual)}</div>`;
+    <details class="technical-details" id="visualsTechDetails"><summary>Chi tiết kỹ thuật · Visual Prompts &amp; Manifest JSON</summary><div class="artifact-grid two-col" id="visualsTechGrid"><p style="grid-column: 1 / -1; color: #6a889f; padding: 10px 12px; margin: 0; font-size: 11.5px;">Nhấn mở để nạp tệp JSON kỹ thuật...</p></div></details>`;
+  const visualsTech = root.querySelector("#visualsTechDetails");
+  if (visualsTech) {
+    visualsTech.addEventListener("toggle", () => {
+      if (visualsTech.open) {
+        const grid = visualsTech.querySelector("#visualsTechGrid");
+        if (grid && !grid.dataset.loaded) {
+          grid.dataset.loaded = "true";
+          grid.innerHTML = `${codeViewer("Visual prompts · mỗi dòng một prompt", prompts)}${codeViewer("Visual manifest đã chia nhỏ", visual)}`;
+        }
+      }
+    });
+  }
   bindWorkspacePhaseButtons(job, root);
 }
 
@@ -8411,11 +9895,6 @@ async function renderFootageWorkspace(job) {
   const footageNextTab = isHybridLike ? "ai_visual" : "edit";
   root.innerHTML = `${phaseStepPanelHtml(job, "footage", footageNextTab, true)}
     ${footageControlsHtml(job, checkpoint)}
-    <section class="workspace-note footage-tools-note">
-      <strong>TOOLS TÌM TƯ LIỆU · ${escapeHtml(sourceTools.length ? `${sourceTools.length} nguồn/tool` : "đang kiểm tra")}</strong>
-      <p>${escapeHtml(sourceToolText)}</p>
-      <p>Luồng bắt buộc: tools tìm → semantic rank → tải/cắt candidate → ${escapeHtml(reviewProvider)} duyệt. Nếu REJECT, AI chỉ trả query để tools tìm lại; AI không tự research web.</p>
-    </section>
     ${checkpointTotal ? `<section class="footage-progress-panel ${escapeHtml(checkpoint.status || "running")}">
       <div class="footage-progress-copy"><span>${escapeHtml(displayLabel)}</span><strong>${displayDone}/${displayTotal} ${escapeHtml(displayUnit)}</strong><p>${escapeHtml(progressStatusMessage || "Đang xử lý theo từng batch nhỏ.")}</p></div>
       <div class="footage-progress-meter"><div><span style="width:${checkpointPercent}%"></span></div><small>${checkpointPercent}% · ${escapeHtml(displayLabel)}${escapeHtml(reviewBatchText)} · ${escapeHtml(controlState === "paused" ? "TẠM DỪNG" : controlState === "stop_requested" ? "ĐANG DỪNG" : "ĐANG CHẠY")}</small></div>
@@ -8429,11 +9908,11 @@ async function renderFootageWorkspace(job) {
       <div><span>Cần REVIEW</span><strong>${candidateDecisions.REVIEW || 0}</strong></div>
       <div><span>REJECT</span><strong>${candidateDecisions.REJECT || 0}</strong></div>
       <div><span>File dùng thật khác nhau</span><strong>${uniqueFiles}</strong></div>
-      <div><span>Motion native</span><strong>${Array.isArray(registryData.native_treatments) ? registryData.native_treatments.length : 0}</strong></div>
+      <div><span>Nguồn tools</span><strong>${sourceTools.length || "—"}</strong></div>
     </section>
     ${aiFallbackNotes}
     ${items.length ? `<div class="footage-grid footage-gallery">${cards}${paginationHtml}</div>` : `<div class="empty-state">${escapeHtml(emptyFootageMessage)}</div>`}
-    <details class="technical-details" id="footageTechDetails"><summary>Chi tiết kỹ thuật · JSON</summary><div class="artifact-grid two-col" id="footageTechGrid"><p style="grid-column: 1 / -1; color: #6a889f; padding: 12px; margin: 0; font-size: 11px;">Nhấn để hiển thị toàn bộ 5 tệp JSON kỹ thuật (sẽ nạp khi bạn mở mục này)...</p></div></details>`;
+    <details class="technical-details" id="footageTechDetails"><summary>Chi tiết kỹ thuật · Nguồn Tools (${escapeHtml(sourceTools.length ? `${sourceTools.length} nguồn` : "—")}) &amp; JSON</summary><div class="artifact-grid two-col" id="footageTechGrid"><p style="grid-column: 1 / -1; color: #6a889f; padding: 12px; margin: 0; font-size: 11px;">Nhấn để hiển thị danh sách nguồn (${escapeHtml(sourceToolText)}) và 5 tệp JSON kỹ thuật...</p></div></details>`;
   root.querySelectorAll("[data-footage-media-slot]").forEach(slot => {
     const mediaKey = String(slot.dataset.footageMediaSlot || "");
     const existing = preservedMedia.get(mediaKey);
@@ -9028,48 +10507,76 @@ async function renderEditWorkspace(job) {
     root.innerHTML = `<div class="empty-state">Chọn một dự án để mở editor.</div>`;
     return;
   }
+  if (!state.editViewMode) {
+    state.editViewMode = localStorage.getItem("cofi-edit-view-mode") || "nle";
+  }
   const editPhaseRunning = job.phases?.edit?.status === "running";
+  const liveEditMtime = state.realtimeLive?.job_id === job.id ? (state.realtimeLive.live_edit_mtime || 0) : 0;
+  const editQuickSig = `${job.id}|${state.editViewMode}|${job.phases?.edit?.status || ''}|${job.phases?.edit?.finished_at || ''}|${job.updated_at || ''}|${liveEditMtime}`;
   const nowMs = Date.now();
   if (
     !editPhaseRunning &&
     state.editJobId === job.id &&
+    state.lastEditQuickSig === editQuickSig &&
     state.editStudioUrl &&
     root.querySelector("iframe") &&
     state.lastEditStatusPollMs &&
-    nowMs - state.lastEditStatusPollMs < 10000
+    nowMs - state.lastEditStatusPollMs < 15000
   ) {
     return;
   }
+  state.lastEditQuickSig = editQuickSig;
   state.lastEditStatusPollMs = nowMs;
   let session = null;
   try { session = await api(`/api/jobs/${encodeURIComponent(job.id)}/remotion`); } catch (_) {}
-  const running = Boolean(session?.studio_running && session?.studio_url);
+  if (
+    session &&
+    !session.studio_running &&
+    state.editViewMode === "studio" &&
+    (session.composition_registered === true || job.phases?.edit?.status === "running" || root.querySelector("iframe.remotion-frame")) &&
+    (!state.lastAutoStudioStartMs || Date.now() - state.lastAutoStudioStartMs > 15000)
+  ) {
+    state.lastAutoStudioStartMs = Date.now();
+    try {
+      session = await api(`/api/jobs/${encodeURIComponent(job.id)}/remotion/start`, { method: "POST" });
+    } catch (_) {}
+  }
+  const compId = session?.composition_id || job.composition_id || `Documentary-${job.id}`;
+  const nleUrl = session?.nle_url || `http://127.0.0.1:8891/?jobId=${encodeURIComponent(job.id)}&compId=${encodeURIComponent(compId)}`;
+  const studioRunning = Boolean(session?.studio_running && session?.studio_url);
   const editRunning = job.phases?.edit?.status === "running";
   const compositionReady = session?.composition_registered === true;
-  const studioUrl = running
+  const rawStudioUrl = studioRunning
     ? ((compositionReady || editRunning) ? (session.composition_url || session.studio_url) : session.studio_url)
     : null;
+  const isNleMode = state.editViewMode !== "studio";
+  const running = isNleMode ? (compositionReady || editRunning || studioRunning) : studioRunning;
+  const activeFrameUrl = isNleMode ? nleUrl : rawStudioUrl;
+
   const liveStatus = liveEditStatusText(
     session,
     editRunning
       ? (compositionReady
-        ? "Codex đang dựng · preview tự cập nhật trực tiếp"
-        : `Codex đang tạo composition ${session?.composition_id || "cho dự án"}`)
+        ? "Đang dựng · Timeline tự cập nhật trực tiếp"
+        : `Đang khởi tạo ${compId}`)
       : (compositionReady
-        ? `Preview đang mở đúng composition ${session?.composition_id || "của dự án"}`
-        : "Studio đang chạy · composition của dự án chưa được dựng"),
+        ? `${compId}`
+        : "Composition chưa được dựng"),
   );
   const progressText = editProgressText(session?.edit_progress);
   const runningStatus = `${liveStatus}${progressText ? ` · ${progressText}` : ""}`;
+  const liveEventStamp = String(session?.live_edit_event?.updated_at || session?.live_edit_event?.created_at || liveEditMtime || "");
   const editorStateKey = [
     job.status || "",
     job.phases?.edit?.status || "pending",
+    job.phases?.edit?.finished_at || "",
     compositionReady ? "composition-ready" : "composition-missing",
+    state.editViewMode || "nle",
   ].join("|");
   if (
     running &&
     state.editJobId === job.id &&
-    state.editStudioUrl === studioUrl &&
+    state.editStudioUrl === activeFrameUrl &&
     root.dataset.editorStateKey === editorStateKey &&
     root.querySelector("iframe")
   ) {
@@ -9078,18 +10585,15 @@ async function renderEditWorkspace(job) {
       statusEl.textContent = runningStatus;
     }
     const progressNode = root.querySelector("[data-edit-progress]");
-    const progressMarkup = editProgressHtml(session?.edit_progress);
+    const progressMarkup = editRunning ? editProgressHtml(session?.edit_progress) : "";
     if (progressNode) {
       if (progressNode.outerHTML !== progressMarkup) progressNode.outerHTML = progressMarkup;
     } else if (progressMarkup) {
-      root.querySelector(".editor-toolbar")?.insertAdjacentHTML("afterend", progressMarkup);
+      root.querySelector(".nle-edit-topbar")?.insertAdjacentHTML("afterend", progressMarkup);
     }
-    const cacheNode = root.querySelector("[data-render-cache]");
-    const cacheMarkup = renderCacheHtml(session?.render_cache);
-    if (cacheNode) {
-      if (cacheNode.outerHTML !== cacheMarkup) cacheNode.outerHTML = cacheMarkup;
-    } else if (cacheMarkup) {
-      (root.querySelector("[data-edit-progress]") || root.querySelector(".editor-toolbar"))?.insertAdjacentHTML("afterend", cacheMarkup);
+    if (liveEventStamp && root.dataset.lastLiveEventStamp !== liveEventStamp) {
+      root.dataset.lastLiveEventStamp = liveEventStamp;
+      renderSyncComplianceScorecard(job, root);
     }
     return;
   }
@@ -9099,37 +10603,86 @@ async function renderEditWorkspace(job) {
   }
   const checkpoint = await artifact(job.id, "edit_checkpoint.json");
   state.editJobId = job.id;
-  state.editStudioUrl = studioUrl;
+  state.editStudioUrl = activeFrameUrl;
   root.dataset.editorStateKey = editorStateKey;
   const editSucceeded = job.phases?.edit?.status === "succeeded";
   const editStatus = job.phases?.edit?.status || "pending";
   const activePhases = effectivePhases(job);
   const editStep = activePhases.indexOf("edit") + 1;
   const seoStep = activePhases.indexOf("seo") + 1;
+  const qcReadyInEdit = job.phases?.qc?.status === "succeeded" || job.status === "succeeded" || job.status === "completed";
+  const saveVideoInEditHtml = qcReadyInEdit
+    ? `<button type="button" class="primary compact" data-local-save-job="${escapeHtml(job.id)}" data-local-save-path="release/video.mp4" style="background:linear-gradient(135deg,#10b981,#059669);border-color:#34d399;color:#ffffff;font-weight:800;" title="Mở hộp thoại chọn thư mục (cho phép đổi tên) và chuyển thẳng video gốc sang thư mục chọn">💾 Lưu Video (.MP4)</button>`
+    : "";
   const editAction = editSucceeded
-    ? `<button class="primary compact" data-open-step="seo">Sang bước ${seoStep}: SEO + Thumbnail</button><button class="ghost compact" data-workspace-run-phase="edit">Chạy lại Edit</button>`
-    : phaseActionHtml(job, "edit");
+    ? `${saveVideoInEditHtml}<button class="ghost compact" data-workspace-run-phase="edit" title="Chạy lại bước Edit">↻ Dựng lại</button><button class="primary compact" data-open-step="seo">Tiếp tục →</button>`
+    : `${saveVideoInEditHtml}${phaseActionHtml(job, "edit")}`;
   const editError = job.phases?.edit?.error;
-  root.innerHTML = `<div class="persistent-editor-shell">
-    <div class="editor-toolbar"><div><strong>BƯỚC ${editStep} · ${escapeHtml(job.title)}</strong><small data-edit-status>${escapeHtml(statusLabels[editStatus] || editStatus)} · ${running ? escapeHtml(runningStatus) : "Studio chưa chạy"}</small></div><div class="button-row">${editAction}<button class="primary compact" id="lockEditDnaBtn" title="Chốt Mẫu Edit Chuẩn Cho Kênh">🔒 Chốt Mẫu Edit Chuẩn Cho Kênh</button><button class="ghost compact" id="openGlobalChatFromEdit">Mở AI bên phải</button><button class="ghost compact" id="startWorkspaceStudioBtn">${running ? (compositionReady ? "Mở đúng preview" : "Mở Remotion Studio") : "Bật Remotion Studio"}</button></div></div>
-    ${editProgressHtml(session?.edit_progress)}
-    ${renderCacheHtml(session?.render_cache)}
-    <div class="edit-sync-policy-panel" id="editSyncPolicyPanel"></div>
-    <div id="cofiVoxBlenderStudioHost"></div>
-    ${editError ? `<div class="editor-step-error"><strong>Lỗi Edit</strong><span>${escapeHtml(editError)}</span></div>` : ""}
-    <div class="editor-body chat-collapsed">
-      <div class="editor-canvas">${running ? `<iframe class="remotion-frame persistent-frame" src="${escapeHtml(studioUrl)}" title="Remotion Studio"></iframe>` : `<div class="preview-empty"><div>▶</div><h3>Remotion Studio chưa bật</h3><p>Bật Studio một lần. Sau đó màn hình editor này sẽ được giữ nguyên khi anh chuyển sang tab khác rồi quay lại.</p></div>`}</div>
+  root.innerHTML = `<div class="persistent-editor-shell nle-workbench-shell">
+    <div class="editor-toolbar nle-edit-topbar">
+      <div class="nle-topbar-left">
+        <span class="nle-step-badge">0${editStep} · EDIT</span>
+        <span class="nle-status-pill" data-edit-status>${escapeHtml(statusLabels[editStatus] || editStatus)}</span>
+        <div class="edit-sync-policy-panel nle-inline-sync" id="editSyncPolicyPanel"></div>
+      </div>
+      <div class="button-row nle-topbar-right">
+        <div class="nle-mode-switch" role="group" aria-label="Chế độ trình phát Edit">
+          <button type="button" class="nle-mode-btn ${isNleMode ? "is-active" : ""}" data-edit-view-mode="nle" title="Trình phát CapCut NLE · Khóa 30 FPS + Lăn chuột Zoom Timeline">Timeline</button>
+          <button type="button" class="nle-mode-btn ${!isNleMode ? "is-active" : ""}" data-edit-view-mode="studio" title="Mở giao diện Remotion Studio gốc (cổng 8890)">Studio</button>
+        </div>
+        <button type="button" class="ghost compact" id="openEditCheckpointModalBtn" title="Xem điểm lưu dựng (edit_checkpoint.json) &amp; Render Cache">Checkpoint</button>
+        <button type="button" class="ghost compact" id="lockEditDnaBtn" title="Chốt Mẫu Edit Chuẩn Cho Kênh">Chốt mẫu</button>
+        ${!isNleMode ? `<button type="button" class="ghost compact" id="startWorkspaceStudioBtn">${studioRunning ? "↻ Tải lại" : "Bật Studio"}</button>` : ""}
+        ${editAction}
+      </div>
     </div>
-    <details class="edit-checkpoint"><summary>Điểm lưu dựng</summary>${checkpoint ? `<pre>${escapeHtml(checkpoint)}</pre>` : `<div class="checkpoint-empty">Chưa có checkpoint.</div>`}</details>
+    ${editRunning ? editProgressHtml(session?.edit_progress) : ""}
+    <div id="cofiVoxBlenderStudioHost" hidden></div>
+    ${editError ? `<div class="editor-step-error"><strong>Lỗi Edit</strong><span>${escapeHtml(editError)}</span></div>` : ""}
+    <div class="editor-body chat-collapsed nle-editor-body">
+      <div class="editor-canvas nle-editor-canvas">${running && activeFrameUrl ? `<iframe class="remotion-frame persistent-frame" src="${escapeHtml(activeFrameUrl)}" title="Cofi NLE Timeline Player" allow="autoplay; fullscreen; clipboard-write"></iframe>` : `<div class="preview-empty"><div>▶</div><h3>Trình dựng chưa bật</h3><p>Bấm "Timeline Mượt 30FPS" hoặc "Bật Studio" để mở bàn dựng thời gian thực.</p></div>`}</div>
+    </div>
   </div>`;
 
   renderSyncComplianceScorecard(job, root);
   if (typeof window.mountCofiVoxBlenderStudio === "function") { window.mountCofiVoxBlenderStudio(job.id, root.querySelector("#cofiVoxBlenderStudioHost")); }
 
+  root.querySelectorAll("[data-edit-view-mode]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const nextMode = btn.getAttribute("data-edit-view-mode") || "nle";
+      if (state.editViewMode === nextMode) return;
+      state.editViewMode = nextMode;
+      localStorage.setItem("cofi-edit-view-mode", nextMode);
+      state.editStudioUrl = null;
+      state.lastEditQuickSig = null;
+      await renderEditWorkspace(job);
+    });
+  });
+
+  $("#openEditCheckpointModalBtn")?.addEventListener("click", () => {
+    const cacheInfo = session?.render_cache ? JSON.stringify(session.render_cache, null, 2) : null;
+    const bodyHtml = `
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        ${session?.render_cache ? `<div><h4 style="margin:0 0 6px;font-size:12px;color:#38bdf8;text-transform:uppercase;">Render Cache &amp; Proxy 30FPS</h4>${renderCacheHtml(session.render_cache)}</div>` : ""}
+        <div>
+          <h4 style="margin:0 0 6px;font-size:12px;color:#94a3b8;text-transform:uppercase;">Điểm lưu dựng (edit_checkpoint.json)</h4>
+          ${checkpoint ? codeViewer("edit_checkpoint.json", checkpoint) : `<div class="checkpoint-empty">Chưa có checkpoint cho dự án này.</div>`}
+        </div>
+        ${cacheInfo ? `<details class="technical-details"><summary>JSON Render Cache thô</summary>${codeViewer("render_cache.json", cacheInfo)}</details>` : ""}
+      </div>
+    `;
+    openStudioModal({
+      badge: "📜",
+      title: `Điểm Lưu Dựng & Cache · ${job.title}`,
+      subtitle: `Composition: ${compId} · Chế độ: ${isNleMode ? "Timeline Mượt 30FPS (@remotion/player)" : "Remotion Studio Gốc"}`,
+      bodyHtml,
+    });
+  });
+
   $("#lockEditDnaBtn")?.addEventListener("click", async () => {
     const btn = $("#lockEditDnaBtn");
     btn.disabled = true;
-    btn.textContent = "Đang chốt mẫu...";
+    btn.textContent = "Đang chốt...";
     try {
       const res = await api(`/api/jobs/${encodeURIComponent(job.id)}/lock-edit-dna`, {
         method: "POST",
@@ -9141,7 +10694,7 @@ async function renderEditWorkspace(job) {
     } catch (err) {
       toast(`Lỗi khi chốt mẫu edit: ${err.message}`, true);
       btn.disabled = false;
-      btn.textContent = "🔒 Chốt Mẫu Edit Chuẩn Cho Kênh";
+      btn.textContent = "🔒 Chốt Mẫu";
     }
   });
 
@@ -9166,7 +10719,7 @@ async function renderSyncComplianceScorecard(job, container) {
   const panel = container.querySelector("#editSyncPolicyPanel");
   if (!panel) return;
   try {
-    panel.innerHTML = `<div style="padding: 6px 12px; background: rgba(0, 200, 255, 0.05); border: 1px solid rgba(0, 200, 255, 0.15); border-radius: 6px; font-size: 12px; color: var(--text-secondary);">Đang kiểm tra đồng bộ Voice/SRT & YouTube Policy Guardrails...</div>`;
+    panel.innerHTML = `<span class="nle-sync-pill is-loading">⏳ Kiểm tra đồng bộ...</span>`;
     const data = await api(`/api/jobs/${encodeURIComponent(job.id)}/sync-compliance`);
     const sync = data.sync_scorecard || {};
     const policy = data.policy_scorecard || {};
@@ -9175,64 +10728,71 @@ async function renderSyncComplianceScorecard(job, container) {
     const isGreen = policy.green_monetization !== false;
     const isSyncOk = sync.passed !== false;
     const overlayPct = Math.round((policy.editorial_overlay_ratio || 0) * 100);
+    const allClean = isGreen && isSyncOk && holdsCount === 0;
+    const totalBeats = sync.total_beats || 0;
+    const alignedBeats = sync.aligned_beats || totalBeats;
 
     panel.innerHTML = `
-      <div class="sync-compliance-bar">
-        <div class="sync-compliance-summary">
-          <strong class="sync-bar-label">⚖️ Role Edit &amp; Kiếm tiền Xanh:</strong>
-          <span class="sync-chip chip-green" title="Footage lấy từ 3–6s/cut · Bắt buộc xóa/crop sạch 100% logo &amp; text Trung của bên khác · Cấm mặt người dẫn chương trình/chủ kênh khác · Chỉ lấy đúng footage cần thiết">✓ Footage 3–6s · Crop sạch Logo/Chữ Trung · 0% MC/Chủ kênh</span>
-          <span class="sync-chip chip-green" title="Mỗi cảnh Vox là độc nhất 100% theo từng câu voice, không trùng khung wrapper hay bảng dòng">✓ Vox Độc Bản 100%</span>
-          <span class="sync-chip ${isGreen ? 'chip-green' : 'chip-red'}">${isGreen ? '✓ 100% Green Monetization' : '⚠️ Có từ khóa nhạy cảm'}</span>
-          <span class="sync-chip ${isSyncOk ? 'chip-green' : 'chip-amber'}">${isSyncOk ? `✓ Khớp 100% (${sync.aligned_beats || sync.total_beats || 0}/${sync.total_beats || 0} beats)` : `⚠️ Lệch ${misalignedCount} beat`}</span>
-          <span class="sync-chip ${holdsCount === 0 ? 'chip-green' : 'chip-red'}">${holdsCount === 0 ? '✓ 0 Hold > 6s' : `⚠️ ${holdsCount} hold > 6s`}</span>
-          <span class="sync-chip chip-purple">${overlayPct}% Phủ biên tập (${policy.reused_content_risk || 'low'})</span>
-        </div>
-        <div class="sync-bar-actions">
-          ${!isSyncOk || holdsCount > 0 ? `<button type="button" class="primary compact" id="autoRepairSyncBtn" style="padding:2px 8px;font-size:11px;">⚡ Tự động sửa</button>` : ''}
-          <button type="button" class="ghost compact" id="toggleSyncDetailsBtn" style="padding:2px 8px;font-size:11px;">Chi tiết ▾</button>
-        </div>
-      </div>
-      <div class="sync-compliance-expanded" id="syncComplianceExpanded" style="display: none; margin: 4px 0 10px; padding: 12px 14px; background: #0e1420; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 10px;">
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 18px; font-weight: 700; color: #38bdf8;">${sync.total_beats || 0}</div>
-            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Tổng số Beat</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 18px; font-weight: 700; color: ${misalignedCount > 0 ? '#f59e0b' : '#10b981'};">${sync.aligned_beats || 0}</div>
-            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Khớp chuẩn timeline</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 18px; font-weight: 700; color: ${holdsCount > 0 ? '#ef4444' : '#10b981'};">${holdsCount}</div>
-            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Ảnh tĩnh hold > 8s</div>
-          </div>
-          <div style="background: rgba(255,255,255,0.03); padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.06);">
-            <div style="font-size: 18px; font-weight: 700; color: #a855f7;">${overlayPct}%</div>
-            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Phủ biên tập (${policy.reused_content_risk || 'low'})</div>
-          </div>
-        </div>
-        <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 8px;">
-          <span style="font-size: 12px; color: ${isSyncOk && holdsCount === 0 ? '#10b981' : '#f59e0b'};">
-            ${isSyncOk && holdsCount === 0 ? '✓ Đạt chuẩn: Tất cả beat khớp thoại và không có ảnh tĩnh đứng hình > 8 giây.' : `⚠️ Cần xử lý: ${holdsCount} beat đứng hình > 8s hoặc ${misalignedCount} beat lệch thoại.`}
-          </span>
-          ${isSyncOk && holdsCount === 0 ? '' : `<button type="button" class="primary compact" id="autoRepairSyncBtnExpanded" style="gap: 4px;"><span>⚡</span> Tự động sửa lệch &amp; Hold > 8s</button>`}
-        </div>
+      <div class="nle-sync-compact-wrap">
+        <button type="button" class="nle-sync-pill ${allClean ? "is-clean" : "is-warn"}" id="toggleSyncDetailsBtn" title="Bấm để xem chi tiết Kiểm duyệt Đồng bộ Voice/SRT &amp; Kiếm tiền Xanh">
+          <span>${allClean ? "✓ Đồng bộ chuẩn" : "⚠ Kiểm tra đồng bộ"}</span>
+          <span class="nle-sync-sep">·</span>
+          <span>${alignedBeats}/${totalBeats}</span>
+          <span style="opacity:0.6;font-size:9px;">▾</span>
+        </button>
+        ${!isSyncOk || holdsCount > 0 ? `<button type="button" class="nle-repair-mini-btn" id="autoRepairSyncBtn" title="Tự động sửa lệch beat &amp; hold > 8s">Sửa lệch</button>` : ""}
       </div>
     `;
 
-    const toggleBtn = panel.querySelector("#toggleSyncDetailsBtn");
-    const expandedBox = panel.querySelector("#syncComplianceExpanded");
-    if (toggleBtn && expandedBox) {
-      toggleBtn.addEventListener("click", () => {
-        const isHidden = expandedBox.style.display === "none";
-        expandedBox.style.display = isHidden ? "block" : "none";
-        toggleBtn.textContent = isHidden ? "Thu gọn ▲" : "Chi tiết ▾";
+    const openComplianceDialog = () => {
+      const dialogHtml = `
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <div style="display:flex;flex-wrap:wrap;gap:6px;">
+            <span class="sync-chip chip-green">✓ Footage 3–6s · Crop sạch Logo/Chữ Trung · 0% MC/Chủ kênh</span>
+            <span class="sync-chip chip-green">✓ Vox Độc Bản 100%</span>
+            <span class="sync-chip ${isGreen ? 'chip-green' : 'chip-red'}">${isGreen ? '✓ 100% Green Monetization' : '⚠️ Có từ khóa nhạy cảm'}</span>
+            <span class="sync-chip ${isSyncOk ? 'chip-green' : 'chip-amber'}">${isSyncOk ? `✓ Khớp 100% (${alignedBeats}/${totalBeats} beats)` : `⚠️ Lệch ${misalignedCount} beat`}</span>
+            <span class="sync-chip ${holdsCount === 0 ? 'chip-green' : 'chip-red'}">${holdsCount === 0 ? '✓ 0 Hold > 6s' : `⚠️ ${holdsCount} hold > 6s`}</span>
+            <span class="sync-chip chip-purple">${overlayPct}% Phủ biên tập (${policy.reused_content_risk || 'low'})</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;">
+            <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.07);">
+              <div style="font-size: 20px; font-weight: 700; color: #38bdf8;">${totalBeats}</div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Tổng số Beat</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.07);">
+              <div style="font-size: 20px; font-weight: 700; color: ${misalignedCount > 0 ? '#f59e0b' : '#10b981'};">${alignedBeats}</div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Khớp chuẩn timeline</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.07);">
+              <div style="font-size: 20px; font-weight: 700; color: ${holdsCount > 0 ? '#ef4444' : '#10b981'};">${holdsCount}</div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Ảnh tĩnh hold > 8s</div>
+            </div>
+            <div style="background: rgba(255,255,255,0.03); padding: 10px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.07);">
+              <div style="font-size: 20px; font-weight: 700; color: #a855f7;">${overlayPct}%</div>
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase;">Phủ biên tập (${policy.reused_content_risk || 'low'})</div>
+            </div>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 10px;">
+            <span style="font-size: 12.5px; color: ${isSyncOk && holdsCount === 0 ? '#10b981' : '#f59e0b'};">
+              ${isSyncOk && holdsCount === 0 ? '✓ Đạt chuẩn: Tất cả beat khớp thoại và không có ảnh tĩnh đứng hình > 8 giây.' : `⚠️ Cần xử lý: ${holdsCount} beat đứng hình > 8s hoặc ${misalignedCount} beat lệch thoại.`}
+            </span>
+          </div>
+        </div>
+      `;
+      openStudioModal({
+        badge: "⚖️",
+        title: "Kiểm Duyệt Đồng Bộ Voice/SRT & Kiếm Tiền Xanh",
+        subtitle: `${job.title} · ${alignedBeats}/${totalBeats} beat khớp chuẩn`,
+        bodyHtml: dialogHtml,
       });
-    }
+    };
+
+    panel.querySelector("#toggleSyncDetailsBtn")?.addEventListener("click", openComplianceDialog);
 
     const runAutoRepair = async (btn) => {
       btn.disabled = true;
-      btn.textContent = "Đang Auto-Repair...";
+      btn.textContent = "Đang sửa...";
       try {
         const res = await api(`/api/jobs/${encodeURIComponent(job.id)}/auto-repair-sync`, { method: "POST" });
         toast(`Đã sửa ${res.realigned_beats_count || 0} beat lệch timeline và bổ sung Ken Burns/HUD cho ${res.repaired_holds_count || 0} đoạn hold > 8s!`);
@@ -9240,14 +10800,13 @@ async function renderSyncComplianceScorecard(job, container) {
       } catch (e) {
         toast(e.message, true);
         btn.disabled = false;
-        btn.textContent = "⚡ Tự động sửa";
+        btn.textContent = "⚡ Sửa lệch";
       }
     };
 
     panel.querySelector("#autoRepairSyncBtn")?.addEventListener("click", (e) => runAutoRepair(e.currentTarget));
-    panel.querySelector("#autoRepairSyncBtnExpanded")?.addEventListener("click", (e) => runAutoRepair(e.currentTarget));
   } catch (err) {
-    panel.innerHTML = `<div style="padding: 8px 12px; color: var(--text-secondary); font-size: 12px;">Chưa tải được scorecard: ${escapeHtml(err.message)}</div>`;
+    panel.innerHTML = `<span class="nle-sync-pill is-warn" title="${escapeHtml(err.message)}">⚠️ Scorecard</span>`;
   }
 }
 
@@ -9258,8 +10817,20 @@ function seoListHtml(values = []) {
 
 function seoCopyCard(label, key, value, { wide = false, prominent = false } = {}) {
   const content = String(value || "").trim();
+  const readerBtnHtml = content.length > 100
+    ? (() => {
+        const readerKey = registerStudioReaderPayload({
+          badge: "🔑",
+          title: label,
+          subtitle: "Nội dung SEO YouTube · 15 Phòng Ban Chuyên Môn",
+          rawText: content,
+          isCode: false,
+        });
+        return `<button type="button" class="ghost compact" data-studio-reader-key="${readerKey}">🗗 Đọc Popup</button>`;
+      })()
+    : "";
   return `<section class="seo-result-card seo-copy-card${wide ? " wide" : ""}${prominent ? " prominent" : ""}">
-    <div class="seo-copy-head"><span>${escapeHtml(label)}</span><button type="button" class="ghost compact seo-copy-btn" data-seo-copy="${escapeHtml(key)}">Sao chép</button></div>
+    <div class="seo-copy-head"><span>${escapeHtml(label)}</span><div style="display:flex;gap:5px;align-items:center;">${readerBtnHtml}<button type="button" class="ghost compact seo-copy-btn" data-seo-copy="${escapeHtml(key)}">Sao chép</button></div></div>
     <pre class="seo-copy-box">${escapeHtml(content || "Chưa có")}</pre>
   </section>`;
 }
@@ -9300,10 +10871,34 @@ function bindSeoCopyButtons(root, values) {
   }));
 }
 
-async function renderSeoWorkspace(job) {
+let seoRenderInFlight = false;
+async function renderSeoWorkspace(job, { forceRemount = false } = {}) {
   $("#seoProjectLabel").textContent = selectedProjectLabel(job);
   const root = $("#seoWorkspace");
   if (!job) return root.innerHTML = `<div class="empty-state">Chọn một dự án để tạo SEO và prompt thumbnail.</div>`;
+  const seoStatus = String(job.phases?.seo?.status || "pending");
+  const prevSeoStatus = String(root.dataset.seoStatus || "");
+  const justFinishedSeo = ["running", "queued"].includes(prevSeoStatus) && seoStatus === "succeeded";
+  const existingHost = root.querySelector("#cofiThumbnailStudioHost");
+  const studioAlreadyLoaded = Boolean(
+    existingHost
+    && existingHost.dataset.mountedJobId === String(job.id)
+    && existingHost.children.length > 0
+  );
+  if (!forceRemount && !justFinishedSeo && studioAlreadyLoaded) {
+    if (prevSeoStatus !== seoStatus) {
+      const stepCard = root.querySelector(".step-status-card");
+      if (stepCard) {
+        stepCard.outerHTML = phaseStepPanelHtml(job, "seo", "qc");
+        bindWorkspacePhaseButtons(job, root);
+      }
+      root.dataset.seoStatus = seoStatus;
+    }
+    return;
+  }
+  if (seoRenderInFlight) return;
+  seoRenderInFlight = true;
+  try {
   const [packageRaw, referenceRaw] = await Promise.all([
     artifact(job.id, "seo_package.json"),
     artifact(job.id, "seo_reference_context.json"),
@@ -9346,16 +10941,90 @@ async function renderSeoWorkspace(job) {
   }
   const overlayOptions = Array.isArray(thumbnail.overlay_text_options) ? thumbnail.overlay_text_options : [];
   const channelFramework = pack.channel_framework && typeof pack.channel_framework === "object" ? pack.channel_framework : null;
-  const recommendedTitleVi = String(pack.recommended_title_vi || "").trim();
+  const splitBilingualTitle = (rawTitle, explicitVi = "") => {
+    let raw = String(rawTitle || "").trim().replace(/^(?:🇰🇷\s*)?(?:KR\s+)+/i, "").trim();
+    let vi = String(explicitVi || "").trim();
+    const viRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
+    const parenMatch = raw.match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+    if (parenMatch && viRegex.test(parenMatch[2])) {
+      raw = parenMatch[1].trim();
+      if (!vi) {
+        vi = parenMatch[2].replace(/^(?:🇻🇳\s*)?(?:VN|VI|Tiếng Việt|Nghĩa(?:\s+Tiếng\s+Việt)?)\s*[:\-–—]?\s*/i, "").trim();
+      }
+    }
+    const splitLines = raw.split(/\n+|\s+\/\/\s+/);
+    if (splitLines.length >= 2 && viRegex.test(splitLines[splitLines.length - 1]) && !/[가-힣]/.test(splitLines[splitLines.length - 1])) {
+      if (!vi) {
+        vi = splitLines[splitLines.length - 1].replace(/^(?:🇻🇳\s*)?(?:VN|VI|Tiếng Việt|Nghĩa(?:\s+Tiếng\s+Việt)?)\s*[:\-–—]?\s*/i, "").trim();
+      }
+      raw = splitLines.slice(0, -1).join(" ").trim();
+    }
+    return { ko: raw, vi };
+  };
+  const titleOptionsDetails = Array.isArray(pack.title_options_details) ? pack.title_options_details : [];
+  const titleOptionsVi = Array.isArray(pack.title_options_vi) ? pack.title_options_vi : [];
+  const titlesViFallback = Array.isArray(pack.titles_vi) ? pack.titles_vi : [];
+  const titleVariantsList = Array.isArray(pack.title_variants) ? pack.title_variants : [];
+  const abVariantsList = Array.isArray(pack.ab_variants) ? pack.ab_variants : [];
+  const titleThumbPairs = Array.isArray(pack.title_thumbnail_pairs) ? pack.title_thumbnail_pairs : [];
+  const rawTitleOptionsSource = (pack.title_options || []).length
+    ? [...pack.title_options]
+    : (titleVariantsList.length ? [...titleVariantsList] : [...titleOptionsDetails]);
+  if (rawTitleOptionsSource.length < 8) {
+    const seenKo = new Set(
+      rawTitleOptionsSource.map((item) => {
+        const s = typeof item === "object" && item !== null ? String(item.title_ko || item.kr || item.title || "") : String(item || "");
+        return splitBilingualTitle(s).ko;
+      }).filter(Boolean)
+    );
+    for (const ex of [...titleVariantsList, ...abVariantsList, ...titleOptionsDetails, ...titleThumbPairs]) {
+      if (rawTitleOptionsSource.length >= 8) break;
+      if (!ex || typeof ex !== "object") continue;
+      const exKo = splitBilingualTitle(ex.title_ko || ex.kr || ex.title || ex.paired_title || "").ko;
+      if (exKo && !seenKo.has(exKo)) {
+        seenKo.add(exKo);
+        rawTitleOptionsSource.push(ex);
+      }
+    }
+  }
+  const normalizedTitleOptions = rawTitleOptionsSource.map((opt, idx) => {
+    const detailObj = (typeof opt === "object" && opt !== null) ? opt : (titleOptionsDetails[idx] || titleVariantsList[idx] || abVariantsList[idx] || {});
+    const rawKo = typeof opt === "object" && opt !== null ? String(opt.title_ko || opt.kr || opt.title || opt.paired_title || "").trim() : String(opt || "").trim();
+    const explicitVi = String(
+      detailObj.title_vi
+      || detailObj.vi
+      || titleOptionsVi[idx]
+      || titlesViFallback[idx]
+      || titleVariantsList[idx]?.title_vi
+      || titleVariantsList[idx]?.vi
+      || abVariantsList[idx]?.title_vi
+      || abVariantsList[idx]?.vi
+      || titleThumbPairs[idx]?.title_vi
+      || titleThumbPairs[idx]?.paired_title_vi
+      || overlayOptions[idx]?.paired_title_vi
+      || ""
+    ).trim();
+    const { ko: koTitle, vi: viTitle } = splitBilingualTitle(rawKo, explicitVi);
+    const pairedVar = String(detailObj.paired_variant || `BẢN ${["A", "B", "C", "D"][idx % 4]}`).trim();
+    const synergyNote = String(detailObj.synergy_vi || "").trim();
+    const kwAnchor = String(detailObj.keyword_anchor || detailObj.keyword_anchor_vi || "").trim();
+    return { idx, koTitle, viTitle, pairedVar, synergyNote, kwAnchor };
+  });
+  const splitRecTitle = splitBilingualTitle(
+    pack.recommended_title || normalizedTitleOptions[0]?.koTitle || "",
+    pack.recommended_title_vi || pack.title_vi || normalizedTitleOptions[0]?.viTitle || titleOptionsVi[0] || titlesViFallback[0] || ""
+  );
+  const recommendedTitleVi = splitRecTitle.vi;
   const rawPrimaryKw = pack.primary_keywords_summary;
   const primaryKeywordsSummary = (rawPrimaryKw && typeof rawPrimaryKw === "object")
     ? Object.values(rawPrimaryKw).map((v) => String(v || "").trim()).filter(Boolean).join(" · ")
     : String(rawPrimaryKw || "").trim();
   const titleThumbSynergyVi = String(pack.title_thumb_synergy_vi || "").trim();
-  const titleOptionsDetails = Array.isArray(pack.title_options_details) ? pack.title_options_details : [];
-  const titleOptionsVi = Array.isArray(pack.title_options_vi) ? pack.title_options_vi : [];
+  const descriptionViText = String(pack.description_vi || "").trim();
+  const chaptersList = Array.isArray(pack.chapters) ? pack.chapters : [];
+  const chaptersViList = Array.isArray(pack.chapters_vi) ? pack.chapters_vi : [];
   const copyValues = {
-    title: String(pack.recommended_title || "").trim(),
+    title: splitRecTitle.ko,
     description: descriptionWithHashtags,
     tags: videoTags,
     keywords: keywordText,
@@ -9363,9 +11032,8 @@ async function renderSeoWorkspace(job) {
     thumbnail_prompt: thumbnailPrompt,
     negative_prompt: String(thumbnail.negative_prompt || "").trim(),
   };
-  (pack.title_options || []).forEach((opt, idx) => {
-    const koText = typeof opt === "object" && opt !== null ? String(opt.title_ko || opt.title || "").trim() : String(opt || "").trim();
-    copyValues[`title_opt_${idx}`] = koText;
+  normalizedTitleOptions.forEach((optObj, idx) => {
+    copyValues[`title_opt_${idx}`] = optObj.koTitle;
   });
   overlayOptions.forEach((opt, idx) => {
     const badge = String(opt.badge || "").trim();
@@ -9375,39 +11043,58 @@ async function renderSeoWorkspace(job) {
   });
   const recommendedTitleMetaHtml = (recommendedTitleVi || primaryKeywordsSummary || titleThumbSynergyVi)
     ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(15,23,42,0.92);border:1px solid rgba(34,197,94,0.4);border-radius:8px;display:flex;flex-direction:column;gap:6px;font-size:13px;line-height:1.5;">
-        ${recommendedTitleVi ? `<div><span style="color:#4ade80;font-weight:800;">🇻🇳 Bản dịch Tiếng Việt:</span> <span style="color:#f8fafc;font-weight:700;">${escapeHtml(recommendedTitleVi)}</span></div>` : ""}
+        ${recommendedTitleVi ? `<div><span style="display:inline-block;padding:1px 6px;margin-right:6px;border-radius:4px;background:rgba(34,197,94,0.25);color:#4ade80;font-size:11px;font-weight:800;">VN</span><span style="color:#4ade80;font-weight:800;">🇻🇳 Nghĩa Tiếng Việt:</span> <span style="color:#f8fafc;font-weight:700;">${escapeHtml(recommendedTitleVi)}</span></div>` : ""}
         ${primaryKeywordsSummary ? `<div><span style="color:#38bdf8;font-weight:800;">🔑 Từ khóa chính &amp; Địa điểm Trung Quốc:</span> <span style="color:#e2e8f0;">${escapeHtml(primaryKeywordsSummary)}</span></div>` : ""}
         ${titleThumbSynergyVi ? `<div><span style="color:#fbbf24;font-weight:800;">🔗 Hỗ trợ nghĩa với Text Thumbnail:</span> <span style="color:#cbd5e1;">${escapeHtml(titleThumbSynergyVi)}</span></div>` : ""}
       </div>`
     : "";
   const recommendedTitleCardHtml = `<section class="seo-result-card seo-copy-card prominent">
     <div class="seo-copy-head"><span>TIÊU ĐỀ YOUTUBE ĐỀ XUẤT (CHUẨN CTR &amp; DNA KÊNH — SONG NGỮ HÀN · VIỆT)</span><button type="button" class="ghost compact seo-copy-btn" data-seo-copy="title">Sao chép</button></div>
-    <pre class="seo-copy-box">${escapeHtml(copyValues.title || "Chưa có")}</pre>
+    <pre class="seo-copy-box">🇰🇷 KR ${escapeHtml(copyValues.title || "Chưa có")}</pre>
     ${recommendedTitleMetaHtml}
   </section>`;
-  const titleOptionsHtml = (pack.title_options || []).length
-    ? `<div class="seo-options-stack" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">${(pack.title_options || []).map((opt, idx) => {
-        const detailObj = (typeof opt === "object" && opt !== null) ? opt : (titleOptionsDetails[idx] || {});
-        const koTitle = typeof opt === "object" && opt !== null ? String(opt.title_ko || opt.title || "").trim() : String(opt || "").trim();
-        const viTitle = String(detailObj.title_vi || titleOptionsVi[idx] || "").trim();
-        const pairedVar = String(detailObj.paired_variant || "").trim();
-        const synergyNote = String(detailObj.synergy_vi || "").trim();
-        const kwAnchor = String(detailObj.keyword_anchor || "").trim();
+  const titleOptionsHtml = normalizedTitleOptions.length
+    ? `<div class="seo-options-stack" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;">${normalizedTitleOptions.map((item) => {
+        const { idx, koTitle, viTitle, pairedVar, synergyNote, kwAnchor } = item;
         return `<div style="display:flex;flex-direction:column;gap:6px;padding:10px 12px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;">
           <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;">
             <div style="font-size:13.5px;line-height:1.45;color:#f8fafc;font-weight:700;">
-              <b style="color:#38bdf8;">#${idx + 1}.</b> ${pairedVar ? `<span style="display:inline-block;padding:1px 7px;margin-right:6px;border-radius:4px;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.4);color:#fde047;font-size:11px;font-weight:800;">${escapeHtml(pairedVar)}</span>` : ""}${escapeHtml(koTitle)}
+              <b style="color:#38bdf8;">#${idx + 1}.</b> ${pairedVar ? `<span style="display:inline-block;padding:1px 7px;margin-right:6px;border-radius:4px;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.4);color:#fde047;font-size:11px;font-weight:800;">${escapeHtml(pairedVar)}</span>` : ""}<span style="display:inline-block;padding:1px 5px;margin-right:5px;border-radius:3px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-size:10.5px;font-weight:800;">KR</span> 🇰🇷 ${escapeHtml(koTitle)}
             </div>
             <button type="button" class="ghost compact seo-copy-btn" data-seo-copy="title_opt_${idx}" style="flex-shrink:0;">Sao chép</button>
           </div>
-          ${viTitle ? `<div style="font-size:12.5px;line-height:1.45;color:#4ade80;padding-left:6px;border-left:3px solid #22c55e;"><b>🇻🇳 Nghĩa Tiếng Việt:</b> <span style="color:#f1f5f9;">${escapeHtml(viTitle)}</span></div>` : ""}
+          ${viTitle ? `<div style="font-size:12.5px;line-height:1.45;color:#4ade80;padding:5px 8px;background:rgba(34,197,94,0.12);border-left:3px solid #22c55e;border-radius:4px;"><span style="display:inline-block;padding:1px 5px;margin-right:5px;border-radius:3px;background:rgba(34,197,94,0.25);color:#4ade80;font-size:10.5px;font-weight:800;">VN</span> <b>🇻🇳 Nghĩa Tiếng Việt:</b> <span style="color:#f1f5f9;font-weight:600;">${escapeHtml(viTitle)}</span></div>` : ""}
           ${kwAnchor ? `<div style="font-size:11.5px;color:#7dd3fc;padding-left:6px;"><b>📍 Từ khóa &amp; Địa điểm TQ:</b> ${escapeHtml(kwAnchor)}</div>` : ""}
           ${synergyNote ? `<div style="font-size:11.5px;color:#cbd5e1;padding-left:6px;"><b>🔗 Bổ trợ nghĩa với Thumb:</b> ${escapeHtml(synergyNote)}</div>` : ""}
         </div>`;
       }).join("")}</div>`
     : `<span class="muted">Chưa có</span>`;
+  const chaptersViHtml = (chaptersList.length || chaptersViList.length)
+    ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(15,23,42,0.92);border:1px solid rgba(56,189,248,0.32);border-radius:8px;">
+        <div style="font-size:12px;font-weight:800;color:#38bdf8;margin-bottom:6px;">⏱️ TIMESTAMPS CÁC CHƯƠNG SONG NGỮ (HÀN — VIỆT):</div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          ${Array.from({ length: Math.max(chaptersList.length, chaptersViList.length) }).map((_, i) => {
+            const ch = chaptersList[i] || {};
+            const chVi = chaptersViList[i] || {};
+            const ts = String(ch.timestamp || chVi.timestamp || "00:00").trim();
+            const koT = String(ch.title_ko || ch.title || chVi.title_ko || "").trim();
+            const viT = String(ch.title_vi || chVi.title_vi || (typeof chVi === "string" ? chVi : chVi.title) || "").trim();
+            return `<div style="font-size:12.5px;line-height:1.45;padding:5px 8px;background:rgba(9,14,26,0.75);border-radius:5px;">
+              <div><b style="color:#38bdf8;font-family:monospace;">${escapeHtml(ts)}</b> · 🇰🇷 ${escapeHtml(koT)}</div>
+              ${viT && viT !== koT ? `<div style="color:#4ade80;margin-top:2px;">🇻🇳 <b>Nghĩa:</b> <span style="color:#f8fafc;">${escapeHtml(viT)}</span></div>` : ""}
+            </div>`;
+          }).join("")}
+        </div>
+      </div>`
+    : "";
+  const descriptionViBlockHtml = (descriptionViText || chaptersViHtml)
+    ? `<div style="margin-top:10px;padding:10px 12px;background:rgba(15,23,42,0.94);border:1px solid rgba(34,197,94,0.4);border-radius:8px;">
+        ${descriptionViText ? `<div style="color:#4ade80;font-weight:800;font-size:12.5px;margin-bottom:6px;">🇻🇳 BẢN DỊCH NGHĨA TIẾNG VIỆT (MÔ TẢ &amp; TIMESTAMPS ĐỂ ĐỌC DUYỆT):</div><pre style="white-space:pre-wrap;margin:0;font-family:inherit;color:#f8fafc;font-size:13px;line-height:1.55;">${escapeHtml(descriptionViText)}</pre>` : ""}
+        ${chaptersViHtml}
+      </div>`
+    : "";
   const overlayOptionsHtml = overlayOptions.length
-    ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px;">${overlayOptions.map((opt, idx) => `<div style="padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;"><div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="background:rgba(34,197,94,0.18);border:1px solid rgba(34,197,94,0.45);color:#4ade80;font-weight:800;font-size:11.5px;padding:2px 8px;border-radius:4px;">🏷 ${escapeHtml(opt.badge || "중국 인프라")}</span><button type="button" class="ghost compact seo-copy-btn" data-seo-copy="thumb_text_opt_${idx}">Sao chép</button></div><div style="font-size:15px;font-weight:800;color:#fde047;line-height:1.3;">${escapeHtml(opt.line_1 || "")}</div><div style="font-size:16px;font-weight:900;color:#f87171;line-height:1.3;">${escapeHtml(opt.line_2 || "")}</div></div>${opt.meaning_vi ? `<small style="color:#e2e8f0;font-size:12px;line-height:1.4;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">🇻🇳 ${escapeHtml(opt.meaning_vi)}</small>` : ""}${opt.paired_title ? `<small style="color:#93c5fd;font-size:11.5px;line-height:1.35;">🎬 <b>Tiêu đề ghép:</b> ${escapeHtml(opt.paired_title)}<br/><span style="color:#cbd5e1;">🇻🇳 ${escapeHtml(opt.paired_title_vi || "")}</span></small>` : ""}</div>`).join("")}</div>`
+    ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;margin-top:10px;">${overlayOptions.map((opt, idx) => `<div style="padding:10px 12px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:8px;display:flex;flex-direction:column;justify-content:space-between;gap:8px;"><div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="background:rgba(34,197,94,0.18);border:1px solid rgba(34,197,94,0.45);color:#4ade80;font-weight:800;font-size:11.5px;padding:2px 8px;border-radius:4px;">🏷 ${escapeHtml(opt.badge || "중국 인프라")}</span><button type="button" class="ghost compact seo-copy-btn" data-seo-copy="thumb_text_opt_${idx}">Sao chép</button></div><div style="font-size:15px;font-weight:800;color:#fde047;line-height:1.3;">${escapeHtml(opt.line_1 || "")}</div><div style="font-size:16px;font-weight:900;color:#f87171;line-height:1.3;">${escapeHtml(opt.line_2 || "")}</div></div>${(opt.line_1_vi || opt.line_2_vi || opt.meaning_vi) ? `<small style="color:#e2e8f0;font-size:12px;line-height:1.4;border-top:1px solid rgba(255,255,255,0.08);padding-top:6px;">🇻🇳 ${escapeHtml([opt.badge_vi ? `[${opt.badge_vi}]` : "", opt.line_1_vi, opt.line_2_vi].filter(Boolean).join(" / ") || opt.meaning_vi || "")}</small>` : ""}${opt.paired_title ? `<small style="color:#93c5fd;font-size:11.5px;line-height:1.35;">🎬 <b>Tiêu đề ghép:</b> ${escapeHtml(opt.paired_title)}<br/><span style="color:#cbd5e1;">🇻🇳 ${escapeHtml(opt.paired_title_vi || "")}</span></small>` : ""}</div>`).join("")}</div>`
     : "";
   const frameworkHtml = channelFramework
     ? `<section class="seo-result-card wide" style="border-color:rgba(251,191,36,0.35);background:rgba(251,191,36,0.04);">
@@ -9422,8 +11109,12 @@ async function renderSeoWorkspace(job) {
   const result = packageRaw ? `<div class="seo-clean-hub">
       <div class="seo-clean-col">
         ${recommendedTitleCardHtml}
-        ${(pack.title_options || []).length ? `<section class="seo-result-card"><span>CÁC PHƯƠNG ÁN TIÊU ĐỀ &amp; CẶP GHÉP THUMBNAIL (SONG NGỮ HÀN - VIỆT)</span>${titleOptionsHtml}</section>` : ""}
-        ${seoCopyCard("MÔ TẢ YOUTUBE + HASHTAGS", "description", copyValues.description)}
+        ${normalizedTitleOptions.length ? `<section class="seo-result-card"><span>8 PHƯƠNG ÁN TIÊU ĐỀ &amp; CẶP GHÉP THUMBNAIL (SONG NGỮ HÀN - VIỆT)</span>${titleOptionsHtml}</section>` : ""}
+        <section class="seo-result-card seo-copy-card">
+          <div class="seo-copy-head"><span>MÔ TẢ YOUTUBE + HASHTAGS · TIMESTAMPS &amp; BẢN DỊCH TIẾNG VIỆT</span><button type="button" class="ghost compact seo-copy-btn" data-seo-copy="description">Sao chép</button></div>
+          <pre class="seo-copy-box">${escapeHtml(copyValues.description || "Chưa có")}</pre>
+          ${descriptionViBlockHtml}
+        </section>
       </div>
       <div class="seo-clean-col">
         ${seoCopyCard("VIDEO TAGS · DÁN THẲNG VÀO YOUTUBE STUDIO", "tags", copyValues.tags)}
@@ -9440,64 +11131,43 @@ async function renderSeoWorkspace(job) {
       </div>
       <div class="artifact-grid two-col" style="margin-top:10px;">${codeViewer("SEO package", packageRaw)}${codeViewer("Reference context", referenceRaw)}</div>
     </details>` : `<div class="empty-state">Chưa có gói SEO. Bạn vẫn có thể thiết kế &amp; tải 4 bản Thumbnail bên trên, hoặc bấm <b>Thực hiện bước này</b> để AI tạo trọn bộ Tiêu đề, Mô tả, Tags và Hook Thumbnail.</div>`;
-  const initialSubTab = localStorage.getItem("cofi-seo-subtab") || "thumb";
-  const accordionsHtml = `<div class="saas-seo-accordions-group seo-subtab-content" id="seoSubtabCopyPane" style="${initialSubTab === "copy" ? "" : "display:none;"}">
-      ${preflightHtml}${referenceSummary}${result}
-    </div>`;
+  const hasUnifiedThumbStudio = typeof window.mountCofiThumbnailStudio === "function";
+  const accordionsHtml = hasUnifiedThumbStudio
+    ? (packageRaw
+        ? `<details class="technical-details" id="seoTechDetails"><summary>Chi tiết kỹ thuật · JSON gói SEO &amp; Hồ sơ tham chiếu</summary><div class="artifact-grid two-col" id="seoTechGrid"><p style="grid-column: 1 / -1; color: #6a889f; padding: 10px 12px; margin: 0; font-size: 11.5px;">Nhấn mở để nạp tệp JSON kỹ thuật...</p></div></details>`
+        : "")
+    : `<div class="saas-seo-accordions-group seo-subtab-content" id="seoSubtabCopyPane">${preflightHtml}${referenceSummary}${result}</div>`;
 
   root.innerHTML = `${phaseStepPanelHtml(job, "seo", "qc")}
-    <div class="seo-subnav-bar">
-      <button type="button" class="seo-subnav-btn ${initialSubTab === "thumb" ? "active" : ""}" data-seo-subtab-btn="thumb">
-        <span class="seo-subnav-icon">🎨</span>
-        <span class="seo-subnav-text">Thumbnail Studio</span>
-        <span class="seo-subnav-tag">4 Bản Test &amp; Canva 2 Bàn</span>
-      </button>
-      <button type="button" class="seo-subnav-btn ${initialSubTab === "copy" ? "active" : ""}" data-seo-subtab-btn="copy">
-        <span class="seo-subnav-icon">📝</span>
-        <span class="seo-subnav-text">Gói SEO YouTube Studio</span>
-        <span class="seo-subnav-tag">Tiêu Đề · Mô Tả · Tags · Hook</span>
-      </button>
-    </div>
-    <div class="seo-subtab-content" id="seoSubtabThumbPane" style="${initialSubTab === "thumb" ? "" : "display:none;"}">
-      <section id="cofiThumbnailStudioHost" class="thumb-studio-host"></section>
+    <div class="seo-subtab-content" id="seoSubtabThumbPane">
+      <section id="cofiThumbnailStudioHost" class="thumb-studio-host" data-mounted-job-id="${escapeHtml(job.id)}"></section>
     </div>
     ${accordionsHtml}`;
+  root.dataset.seoJobId = String(job.id);
+  root.dataset.seoStatus = seoStatus;
   bindWorkspacePhaseButtons(job, root);
-  if (packageRaw) bindSeoCopyButtons(root, copyValues);
+  if (packageRaw && !hasUnifiedThumbStudio) bindSeoCopyButtons(root, copyValues);
 
-  root.querySelectorAll("[data-seo-subtab-btn]").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      const target = btn.dataset.seoSubtabBtn;
-      localStorage.setItem("cofi-seo-subtab", target);
-      root.querySelectorAll("[data-seo-subtab-btn]").forEach((b) => {
-        b.classList.toggle("active", b.dataset.seoSubtabBtn === target);
-      });
-      const thumbPane = root.querySelector("#seoSubtabThumbPane");
-      const copyPane = root.querySelector("#seoSubtabCopyPane");
-      if (thumbPane) thumbPane.style.display = target === "thumb" ? "" : "none";
-      if (copyPane) copyPane.style.display = target === "copy" ? "" : "none";
+  const seoTech = root.querySelector("#seoTechDetails");
+  if (seoTech) {
+    seoTech.addEventListener("toggle", () => {
+      if (seoTech.open) {
+        const grid = seoTech.querySelector("#seoTechGrid");
+        if (grid && !grid.dataset.loaded) {
+          grid.dataset.loaded = "true";
+          grid.innerHTML = `${codeViewer("SEO package (seo_package.json)", packageRaw)}${codeViewer("Reference context (seo_reference_context.json)", referenceRaw)}`;
+        }
+      }
     });
-  });
+  }
 
   const studioHost = root.querySelector("#cofiThumbnailStudioHost");
-  if (studioHost) {
-    if (
-      typeof window.mountCofiThumbnailStudio !== "function" ||
-      window.COFI_THUMB_STUDIO_VERSION !== "20261027-smart-save-v2"
-    ) {
-      try {
-        await new Promise((resolve) => {
-          const s = document.createElement("script");
-          s.src = `/static/thumbnail_studio.js?v=${Date.now()}`;
-          s.onload = resolve;
-          s.onerror = resolve;
-          document.head.appendChild(s);
-        });
-      } catch (_) {}
-    }
-    if (typeof window.mountCofiThumbnailStudio === "function") {
-      window.mountCofiThumbnailStudio(job.id, studioHost);
-    }
+  if (studioHost && typeof window.mountCofiThumbnailStudio === "function") {
+    studioHost.dataset.mountedJobId = String(job.id);
+    await window.mountCofiThumbnailStudio(job.id, studioHost, { force: justFinishedSeo || forceRemount });
+  }
+  } finally {
+    seoRenderInFlight = false;
   }
 }
 
@@ -9562,10 +11232,28 @@ async function renderQcWorkspace(job) {
     root.innerHTML = `${phaseStepPanelHtml(job, "qc")}
       ${exportProgressHtml(exportProgress)}
       <section class="final-output-card ${escapeHtml(qcStatus)}">
-        <div class="final-output-head"><div><span>BẢN XUẤT CUỐI</span><strong>${videoPath ? escapeHtml(videoPath.split(/[\\/]/).pop()) : "Chưa xuất video cuối"}</strong><small>${videoPath ? "Video MP4 đã được kết xuất từ timeline đã chốt ở bước Edit." : `${cacheText}. Khi bấm Thực hiện bước này, hệ thống mới dồn toàn lực CPU/GPU render 1 lượt duy nhất.`}</small></div>${videoPath ? `<a class="ghost compact" href="${escapeHtml(videoDownloadUrl)}" download="${escapeHtml(videoDownloadName)}" data-download-file-url="${escapeHtml(videoDownloadUrl)}" data-download-filename="${escapeHtml(videoDownloadName)}">⬇ Tải video (.MP4)</a>` : ""}</div>
-        ${videoUrl ? `<video class="final-video" controls controlslist="nodownload" preload="auto" playsinline src="${escapeHtml(videoUrl)}"></video>` : `<div class="preview-empty"><div>⇩</div><h3>${["running", "queued"].includes(qcStatus) ? "Đang Render 1 lượt (chống đơ máy)" : "Sẵn sàng Render 1 lượt duy nhất"}</h3><p>${escapeHtml(cacheText)}. Bạn có thể chỉnh sửa thoải mái ở bước Edit bằng Remotion Live Preview mà không tốn tài nguyên máy, sau đó bấm Xuất video để render 1 lần.</p></div>`}
+        <div class="final-output-head" style="flex-wrap:wrap;gap:12px;">
+          <div style="flex:1;min-width:280px;">
+            <span>BẢN XUẤT CUỐI (LƯU TRỰC TIẾP TRÊN Ổ CỨNG MÁY BẠN)</span>
+            <strong>${videoPath ? escapeHtml(videoPath.split(/[\\/]/).pop()) : "Chưa xuất video cuối"}</strong>
+            <small>${videoPath ? `📍 File gốc đã nằm sẵn trên ổ cứng (không cần tải từ Cloud): <code style="user-select:all;color:#38bdf8;background:rgba(15,23,42,0.85);padding:2px 6px;border-radius:4px;">${escapeHtml(videoPath)}</code>` : `${cacheText}. Khi bấm Thực hiện bước này, hệ thống mới dồn toàn lực CPU/GPU render 1 lượt duy nhất.`}</small>
+          </div>
+          ${videoPath ? `<div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;">
+            <button type="button" class="primary compact" data-local-save-job="${escapeHtml(job.id)}" data-local-save-path="${escapeHtml(videoPath)}" style="background:linear-gradient(135deg,#10b981,#059669);border-color:#34d399;color:#ffffff;font-weight:800;" title="Mở hộp thoại chọn thư mục (cho phép đổi tên) và chuyển thẳng video gốc sang thư mục chọn">💾 Lưu Video (.MP4)</button>
+          </div>` : ""}
+        </div>
+        ${videoUrl ? `<video class="final-video" controls controlslist="nodownload" preload="metadata" playsinline src="${escapeHtml(videoUrl)}"></video>` : `<div class="preview-empty"><div>⇩</div><h3>${["running", "queued"].includes(qcStatus) ? "Đang Render 1 lượt (chống đơ máy)" : "Sẵn sàng Render 1 lượt duy nhất"}</h3><p>${escapeHtml(cacheText)}. Bạn có thể chỉnh sửa thoải mái ở bước Edit bằng Remotion Live Preview mà không tốn tài nguyên máy, sau đó bấm Xuất video để render 1 lần.</p></div>`}
       </section>
-      ${directorRaw ? `<section class="director-report"><span>BÁO CÁO KIỂM TRA KỸ THUẬT</span><pre>${escapeHtml(directorRaw)}</pre></section>` : ""}
+      ${directorRaw ? (() => {
+        const qcReaderKey = registerStudioReaderPayload({
+          badge: "🎬",
+          title: "BÁO CÁO KIỂM TRA KỸ THUẬT (DIRECTOR QC)",
+          subtitle: job.title || job.id,
+          rawText: String(directorRaw),
+          isCode: false,
+        });
+        return `<section class="director-report"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span>BÁO CÁO KIỂM TRA KỸ THUẬT</span><button type="button" class="ghost compact" data-studio-reader-key="${qcReaderKey}">🗗 Đọc Popup</button></div><pre>${escapeHtml(directorRaw)}</pre></section>`;
+      })() : ""}
       <details class="technical-details"><summary>Chi tiết kỹ thuật · manifest xuất video</summary><div class="artifact-grid two-col">${codeViewer("Final manifest", finalRaw)}${codeViewer("Render manifest", renderRaw)}</div></details>`;
     root.dataset.qcJobId = job.id;
     root.dataset.qcVideoUrl = videoUrl;
@@ -9584,14 +11272,23 @@ async function renderFunctionWorkspaces() {
   const tabPhase = { script: "plan", voice: "voice", visuals: "visuals", footage: "footage", ai_visual: "ai_visual", edit: "edit", seo: "seo", qc: "qc" }[state.appTab];
   if (job && tabPhase && state.appTab !== "edit") {
     const phase = job.phases?.[tabPhase] || {};
+    const seoHostEl = state.appTab === "seo" ? document.querySelector("#cofiThumbnailStudioHost") : null;
+    const seoAlreadyMounted = Boolean(
+      seoHostEl
+      && seoHostEl.dataset.mountedJobId === String(job.id)
+      && seoHostEl.children.length > 0
+    );
     const extra = state.appTab === "voice"
       ? `${JSON.stringify(job.voice || {})}|${Boolean(state.health?.cofi_voice?.ok)}`
-      : state.appTab === "seo"
-        ? `${job.thumbnail?.updated_at || ""}`
-        : "";
-    const key = `${job.id}|${phase.status || "pending"}|${phase.finished_at || ""}|${phase.error || ""}|${extra}`;
-    const seoStudioEmpty = state.appTab === "seo" && !document.querySelector("#cofiThumbnailStudioHost")?.children?.length;
-    const needsLiveRefresh = (["running", "queued"].includes(phase.status) && state.appTab !== "ai_visual") || seoStudioEmpty;
+      : "";
+    const liveMtime = (state.appTab !== "seo" && state.realtimeLive?.job_id === job.id)
+      ? JSON.stringify(state.realtimeLive)
+      : "";
+    const key = state.appTab === "seo"
+      ? `${job.id}|${phase.status || "pending"}|${phase.started_at || ""}|${phase.finished_at || ""}`
+      : `${job.id}|${phase.status || "pending"}|${phase.started_at || ""}|${phase.finished_at || ""}|${phase.last_message || ""}|${phase.error || ""}|${job.updated_at || ""}|${extra}|${liveMtime}`;
+    const seoStudioEmpty = state.appTab === "seo" && !seoAlreadyMounted;
+    const needsLiveRefresh = (["running", "queued"].includes(phase.status) && !["ai_visual", "seo"].includes(state.appTab)) || seoStudioEmpty;
     if (!needsLiveRefresh && state.workspaceRenderKeys[state.appTab] === key) return;
     state.workspaceRenderKeys[state.appTab] = key;
   }
@@ -9654,7 +11351,7 @@ async function renderTab(job) {
   if (state.detailTab === "edit") return renderRemotionTab(job);
   if (state.detailTab === "nhatky") {
     let log = "";
-    try { log = await api(`/api/jobs/${encodeURIComponent(job.id)}/logs/${state.logPhase}`); } catch (_) {}
+    try { log = await api(`/api/jobs/${encodeURIComponent(job.id)}/logs/${state.logPhase}?tail_bytes=98304`); } catch (_) {}
     return `<div class="log-panel"><div class="log-toolbar"><strong>Nhật ký AI</strong><select id="logPhaseSelect">${phases.map(p => `<option value="${p}" ${state.logPhase === p ? "selected" : ""}>${phaseLabels[p]}</option>`).join("")}</select></div><pre>${escapeHtml(log || "Chưa có sự kiện cho bước này.")}</pre></div>`;
   }
   return "";
@@ -9769,16 +11466,10 @@ async function renderDetail() {
 async function refreshAll() {
   state.workspaceRenderKeys = {};
   try {
-    const cssLink = document.querySelector('link[href*="/static/styles.css"]');
-    if (cssLink) {
-      cssLink.href = `/static/styles.css?v=${Date.now()}`;
-    }
-    await new Promise((resolve) => {
-      const s = document.createElement("script");
-      s.src = `/static/thumbnail_studio.js?v=${Date.now()}`;
-      s.onload = resolve;
-      s.onerror = resolve;
-      document.head.appendChild(s);
+    const stamp = Date.now();
+    document.querySelectorAll('link[rel="stylesheet"][href*="/static/"]').forEach(link => {
+      const base = link.getAttribute("href").split("?")[0];
+      link.href = `${base}?v=${stamp}`;
     });
   } catch (_) {}
   await Promise.all([loadHealth(), loadJobs(true)]);
@@ -9843,16 +11534,35 @@ async function boot() {
   syncGoalModeToggles();
   await renderDetail();
   const initialActiveJob = state.jobs.find(job => ["running", "queued"].includes(String(job.status || "")));
-  if (initialActiveJob && initialActiveJob.current_phase) {
+  if (initialActiveJob && initialActiveJob.current_phase && state.appTab === "overview") {
     state.lastFollowedPhaseKey = `${initialActiveJob.id}:${initialActiveJob.current_phase}`;
     followPipelineJob(initialActiveJob, { switchTab: true });
-  } else {
+  } else if (!state.appTab || state.appTab === "overview") {
     setAppTab("overview");
+  } else {
+    setAppTab(state.appTab);
   }
   await renderGlobalProducerChat({ loadHistory: false });
-  setInterval(async () => {
+  let mainPollInFlight = false;
+  let mainPollPending = false;
+  let lastHealthPollMs = Date.now();
+  let fastWorkspacePollInFlight = false;
+  let globalChatPollInFlight = false;
+
+  const runRealtimeSyncTick = async ({ forceDetail = false } = {}) => {
+    if (mainPollInFlight) {
+      mainPollPending = true;
+      return;
+    }
+    mainPollInFlight = true;
     try {
-      await Promise.all([loadHealth(), loadJobs(true)]);
+      const nowMs = Date.now();
+      const shouldPollHealth = (nowMs - lastHealthPollMs) >= 15000;
+      if (shouldPollHealth) lastHealthPollMs = nowMs;
+      await Promise.all([
+        shouldPollHealth ? loadHealth({ cached: true }) : Promise.resolve(),
+        loadJobs(true, { summary: true }),
+      ]);
       let current = state.jobs.find(j => j.id === state.selectedId);
       if (state.userPinnedJobId && !state.jobs.some(j => j.id === state.userPinnedJobId)) {
         state.userPinnedJobId = null;
@@ -9867,7 +11577,7 @@ async function boot() {
           current = externalActive;
           state.selectedId = externalActive.id;
           state.autoFollowPipelineJobId = externalActive.id;
-          await loadJobs(true);
+          await loadJobs(true, { summary: true });
         }
       }
       if (current && ["running", "queued"].includes(String(current.status || ""))) {
@@ -9879,20 +11589,73 @@ async function boot() {
         state.autoFollowPipelineJobId = null;
       }
       const uiSignature = pipelineUiSignature(current);
-      const pipelineChanged = uiSignature !== state.lastPipelineUiSignature;
+      const pipelineChanged = forceDetail || (uiSignature !== state.lastPipelineUiSignature);
       state.lastPipelineUiSignature = uiSignature;
-      // AI bổ sung giữ Media Factory iframe đang chạy. renderDetail() dựng lại toàn bộ
-      // jobDetail và làm mất workspace/iframe khiến giao diện nhấp nháy mỗi lần polling.
-      // Workspace này đã có vòng refresh riêng bên dưới.
-      if (current && pipelineChanged && state.appTab !== "ai_visual") await renderDetail();
-      if (["script", "voice", "visuals", "footage", "ai_visual", "edit", "seo", "qc"].includes(state.appTab)) await renderFunctionWorkspaces();
+      if (pipelineChanged) {
+        state.workspaceRenderKeys = {};
+      }
+      if (current && (pipelineChanged || (state.detailTab === "nhatky" && ["running", "queued"].includes(String(current.status || "")))) && state.appTab !== "ai_visual") {
+        await renderDetail();
+      }
+      if (["script", "voice", "visuals", "footage", "ai_visual", "edit", "seo", "qc"].includes(state.appTab)) {
+        await renderFunctionWorkspaces();
+      }
       const profile = currentChannelProfile();
-      if (profile?.plan?.plan_id && state.appTab === "overview") {
+      if (profile?.plan?.plan_id && state.appTab === "overview" && pipelineChanged) {
         try { renderChannelPlan(await api(`/api/radar/channel-profiles/${encodeURIComponent(profile.id)}/plan`)); } catch (_) {}
       }
+    } catch (_) {
+    } finally {
+      mainPollInFlight = false;
+      if (mainPollPending) {
+        mainPollPending = false;
+        setTimeout(() => runRealtimeSyncTick(), 120);
+      }
+    }
+  };
+
+  let lastRealtimeTickAtMs = 0;
+  const connectRealtimeEvents = () => {
+    if (typeof window.EventSource !== "function") return;
+    try {
+      if (state.realtimeEventSource) state.realtimeEventSource.close();
+      const q = state.selectedId ? `?selected_job_id=${encodeURIComponent(state.selectedId)}` : "";
+      const es = new EventSource(`/api/events${q}`);
+      state.realtimeEventSource = es;
+      es.addEventListener("pulse", ev => {
+        try {
+          const payload = JSON.parse(ev.data || "{}");
+          state.realtimeLive = payload.live || {};
+          lastRealtimeTickAtMs = Date.now();
+          runRealtimeSyncTick();
+        } catch (_) {}
+      });
+      es.onerror = () => {
+        try { es.close(); } catch (_) {}
+        state.realtimeEventSource = null;
+        setTimeout(connectRealtimeEvents, 5000);
+      };
     } catch (_) {}
-  }, 2000);
+  };
+  connectRealtimeEvents();
+
+  setInterval(() => {
+    if (document.hidden) return;
+    const sseConnected = state.realtimeEventSource && state.realtimeEventSource.readyState === 1;
+    const minGapMs = sseConnected ? 8500 : 2500;
+    if (Date.now() - lastRealtimeTickAtMs < minGapMs) return;
+    lastRealtimeTickAtMs = Date.now();
+    runRealtimeSyncTick();
+  }, 2500);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) runRealtimeSyncTick({ forceDetail: true });
+  });
+  window.addEventListener("focus", () => {
+    runRealtimeSyncTick();
+  });
   setInterval(async () => {
+    if (fastWorkspacePollInFlight || document.hidden) return;
+    fastWorkspacePollInFlight = true;
     try {
       const current = state.jobs.find(j => j.id === state.selectedId);
       if (state.appTab === "footage" && current?.phases?.footage?.status === "running") {
@@ -9904,15 +11667,55 @@ async function boot() {
       if (state.appTab === "qc" && current?.phases?.qc?.status === "running") {
         await renderQcWorkspace(current);
       }
-    } catch (_) {}
-  }, 1000);
+    } catch (_) {
+    } finally {
+      fastWorkspacePollInFlight = false;
+    }
+  }, 1200);
   setInterval(async () => {
+    if (globalChatPollInFlight || document.hidden || !state.globalCodexOpen) return;
+    globalChatPollInFlight = true;
     try {
       if (state.appTab !== "codex") await refreshGlobalCodexContext();
-    } catch (_) {}
-  }, 2000);
+    } catch (_) {
+    } finally {
+      globalChatPollInFlight = false;
+    }
+  }, 2500);
 
   document.addEventListener("click", event => {
+    const revealBtn = event.target.closest("[data-local-reveal-job]");
+    if (revealBtn) {
+      event.preventDefault();
+      revealLocalJobMedia(
+        revealBtn.dataset.localRevealJob,
+        revealBtn.dataset.localRevealPath || "release/video.mp4",
+        revealBtn,
+      );
+      return;
+    }
+    const saveLocalBtn = event.target.closest("[data-local-save-job]");
+    if (saveLocalBtn) {
+      event.preventDefault();
+      saveLocalMediaDirectly(
+        saveLocalBtn.dataset.localSaveJob,
+        saveLocalBtn.dataset.localSavePath || "release/video.mp4",
+        saveLocalBtn.dataset.localSaveFilename || "video.mp4",
+        saveLocalBtn,
+      );
+      return;
+    }
+    const copyPathBtn = event.target.closest("[data-copy-local-path]");
+    if (copyPathBtn) {
+      event.preventDefault();
+      const localPath = copyPathBtn.dataset.copyLocalPath || "";
+      if (localPath && navigator.clipboard) {
+        navigator.clipboard.writeText(localPath).then(() => {
+          toast(`Đã copy đường dẫn file: ${localPath}`);
+        }).catch(() => {});
+      }
+      return;
+    }
     const dlBtn = event.target.closest("[data-download-file-url]");
     if (dlBtn) {
       event.preventDefault();
@@ -9964,6 +11767,275 @@ async function boot() {
   });
 }
 
+function syncCreateRecipeSummaryBar() {
+  const form = document.getElementById("jobForm");
+  if (!form) return;
+
+  const engineVal = form.querySelector('input[name="plan_engine"]:checked')?.value || "codex";
+  const engineChip = document.getElementById("recipeChipEngine");
+  if (engineChip) {
+    engineChip.textContent = engineVal === "gemini" ? "🤖 Gemini Ultra" : "🤖 Codex";
+  }
+
+  const stratMap = {
+    full_ai: "🎬 Full AI",
+    full_footage: "🎬 Full Footage",
+    hybrid: "🎬 Kết hợp",
+    evidence_footage: "🎬 Bằng chứng + AI",
+    edit_direct_footage: "🎬 Bán Content",
+  };
+  const stratVal = form.querySelector('input[name="visual_strategy"]:checked')?.value || "full_footage";
+  const stratChip = document.getElementById("recipeChipStrategy");
+  if (stratChip) {
+    stratChip.textContent = stratMap[stratVal] || `🎬 ${stratVal}`;
+  }
+
+  const styleChip = document.getElementById("recipeChipStyle");
+  if (styleChip) {
+    if (stratVal === "full_footage") {
+      styleChip.textContent = "🎨 Tư liệu thật 100%";
+      styleChip.classList.add("is-muted");
+    } else {
+      styleChip.classList.remove("is-muted");
+      const styleMode = document.getElementById("createAiStyleMode")?.value || "auto";
+      const presetSel = document.getElementById("createAiStylePreset");
+      const mediaVal = form.querySelector('input[name="ai_media_mode"]:checked')?.value || "mixed";
+      const mediaShort = mediaVal === "image" ? "Ảnh" : mediaVal === "video" ? "Video" : "Ảnh+Video";
+      if (styleMode === "preset" && presetSel && presetSel.value) {
+        const rawLabel = (presetSel.selectedOptions?.[0]?.textContent || presetSel.value || "").split("(")[0].trim();
+        const shortPreset = rawLabel.length > 22 ? `${rawLabel.slice(0, 21)}…` : rawLabel;
+        styleChip.textContent = `🎨 ${shortPreset} · ${mediaShort}`;
+      } else if (styleMode === "custom") {
+        styleChip.textContent = `🎨 Nét vẽ riêng · ${mediaShort}`;
+      } else {
+        styleChip.textContent = `🎨 AI tự chọn · ${mediaShort}`;
+      }
+    }
+  }
+
+  const voiceChip = document.getElementById("recipeChipVoice");
+  if (voiceChip) {
+    const voiceSel = document.getElementById("voiceSelect");
+    const rawVoice = (voiceSel?.selectedOptions?.[0]?.textContent || "Giọng mặc định").split("—")[0].split("(")[0].trim();
+    const shortVoice = rawVoice.length > 18 ? `${rawVoice.slice(0, 17)}…` : rawVoice;
+    const speedNum = Number(form.querySelector('input[name="voice_speed"]')?.value || 1).toFixed(2);
+    voiceChip.textContent = `🎙️ ${shortVoice} · ${speedNum}×`;
+  }
+}
+
+function setCreateConfigSheetOpen(open, focusSection = "") {
+  const form = document.getElementById("jobForm");
+  const pane = document.getElementById("tao-video");
+  if (!form) return;
+  const isOpen = Boolean(open);
+  form.classList.toggle("config-sheet-open", isOpen);
+  if (pane) {
+    pane.classList.toggle("config-sheet-open", isOpen);
+    pane.scrollLeft = 0;
+  }
+  if (isOpen && focusSection) {
+    const scroller = form.querySelector(".form-side-sheet-scroll");
+    const targetCard = form.querySelector(`[data-config-section="${focusSection}"]`);
+    if (scroller && targetCard) {
+      requestAnimationFrame(() => {
+        scroller.scrollTo({
+          top: Math.max(0, targetCard.offsetTop - 12),
+          behavior: "smooth",
+        });
+      });
+    }
+  }
+}
+
+function initAdaptiveSaaSWorkbench() {
+  // 1. Collapsible Sidebar Icon Rail (Manual + Smart Auto-Collapse)
+  const sidebar = document.getElementById("studioSidebar") || document.querySelector(".channel-studio-sidebar");
+  const collapseBtn = document.getElementById("sidebarCollapseBtn");
+  const savedMode = localStorage.getItem("cofi-sidebar-mode") || "auto";
+  if (savedMode === "collapsed") {
+    document.body.classList.add("sidebar-collapsed");
+  } else if (savedMode === "expanded") {
+    document.body.classList.add("sidebar-expanded-override");
+  }
+
+  const syncSidebarBtnIcon = () => {
+    if (!sidebar || !collapseBtn) return;
+    const isNarrowRail = sidebar.getBoundingClientRect().width <= 84;
+    collapseBtn.textContent = isNarrowRail ? "»" : "«";
+    collapseBtn.setAttribute("aria-expanded", isNarrowRail ? "false" : "true");
+    collapseBtn.setAttribute(
+      "title",
+      isNarrowRail ? "Mở rộng menu trái (Ctrl+B)" : "Thu gọn menu trái thành Icon Rail (Ctrl+B)"
+    );
+  };
+
+  const toggleSidebarRail = () => {
+    if (!sidebar) return;
+    const currentlyRail = sidebar.getBoundingClientRect().width <= 84;
+    if (currentlyRail) {
+      document.body.classList.remove("sidebar-collapsed");
+      document.body.classList.add("sidebar-expanded-override");
+      localStorage.setItem("cofi-sidebar-mode", "expanded");
+    } else {
+      document.body.classList.add("sidebar-collapsed");
+      document.body.classList.remove("sidebar-expanded-override");
+      localStorage.setItem("cofi-sidebar-mode", "collapsed");
+    }
+    requestAnimationFrame(syncSidebarBtnIcon);
+  };
+
+  collapseBtn?.addEventListener("click", (e) => {
+    e.stopPropagation();
+    toggleSidebarRail();
+  });
+
+  if (sidebar && typeof ResizeObserver !== "undefined") {
+    const ro = new ResizeObserver(() => syncSidebarBtnIcon());
+    ro.observe(sidebar);
+  }
+  requestAnimationFrame(syncSidebarBtnIcon);
+
+  // 2. Step 2 Production Recipe Summary Bar & Slide-Over Config Sheet
+  const jobForm = document.getElementById("jobForm");
+  if (jobForm) {
+    document.getElementById("openCreateConfigSheetBtn")?.addEventListener("click", () => {
+      const isOpen = jobForm.classList.contains("config-sheet-open");
+      setCreateConfigSheetOpen(!isOpen);
+    });
+    document.getElementById("closeCreateConfigSheetBtn")?.addEventListener("click", () => {
+      setCreateConfigSheetOpen(false);
+    });
+    document.getElementById("createConfigBackdrop")?.addEventListener("click", () => {
+      setCreateConfigSheetOpen(false);
+    });
+    jobForm.querySelectorAll("[data-open-create-config]").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        setCreateConfigSheetOpen(true, chip.dataset.openCreateConfig || "");
+      });
+    });
+
+    jobForm.addEventListener("change", () => syncCreateRecipeSummaryBar());
+    jobForm.addEventListener("input", () => syncCreateRecipeSummaryBar());
+
+    // Catch programmatic option/value updates from profile DNA or async preset loading
+    ["voiceSelect", "createAiStylePreset", "createChannelProfileSelect"].forEach((id) => {
+      const el = document.getElementById(id);
+      if (el && typeof MutationObserver !== "undefined") {
+        const mo = new MutationObserver(() => syncCreateRecipeSummaryBar());
+        mo.observe(el, { childList: true, subtree: true, attributes: true });
+      }
+    });
+    document.getElementById("createChannelProfileSelect")?.addEventListener("change", () => {
+      setTimeout(syncCreateRecipeSummaryBar, 80);
+    });
+    syncCreateRecipeSummaryBar();
+  }
+
+  // 3. Editorial AI Chat Dock — Drag Resizer & 1-Click Split Reader ("⇔ Rộng")
+  const chatResizer = document.getElementById("globalCodexResizer");
+  const chatWideBtn = document.getElementById("globalCodexWideBtn");
+  const defaultChatWidthCss = "clamp(384px, 28vw, 436px)";
+  const wideChatWidthCss = "min(620px, 48vw)";
+
+  const syncChatWideBtnUi = (isWide) => {
+    if (!chatWideBtn) return;
+    chatWideBtn.classList.toggle("is-active", Boolean(isWide));
+    chatWideBtn.textContent = isWide ? "⇤ Thu gọn" : "⇔ Rộng";
+    chatWideBtn.title = isWide
+      ? "Thu khung chat về kích thước chuẩn (hoặc nhấp đúp thanh kéo cạnh trái)"
+      : "Mở rộng khung đọc AI thành Split Reader (620px)";
+  };
+
+  const applySavedChatDockWidth = () => {
+    const isWide = localStorage.getItem("cofi-chat-dock-wide") === "1";
+    const savedPx = Number(localStorage.getItem("cofi-chat-dock-px") || 0);
+    if (isWide) {
+      document.documentElement.style.setProperty("--chat-dock-width", wideChatWidthCss);
+      syncChatWideBtnUi(true);
+    } else if (savedPx >= 340 && savedPx <= 800) {
+      const clamped = Math.min(savedPx, Math.max(360, Math.round(window.innerWidth * 0.56)));
+      document.documentElement.style.setProperty("--chat-dock-width", `${clamped}px`);
+      syncChatWideBtnUi(clamped >= 540);
+    } else {
+      document.documentElement.style.setProperty("--chat-dock-width", defaultChatWidthCss);
+      syncChatWideBtnUi(false);
+    }
+  };
+  applySavedChatDockWidth();
+
+  chatWideBtn?.addEventListener("click", () => {
+    const currentlyWide = chatWideBtn.classList.contains("is-active");
+    if (currentlyWide) {
+      localStorage.setItem("cofi-chat-dock-wide", "0");
+      localStorage.removeItem("cofi-chat-dock-px");
+      document.documentElement.style.setProperty("--chat-dock-width", defaultChatWidthCss);
+      syncChatWideBtnUi(false);
+    } else {
+      localStorage.setItem("cofi-chat-dock-wide", "1");
+      document.documentElement.style.setProperty("--chat-dock-width", wideChatWidthCss);
+      syncChatWideBtnUi(true);
+    }
+  });
+
+  if (chatResizer) {
+    let draggingChat = false;
+    chatResizer.addEventListener("pointerdown", (ev) => {
+      if (ev.button !== 0) return;
+      ev.preventDefault();
+      draggingChat = true;
+      chatResizer.setPointerCapture?.(ev.pointerId);
+      document.body.classList.add("is-resizing-chat");
+    });
+    chatResizer.addEventListener("pointermove", (ev) => {
+      if (!draggingChat) return;
+      const maxWidth = Math.max(400, Math.min(760, Math.round(window.innerWidth * 0.56)));
+      const nextWidth = Math.max(350, Math.min(maxWidth, Math.round(window.innerWidth - ev.clientX)));
+      document.documentElement.style.setProperty("--chat-dock-width", `${nextWidth}px`);
+      syncChatWideBtnUi(nextWidth >= 540);
+    });
+    const finishChatResize = (ev) => {
+      if (!draggingChat) return;
+      draggingChat = false;
+      try { chatResizer.releasePointerCapture?.(ev.pointerId); } catch (_) {}
+      document.body.classList.remove("is-resizing-chat");
+      const dock = document.getElementById("globalCodexDock");
+      const finalWidth = Math.round(dock?.getBoundingClientRect().width || 0);
+      if (finalWidth >= 350) {
+        localStorage.setItem("cofi-chat-dock-px", String(finalWidth));
+        localStorage.setItem("cofi-chat-dock-wide", "0");
+      }
+    };
+    chatResizer.addEventListener("pointerup", finishChatResize);
+    chatResizer.addEventListener("pointercancel", finishChatResize);
+    chatResizer.addEventListener("dblclick", () => {
+      localStorage.removeItem("cofi-chat-dock-px");
+      localStorage.setItem("cofi-chat-dock-wide", "0");
+      document.documentElement.style.setProperty("--chat-dock-width", defaultChatWidthCss);
+      syncChatWideBtnUi(false);
+    });
+  }
+
+  // Keyboard shortcuts: Ctrl+B toggles sidebar; Escape closes Step 2 Config Sheet first
+  window.addEventListener(
+    "keydown",
+    (e) => {
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && e.key.toLowerCase() === "b") {
+        const tag = (document.activeElement?.tagName || "").toUpperCase();
+        if (tag !== "INPUT" && tag !== "TEXTAREA") {
+          e.preventDefault();
+          toggleSidebarRail();
+        }
+      } else if (e.key === "Escape" && jobForm?.classList.contains("config-sheet-open")) {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        setCreateConfigSheetOpen(false);
+      }
+    },
+    true
+  );
+}
+
+initAdaptiveSaaSWorkbench();
 boot();
 
 
@@ -9988,5 +12060,151 @@ $("#aiTrailSyncBtn")?.addEventListener("click", async () => {
   } finally {
     btn.disabled = false;
     btn.textContent = orig;
+  }
+});
+
+async function openSmartCacheModal() {
+  const dlg = $("#smartCacheDialog");
+  const body = $("#smartCacheDialogContent");
+  if (!dlg || !body) return;
+  body.innerHTML = `<div class="loading">⏳ Đang quét dung lượng Cache & trạng thái RAM hệ thống…</div>`;
+  if (!dlg.open) dlg.showModal();
+  await refreshSmartCacheModalContent();
+}
+
+async function refreshSmartCacheModalContent() {
+  const body = $("#smartCacheDialogContent");
+  if (!body) return;
+  try {
+    const q = state.selectedId ? `?selected_job_id=${encodeURIComponent(state.selectedId)}` : "";
+    const report = await api(`/api/system/cache-report${q}`);
+    const mem = report.memory || {};
+    const t1 = report.tiers?.safe_ephemeral || {};
+    const t2 = report.tiers?.slim_completed || {};
+    const t3 = report.tiers?.archive_completed || {};
+    const b1 = t1.breakdown || {};
+    body.innerHTML = `
+      <div style="display:grid;gap:14px;padding:4px 0;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-radius:10px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.25);">
+          <div>
+            <div style="font-size:12px;color:#94a3b8;text-transform:uppercase;letter-spacing:0.05em;">Bộ nhớ RAM Hệ Thống Hiện Tại</div>
+            <div style="font-size:16px;font-weight:700;color:#f8fafc;margin-top:2px;">
+              Đang trống ${Number(mem.available_ram_gb || 0).toFixed(1)} GB / ${Number(mem.total_ram_gb || 32).toFixed(1)} GB
+              <span style="font-size:13px;font-weight:500;color:#38bdf8;margin-left:8px;">(Tải RAM: ${mem.memory_load_pct || 0}%)</span>
+            </div>
+          </div>
+          <button class="ghost" type="button" data-smart-cache-reclaim-ram="true">⚡ Giải phóng RAM & Server ngầm</button>
+        </div>
+
+        <div style="padding:14px 16px;border-radius:10px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div>
+              <strong style="color:#34d399;font-size:15px;">🟢 ${escapeHtml(t1.label || "Tầng 1 · Cache Rác, Phân Đoạn Render, Video Nguồn Thô & Bản Sao Remotion")}</strong>
+              <p style="margin:6px 0 8px;font-size:13px;color:#cbd5e1;">
+                Xóa bản sao trong <code>CofiRemotion/public/jobs/</code> (${Number(b1.remotion_public_mirror?.gb || 0).toFixed(2)} GB),
+                phân đoạn <code>universal_segments</code> + preview + video nguồn thô dư thừa &amp; MP4 nhân bản (${Number(b1.render_cache?.gb || 0).toFixed(2)} GB),
+                <code>CofiRemotion/out</code> + log cũ (${Number(b1.remotion_scratch_outputs?.gb || 0).toFixed(2)} GB)
+                và Temp bundle hệ thống (${Number(b1.system_temp_bundles?.gb || 0).toFixed(2)} GB).
+                <strong>⚡ Chế độ này cũng tự động chạy ngầm ngay sau khi mỗi Job xuất xong MP4!</strong>
+              </p>
+            </div>
+            <div style="text-align:right;min-width:150px;">
+              <div style="font-size:20px;font-weight:800;color:#34d399;">${Number(t1.total_gb || 0).toFixed(2)} GB</div>
+              <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">${Number(t1.total_files || 0).toLocaleString("vi-VN")} files</div>
+              <button class="primary" type="button" data-smart-cache-clean="safe_ephemeral">🧹 Dọn Tầng 1 Ngay</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:14px 16px;border-radius:10px;background:rgba(250,204,21,0.06);border:1px solid rgba(250,204,21,0.25);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+            <div>
+              <strong style="color:#facc15;font-size:15px;">🟡 ${escapeHtml(t2.label || "Tầng 2 · Thu Gọn Dự Án Đã Hoàn Thành")}</strong>
+              <p style="margin:6px 0 8px;font-size:13px;color:#cbd5e1;">
+                Áp dụng cho <strong>${Number(t2.jobs_count || 0)} dự án đã hoàn thành</strong> (đã có sẵn MP4 trong <code>release/</code>):
+                Xóa file WAV cắt lẻ từng câu (<code>audio/beats/</code>), bản nháp <code>edit_plates</code> trùng lặp và ứng viên thô.
+                <strong>Giữ nguyên 100% Video MP4 cuối, Voice tổng (narration.wav), Phụ đề SRT, Thumbnail & Kịch bản.</strong>
+              </p>
+            </div>
+            <div style="text-align:right;min-width:150px;">
+              <div style="font-size:20px;font-weight:800;color:#facc15;">+${Number(t2.total_gb || 0).toFixed(2)} GB</div>
+              <div style="font-size:12px;color:#94a3b8;margin-bottom:8px;">${Number(t2.total_files || 0).toLocaleString("vi-VN")} files</div>
+              <button class="ghost" type="button" data-smart-cache-clean="slim_completed">📦 Dọn Tầng 1 + Tầng 2</button>
+            </div>
+          </div>
+        </div>
+
+        <div style="padding:12px 16px;border-radius:10px;background:rgba(148,163,184,0.06);border:1px solid rgba(148,163,184,0.2);">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+            <div>
+              <strong style="color:#e2e8f0;font-size:14px;">⚪ ${escapeHtml(t3.label || "Tầng 3 · Lưu Trữ Lạnh")}</strong>
+              <p style="margin:4px 0 0;font-size:12px;color:#94a3b8;">
+                Chỉ giữ gói thành phẩm (<code>release/*.mp4</code> + Kịch bản + Voice tổng + Thumbnail), xóa thêm thư mục <code>media/</code> của các job đã xuất xong.
+              </p>
+            </div>
+            <div style="text-align:right;min-width:150px;">
+              <div style="font-size:16px;font-weight:700;color:#cbd5e1;">+${Number(t3.total_gb || 0).toFixed(2)} GB</div>
+              <button class="ghost" type="button" data-smart-cache-clean="archive_completed" style="margin-top:6px;font-size:12px;">🗄️ Lưu Trữ Lạnh</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  } catch (err) {
+    body.innerHTML = `<div class="error">Không tải được báo cáo Cache: ${escapeHtml(err.message || String(err))}</div>`;
+  }
+}
+
+$("#smartCacheBtn")?.addEventListener("click", () => openSmartCacheModal());
+$("#closeSmartCacheDialog")?.addEventListener("click", () => $("#smartCacheDialog")?.close());
+
+document.addEventListener("click", async (ev) => {
+  const cleanBtn = ev.target.closest("[data-smart-cache-clean]");
+  if (cleanBtn) {
+    const mode = cleanBtn.getAttribute("data-smart-cache-clean") || "safe_ephemeral";
+    if (mode === "archive_completed" && !window.confirm("Lưu trữ lạnh sẽ xóa thư mục media/ nguyên liệu của các dự án đã hoàn thành (vẫn giữ nguyên 100% video MP4 cuối trong release/, giọng đọc tổng và kịch bản). Bạn có chắc chắn muốn tiếp tục?")) {
+      return;
+    }
+    const orig = cleanBtn.textContent;
+    cleanBtn.disabled = true;
+    cleanBtn.textContent = "⏳ Đang dọn…";
+    try {
+      const res = await api("/api/system/cache-clean", {
+        method: "POST",
+        body: JSON.stringify({
+          mode,
+          selected_job_id: state.selectedId || null,
+          include_tier1: true,
+          reclaim_ram: true,
+        }),
+      });
+      toast(`Đã giải phóng ${Number(res.freed_gb || 0).toFixed(2)} GB (${Number(res.removed_files || 0).toLocaleString("vi-VN")} files) & tối ưu RAM!`);
+      await refreshSmartCacheModalContent();
+      await loadJobs(true, { summary: true });
+    } catch (err) {
+      toast(`Lỗi dọn cache: ${err.message || err}`, true);
+    } finally {
+      cleanBtn.disabled = false;
+      cleanBtn.textContent = orig;
+    }
+    return;
+  }
+
+  const ramBtn = ev.target.closest("[data-smart-cache-reclaim-ram]");
+  if (ramBtn) {
+    const orig = ramBtn.textContent;
+    ramBtn.disabled = true;
+    ramBtn.textContent = "⏳ Đang giải phóng RAM…";
+    try {
+      const res = await api("/api/hardware-profile/reclaim-vram", { method: "POST", body: "{}" });
+      const freedRam = res?.reap_details?.freed_ram_gb || 0;
+      toast(`Đã giải phóng tiến trình ngầm & thu hồi RAM (+${Number(freedRam).toFixed(2)} GB trống)!`);
+      await refreshSmartCacheModalContent();
+    } catch (err) {
+      toast(`Lỗi giải phóng RAM: ${err.message || err}`, true);
+    } finally {
+      ramBtn.disabled = false;
+      ramBtn.textContent = orig;
+    }
   }
 });

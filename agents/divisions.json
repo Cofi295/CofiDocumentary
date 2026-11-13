@@ -1,0 +1,41 @@
+{
+  "_note": "Single source of truth for the COFI DOCUMENTARY 4 Studio Divisions (15 bespoke documentary specialists).",
+  "divisions": {
+    "direction": {
+      "id": "direction",
+      "label": "Executive Direction, Radar & Channel DNA",
+      "label_vi": "Ban Chỉ Huy Sản Xuất, Radar & Chiến Lược DNA Kênh",
+      "emoji": "🎯",
+      "color": "#0EA5E9",
+      "order": 1,
+      "description": "Autonomous studio orchestration, CofiRadar outlier topic scouting, channel DNA isolation, handoff ledgers, and closed-loop retry control."
+    },
+    "editorial": {
+      "id": "editorial",
+      "label": "Editorial, Archival Research & Acoustic Voice",
+      "label_vi": "Ban Nội Dung, Điều Tra Hồ Sơ & Đạo Diễn Thanh Nhạc",
+      "emoji": "🖋️",
+      "color": "#F59E0B",
+      "order": 2,
+      "description": "Fact-grounded source investigation, broadcast-grade spoken screenwriting isolated per channel DNA, and studio acoustic TTS direction."
+    },
+    "visual_cinema": {
+      "id": "visual_cinema",
+      "label": "Cinematography, Archival Footage, AI Art, Vox Motion & Editing",
+      "label_vi": "Ban Phân Cảnh, Tư Liệu Thật, Mỹ Thuật AI, Đồ Họa Vox & Dựng Phim",
+      "emoji": "🎬",
+      "color": "#8B5CF6",
+      "order": 3,
+      "description": "1-to-1 storyboard architecture, 3-frame hygienic archival retrieval, cinematographic AI keyframing, Walter Murch timeline editing, and CTR packaging."
+    },
+    "quality_and_engineering": {
+      "id": "quality_and_engineering",
+      "label": "Stage Critique, Master Broadcast Screening & Core Engineering",
+      "label_vi": "Ban Phản Biện Từng Bước, Duyệt Phim Xuất Bản & Kỹ Thuật Cốt Lõi",
+      "emoji": "🛡️",
+      "color": "#10B981",
+      "order": 4,
+      "description": "Continuous Maker-QA verification loops, default-to-NEEDS-WORK final broadcast certification, and pure technical core software engineering."
+    }
+  }
+}

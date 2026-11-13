@@ -195,6 +195,9 @@ class ChannelProfileCreateModel(BaseModel):
     market: str = "KR"
     default_language: str | None = None
     language: str | None = None
+    voice_id: str = ""
+    default_voice_id: str | None = None
+    secondary_voice_id: str | None = None
     default_duration_minutes: float | None = Field(default=None, ge=2, le=180)
     target_duration_minutes: float | None = Field(default=None, ge=2, le=180)
     default_visual_strategy: str | None = None
@@ -217,9 +220,21 @@ class ChannelProfileCreateModel(BaseModel):
     self_learning_memory: dict[str, Any] | None = None
     editorial_dna: dict[str, Any] | None = None
     topic_memory: list[dict[str, Any]] | None = None
+    topic_streams: list[dict[str, Any]] | None = None
+    suggested_topic_history: list[dict[str, Any]] | None = None
+    topic_research_round: int | None = None
     seo_keyword_dna: dict[str, Any] | None = None
     thumbnail_dna: dict[str, Any] | None = None
     thumbnail_dna_history: list[dict[str, Any]] | None = None
+    rhythm_dna: dict[str, Any] | None = None
+    voice_signature: dict[str, Any] | None = None
+    auto_design_voice: bool | None = None
+    voice_source_mode: str | None = None
+    base_voice_id: str | None = None
+    voice_sample_base64: str | None = None
+    voice_sample_filename: str | None = None
+    voice_sample_ref_text: str | None = None
+    voice_custom_direction: str | None = None
 
 
 class ChannelProfileUpdateModel(BaseModel):
@@ -227,6 +242,9 @@ class ChannelProfileUpdateModel(BaseModel):
     market: str | None = None
     default_language: str | None = None
     language: str | None = None
+    voice_id: str | None = None
+    default_voice_id: str | None = None
+    secondary_voice_id: str | None = None
     default_duration_minutes: float | None = Field(default=None, ge=2, le=180)
     target_duration_minutes: float | None = Field(default=None, ge=2, le=180)
     default_visual_strategy: str | None = None
@@ -249,13 +267,67 @@ class ChannelProfileUpdateModel(BaseModel):
     self_learning_memory: dict[str, Any] | None = None
     editorial_dna: dict[str, Any] | None = None
     topic_memory: list[dict[str, Any]] | None = None
+    topic_streams: list[dict[str, Any]] | None = None
+    suggested_topic_history: list[dict[str, Any]] | None = None
+    topic_research_round: int | None = None
     seo_keyword_dna: dict[str, Any] | None = None
     thumbnail_dna: dict[str, Any] | None = None
     thumbnail_dna_history: list[dict[str, Any]] | None = None
+    rhythm_dna: dict[str, Any] | None = None
+    voice_signature: dict[str, Any] | None = None
+    auto_design_voice: bool | None = None
+    voice_source_mode: str | None = None
+    base_voice_id: str | None = None
+    voice_sample_base64: str | None = None
+    voice_sample_filename: str | None = None
+    voice_sample_ref_text: str | None = None
+    voice_custom_direction: str | None = None
 
 
 class ChannelProfileCloneModel(BaseModel):
     label: str | None = None
+
+
+class ChannelProfile(BaseModel):
+    id: str = ""
+    channel_profile_id: str | None = None
+    label: str | None = None
+    market: str = "KR"
+    default_language: str | None = None
+    language: str | None = None
+    voice_id: str = ""
+    secondary_voice_id: str | None = None
+    default_duration_minutes: float | None = None
+    target_duration_minutes: float | None = None
+    default_visual_strategy: str | None = None
+    visual_strategy: str | None = None
+    default_ai_media_mode: str | None = None
+    ai_media_mode: str | None = None
+    default_ai_style_mode: str | None = None
+    default_ai_custom_style: str | None = None
+    dna_mode: str | None = None
+    own_channel_ref: str = ""
+    competitor_refs: list[str] = Field(default_factory=list)
+    allowed_topics: str | None = None
+    forbidden_topics: str | None = None
+    monetization_safety_policy: str | None = None
+    voice_and_structure: str | None = None
+    reference_image_policy: str | None = None
+    cta_strategy: str | None = None
+    default_creative_brief: dict[str, Any] | None = None
+    editing_dna: dict[str, Any] | None = None
+    self_learning_memory: dict[str, Any] | None = None
+    editorial_dna: dict[str, Any] | None = None
+    topic_memory: list[dict[str, Any]] | None = None
+    topic_streams: list[dict[str, Any]] | None = None
+    suggested_topic_history: list[dict[str, Any]] | None = None
+    topic_research_round: int | None = None
+    seo_keyword_dna: dict[str, Any] | None = None
+    thumbnail_dna: dict[str, Any] | None = None
+    thumbnail_dna_history: list[dict[str, Any]] | None = None
+
+    class Config:
+        extra = "allow"
 
 
 # ==============================================================================
@@ -263,12 +335,19 @@ class ChannelProfileCloneModel(BaseModel):
 # ==============================================================================
 
 class ChannelProfileService:
+    _BACKFILLED_STORAGE_MTIMES: dict[str, float] = {}
+
     def __init__(self, storage_path: Path | str | None = None, documentary_service: Any = None):
         self.storage_path = Path(storage_path) if storage_path else DEFAULT_STORAGE_FILE
         self.documentary_service = documentary_service
         self._lock = threading.RLock()
         try:
-            self.backfill_topic_memory()
+            resolved_key = str(self.storage_path.resolve())
+            cur_mtime = self.storage_path.stat().st_mtime if self.storage_path.exists() else -1.0
+            if self._BACKFILLED_STORAGE_MTIMES.get(resolved_key) != cur_mtime:
+                self.backfill_topic_memory()
+                new_mtime = self.storage_path.stat().st_mtime if self.storage_path.exists() else cur_mtime
+                self._BACKFILLED_STORAGE_MTIMES[resolved_key] = new_mtime
         except Exception:
             pass
 
@@ -288,6 +367,14 @@ class ChannelProfileService:
                         p["thumbnail_dna"] = {}
                     if "thumbnail_dna_history" not in p or not isinstance(p["thumbnail_dna_history"], list):
                         p["thumbnail_dna_history"] = []
+                    vid_top = str(p.get("voice_id") or p.get("default_voice_id") or "").strip()
+                    if vid_top:
+                        p["voice_id"] = vid_top
+                        p["default_voice_id"] = vid_top
+                        if isinstance(p.get("voice_signature"), dict):
+                            p["voice_signature"] = {**p["voice_signature"], "voice_id": vid_top}
+                            if not p["voice_signature"].get("base_voice_id") or str(p.get("default_language") or p.get("language") or "").startswith("ko"):
+                                p["voice_signature"]["base_voice_id"] = "09c70cc1-cc86-4905-b65b-3967209c3175"
                 return profiles
             except Exception:
                 return []
@@ -438,6 +525,9 @@ class ChannelProfileService:
             "market": market,
             "default_language": default_lang,
             "language": default_lang,
+            "voice_id": str(raw_data.get("voice_id") or raw_data.get("default_voice_id") or ""),
+            "default_voice_id": str(raw_data.get("default_voice_id") or raw_data.get("voice_id") or "") or None,
+            "secondary_voice_id": str(raw_data.get("secondary_voice_id")) if raw_data.get("secondary_voice_id") else None,
             "default_duration_minutes": duration,
             "target_duration_minutes": duration,
             "default_visual_strategy": visual_strategy,
@@ -482,14 +572,52 @@ class ChannelProfileService:
                 "version": 1,
             }),
             "thumbnail_dna_history": [],
+            "rhythm_dna": dict(raw_data.get("rhythm_dna") or {}),
+            "voice_signature": dict(raw_data.get("voice_signature") or {}),
             "created_at": stamp,
             "updated_at": stamp,
         }
+
+        voice_custom_dir = str(raw_data.get("voice_custom_direction") or "").strip()
+        pref_base_vid = str(raw_data.get("base_voice_id") or "").strip() or None
+        if not profile["rhythm_dna"]:
+            try:
+                from services.voice_rhythm_specialist import VoiceRhythmSpecialistService
+
+                profile["rhythm_dna"] = VoiceRhythmSpecialistService().analyze_profile_rhythm_dna(
+                    profile,
+                    custom_direction=voice_custom_dir,
+                    preferred_base_voice_id=pref_base_vid,
+                )
+            except Exception:
+                profile["rhythm_dna"] = {}
 
         with self._lock:
             profiles = self._read_profiles_raw()
             profiles.append(profile)
             self._write_profiles_raw(profiles)
+
+        sample_b64 = str(raw_data.get("voice_sample_base64") or "").strip() or None
+        should_auto_design = bool(raw_data.get("auto_design_voice") is True or sample_b64)
+        if should_auto_design:
+            try:
+                from services.voice_rhythm_specialist import VoiceRhythmSpecialistService
+
+                designed = VoiceRhythmSpecialistService().design_and_bind_profile_voice(
+                    profile,
+                    profile_service=self,
+                    source_mode=str(raw_data.get("voice_source_mode") or ("user_sample" if sample_b64 else "base_voice")),
+                    base_voice_id=pref_base_vid,
+                    sample_audio_base64=sample_b64,
+                    sample_filename=str(raw_data.get("voice_sample_filename") or "sample.wav"),
+                    ref_text=str(raw_data.get("voice_sample_ref_text") or "") or None,
+                    custom_direction=voice_custom_dir,
+                    persist_to_profile=True,
+                )
+                if isinstance(designed.get("profile"), dict):
+                    profile = designed["profile"]
+            except Exception as exc:
+                profile["voice_specialist_warning"] = str(exc)
 
         return profile
 
@@ -525,6 +653,14 @@ class ChannelProfileService:
         else:
             patch = dict(payload)
 
+        auto_design_voice = patch.pop("auto_design_voice", None)
+        voice_source_mode = patch.pop("voice_source_mode", None)
+        base_voice_id = patch.pop("base_voice_id", None)
+        voice_sample_base64 = patch.pop("voice_sample_base64", None)
+        voice_sample_filename = patch.pop("voice_sample_filename", None)
+        voice_sample_ref_text = patch.pop("voice_sample_ref_text", None)
+        voice_custom_direction = patch.pop("voice_custom_direction", None)
+
         with self._lock:
             profiles = self._read_profiles_raw()
             index = next(
@@ -541,7 +677,7 @@ class ChannelProfileService:
             for key, value in patch.items():
                 if value is None:
                     continue
-                if key in {"default_creative_brief", "editing_dna", "self_learning_memory", "seo_keyword_dna"}:
+                if key in {"default_creative_brief", "editing_dna", "self_learning_memory", "seo_keyword_dna", "rhythm_dna", "voice_signature"}:
                     if not isinstance(value, dict):
                         raise ValueError(f"Field '{key}' must be an object")
                     merged_dict = dict(existing.get(key) or {})
@@ -563,6 +699,10 @@ class ChannelProfileService:
                     if not isinstance(value, list):
                         raise ValueError("Field 'topic_memory' must be a list")
                     updated["topic_memory"] = list(value)
+                elif key in {"topic_streams", "suggested_topic_history"}:
+                    if not isinstance(value, list):
+                        raise ValueError(f"Field '{key}' must be a list")
+                    updated[key] = list(value)
                 else:
                     updated[key] = value
 
@@ -577,10 +717,34 @@ class ChannelProfileService:
                 updated["default_language"] = patch["language"]
             if "default_language" in patch:
                 updated["language"] = patch["default_language"]
+            if "voice_id" in patch and patch["voice_id"]:
+                updated["default_voice_id"] = patch["voice_id"]
+            elif "default_voice_id" in patch and patch["default_voice_id"] and not patch.get("voice_id"):
+                updated["voice_id"] = patch["default_voice_id"]
 
             updated["updated_at"] = _now()
             profiles[index] = updated
             self._write_profiles_raw(profiles)
+
+        if auto_design_voice is True or voice_sample_base64:
+            try:
+                from services.voice_rhythm_specialist import VoiceRhythmSpecialistService
+
+                designed = VoiceRhythmSpecialistService().design_and_bind_profile_voice(
+                    updated,
+                    profile_service=self,
+                    source_mode=str(voice_source_mode or ("user_sample" if voice_sample_base64 else "base_voice")),
+                    base_voice_id=str(base_voice_id or "").strip() or None,
+                    sample_audio_base64=str(voice_sample_base64 or "").strip() or None,
+                    sample_filename=str(voice_sample_filename or "sample.wav"),
+                    ref_text=str(voice_sample_ref_text or "") or None,
+                    custom_direction=str(voice_custom_direction or ""),
+                    persist_to_profile=True,
+                )
+                if isinstance(designed.get("profile"), dict):
+                    updated = designed["profile"]
+            except Exception as exc:
+                updated["voice_specialist_warning"] = str(exc)
 
         return updated
 
@@ -623,42 +787,145 @@ class ChannelProfileService:
         return False
 
     @staticmethod
-    def _prune_profile_curated_candidates(profile: dict[str, Any]) -> bool:
+    def _sibling_profile_ids(profile_id: str) -> set[str]:
+        pid = str(profile_id or "").strip()
+        true_crime_kr_family = {"channel-e544a64b7c", "channel-kr-truecrime-director-v2"}
+        if pid in true_crime_kr_family:
+            return true_crime_kr_family
+        return {pid} if pid else set()
+
+    @staticmethod
+    def _deduplicate_topic_memory_list(mem_list: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], bool]:
+        from services.case_similarity import check_case_similarity, extract_case_anchors_and_entities
+
+        if not isinstance(mem_list, list) or len(mem_list) <= 1:
+            return list(mem_list or []), False
+
+        deduped: list[dict[str, Any]] = []
+        changed = False
+        for raw_m in mem_list:
+            if not isinstance(raw_m, dict):
+                changed = True
+                continue
+            m = dict(raw_m)
+            m_title = str(m.get("title") or "").strip()
+            m_topic = str(m.get("topic") or m_title).strip()
+            if not m_title and not m_topic:
+                changed = True
+                continue
+            m_id = str(m.get("id") or "")
+            m_job = str(m.get("job_id") or "")
+            entities, keywords = extract_case_anchors_and_entities(m_title, m_topic)
+            m_tags = list(dict.fromkeys(list(m.get("tags") or []) + entities))
+            m_anchors = list(dict.fromkeys(list(m.get("anchors") or []) + entities + keywords))
+            m["tags"] = m_tags
+            m["anchors"] = m_anchors
+
+            match_idx: int | None = None
+            for idx, prev in enumerate(deduped):
+                p_id = str(prev.get("id") or "")
+                p_job = str(prev.get("job_id") or "")
+                p_title = str(prev.get("title") or "").strip()
+                p_topic = str(prev.get("topic") or p_title).strip()
+                if (m_id and m_id == p_id) or (m_job and p_job and m_job == p_job):
+                    match_idx = idx
+                    break
+                if m_title.lower() == p_title.lower():
+                    match_idx = idx
+                    break
+                is_dup, _, _ = check_case_similarity(
+                    f"{m_title} {m_topic}",
+                    p_title,
+                    target_topic=p_topic,
+                    target_entities=list(prev.get("tags") or []),
+                    target_keywords=list(prev.get("anchors") or []),
+                )
+                if is_dup:
+                    match_idx = idx
+                    break
+
+            if match_idx is not None:
+                changed = True
+                prev = deduped[match_idx]
+                p_title = str(prev.get("title") or "").strip()
+                # Prefer clean non-test title or longer bilingual title
+                p_is_test_prefix = p_title.upper().startswith("[VOX") or p_title.upper().startswith("[TEST")
+                m_is_test_prefix = m_title.upper().startswith("[VOX") or m_title.upper().startswith("[TEST")
+                if (p_is_test_prefix and not m_is_test_prefix) or (
+                    not m_is_test_prefix and "([" in m_title and "([" not in p_title
+                ):
+                    prev["title"] = m_title
+                if len(m_topic) > len(str(prev.get("topic") or "")) and not m_is_test_prefix:
+                    prev["topic"] = m_topic
+                if not prev.get("job_id") and m_job:
+                    prev["job_id"] = m_job
+                    prev["source"] = str(m.get("source") or "job")
+                prev["tags"] = list(dict.fromkeys(list(prev.get("tags") or []) + m_tags))
+                prev["anchors"] = list(dict.fromkeys(list(prev.get("anchors") or []) + m_anchors))
+            else:
+                deduped.append(m)
+
+        return deduped, changed
+
+    @classmethod
+    def _prune_profile_curated_candidates(
+        cls,
+        profile: dict[str, Any],
+        all_profiles: list[dict[str, Any]] | None = None,
+    ) -> bool:
         from services.case_similarity import check_case_similarity
 
         curated = profile.get("curated_today_candidates")
         if not isinstance(curated, list) or not curated:
             return False
 
-        produced_records: list[dict[str, Any]] = []
-        for m in (profile.get("topic_memory") or []):
-            if isinstance(m, dict) and (m.get("title") or m.get("topic")):
-                produced_records.append({
-                    "title": str(m.get("title") or ""),
-                    "topic": str(m.get("topic") or m.get("title") or ""),
-                    "tags": list(m.get("tags") or []),
-                    "anchors": list(m.get("anchors") or []),
-                })
+        family_ids = cls._sibling_profile_ids(str(profile.get("id") or ""))
+        source_profiles = [profile]
+        if all_profiles:
+            for sp in all_profiles:
+                if isinstance(sp, dict) and str(sp.get("id") or "") in family_ids and sp is not profile:
+                    source_profiles.append(sp)
 
-        own_ch = profile.get("own_channel") or {}
-        for wt in ((own_ch.get("dna") or {}).get("winner_titles") or []):
-            wt_str = str(wt.get("title") if isinstance(wt, dict) else wt or "").strip()
-            if wt_str:
-                produced_records.append({
-                    "title": wt_str,
-                    "topic": wt_str,
-                    "tags": [],
-                    "anchors": [],
-                })
-        for v in (own_ch.get("videos") or []):
-            if isinstance(v, dict) and v.get("title"):
-                vt_str = str(v["title"]).strip()
-                produced_records.append({
-                    "title": vt_str,
-                    "topic": vt_str,
-                    "tags": [],
-                    "anchors": [],
-                })
+        produced_records: list[dict[str, Any]] = []
+        for src_prof in source_profiles:
+            for m in (src_prof.get("topic_memory") or []):
+                if isinstance(m, dict) and (m.get("title") or m.get("topic")):
+                    produced_records.append({
+                        "title": str(m.get("title") or ""),
+                        "topic": str(m.get("topic") or m.get("title") or ""),
+                        "tags": list(m.get("tags") or []),
+                        "anchors": list(m.get("anchors") or []),
+                    })
+
+            own_ch = src_prof.get("own_channel") or {}
+            for wt in ((own_ch.get("dna") or {}).get("winner_titles") or []):
+                wt_str = str(wt.get("title") if isinstance(wt, dict) else wt or "").strip()
+                if wt_str:
+                    produced_records.append({
+                        "title": wt_str,
+                        "topic": wt_str,
+                        "tags": [],
+                        "anchors": [],
+                    })
+            for v in (own_ch.get("videos") or []):
+                if isinstance(v, dict) and v.get("title"):
+                    vt_str = str(v["title"]).strip()
+                    produced_records.append({
+                        "title": vt_str,
+                        "topic": vt_str,
+                        "tags": [],
+                        "anchors": [],
+                    })
+
+        def _cand_blob(c: dict[str, Any]) -> str:
+            return " ".join([
+                str(c.get("suggested_title") or c.get("title") or c.get("topic_anchor") or ""),
+                str(c.get("title_vi") or ""),
+                str(c.get("case_real_name_zh") or ""),
+                str(c.get("topic_summary") or c.get("summary_vi") or c.get("why_now") or c.get("note") or ""),
+                str(c.get("winner_cluster") or c.get("cluster_label") or ""),
+                str(c.get("codex_angle") or ""),
+            ]).strip()
 
         kept: list[dict[str, Any]] = []
         changed = False
@@ -669,11 +936,8 @@ class ChannelProfileService:
             if cand.get("already_produced") is True:
                 changed = True
                 continue
-            c_title = str(cand.get("suggested_title") or cand.get("title") or "").strip()
-            c_vi = str(cand.get("title_vi") or "").strip()
-            c_sum = str(cand.get("topic_summary") or cand.get("summary_vi") or cand.get("why_now") or "").strip()
-            c_cluster = str(cand.get("cluster_label") or "").strip()
-            combined_cand = f"{c_title} {c_vi} {c_sum} {c_cluster}".strip()
+            c_title = str(cand.get("suggested_title") or cand.get("title") or cand.get("topic_anchor") or "").strip()
+            combined_cand = _cand_blob(cand)
             if not c_title:
                 changed = True
                 continue
@@ -696,8 +960,8 @@ class ChannelProfileService:
 
             # Also deduplicate against already-kept candidates in the same list
             for prev in kept:
-                p_title = str(prev.get("suggested_title") or prev.get("title") or "").strip()
-                p_sum = f"{prev.get('title_vi') or ''} {prev.get('topic_summary') or ''}".strip()
+                p_title = str(prev.get("suggested_title") or prev.get("title") or prev.get("topic_anchor") or "").strip()
+                p_sum = _cand_blob(prev)
                 is_dup_internal, _, _ = check_case_similarity(
                     combined_cand,
                     p_title,
@@ -716,6 +980,39 @@ class ChannelProfileService:
             profile["curated_today_candidates"] = kept
             return True
         return False
+
+    @classmethod
+    def _auto_replenish_profile_dna_vault(
+        cls,
+        profile: dict[str, Any],
+        all_profiles: list[dict[str, Any]] | None = None,
+        vault_path: Path | None = None,
+    ) -> dict[str, Any]:
+        """
+        Automatically replenish DNA cases into `data/dna_replenished_vault.json` and top up
+        `curated_today_candidates` whenever a video is produced and saved to `topic_memory`.
+        """
+        try:
+            from documentary.topic_research import auto_replenish_dna_case_vault
+
+            pid = str(profile.get("id") or "")
+            family_ids = cls._sibling_profile_ids(pid)
+            sibling_curated: list[dict[str, Any]] = []
+            for p in (all_profiles or []):
+                spid = str(p.get("id") or "")
+                if spid in family_ids and spid != pid:
+                    for c in list(p.get("curated_today_candidates") or []):
+                        if isinstance(c, dict):
+                            sibling_curated.append(c)
+
+            return auto_replenish_dna_case_vault(
+                profile,
+                produced_records=list(profile.get("topic_memory") or []),
+                sibling_curated_candidates=sibling_curated,
+                vault_path=vault_path,
+            )
+        except Exception:
+            return {}
 
     def get_topic_memory(self, profile_id: str) -> list[dict[str, Any]]:
         profile = self.get_profile(profile_id)
@@ -776,6 +1073,13 @@ class ChannelProfileService:
                     if str(m.get("id")) == entry_id
                     or (data.get("job_id") and str(m.get("job_id")) == str(data.get("job_id")))
                     or str(m.get("title") or "").strip().lower() == title.lower()
+                    or check_case_similarity(
+                        f"{title} {topic}",
+                        str(m.get("title") or ""),
+                        target_topic=str(m.get("topic") or m.get("title") or ""),
+                        target_entities=list(m.get("tags") or []),
+                        target_keywords=list(m.get("anchors") or []),
+                    )[0]
                 ),
                 None,
             )
@@ -790,8 +1094,12 @@ class ChannelProfileService:
             else:
                 mem.append(new_entry)
 
+            mem, _ = self._deduplicate_topic_memory_list(mem)
             profile["topic_memory"] = mem
-            self._prune_profile_curated_candidates(profile)
+            self._prune_profile_curated_candidates(profile, all_profiles=profiles)
+            vault_stats = self._auto_replenish_profile_dna_vault(profile, all_profiles=profiles)
+            if vault_stats:
+                new_entry["dna_vault_status"] = vault_stats
             profile["updated_at"] = _now()
             profiles[index] = profile
             self._write_profiles_raw(profiles)
@@ -823,7 +1131,7 @@ class ChannelProfileService:
         return {"status": "ok", "deleted_entry_id": entry_id}
 
     def backfill_topic_memory(self) -> int:
-        from services.case_similarity import extract_case_anchors_and_entities, is_duplicate_case
+        from services.case_similarity import check_case_similarity, extract_case_anchors_and_entities, is_duplicate_case
 
         with self._lock:
             profiles = self._read_profiles_raw()
@@ -952,10 +1260,20 @@ class ChannelProfileService:
                         added_count += 1
                         mutated = True
 
-            jobs_dir = ROOT / "data" / "jobs"
-            if jobs_dir.is_dir():
-                for jdir in jobs_dir.iterdir():
+            known_job_ids = {
+                str(m.get("job_id"))
+                for p in profiles
+                for m in (p.get("topic_memory") or [])
+                if isinstance(m, dict) and m.get("job_id")
+            }
+
+            for job_root in (ROOT / "data" / "jobs", ROOT / "workspaces"):
+                if not job_root.is_dir():
+                    continue
+                for jdir in job_root.iterdir():
                     if not jdir.is_dir():
+                        continue
+                    if jdir.name in known_job_ids or self._is_synthetic_test_topic("", "", jdir.name):
                         continue
                     jfile = jdir / "job.json"
                     if not jfile.is_file():
@@ -975,7 +1293,13 @@ class ChannelProfileService:
                                 continue
                             has_job = any(str(m.get("job_id")) == jid for m in mem_list)
                             has_anchor = any(
-                                is_duplicate_case(str(m.get("title", "")), jtitle)
+                                check_case_similarity(
+                                    f"{jtitle} {jtopic}",
+                                    str(m.get("title", "")),
+                                    target_topic=str(m.get("topic", "")),
+                                    target_entities=list(m.get("tags") or []),
+                                    target_keywords=list(m.get("anchors") or []),
+                                )[0]
                                 for m in mem_list
                             )
                             if not has_job and not has_anchor:
@@ -996,8 +1320,44 @@ class ChannelProfileService:
                     except Exception:
                         continue
 
+            # Sync produced topic_memory across sibling profiles of the same channel family
             for p in profiles:
-                if self._prune_profile_curated_candidates(p):
+                pid = str(p.get("id") or "")
+                sib_ids = self._sibling_profile_ids(pid) - {pid}
+                if not sib_ids:
+                    continue
+                mem_list = p.setdefault("topic_memory", [])
+                for sid in sib_ids:
+                    sib_p = profiles_by_id.get(sid)
+                    if not sib_p:
+                        continue
+                    for sm in list(sib_p.get("topic_memory") or []):
+                        if not isinstance(sm, dict):
+                            continue
+                        sm_title = str(sm.get("title") or "").strip()
+                        sm_topic = str(sm.get("topic") or sm_title).strip()
+                        if not sm_title or self._is_synthetic_test_topic(sm_title, sm_topic, str(sm.get("job_id") or "")):
+                            continue
+                        if not any(
+                            check_case_similarity(
+                                f"{sm_title} {sm_topic}",
+                                str(m.get("title", "")),
+                                target_topic=str(m.get("topic", "")),
+                                target_entities=list(m.get("tags") or []),
+                                target_keywords=list(m.get("anchors") or []),
+                            )[0]
+                            for m in mem_list
+                        ):
+                            mem_list.append(dict(sm, id=f"topic-{uuid4().hex[:8]}"))
+                            added_count += 1
+                            mutated = True
+
+            for p in profiles:
+                deduped_mem, mem_changed = self._deduplicate_topic_memory_list(list(p.get("topic_memory") or []))
+                if mem_changed:
+                    p["topic_memory"] = deduped_mem
+                    mutated = True
+                if self._prune_profile_curated_candidates(p, all_profiles=profiles):
                     mutated = True
 
             if mutated or added_count > 0:

@@ -16,6 +16,7 @@
   <div class="desktop-titlebar" id="desktopTitlebar" aria-label="Điều khiển cửa sổ">
     <div class="desktop-titlebar-drag pywebview-drag-region"><span class="desktop-titlebar-mark">CD</span><span>COFI DOCUMENTARY</span></div>
     <div class="desktop-titlebar-actions">
+      <button type="button" id="desktopAgentOfficeBtn" data-open-agent-office="true" aria-label="15 Phòng Ban Chuyên Môn" title="🏛️ 15 Phòng Ban Chuyên Môn (15 Tổ trưởng · 15 Tổ phó · 62 Chuyên viên Mini-Agents) (Ctrl+Shift+O)">🏛️</button>
       <button type="button" id="desktopChatToggleBtn" aria-label="Bật/tắt AI Chat" title="Bật/tắt AI Chat (Ctrl+Shift+C)">💬</button>
       <button type="button" id="desktopReloadBtn" aria-label="Làm mới trang" title="Làm mới giao diện (F5)">↻</button>
       <button type="button" id="desktopMinimizeBtn" aria-label="Thu nhỏ cửa sổ" title="Thu nhỏ">−</button>
@@ -49,8 +50,8 @@
         <button class="nav-item" data-app-tab="projects"><span>▤</span>Dự án</button>
       </nav>
 
-      <button class="sidebar-agent-button" type="button" id="sidebarChatToggleBtn" data-toggle-global-chat="true">
-        <span>◆</span><div><strong>AI Agent</strong><small>Điều khiển toàn bộ app</small></div>
+      <button class="sidebar-agent-button" type="button" id="sidebarChatToggleBtn" data-toggle-global-chat="true" title="Hộp Chat Điều Phối Thuần Khiết (@orchestrator → 15 Phòng Ban Chuyên Môn)">
+        <span>◆</span><div><strong>Điều Phối 15 Phòng Ban</strong><small>@orchestrator · 92 Nhân sự</small></div>
       </button>
       <div class="sidebar-status">
         <div class="pulse" id="systemPulse"></div>
@@ -73,8 +74,14 @@
             </select>
           </label>
           <div class="studio-engine-chip"><span>AI ENGINE</span><strong>Codex + Gemini</strong></div>
+          <button class="studio-action agent-office-trigger-btn" type="button" id="openAgentOfficeBtn" data-open-agent-office="true" title="🏛️ 15 Phòng Ban Chuyên Môn (15 Tổ trưởng · 15 Tổ phó · 62 Chuyên viên Mini-Agents) (Ctrl+Shift+O)">
+            <span class="ao-trigger-dot"></span>
+            <span>🏛️ 15 Phòng Ban Chuyên Môn</span>
+            <span class="ao-trigger-badge" id="aoTriggerBadge">15 Phòng · 92 NS</span>
+          </button>
+          <button class="studio-action" type="button" id="smartCacheBtn" title="Dọn Cache thông minh & Giải phóng RAM">🧹 Dọn Cache & RAM</button>
           <button class="studio-action" type="button" data-open-tab="accounts">◈ Tài khoản</button>
-          <button class="studio-action" type="button" data-toggle-global-chat="true">◆ AI Agent</button>
+          <button class="studio-action" type="button" data-toggle-global-chat="true" title="Hộp Chat Điều Phối Thuần Khiết (@orchestrator → 15 Phòng Ban Chuyên Môn)">◆ Chat Điều Phối</button>
           <button class="studio-primary-action" type="button" data-open-tab="create">＋ Video mới</button>
         </div>
       </header>
@@ -603,7 +610,7 @@
               <div class="create-ai-config-grid">
                 <div class="wide create-ai-media-modes"><span>Kiểu media</span><div class="choice-grid visual-strategy-grid"><label class="choice"><input type="radio" name="ai_media_mode" value="image" /><span><b>Chỉ ảnh</b><small>Tạo ảnh cho visual AI</small></span></label><label class="choice"><input type="radio" name="ai_media_mode" value="video" /><span><b>Chỉ video</b><small>Tạo clip AI cho visual</small></span></label><label class="choice"><input type="radio" name="ai_media_mode" value="mixed" checked /><span><b>Ảnh + video</b><small>AI chọn loại phù hợp từng đoạn</small></span></label></div></div>
                 <label><span>Phong cách</span><select name="ai_style_mode" id="createAiStyleMode"><option value="auto">AI tự chọn theo nội dung</option><option value="preset">Preset có sẵn</option><option value="custom">Phong cách tự nhập</option></select></label>
-                <label><span>Preset nét vẽ</span><select name="ai_style_preset" id="createAiStylePreset"><option value="" disabled>Chọn preset…</option><option value="Siêu thực 4D Người vô diện (4D Faceless Forensic)">Siêu thực 4D Người vô diện (4D Faceless Forensic)</option><option value="Người que (Stickman)">Người que (Stickman)</option><option value="Sơn dầu (Oil painting)">Sơn dầu (Oil painting)</option><option value="Video 2D (US Animation)">Video 2D (US Animation)</option><option value="3D Hoạt hình (Pixar/Disney)">3D Hoạt hình (Pixar/Disney)</option><option value="Anime Nhật Bản">Anime Nhật Bản</option><option value="Hiện thực điện ảnh (Cinematic Realism)">Hiện thực điện ảnh (Cinematic Realism)</option><option value="Dark Fantasy (Ma mị/Kinh dị)">Dark Fantasy (Ma mị/Kinh dị)</option><option value="Màu nước (Watercolor)">Màu nước (Watercolor)</option><option value="Cyberpunk (Viễn tưởng)">Cyberpunk (Viễn tưởng)</option><option value="Thủy mặc (Cổ trang/Kiếm hiệp)">Thủy mặc (Cổ trang/Kiếm hiệp)</option><option value="Chibi Cute (Dễ thương)">Chibi Cute (Dễ thương)</option><option value="cinematic 2D editorial cartoon / American comic explainer illustration">cinematic 2D editorial cartoon / American comic explainer illustration</option><option value="Người que mỹ">Người que mỹ</option><option value="Người Que Mỹ 2">Người Que Mỹ 2</option><option value="Người Que US">Người Que US</option></select><small id="createAiStylePresetStatus">Đang tải đầy đủ preset từ SRT-To-Prompt…</small></label>
+                <label><span>Preset nét vẽ</span><select name="ai_style_preset" id="createAiStylePreset"><option value="" disabled>Chọn preset…</option><option value="Điện ảnh Hầm Ngân hàng &amp; Cổ cồn trắng Đào tẩu (Prestige Vault &amp; Financial Thriller Noir - Luồng 1)">Điện ảnh Hầm Ngân hàng &amp; Cổ cồn trắng Đào tẩu (Prestige Vault &amp; Financial Thriller Noir - Luồng 1)</option><option value="Điện ảnh Hình sự &amp; Pháp y Đêm mưa (Atmospheric Forensic Crime Noir - Luồng 2)">Điện ảnh Hình sự &amp; Pháp y Đêm mưa (Atmospheric Forensic Crime Noir - Luồng 2)</option><option value="Siêu thực 4D Người vô diện (4D Faceless Forensic)">Siêu thực 4D Người vô diện (4D Faceless Forensic)</option><option value="Người que (Stickman)">Người que (Stickman)</option><option value="Sơn dầu (Oil painting)">Sơn dầu (Oil painting)</option><option value="Video 2D (US Animation)">Video 2D (US Animation)</option><option value="3D Hoạt hình (Pixar/Disney)">3D Hoạt hình (Pixar/Disney)</option><option value="Anime Nhật Bản">Anime Nhật Bản</option><option value="Hiện thực điện ảnh (Cinematic Realism)">Hiện thực điện ảnh (Cinematic Realism)</option><option value="Dark Fantasy (Ma mị/Kinh dị)">Dark Fantasy (Ma mị/Kinh dị)</option><option value="Màu nước (Watercolor)">Màu nước (Watercolor)</option><option value="Cyberpunk (Viễn tưởng)">Cyberpunk (Viễn tưởng)</option><option value="Thủy mặc (Cổ trang/Kiếm hiệp)">Thủy mặc (Cổ trang/Kiếm hiệp)</option><option value="Chibi Cute (Dễ thương)">Chibi Cute (Dễ thương)</option><option value="cinematic 2D editorial cartoon / American comic explainer illustration">cinematic 2D editorial cartoon / American comic explainer illustration</option><option value="Người que mỹ">Người que mỹ</option><option value="Người Que Mỹ 2">Người Que Mỹ 2</option><option value="Người Que US">Người Que US</option></select><small id="createAiStylePresetStatus">Đang tải đầy đủ preset từ SRT-To-Prompt…</small></label>
                 <label class="wide"><span>Phong cách mong muốn</span><textarea name="ai_custom_style" id="createAiCustomStyle" rows="3" placeholder="Ví dụ: tranh minh họa editorial 2D, nét mực rõ, ánh sáng điện ảnh, bảng màu trầm…"></textarea></label>
                 <label class="wide create-style-reference"><span>Ảnh tham chiếu phong cách</span><input id="createStyleReferenceInput" type="file" accept="image/png,image/jpeg,image/webp" /><small>Ảnh chỉ dùng để học phong cách, màu sắc, chất liệu và bố cục.</small></label>
               </div>
@@ -662,7 +669,7 @@
       </section>
 
       <section class="panel workspace-pane function-workspace" data-app-pane="qc">
-        <div class="section-head"><div><p class="eyebrow">DUYỆT & XUẤT</p><h2>Xuất video cuối</h2><p>Chỉ xuất sau khi anh đã duyệt bản preview trong Edit. QC kiểm tra đúng bản vừa duyệt.</p></div><div class="workspace-project" id="qcProjectLabel">Chưa chọn dự án</div></div>
+        <div class="section-head"><div><p class="eyebrow">XUẤT VIDEO</p><h2>Xuất video cuối</h2><p>Chỉ xuất sau khi anh đã duyệt bản preview trong Edit. Sau khi render chỉ kiểm tra kỹ thuật tối thiểu (không chặn, không render lại).</p></div><div class="workspace-project" id="qcProjectLabel">Chưa chọn dự án</div></div>
         <div class="function-body" id="qcWorkspace"><div class="empty-state">Chọn một dự án để duyệt và xuất video.</div></div>
       </section>
 
@@ -868,6 +875,19 @@
         <button class="icon-btn channel-profile-dialog-close" type="button" id="closeFlowAccountsDialog" title="Đóng (Esc)">×</button>
       </div>
       <div id="flowAccountsDialogContent"></div>
+    </div>
+  </dialog>
+
+  <dialog id="smartCacheDialog" class="channel-profile-dialog flow-accounts-dialog">
+    <div class="channel-profile-dialog-shell flow-accounts-dialog-shell" style="max-width:780px;">
+      <div class="channel-profile-dialog-head">
+        <div>
+          <span class="profile-library-kicker">SMART CACHE &amp; RAM GOVERNOR</span>
+          <h3>Dọn Cache Thông Minh &amp; Giải Phóng Bộ Nhớ</h3>
+        </div>
+        <button class="icon-btn channel-profile-dialog-close" type="button" id="closeSmartCacheDialog" title="Đóng (Esc)">×</button>
+      </div>
+      <div id="smartCacheDialogContent"></div>
     </div>
   </dialog>
 

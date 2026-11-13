@@ -92,9 +92,11 @@ class JobService:
         # Re-normalize production_recipe & creative_brief whenever target_duration_minutes or visual_strategy changes
         effective_duration = sanitized_patch.get("target_duration_minutes", existing.get("target_duration_minutes"))
         effective_strategy = sanitized_patch.get("visual_strategy", existing.get("visual_strategy"))
+        effective_editing_dna = sanitized_patch.get("editing_dna") or existing.get("editing_dna")
         if (
             "target_duration_minutes" in sanitized_patch
             or "visual_strategy" in sanitized_patch
+            or "editing_dna" in sanitized_patch
             or (effective_duration not in (None, "") and not (existing.get("production_recipe") or {}).get("quality_contract"))
         ):
             if effective_duration not in (None, ""):
@@ -102,13 +104,44 @@ class JobService:
                     sanitized_patch.get("production_recipe") or existing.get("production_recipe"),
                     target_duration_minutes=effective_duration,
                     visual_strategy=effective_strategy,
+                    editing_dna=effective_editing_dna if isinstance(effective_editing_dna, dict) else None,
                 )
                 brief_to_sync = sanitized_patch.get("creative_brief") or existing.get("creative_brief")
                 if isinstance(brief_to_sync, dict):
                     sanitized_patch["creative_brief"] = _sync_creative_brief_duration(brief_to_sync, effective_duration)
+        if "visual_strategy" in sanitized_patch:
+            vs_norm = str(effective_strategy or "").strip().lower()
+            merged_ai_vis = copy.deepcopy(sanitized_patch.get("ai_visual") or existing.get("ai_visual") or {})
+            if isinstance(merged_ai_vis, dict):
+                merged_ai_vis["coverage_mode"] = (
+                    "full_ai"
+                    if vs_norm == "full_ai"
+                    else ("selective_ai" if vs_norm == "edit_direct_footage" else "fallback_only")
+                )
+                sanitized_patch["ai_visual"] = merged_ai_vis
+            snap = copy.deepcopy(sanitized_patch.get("channel_profile_snapshot") or existing.get("channel_profile_snapshot") or {})
+            if isinstance(snap, dict) and snap:
+                snap["visual_strategy"] = effective_strategy
+                sanitized_patch["channel_profile_snapshot"] = snap
 
         # Perform atomic update on designated job only
         updated = self.store.update(job_id, sanitized_patch)
+        try:
+            ws_str = str(updated.get("workspace") or "").strip()
+            if ws_str:
+                ws_dir = Path(ws_str)
+                if ws_dir.is_dir():
+                    (ws_dir / "input.json").write_text(
+                        json.dumps({k: v for k, v in updated.items() if k != "phases"}, ensure_ascii=False, indent=2),
+                        encoding="utf-8",
+                    )
+                    if isinstance(updated.get("ai_visual"), dict):
+                        (ws_dir / "ai_visual_settings.json").write_text(
+                            json.dumps(updated["ai_visual"], ensure_ascii=False, indent=2),
+                            encoding="utf-8",
+                        )
+        except Exception:
+            pass
         if updated.get("channel_profile_id") and ("title" in sanitized_patch or "topic" in sanitized_patch):
             try:
                 self.profile_service.sync_job_to_topic_memory(updated)
@@ -126,9 +159,23 @@ class JobService:
             except KeyError as exc:
                 raise ValueError(f"Channel profile '{profile_id}' not found") from exc
 
-            # Lock channel profile configuration into job if not explicitly specified
-            if not job_data.get("visual_strategy"):
-                job_data["visual_strategy"] = profile.get("visual_strategy") or profile.get("default_visual_strategy") or "hybrid"
+            # Lock channel profile configuration into job if not explicitly specified (or if profile enforces edit_direct_footage)
+            prof_vs = str(
+                profile.get("visual_strategy")
+                or profile.get("default_visual_strategy")
+                or (profile.get("editorial_dna") or {}).get("visual_strategy")
+                or ""
+            ).strip().lower()
+            if prof_vs in {"semi_content", "ban_content", "edit_footage"}:
+                prof_vs = "edit_direct_footage"
+            prof_preset = str(
+                ((profile.get("editing_dna") or {}).get("preset_id") if isinstance(profile.get("editing_dna"), dict) else "")
+                or ""
+            ).strip()
+            if not job_data.get("visual_strategy") or (
+                prof_vs == "edit_direct_footage" and prof_preset in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"}
+            ):
+                job_data["visual_strategy"] = prof_vs or "hybrid"
             if job_data.get("target_duration_minutes") in (None, "") and profile.get("default_duration_minutes") not in (None, ""):
                 job_data["target_duration_minutes"] = profile.get("default_duration_minutes")
 
@@ -146,8 +193,18 @@ class JobService:
             if not job_data.get("thumbnail_dna") and profile.get("thumbnail_dna"):
                 job_data["thumbnail_dna"] = copy.deepcopy(profile["thumbnail_dna"])
 
-            if not job_data.get("style_reference_image") and profile.get("default_style_reference_image"):
-                job_data["style_reference_image"] = str(profile["default_style_reference_image"])
+            prof_rhythm_dna = copy.deepcopy(profile.get("rhythm_dna") or {})
+            if not prof_rhythm_dna:
+                try:
+                    from services.voice_rhythm_specialist import VoiceRhythmSpecialistService
+
+                    prof_rhythm_dna = VoiceRhythmSpecialistService().analyze_profile_rhythm_dna(profile)
+                except Exception:
+                    prof_rhythm_dna = {}
+            if not job_data.get("rhythm_dna") and prof_rhythm_dna:
+                job_data["rhythm_dna"] = copy.deepcopy(prof_rhythm_dna)
+            if not job_data.get("voice_signature") and profile.get("voice_signature"):
+                job_data["voice_signature"] = copy.deepcopy(profile["voice_signature"])
 
             if not job_data.get("ai_media_mode") and profile.get("default_ai_media_mode"):
                 job_data["ai_media_mode"] = str(profile["default_ai_media_mode"])
@@ -167,8 +224,40 @@ class JobService:
                     "full_ai" if vs_val == "full_ai"
                     else ("selective_ai" if vs_val == "edit_direct_footage" else "fallback_only")
                 )
+            if ai_vis.get("style_mode") == "preset" and ai_vis.get("style_preset") and not ai_vis.get("style_prompt"):
+                try:
+                    presets_dir = ROOT / "presets" / "ai_visual_styles"
+                    for pfile in sorted(presets_dir.glob("*.json")):
+                        pdata = json.loads(pfile.read_text(encoding="utf-8"))
+                        if str(pdata.get("name") or "").strip() == str(ai_vis["style_preset"]).strip():
+                            ai_vis["style_prompt"] = str(pdata.get("prompt") or "").strip()
+                            break
+                except Exception:
+                    pass
+            resolved_style_prompt_lower = str(ai_vis.get("style_prompt") or "").lower()
+            forbids_cartoon_ref = any(
+                tok in resolved_style_prompt_lower
+                for tok in ("0% cartoon", "0% stickman", "realistic human anatomy")
+            )
+            if (
+                not job_data.get("style_reference_image")
+                and profile.get("default_style_reference_image")
+                and not forbids_cartoon_ref
+            ):
+                job_data["style_reference_image"] = str(profile["default_style_reference_image"])
             if ai_vis:
                 job_data["ai_visual"] = ai_vis
+
+            voice_cfg = dict(job_data.get("voice") or {}) if isinstance(job_data.get("voice"), dict) else {}
+            prof_voice_id = str(profile.get("voice_id") or profile.get("default_voice_id") or "").strip()
+            if prof_voice_id and not voice_cfg.get("voice_id"):
+                voice_cfg["voice_id"] = prof_voice_id
+            if profile.get("secondary_voice_id") and "secondary_voice_id" not in voice_cfg:
+                voice_cfg["secondary_voice_id"] = str(profile["secondary_voice_id"]).strip()
+            if profile.get("voice_speed") not in (None, "") and not voice_cfg.get("speed"):
+                voice_cfg["speed"] = float(profile["voice_speed"])
+            if voice_cfg:
+                job_data["voice"] = voice_cfg
 
             # Snapshot
             job_data["channel_profile_snapshot"] = {
@@ -178,12 +267,18 @@ class JobService:
                 "market": profile.get("market"),
                 "language": profile.get("default_language") or profile.get("language"),
                 "visual_strategy": job_data["visual_strategy"],
+                "voice_id": prof_voice_id or None,
+                "default_voice_id": prof_voice_id or None,
+                "secondary_voice_id": profile.get("secondary_voice_id"),
+                "voice_speed": profile.get("voice_speed"),
                 "default_style_reference_image": profile.get("default_style_reference_image"),
                 "default_creative_brief": copy.deepcopy(profile.get("default_creative_brief") or {}),
                 "editorial_dna": copy.deepcopy(profile.get("editorial_dna") or {}),
                 "editing_dna": copy.deepcopy(profile.get("editing_dna") or {}),
                 "seo_keyword_dna": copy.deepcopy(profile.get("seo_keyword_dna") or {}),
                 "thumbnail_dna": copy.deepcopy(profile.get("thumbnail_dna") or {}),
+                "rhythm_dna": copy.deepcopy(prof_rhythm_dna),
+                "voice_signature": copy.deepcopy(profile.get("voice_signature") or {}),
             }
 
         # Generate unique Job ID and initialize workspaces/{job_id}
@@ -227,6 +322,7 @@ class JobService:
             job_data.get("production_recipe") if isinstance(job_data.get("production_recipe"), dict) else None,
             target_duration_minutes=job_data.get("target_duration_minutes"),
             visual_strategy=job_data.get("visual_strategy"),
+            editing_dna=job_data.get("editing_dna") if isinstance(job_data.get("editing_dna"), dict) else None,
         )
 
         # Keep creative_brief duration strictly aligned with job target_duration_minutes

@@ -15,13 +15,18 @@ import requests
 from .codex_gateway import StageResult
 from .engines import resolve_executable
 from .prompts import build_phase_prompt
+from .render_cache import (
+    apply_background_worker_qos,
+    background_worker_creationflags,
+    background_worker_env_overrides,
+)
 from .source_discovery import scrub_source_secret_env
 
 
 class GeminiGateway:
     DEFAULT_WEB2API_URL = "http://127.0.0.1:8081"
     DEFAULT_WEB2API_MODEL = "gemini-3.5-flash-thinking@think=0"
-    ANTIGRAVITY_PROBE_TTL_SEC = 60.0
+    ANTIGRAVITY_PROBE_TTL_SEC = 3600.0
     DEFAULT_SESSION_MAX_INPUT_TOKENS = 90_000
     DEFAULT_SESSION_MAX_TURNS = 0
     DEFAULT_SESSION_MAX_PROMPT_CHARS = 180_000
@@ -119,17 +124,21 @@ class GeminiGateway:
         return executable
 
     def _launch_window_options(self, executable: str) -> tuple[int, subprocess.STARTUPINFO | None]:
-        """Return Windows flags that keep the whole Antigravity terminal tree hidden."""
+        """Return Windows flags that keep the whole Antigravity terminal tree hidden.
+
+        ``CREATE_NO_WINDOW`` on console-subsystem ``agy_real.exe`` attaches a
+        headless kernel ConDrv pseudo-console (``GetConsoleWindow() == 0``) that
+        all child ``cmd``/``pwsh``/``python``/``node`` processes inherit without
+        allocating a GUI ``ConsoleWindowClass`` HWND or triggering Windows 11
+        Default Terminal window flashes (unlike ``CREATE_NEW_CONSOLE``).
+        """
+        _ = executable
         if os.name != "nt":
             return 0, None
         startupinfo = subprocess.STARTUPINFO()
         startupinfo.dwFlags |= getattr(subprocess, "STARTF_USESHOWWINDOW", 1)
         startupinfo.wShowWindow = getattr(subprocess, "SW_HIDE", 0)
-        if self.transport == "antigravity" and Path(executable).name.lower() == "agy_real.exe":
-            # Keep one real console attached to Antigravity and all of its
-            # cmd/pwsh/python children, but never show that console on desktop.
-            return getattr(subprocess, "CREATE_NEW_CONSOLE", 0), startupinfo
-        return getattr(subprocess, "CREATE_NO_WINDOW", 0), startupinfo
+        return background_worker_creationflags(getattr(subprocess, "CREATE_NO_WINDOW", 0)), startupinfo
 
     @property
     def available(self) -> bool:
@@ -139,6 +148,12 @@ class GeminiGateway:
 
     def _subprocess_env(self, overrides: dict[str, str] | None = None) -> dict[str, str]:
         env = scrub_source_secret_env(os.environ.copy())
+        env.setdefault("AGY_CLI_DISABLE_AUTO_UPDATE", "1")
+        try:
+            for k, v in background_worker_env_overrides().items():
+                env.setdefault(k, v)
+        except Exception:
+            pass
         if overrides:
             env.update(overrides)
         return env
@@ -377,6 +392,29 @@ The visual_manifest object must satisfy every PLAN requirement above, including 
                 return dict(self._antigravity_probe_cache)
 
             executable = self._antigravity_runtime_executable()
+            disk_cache_path = (
+                None
+                if os.getenv("PYTEST_CURRENT_TEST")
+                else Path(__file__).resolve().parents[1] / "data" / "antigravity_probe_cache.json"
+            )
+            if executable and disk_cache_path is not None and disk_cache_path.is_file():
+                try:
+                    cached_disk = json.loads(disk_cache_path.read_text(encoding="utf-8"))
+                    cached_at = float(cached_disk.get("cached_at_epoch") or 0.0)
+                    cached_status = cached_disk.get("status")
+                    if (
+                        isinstance(cached_status, dict)
+                        and cached_status.get("ready") is True
+                        and cached_disk.get("executable") == executable
+                        and (time.time() - cached_at) < self.ANTIGRAVITY_PROBE_TTL_SEC
+                    ):
+                        cached_status = {**cached_status, "selected_model": self.default_model}
+                        self._antigravity_probe_cache = dict(cached_status)
+                        self._antigravity_probe_at = now
+                        return dict(cached_status)
+                except (OSError, ValueError, TypeError):
+                    pass
+
             if not executable:
                 status = {
                     "ready": False,
@@ -417,6 +455,23 @@ The visual_manifest object must satisfy every PLAN requirement above, including 
                             "models": models,
                             "selected_model": self.default_model,
                         }
+                        if disk_cache_path is not None:
+                            try:
+                                disk_cache_path.parent.mkdir(parents=True, exist_ok=True)
+                                disk_cache_path.write_text(
+                                    json.dumps(
+                                        {
+                                            "cached_at_epoch": time.time(),
+                                            "executable": executable,
+                                            "status": status,
+                                        },
+                                        ensure_ascii=False,
+                                        indent=2,
+                                    ),
+                                    encoding="utf-8",
+                                )
+                            except OSError:
+                                pass
                     else:
                         status = {
                             "ready": False,
@@ -578,6 +633,7 @@ The visual_manifest object must satisfy every PLAN requirement above, including 
             creationflags=creationflags,
             startupinfo=startupinfo,
         )
+        apply_background_worker_qos(process)
         assert process.stdin is not None
         assert process.stdout is not None
         process.stdin.write(prompt)

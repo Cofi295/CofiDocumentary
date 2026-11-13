@@ -1,0 +1,236 @@
+{
+  "sfx_biometric_match_chime.mp3": {
+    "duration_sec": 0.85,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -20.5,
+    "peak_db": -3.1,
+    "peak_linear": 0.6969714164733887,
+    "md5": "53d781ce5560"
+  },
+  "sfx_caliper_metal_slide.mp3": {
+    "duration_sec": 0.57,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 2,
+    "rms_db": -29.9,
+    "peak_db": -1.9,
+    "peak_linear": 0.8041366338729858,
+    "md5": "974254f99b79"
+  },
+  "sfx_camera_shutter.mp3": {
+    "duration_sec": 0.528,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -28.7,
+    "peak_db": -2.8,
+    "peak_linear": 0.7279659509658813,
+    "md5": "5e7db5a758db"
+  },
+  "sfx_chapter_hit.mp3": {
+    "duration_sec": 1.35,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 10,
+    "rms_db": -13.8,
+    "peak_db": -3.1,
+    "peak_linear": 0.6985939145088196,
+    "md5": "616bde56fa44"
+  },
+  "sfx_clock_tick_tense.mp3": {
+    "duration_sec": 0.137,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -26.1,
+    "peak_db": -3.3,
+    "peak_linear": 0.6808913350105286,
+    "md5": "90afd6929a92"
+  },
+  "sfx_compass_bearing_lock.mp3": {
+    "duration_sec": 0.58,
+    "onset_frame_30fps": 1,
+    "peak_frame_30fps": 1,
+    "rms_db": -38.4,
+    "peak_db": -3.1,
+    "peak_linear": 0.6983286142349243,
+    "md5": "618b55500e07"
+  },
+  "sfx_corkboard_pin_push.mp3": {
+    "duration_sec": 0.239,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -33.0,
+    "peak_db": -3.1,
+    "peak_linear": 0.6963945627212524,
+    "md5": "dca094ed3312"
+  },
+  "sfx_crimson_thread_taut.mp3": {
+    "duration_sec": 0.78,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 2,
+    "rms_db": -36.0,
+    "peak_db": -3.9,
+    "peak_linear": 0.6418195962905884,
+    "md5": "3a5344a85d06"
+  },
+  "sfx_document_scanner_hum.mp3": {
+    "duration_sec": 0.88,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 17,
+    "rms_db": -20.3,
+    "peak_db": -3.8,
+    "peak_linear": 0.6479803323745728,
+    "md5": "f736db7532db"
+  },
+  "sfx_dossier_stamp.mp3": {
+    "duration_sec": 0.72,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 3,
+    "rms_db": -25.7,
+    "peak_db": -3.3,
+    "peak_linear": 0.6841021776199341,
+    "md5": "8fac4db17996"
+  },
+  "sfx_folder_open.mp3": {
+    "duration_sec": 0.439,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -25.9,
+    "peak_db": -3.0,
+    "peak_linear": 0.7068392634391785,
+    "md5": "2699cbdc78ed"
+  },
+  "sfx_gavel_hit.mp3": {
+    "duration_sec": 0.88,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -32.3,
+    "peak_db": -3.0,
+    "peak_linear": 0.7052160501480103,
+    "md5": "ee40668461b9"
+  },
+  "sfx_highlighter_swipe.mp3": {
+    "duration_sec": 0.75,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 1,
+    "rms_db": -27.2,
+    "peak_db": -3.0,
+    "peak_linear": 0.7088817954063416,
+    "md5": "5037071d9200"
+  },
+  "sfx_magnifying_lens_click.mp3": {
+    "duration_sec": 0.55,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 6,
+    "rms_db": -20.0,
+    "peak_db": -3.1,
+    "peak_linear": 0.6981877088546753,
+    "md5": "7e7217b3a163"
+  },
+  "sfx_map_route_sweep.mp3": {
+    "duration_sec": 0.82,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 4,
+    "rms_db": -35.8,
+    "peak_db": -3.1,
+    "peak_linear": 0.6972901821136475,
+    "md5": "a9ec29978183"
+  },
+  "sfx_marker_circle_draw.mp3": {
+    "duration_sec": 0.78,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 1,
+    "rms_db": -19.7,
+    "peak_db": -3.2,
+    "peak_linear": 0.6931763887405396,
+    "md5": "6595bce2a976"
+  },
+  "sfx_newspaper_unfold.mp3": {
+    "duration_sec": 0.892,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 8,
+    "rms_db": -28.5,
+    "peak_db": -3.1,
+    "peak_linear": 0.6982060670852661,
+    "md5": "253903cbe012"
+  },
+  "sfx_notebook_page_rustle.mp3": {
+    "duration_sec": 0.82,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 2,
+    "rms_db": -26.1,
+    "peak_db": -3.1,
+    "peak_linear": 0.6993347406387329,
+    "md5": "3fe466ed99a6"
+  },
+  "sfx_official_seal_thud.mp3": {
+    "duration_sec": 0.85,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 18,
+    "rms_db": -19.7,
+    "peak_db": -3.2,
+    "peak_linear": 0.6906718611717224,
+    "md5": "209e73705a0c"
+  },
+  "sfx_page_tear_notebook.mp3": {
+    "duration_sec": 0.76,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 4,
+    "rms_db": -22.4,
+    "peak_db": -3.7,
+    "peak_linear": 0.6549994945526123,
+    "md5": "8b8d3652d984"
+  },
+  "sfx_paper_turn.mp3": {
+    "duration_sec": 0.78,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -32.1,
+    "peak_db": -3.1,
+    "peak_linear": 0.6979311108589172,
+    "md5": "acaafa3b49ce"
+  },
+  "sfx_pencil_underline.mp3": {
+    "duration_sec": 0.75,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 1,
+    "rms_db": -18.2,
+    "peak_db": -3.0,
+    "peak_linear": 0.711006760597229,
+    "md5": "6e61f5c22174"
+  },
+  "sfx_radar_ping_sonar.mp3": {
+    "duration_sec": 1.1,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 5,
+    "rms_db": -14.8,
+    "peak_db": -3.3,
+    "peak_linear": 0.6812293529510498,
+    "md5": "f6c13a065d80"
+  },
+  "sfx_satellite_lock_beep.mp3": {
+    "duration_sec": 0.85,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 12,
+    "rms_db": -28.7,
+    "peak_db": -5.2,
+    "peak_linear": 0.5486791729927063,
+    "md5": "d17f7da8804c"
+  },
+  "sfx_telemetry_tick.mp3": {
+    "duration_sec": 0.23,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -27.7,
+    "peak_db": -3.1,
+    "peak_linear": 0.7000526189804077,
+    "md5": "5391405de9a3"
+  },
+  "sfx_typing_log.mp3": {
+    "duration_sec": 0.311,
+    "onset_frame_30fps": 0,
+    "peak_frame_30fps": 0,
+    "rms_db": -25.5,
+    "peak_db": -2.3,
+    "peak_linear": 0.7633072137832642,
+    "md5": "306b5582d1ed"
+  }
+}

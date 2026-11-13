@@ -141,3 +141,53 @@ def test_start_studio_runs_auto_update_before_launch(tmp_path: Path, monkeypatch
 
     assert calls == ["update", "studio"]
     assert session["studio_running"] is True
+
+
+def test_prepare_job_media_accepts_job_scoped_remotion_vox_plates_and_blocks_outside(tmp_path: Path):
+    import pytest
+
+    project = tmp_path / "CofiRemotion"
+    workspace = tmp_path / "job"
+    media = workspace / "media" / "ai"
+    media.mkdir(parents=True)
+    ai_img = media / "B001-V01_ai_keyframe.jpg"
+    ai_img.write_bytes(b"ai-keyframe")
+
+    vox_plate = project / "public" / "jobs" / "job-1" / "vox_plates" / "arch_anhui_village.jpg"
+    vox_plate.parent.mkdir(parents=True)
+    vox_plate.write_bytes(b"curated-plate")
+    geo_meta = project / "public" / "jobs" / "job-1" / "vox_plates" / "geo_meta.json"
+    geo_meta.write_text('{"crs":"EPSG:4326"}', encoding="utf-8")
+
+    (workspace / "asset_registry.json").write_text(
+        json.dumps({
+            "assets": [
+                {"id": "A1", "beat_id": "B001-V01", "kind": "ai_keyframe", "path": str(ai_img)},
+                {"id": "P1", "kind": "vox_editorial_plate", "path": str(vox_plate)},
+                {"id": "G1", "kind": "vox_editorial_plate", "path": str(geo_meta)},
+            ]
+        }),
+        encoding="utf-8",
+    )
+    manager = RemotionManager(project)
+    manifest = manager.prepare_job_media({"id": "job-1"}, workspace)
+
+    assert manifest["asset_count"] == 3
+    assert {item["public_file"] for item in manifest["assets"]} == {
+        "B001-V01_ai_keyframe.jpg",
+        "vox_plates/arch_anhui_village.jpg",
+        "vox_plates/geo_meta.json",
+    }
+    assert (workspace / "media" / "edit_plates" / "vox_plates" / "arch_anhui_village.jpg").read_bytes() == b"curated-plate"
+    assert vox_plate.read_bytes() == b"curated-plate"
+
+    # Paths in another job's folder or outside both roots must still be blocked
+    other_job_plate = project / "public" / "jobs" / "other-job" / "vox_plates" / "leak.jpg"
+    other_job_plate.parent.mkdir(parents=True)
+    other_job_plate.write_bytes(b"leak")
+    (workspace / "asset_registry.json").write_text(
+        json.dumps({"assets": [{"id": "LEAK", "kind": "vox_editorial_plate", "path": str(other_job_plate)}]}),
+        encoding="utf-8",
+    )
+    with pytest.raises(RuntimeError, match="Media Edit nằm ngoài workspace"):
+        manager.prepare_job_media({"id": "job-1"}, workspace)

@@ -271,34 +271,35 @@ def build_codex_vision_review_prompt(
             "search_queries": ["1-3 concrete replacement searches for the app's local footage tools"],
         }],
     }
+    from .nexus_coordinator import NexusCoordinator
+    footage_charter = NexusCoordinator().build_specialist_soul_header(
+        "footage",
+        "Stage 4 Multimodal Archival Frame Review",
+    )
     return (
-        "Bạn là người DUYỆT CUỐI footage cho phim tài liệu lịch sử theo CHUẨN MỰC TƯ LIỆU 5 CẤP ĐỘ.\n"
-        "Nguyên tắc cốt lõi: ĐÚNG NGƯỜI -> ĐÚNG SỰ KIỆN / CHƯƠNG TRUYỆN -> ĐÚNG THỜI KỲ / BỐI CẢNH LỊCH SỬ. "
-        "TUYỆT ĐỐI KHÔNG ÉP HÌNH PHẢI KHỚP TỪNG CÂU CHỮ HOẶC DIỄN TẢ ĐÚNG TỪNG HÀNH ĐỘNG / ĐỘNG TỪ CỦA VOICE. "
-        "Khán giả nghe chi tiết qua lời dẫn (voiceover) và cảm nhận không khí qua tư liệu lịch sử thật.\n\n"
-        "TIÊU CHUẨN DUYỆT 5 CẤP ĐỘ (5-TIER DOCUMENTARY POLICY) - BẮT BUỘC TUÂN THỦ:\n"
-        "1. Cấp 1 (Ưu tiên cao nhất): Có footage hoặc ảnh chụp tư liệu thật khớp đúng sự kiện / văn bản cụ thể của câu chuyện -> ACCEPT ngay.\n"
-        "2. Cấp 2: Nếu không có cảnh sự kiện cụ thể, chỉ cần ĐÚNG NHÂN VẬT CHÍNH (ví dụ: Eleanor Roosevelt, Franklin D. Roosevelt, Lucy Mercer, người liên quan...) + ĐÚNG GIAI ĐOẠN LỊCH SỬ là ĐẠT CHUẨN -> ACCEPT. Không đòi hỏi ảnh phải thể hiện hành động voice (ví dụ voice nói 'lục vali tìm thư', 'mối quan hệ rạn nứt' thì ảnh chân dung nhân vật thời kỳ đó, ảnh thư từ hay ảnh thời trẻ đều hợp lệ).\n"
-        "3. Cấp 3: Nếu không có chân dung trực tiếp nhân vật đó, ảnh người cùng gia đình, địa danh liên quan (Hyde Park, Warm Springs, Nhà Trắng/White House, New York, Campobello, Capitol) hoặc bối cảnh lịch sử thời kỳ đó (Đại khủng hoảng, WPA, Thế chiến II, bài báo thời đại) -> BẮT BUỘC ACCEPT.\n"
-        "4. Cấp 4 (Phủ cảnh qua cụm beat 10-30 giây): Một tư liệu lưu trữ tốt được phép dùng chung cho 2-4 câu voice liền kề trong cùng phân cảnh/câu chuyện. Chấp nhận giữ cảnh dài 8-15 giây kết hợp pan/zoom/crop Ken Burns. Không ép mỗi 3 giây phải có một ảnh mới.\n"
-        "5. Cấp 5 (Chỉ REJECT khi thật sự không thể dùng): Chỉ REJECT khi ứng viên hoàn toàn sai lệch thời đại (ví dụ thời 1920 mà dùng ảnh màu hiện đại 2020), hoàn toàn sai nhân vật không liên quan, video có watermark/logo thương mại choán màn hình không crop được, hoặc file bị lỗi hỏng. Nếu sau khi tìm kiếm không có tư liệu lịch sử nào dùng được, mới để hệ thống chuyển AI Visual bổ trợ.\n\n"
-        "CÁC QUY TẮC BẮT BUỘC KHÔNG ĐƯỢC VI PHẠM (QUY TẮC ACCEPT-FIRST):\n"
-        "- ĐÚNG ĐỊA DANH / BỐI CẢNH LỊCH SỬ (Cấp 3): Chỉ cần video/ảnh ghi lại đúng địa danh liên quan (Nhà Trắng, Warm Springs, Hyde Park, Capitol, Washington DC, New York, Campobello...) HOẶC bối cảnh thời kỳ (Đại suy thoái, Thế chiến II, bài báo...) -> BẮT BUỘC ACCEPT NGAY. KHÔNG cần có mặt nhân vật trong khung hình, không cần hành động cụ thể!\n"
-        "- ĐÚNG NHÂN VẬT (Cấp 2): Chỉ cần có MỘT trong các nhân vật (FDR một mình, Eleanor một mình, hoặc gia đình Roosevelt) -> BẮT BUỘC ACCEPT NGAY.\n"
-        "- TUYỆT ĐỐI CẤM REJECT VÌ CÁC LÝ DO SAU:\n"
-        "  1. CẤM REJECT vì 'thiếu nhân vật phụ' (ví dụ voice nhắc Lucy Mercer, bác sĩ, trợ lý... nhưng ảnh là FDR hoặc Eleanor hoặc Nhà Trắng -> VẪN PHẢI ACCEPT).\n"
-        "  2. CẤM REJECT vì 'chỉ có một người thay vì cả hai' (chỉ có FDR mà không có Eleanor, hoặc chỉ có Eleanor mà không có FDR -> VẪN PHẢI ACCEPT; tuyệt đối không đòi hỏi phải có cả hai người cùng lúc hay 'two-track motif').\n"
-        "  3. CẤM REJECT vì 'là ảnh gia đình, ảnh chân dung tĩnh, hoặc ngoại cảnh địa danh'. Ảnh gia đình hay chân dung tĩnh của Roosevelt là tư liệu lịch sử quý giá đạt chuẩn Cấp 2 và Cấp 3.\n"
-        "  4. CẤM REJECT vì không thể hiện hành động voice (ví dụ voice nói 'lục vali', 'tìm thư', 'rạn nứt hôn nhân', 'đau tim' -> ảnh chân dung, ảnh Nhà Trắng, ảnh đám đông đều đạt chuẩn 100%).\n"
-        "  5. CẤM dùng `visual_description_reference` để làm lý do REJECT. Mô tả này chỉ là kịch bản gợi ý tham khảo ban đầu, không phải tiêu chí bắt buộc.\n"
-        "- QUY TẮC RETRY_REQUESTS (BẮT BUỘC TUÂN THỦ):\n"
-        "  + NẾU ĐÃ CÓ BẤT KỲ ứng viên nào thuộc Cấp 1, Cấp 2, hoặc Cấp 3 -> BẮT BUỘC CHỌN VÀ ACCEPT ỨNG VIÊN ĐÓ. TUYỆT ĐỐI CẤM TRẢ `retry_requests`! Không được đòi tìm lại khi đã có tư liệu khả dụng.\n"
-        "  + CHỈ ĐƯỢC PHÉP trả `retry_requests` khi TOÀN BỘ ứng viên của beat đó đều bị hỏng file, frame đen 100%, hoặc là clip quảng cáo thời 2020s hoàn toàn không liên quan.\n\n"
-        "BẮT BUỘC kiểm tra `review_attached_frames` của TỪNG candidate trước khi quyết định; không được suy luận chỉ từ title, transcript, URL hay semantic score. Với video, nếu có từ 2 frame đính kèm thì phải xem ít nhất 2 frame ở các thời điểm khác nhau.\n"
-        "Trong mỗi review, trả `inspected_frame_paths` chứa đúng đường dẫn frame đã xem của candidate đó.\n"
+        footage_charter
+        + "\nBạn là ĐẠO DIỄN KIỂM DUYỆT HÌNH ẢNH CUỐI CÙNG (`@footage` / Vision Frame Reviewer) theo 3 LUẬT THÉP: (1) SOI MẮT CẮT SẠCH 100% LOGO BÊN KHÁC & CHỮ CHẠY BÊN KHÁC, (2) SOI MẮT KHỚP 100% NỘI DUNG CÂU VOICE ĐANG NÓI ĐẾN, (3) CẤM TUYỆT ĐỐI DÙNG CODE TỰ ĐỘNG CẮT VÀ GHÉP TỰ ĐỘNG LÀM LỆCH NGHĨA VÀ HÌNH.\n"
+        "Nguyên tắc cốt lõi: BẮT BUỘC mở xem trực tiếp từng ảnh frame đính kèm (`review_attached_frames`) bằng mắt thật để xác thực 2 điều kiện bắt buộc: (1) ĐÃ CROP SẠCH 100% LOGO BÊN KHÁC, CHỮ CHẠY BÊN KHÁC VÀ KHÔNG LẪN INTRO/MC, và (2) HÌNH ẢNH HOẶC VIDEO FOOTAGE TRONG FRAME KHỚP 100% VỚI NỘI DUNG CÂU VOICE (`voice`) ĐANG NÓI ĐẾN.\n\n"
+        "TIÊU CHUẨN DUYỆT BẮT BUỘC (100% EYE-VERIFIED CLEAN CROP & 100% VOICE MATCH GATE):\n"
+        "1. BẮT BUỘC KIỂM TRA THẬT KỸ BẰNG MẮT TRÊN FRAME ĐÍNH KÈM (`review_attached_frames` — Mốc 15% / 50% / 85%):\n"
+        "   - Tuyệt đối KHÔNG đoán mò hoặc duyệt mù chỉ dựa vào tiêu đề video (`title`), URL hay điểm số tự động.\n"
+        "   - Với mỗi ứng viên video, bắt buộc nhìn trực tiếp các frame đính kèm xem cảnh quay thực tế đang diễn ra cái gì và kiểm tra 4 cạnh khung hình.\n"
+        "2. KHỚP 100% VỚI NỘI DUNG VIDEO / CÂU VOICE ĐANG NÓI ĐẾN (`voice` / `visual_description_reference`):\n"
+        "   - Hình ảnh hoặc video footage trong frame phải thể hiện đúng 100% sự kiện, hiện trường, vật chứng, nhân vật, địa danh hoặc hành động mà câu `voice` đang nói tới.\n"
+        "   - Nếu câu `voice` nói về một chi tiết/hành động mà ứng viên video không khớp 100% (hoặc bị lệch nghĩa do cắt tự động), BẮT BUỘC `REJECT` ngay để chuyển câu đó sang Ưu tiên số 2 (`@vox` — VOX minh họa độc bản) hoặc Ưu tiên số 3 cuối cùng (`@ai_visual` — Ảnh AI).\n"
+        "3. ĐẢM BẢO ĐÃ CROP SẠCH 100% LOGO BÊN KHÁC, CHỮ CHẠY BÊN KHÁC & KHÔNG LẪN INTRO/MC:\n"
+        "   - `REJECT` NGAY LẬP TỨC nếu bất kỳ frame nào chứa:\n"
+        "     (a) Logo bên khác (`CCTV`, `CNTV`, `BTV`, `SBS`, `MBN`, watermark kênh thứ 3, mã QR, tên chương trình).\n"
+        "     (b) Chữ chạy bên khác (dải chữ chạy/ticker dưới đáy, bảng tên dọc/ngang của đài khác, phụ đề ngoại ngữ cháy cứng chưa được crop sạch).\n"
+        "     (c) Intro/Outro hiệu ứng 3D của chương trình truyền hình hoặc người dẫn chương trình (MC/Host/Vlogger) đang ngồi/đứng nói.\n"
+        "     (d) Cảnh bị nhảy shot nội bộ (internal hard cut), khung 4:3 viền đen/mờ hai bên, hoặc cảnh trùng lặp đã xuất hiện ở beat trước (`max_uses = 1`).\n"
+        "4. QUY TẮC `retry_requests`:\n"
+        "   - Khi toàn bộ ứng viên của một beat bị `REJECT` (do còn sót logo/chữ chạy bên khác, dính Intro/MC, hoặc không khớp 100% nghĩa câu `voice`), trả thêm `retry_requests` với 1-3 truy vấn tìm kiếm cụ thể hơn hoặc để hệ thống chuyển sang Ưu tiên số 2 (`VOX`) / Ưu tiên số 3 (`AI Visual`).\n\n"
+        "BẮT BUỘC kiểm tra `review_attached_frames` của TỪNG candidate bằng mắt trước khi quyết định. Với video có từ 2 frame đính kèm trở lên, phải xem đủ các frame ở các thời điểm khác nhau.\n"
+        "Trong mỗi review, trả `inspected_frame_paths` chứa đúng đường dẫn frame đã xem bằng mắt của candidate đó.\n"
         "KHÔNG search web trực tiếp. KHÔNG tự gọi công cụ tìm kiếm, KHÔNG yt-dlp và KHÔNG tự tải file. App sở hữu các tool tìm/tải footage.\n"
         "Không đưa `retry_requests` cho beat đã ACCEPT. Không tự tạo candidate giả.\n"
-        "Mỗi beat chọn 1 candidate tốt nhất theo 5 cấp độ trên. Không bao giờ bỏ sót nhảy beat khiến video bị đứt đoạn.\n"
+        "Mỗi beat chỉ ACCEPT tối đa 1 candidate đạt chuẩn Đã Crop Sạch 100% Logo/Chữ Chạy Bên Khác & Khớp 100% Câu Voice. Không bỏ sót beat trong JSON trả về.\n"
         "Trả về JSON thuần, không markdown, theo schema chính xác.\n\n"
         f"JOB: {json.dumps({'id': job.get('id'), 'title': job.get('title'), 'market': job.get('market'), 'language': job.get('language')}, ensure_ascii=False, separators=(',', ':'))}\n"
         f"BEATS: {json.dumps(compact_beats, ensure_ascii=False, separators=(',', ':'))}\n"
@@ -534,8 +535,8 @@ Workspace: {workspace}
 Job: {json.dumps({"id": job.get("id"), "title": job.get("title"), "market": job.get("market"), "language": job.get("language")}, ensure_ascii=False)}
 Các visual beat được giao: {json.dumps(prepared_beats, ensure_ascii=False, indent=2)}
 
-Làm việc tự động cho đến khi hoàn tất. Với TỪNG beat_id, đọc `source_priority` và `search_budget` đã được coordinator chuẩn hóa:
-Nguồn đã dùng ở các batch/beat trước — đây là verified reuse pool KÈM bằng chứng để tránh lặp vô nghĩa. Nếu asset vẫn đúng người/sự kiện/thời kỳ cho beat hiện tại, đặc biệt khi các beat liền nhau cùng `story_group`, có thể reuse trực tiếp thay vì tìm lại hoặc đẩy sang AI. Với beat khác story/context, ưu tiên asset mới: {json.dumps(accepted_source_hints, ensure_ascii=False, separators=(",", ":"))}
+Làm việc tự động cho đến khi hoàn tất theo 3 LUẬT THÉP: (1) SOI MẮT CẮT SẠCH 100% LOGO BÊN KHÁC & CHỮ CHẠY BÊN KHÁC, (2) SOI MẮT KHỚP 100% NỘI DUNG CÂU VOICE ĐANG NÓI ĐẾN, (3) CẤM TUYỆT ĐỐI DÙNG CODE TỰ ĐỘNG CẮT VÀ GHÉP TỰ ĐỘNG LÀM LỆCH NGHĨA VÀ HÌNH (`max_uses = 1`, cấm reuse một đoạn clip qua nhiều câu thoại). Với TỪNG beat_id, đọc `source_priority` và `search_budget` đã được coordinator chuẩn hóa:
+Nguồn đã dùng ở các batch/beat trước — danh sách các clip đã dùng để TUYỆT ĐỐI KHÔNG TRÙNG LẶP (`max_uses = 1` cho từng phân đoạn clip; mỗi câu voice có nghĩa riêng nên cấm giữ nguyên 1 clip kéo qua nhiều câu): {json.dumps(accepted_source_hints, ensure_ascii=False, separators=(",", ":"))}
 Discovery Hub có thể đã gắn `discovery_candidates` vào từng beat. Đây CHỈ LÀ CANDIDATE metadata được tìm nhanh từ nhiều nguồn; ưu tiên kiểm tra các candidate điểm cao trước để giảm search lặp, nhưng KHÔNG được ACCEPT chỉ vì xuất hiện trong discovery. Mọi candidate muốn dùng vẫn phải tải/preview nội dung thật hoặc representative frames và qua toàn bộ gate kỹ thuật/ngữ cảnh bên dưới.
 THỨ TỰ FALLBACK BẮT BUỘC: (1) kiểm tra `discovery_candidates` đã prefetch; (2) nếu yếu/sai/thiếu, gọi tool/repo GitHub cục bộ bằng `{local_search_command}`. Lệnh này fan-out DDGS video + DDGS Images + internetarchive + yt-dlp + Openverse; thay `<QUERY>` bằng truy vấn cụ thể và `<VOICE_TEXT>` bằng đúng câu voice của beat. Mỗi provider chỉ giữ tối đa 2-3 candidate tốt nhất sau semantic rank, có thể gọi lại với query bổ sung trong `search_budget`; (3) chỉ khi local tool vẫn không đủ hoặc lỗi mới dùng Codex/Gemini research/web search bổ sung; (4) chỉ sau khi vòng video thật và ảnh thật đã hoàn tất theo gate bên dưới mới được đề xuất AI visual. Tool chỉ tìm/rank/tải candidate; Codex/Gemini vẫn là lớp duyệt cuối media thật.
 TOOL INSPECTION DÙNG KHI CẦN, KHÔNG CHẠY MÙ QUÁNG: `{inspection_tool} gallery --url "<URL>" --output-dir "<INSPECTION_DIR>" --limit 3` dùng gallery-dl khi yt-dlp không hỗ trợ nguồn; `{inspection_tool} scenes --input "<VIDEO>" --limit 20` dùng PySceneDetect để lấy biên shot rồi ưu tiên extract frame đại diện tại các shot; `{inspection_tool} dedupe --image "<FRAME1>" --image "<FRAME2>"` dùng ImageHash để bỏ frame gần trùng; `{inspection_tool} transcribe --input "<CLIP>"` dùng faster-whisper model `base` CPU/int8 CHỈ khi clip inspection không có caption/VTT/subtitle đủ dùng. Các tool này chỉ hỗ trợ thao tác/triage; Codex/Gemini vẫn phải tự xem nội dung thật và là lớp quyết định cuối về độ khớp ngữ cảnh.
@@ -553,15 +554,15 @@ TOOL INSPECTION DÙNG KHI CẦN, KHÔNG CHẠY MÙ QUÁNG: `{inspection_tool} ga
 12. Media tools đã được app đưa vào PATH: `yt-dlp`, `ffmpeg`, `ffprobe`, `node`. Có thể dùng biến `COFI_YTDLP_BIN`, `COFI_FFMPEG_BIN`, `COFI_FFPROBE_BIN`, `COFI_NODE_BIN` nếu cần đường dẫn tuyệt đối. `yt-dlp` đã có portable config để dùng Node làm JavaScript runtime; không cần tự cài runtime khác.
 13. Bình thường KHÔNG tải nguyên livestream hoặc video dài chỉ để lấy một đoạn ngắn. Với YouTube, mặc định thử `yt-dlp --extractor-args "youtube:player_client=web_embedded" --download-sections ...` trước vì client này tránh lỗi URL media 403 đã quan sát với client mặc định. Khi chỉ cần hình cho narration, ưu tiên format video-only phù hợp như `bv*[height<=1080]` để giảm tải và tránh merge audio không cần thiết. Với nguồn dài/live/DASH khác, dùng fragment/time range tương đương; clip local mục tiêu thường 10–60 giây.
 14. Mỗi file candidate không được vượt {max_media_mb} MB. Trước khi ACCEPT video, bắt buộc chạy ffprobe và xác nhận có video stream + duration hợp lệ. File rỗng, vài byte, container lỗi hoặc tải dở phải xóa/ghi REVIEW, tuyệt đối không ACCEPT.
-15. CHỐNG TRÙNG THEO NGỮ CẢNH, KHÔNG ÉP UNIQUE MỖI BEAT: không ACCEPT lại cùng asset cho beat KHÁC story/context chỉ để lấp coverage. Nhưng một asset thật đã verify được phép phục vụ nhiều beat liền nhau trong cùng `story_group` hoặc cùng người/sự kiện/thời kỳ khi nội dung vẫn đúng; backend sẽ tự đánh dấu `contextual_reuse`. Với reuse xuyên sang story/context khác, chỉ được phép khi có mục đích biên tập rõ ràng như callback, so sánh trước/sau, motif, geographic anchor, identity reminder hoặc continuity bridge; khi đó candidate ghi `intentional_reuse=true` và `reuse_reason` cụ thể.
-16. Nguồn có giấy phép tái sử dụng rõ ràng như Wikimedia Commons, public-domain/Creative Commons hoặc kho chính thức vẫn được ưu tiên khi dễ tìm và đủ đúng nội dung, nhưng KHÔNG phải điều kiện bắt buộc. Khi không có nguồn tốt hơn sau một vòng tìm hợp lý, có thể dùng YouTube thông thường làm candidate và có thể ACCEPT nếu đã kiểm tra nội dung thật, đúng ngữ cảnh và đạt chất lượng kỹ thuật. KHÔNG tự coi việc video xuất hiện công khai trên YouTube là đã được cấp quyền tái sử dụng: luôn ghi `rights-risk` rõ ràng (LOW/MEDIUM/HIGH/UNKNOWN) và lý do. Nguồn của nhà đài/news network, phim/streaming, stock/premium library hoặc chủ sở hữu quyền lớn có watermark/branding rõ phải mặc định REVIEW/REJECT, trừ khi job có bằng chứng quyền/license cụ thể.
+15. ĐỘC BẢN TỪNG CÂU VOICE & CẤM GHÉP LẶP (`max_uses = 1`): Mỗi phân đoạn clip hoặc ảnh tư liệu chỉ được dùng tối đa 1 lần (`max_uses = 1`). Tuyệt đối không dùng lại cùng một đoạn clip cho nhiều câu voice liền nhau (cấm `contextual_reuse` / giữ cảnh tự động). Nếu một nguồn video dài có phân đoạn ở mốc giây khác thật sự thể hiện cảnh khác khớp 100% với câu voice mới, bắt buộc cắt riêng mốc giây mới và soi mắt kiểm định độc lập.
+16. Nguồn có giấy phép tái sử dụng rõ ràng như Wikimedia Commons, public-domain/Creative Commons hoặc kho chính thức vẫn được ưu tiên khi dễ tìm và đủ đúng nội dung, nhưng KHÔNG phải điều kiện bắt buộc. Khi không có nguồn tốt hơn sau một vòng tìm hợp lý, có thể dùng YouTube/CCTV/Bilibili làm candidate và chỉ được ACCEPT sau khi đã soi mắt kiểm tra nội dung thật khớp 100% câu voice và đã crop sạch 100% logo bên khác, chữ chạy bên khác, phụ đề ngoại ngữ cháy cứng, Intro/MC.
 17. Nếu `web_embedded` + `--download-sections`/range download của một video YouTube vẫn trả HTTP 403/Forbidden, 401/Unauthorized, timeout hoặc access denied, bỏ URL/video ID đó và chuyển sang candidate khác. Không tải nguyên video dài/livestream để cứu một đoạn footage ngắn, và không chạy ma trận retry đổi client/format/transport nhiều lần.
 18. Để hình ảnh đa dạng hơn, nhắm nhịp visual khoảng 4-8 giây. Beat dài trên 8 giây hoặc chứa từ hai ý/hành động rõ ràng nên ưu tiên 2 shot video khác nhau (khác timestamp/góc quay, và khác source khi hợp lý) thay vì giữ một ảnh hay một clip suốt cả beat. Không ép thêm shot nếu chúng không làm rõ narration.
-19. Trước khi tiêu `search_budget` cho web, kiểm tra danh sách `Nguồn đã dùng` ở trên. Nếu asset đã verify vẫn đúng ngữ cảnh cho beat hiện tại/cùng `story_group`, ưu tiên reuse có kiểm soát; nếu không còn đúng ngữ cảnh thì ưu tiên query/candidate mới. Với video cùng source URL, timestamp khác thật sự có nội dung khác vẫn có thể dùng sau khi inspect. Chỉ chuyển `prefer_real`/`ai_ok` sang AI khi thực sự thiếu media thật phù hợp sau vòng video + ảnh, KHÔNG chuyển sang AI chỉ vì asset thật phù hợp đã được dùng ở beat liền trước.
+19. Trước khi tiêu `search_budget` cho web, kiểm tra danh sách `Nguồn đã dùng` ở trên để KHÔNG lấy trùng cùng timestamp/clip đã dùng. Khi không có tư liệu thật khớp 100% nghĩa câu voice sau vòng tìm kiểm chứng, chuyển câu đó sang Ưu tiên số 2 (VOX minh họa) hoặc Ưu tiên số 3 (AI Visual).
 20. Giữ output của media tools thật gọn để không làm phình context: với yt-dlp dùng `--quiet --no-warnings` khi đã có `--print`; với ffmpeg dùng `-hide_banner -loglevel error`; với ffprobe dùng `-v error` và chỉ in field cần kiểm tra. Không dump toàn bộ metadata/playlist/directory nếu vài field đã đủ quyết định.
 21. Các truy vấn metadata độc lập trong cùng batch có thể gom và chạy song song TỐI ĐA 4 tác vụ. Download/cắt/inspect media nặng chỉ chạy song song TỐI ĐA 2 tác vụ để tránh 403/rate-limit/I/O contention. Nếu metadata đã cho thấy nguồn là stock/premium/rightsholder rõ và beat không phải `must_real`, loại sớm trước khi tải.
-22. Các beat có cùng `search_group` dùng chung một pool kết quả. Với query giống nhau trong cùng `search_group`, chỉ chạy một lần trong batch rồi tái dùng danh sách kết quả cho mọi beat trong nhóm; không lặp ytsearch chỉ vì beat_id khác nhau. Mỗi beat vẫn phải tự đạt semantic/context match trước khi ACCEPT.
-23. `prior_visual_verified=true` cho phép bỏ kiểm tra/download lặp đối với chính asset đã verify. Có thể reuse tự động khi rule 15 xác định cùng `story_group`/cùng ngữ cảnh; reuse xuyên story/context khác vẫn cần `intentional_reuse=true` + `reuse_reason`. Nếu dùng một timestamp mới thật sự khác của cùng video source thì phải inspect representative frames của đoạn mới như candidate riêng.
+22. Các beat có cùng `search_group` dùng chung một pool kết quả tìm kiếm, nhưng mỗi beat bắt buộc phải chọn một phân đoạn clip riêng biệt (`max_uses = 1`) và tự đạt 100% khớp nghĩa câu voice + sạch 100% logo/chữ chạy bên khác qua kiểm tra bằng mắt trước khi ACCEPT.
+23. Nếu dùng một timestamp mới thật sự khác của cùng video source thì bắt buộc phải inspect representative frames của đoạn mới bằng mắt như candidate riêng và đảm bảo đã crop sạch 100% logo/chữ chạy bên khác.
 24. NGAY SAU KHI HOÀN TẤT TỪNG beat, cập nhật chính file output `{workspace / output_name}` với toàn bộ kết quả đã tích lũy đến beat đó và `status=in_progress`; KHÔNG CHỜ ĐẾN CUỐI BATCH mới ghi. Mỗi lần ghi phải an toàn qua một temporary file rồi replace file output, để UI có thể đọc tiến độ giữa batch mà không gặp JSON dở. Chỉ sau khi beat cuối cùng của batch đã hoàn tất mới đổi `status=completed` và ghi bản cuối.
 
 Chỉ ghi output vào `{workspace / output_name}` theo JSON object:
@@ -656,31 +657,11 @@ def _beats_allow_contextual_reuse(
     beat_order: dict[str, int],
     beats_by_id: dict[str, dict[str, Any]],
 ) -> bool:
-    current = beats_by_id.get(current_beat_id) or {}
-    prior = beats_by_id.get(prior_beat_id) or {}
-    if not current or not prior:
-        return False
-
-    current_story = str(current.get("story_group") or "").strip().lower()
-    prior_story = str(prior.get("story_group") or "").strip().lower()
-    if current_story and prior_story:
-        return current_story == prior_story
-
-    current_search = str(current.get("search_group") or "").strip().lower()
-    prior_search = str(prior.get("search_group") or "").strip().lower()
-    if current_search and prior_search:
-        return current_search == prior_search
-
-    current_index = beat_order.get(current_beat_id)
-    prior_index = beat_order.get(prior_beat_id)
-    if current_index is None or prior_index is None:
-        return False
-    # Documentary standard (Tier 4): Allow visual hold across 2-4 sentences / 10-30s beat cluster
-    if abs(current_index - prior_index) <= 4:
-        return True
-
-    shared = _beat_context_tokens(current).intersection(_beat_context_tokens(prior))
-    return len(shared) >= 1
+    # STRICT BAN ON AUTOMATIC SPLICING / HOLDING ONE FOOTAGE CLIP ACROSS MULTIPLE VOICE SENTENCES:
+    # Every spoken sentence beat has its own specific meaning; repeating or holding a previous beat's
+    # clip across adjacent beats causes image-to-voice mismatch (`max_uses = 1`).
+    _ = (current_beat_id, prior_beat_id, beat_order, beats_by_id)
+    return False
 
 
 def merge_worker_results(workspace: str | Path) -> dict[str, Any]:
@@ -812,8 +793,8 @@ def merge_worker_results(workspace: str | Path) -> dict[str, Any]:
         for beat in visual_beats
         if str(beat.get("beat_id") or "").strip()
     }
-    max_reuse = _positive_int_env("COFI_FOOTAGE_MAX_REUSE_PER_FILE", 1)
-    max_contextual_reuse = _positive_int_env("COFI_FOOTAGE_MAX_CONTEXTUAL_REUSE_PER_FILE", 4)
+    max_reuse = 1
+    max_contextual_reuse = 1
     accepted_reuse_beats: dict[str, set[str]] = {}
     digest_cache: dict[str, str] = {}
     candidate_decisions: dict[str, str] = {}
@@ -2935,94 +2916,42 @@ class FootageCoordinator:
                     }
                     for beat_id in beat_ids:
                         if beat_id not in accepted_in_batch:
-                            # Tier 4 Policy: Một asset tốt được phép phủ 2–4 câu hoặc cả cụm 10–30s
-                            # Tìm asset lưu trữ đã được duyệt từ các beat liền kề trước đó trong cùng phân cảnh
-                            held_from_prior = False
-                            all_beat_ids_list = [_beat_id(b) for b in beats]
-                            curr_beat_idx = all_beat_ids_list.index(beat_id) if beat_id in all_beat_ids_list else -1
-                            if curr_beat_idx > 0:
-                                for step_back in range(1, min(5, curr_beat_idx + 1)):
-                                    prior_id = all_beat_ids_list[curr_beat_idx - step_back]
-                                    prior_cands = [
-                                        c for c in stream_candidates
-                                        if str(c.get("beat_id") or "").strip() == prior_id and c.get("selected_for_beat") is True
-                                    ]
-                                    if prior_cands:
-                                        source_cand = prior_cands[0]
-                                        local_path = source_cand.get("local_path")
-                                        if local_path and Path(local_path).exists():
-                                            reuse_cand_id = f"FT-{beat_id}-hold-{source_cand.get('candidate_id')}"
-                                            held_cand = {
-                                                "candidate_id": reuse_cand_id,
-                                                "beat_id": beat_id,
-                                                "title": source_cand.get("title"),
-                                                "source_name": source_cand.get("source_name"),
-                                                "source_url": source_cand.get("source_url"),
-                                                "timestamp_range": source_cand.get("timestamp_range"),
-                                                "kind": source_cand.get("kind"),
-                                                "local_path": local_path,
-                                                "reason": f"Tái sử dụng tư liệu thật từ {prior_id} (giữ cảnh 10-30s chuẩn phim tài liệu lịch sử theo Tier 4).",
-                                                "codex_decision": "ACCEPT",
-                                                "decision": "ACCEPT",
-                                                "selected_for_beat": True,
-                                                "selection_status": "selected",
-                                                "contextual_reuse": True,
-                                                "intentional_reuse": True,
-                                                "reuse_reason": f"Phủ cảnh tài liệu lịch sử qua cụm phân cảnh {prior_id}->{beat_id}.",
-                                            }
-                                            stream_candidates.append(held_cand)
-                                            accepted_in_batch.add(beat_id)
-                                            approved_path = workspace / "footage_approved_live.json"
-                                            existing_live = {}
-                                            if approved_path.exists():
-                                                try:
-                                                    existing_live = json.loads(approved_path.read_text(encoding="utf-8"))
-                                                except Exception:
-                                                    existing_live = {}
-                                            items = existing_live.get("items") if isinstance(existing_live, dict) else []
-                                            items = [it for it in (items or []) if str(it.get("beat_id") or "").strip() != beat_id]
-                                            items.append({
-                                                "candidate_id": reuse_cand_id,
-                                                "beat_id": beat_id,
-                                                "path": str(local_path),
-                                                "source_url": str(source_cand.get("source_url") or ""),
-                                                "name": Path(local_path).name,
-                                                "kind": str(source_cand.get("kind") or "sourced_video"),
-                                                "reason": held_cand["reason"],
-                                                "timestamp_range": str(source_cand.get("timestamp_range") or ""),
-                                                "decision": "ACCEPT",
-                                            })
-                                            _write_json_atomic(approved_path, {
-                                                "version": 1,
-                                                "updated_at": _now(),
-                                                "items": items,
-                                            })
-                                            held_from_prior = True
-                                            break
-                            if not held_from_prior:
-                                b_candidates = [
-                                    c for c in stream_candidates if str(c.get("beat_id") or "").strip() == beat_id
-                                ]
-                                if b_candidates:
-                                    for c in b_candidates:
-                                        c["ai_fallback_recommended"] = True
-                                        c["real_video_search_complete"] = True
-                                        c["real_still_search_complete"] = True
-                                        if not c.get("ai_fallback_reason"):
-                                            c["ai_fallback_reason"] = "Không tìm thấy tư liệu thật hoặc liên quan đạt chuẩn; chuyển sang AI bổ trợ theo Tier 5."
-                                else:
-                                    stream_candidates.append({
-                                        "candidate_id": f"FT-{beat_id}-ai-fallback",
-                                        "beat_id": beat_id,
-                                        "source_priority": "prefer_real",
-                                        "decision": "REVIEW",
-                                        "kind": "sourced_video",
-                                        "reason": "Không tìm thấy tư liệu thật trong batch; gán AI bổ sung theo Tier 5.",
-                                        "ai_fallback_recommended": True,
-                                        "real_video_search_complete": True,
-                                        "real_still_search_complete": True,
-                                        "ai_fallback_reason": "Không tìm thấy tư liệu thật trong batch; gán AI bổ sung theo Tier 5.",
-                                    })
+                            # STRICT BAN ON AUTOMATIC CROSS-BEAT SPLICING / HOLDING (`0%` `FT-*-hold-*`):
+                            # Never copy or hold a previous beat's footage clip onto a new voice sentence.
+                            # When a beat has no 100% eye-verified, clean-cropped, voice-matched real footage,
+                            # mark it so the pipeline routes it to Priority #2 (`@vox` illustration) or Priority #3 (`@ai_visual`).
+                            b_candidates = [
+                                c for c in stream_candidates if str(c.get("beat_id") or "").strip() == beat_id
+                            ]
+                            if b_candidates:
+                                for c in b_candidates:
+                                    c["ai_fallback_recommended"] = True
+                                    c["real_video_search_complete"] = True
+                                    c["real_still_search_complete"] = True
+                                    if not c.get("ai_fallback_reason"):
+                                        c["ai_fallback_reason"] = (
+                                            "Không có footage thật khớp 100% nghĩa câu voice và sạch 100% logo/chữ chạy bên khác; "
+                                            "chuyển sang Ưu tiên số 2 (VOX minh họa) hoặc Ưu tiên số 3 (Ảnh AI)."
+                                        )
+                            else:
+                                stream_candidates.append({
+                                    "candidate_id": f"FT-{beat_id}-vox-or-ai-fallback",
+                                    "beat_id": beat_id,
+                                    "source_priority": "prefer_real",
+                                    "decision": "REVIEW",
+                                    "kind": "sourced_video",
+                                    "reason": (
+                                        "Không có footage thật khớp 100% nghĩa câu voice và sạch 100% logo/chữ chạy bên khác; "
+                                        "chuyển sang Ưu tiên số 2 (VOX minh họa) hoặc Ưu tiên số 3 (Ảnh AI)."
+                                    ),
+                                    "ai_fallback_recommended": True,
+                                    "real_video_search_complete": True,
+                                    "real_still_search_complete": True,
+                                    "ai_fallback_reason": (
+                                        "Không có footage thật khớp 100% nghĩa câu voice và sạch 100% logo/chữ chạy bên khác; "
+                                        "chuyển sang Ưu tiên số 2 (VOX minh họa) hoặc Ưu tiên số 3 (Ảnh AI)."
+                                    ),
+                                })
                     stream_completed_ids.extend(beat_ids)
                     worker_state["current_batch"] = stream_batch_index
                     worker_state["completed_beat_ids"] = list(dict.fromkeys(stream_completed_ids))
@@ -3429,30 +3358,10 @@ class FootageCoordinator:
                         break
 
                 if retry_reviews is None:
-                    audit_entry["status"] = "review_error_handled"
+                    # STRICT BAN ON BLIND AUTOMATIC ACCEPT (`accepted_resilient_fallback` is forbidden):
+                    # Never accept a candidate without genuine AI eye inspection of its frames (`inspected_frame_paths`).
+                    audit_entry["status"] = "review_error_rejected"
                     audit_entry["error"] = review_error
-                    best_cand = None
-                    for cand in retry_candidates:
-                        c_id = str(cand.get("candidate_id") or "").strip()
-                        c_path = cand.get("local_path")
-                        if c_id and c_path:
-                            valid, _ = _validate_media_file(workspace, c_path, cand.get("kind"))
-                            if valid:
-                                best_cand = cand
-                                break
-                    if best_cand is not None:
-                        fallback_review = [{
-                            "beat_id": beat_id,
-                            "candidate_id": str(best_cand.get("candidate_id") or "").strip(),
-                            "decision": "ACCEPT",
-                            "reason": "Chấp thuận ứng viên tìm lại khả dĩ theo quy chuẩn Tier 3/4 sau khi review tự động gặp lỗi kết nối.",
-                            "inspected_frame_paths": [],
-                        }]
-                        all_reviews.extend(fallback_review)
-                        selected_now = self._commit_reviewed_media(workspace, candidates, fallback_review, all_reviews)
-                        if beat_id in selected_now:
-                            accepted_review_beats.add(beat_id)
-                            audit_entry["status"] = "accepted_resilient_fallback"
                     retry_audit["rounds"].append(audit_entry)
                     continue
 

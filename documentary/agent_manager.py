@@ -1,10 +1,176 @@
-"""Specialist roster and bounded handoff contracts for the main chat."""
+"""NEXUS Multi-Agent Roster, Standalone Source Loader, Lazy Router & Functional Permission Engine.
+
+Inspired by `msitarzewski/agency-agents`:
+- Every specialist is a standalone source document (`agents/<division>/<id>.md`) split into
+  `SOUL` (Identity, Personality, Communication Style, Critical Rules) and
+  `OPERATIONS` (Core Mission, Technical Deliverables, Workflow Process, NEXUS Handoff, Metrics).
+- A single underlying LLM model becomes a true multi-agent collective via:
+  1. Isolated session spans per agent (`agent-{id}-{uid}`),
+  2. Role-scoped context slicing + lazy skill binding (`skills/*/SKILL.md`),
+  3. Hard functional permission guards (`workspace_scope`, `reads_artifacts`,
+     `writes_artifacts`, `allowed_actions`, `allowed_phases`),
+  4. Structured NEXUS Handoff Contracts & Maker <-> EvidenceQA closed loops.
+- Constitutional Law: App Core = 100% Pure Technical Mechanics; Channel Profile = 100% Creative/Country DNA.
+"""
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass, field
+import fnmatch
 import json
+import math
+from pathlib import Path
 import re
 from typing import Any
+
+
+DEFAULT_AGENTS_DIR = Path(__file__).resolve().parents[1] / "agents"
+DEFAULT_SKILLS_DIR = Path(__file__).resolve().parents[1] / "skills"
+
+_WORD_RE = re.compile(r"[a-z0-9à-ỹ][a-z0-9à-ỹ+.#_-]*", re.I)
+_SOUL_HEADER_PATTERNS = (
+    "identity",
+    "learning",
+    "memory",
+    "communication",
+    "style",
+    "critical rule",
+    "rules you must follow",
+)
+_HEX_COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
+_HANGUL_RE = re.compile(r"[\uac00-\ud7a3]")
+
+
+def _csv_tuple(raw: str) -> tuple[str, ...]:
+    if not raw or raw.strip().lower() in {"none", "null", "-"}:
+        return ()
+    return tuple(part.strip() for part in raw.split(",") if part.strip())
+
+
+def _classify_header_bucket(header_line: str) -> str:
+    lowered = header_line.lower()
+    if any(pat in lowered for pat in _SOUL_HEADER_PATTERNS):
+        return "soul"
+    return "operations"
+
+
+def split_soul_and_operations(body: str) -> tuple[str, str, int, int]:
+    """Split an agent markdown body into SOUL (persona/rules) and OPERATIONS (mission/workflow)."""
+    soul_chunks: list[str] = []
+    ops_chunks: list[str] = []
+    soul_headers = 0
+    ops_headers = 0
+
+    current_bucket = "operations"
+    current_lines: list[str] = []
+    fence_char = ""
+    fence_len = 0
+
+    for line in body.splitlines():
+        stripped = line.lstrip()
+        if fence_char:
+            current_lines.append(line)
+            m_close = re.match(rf"^({re.escape(fence_char)}{{{fence_len},}})\s*$", stripped)
+            if m_close:
+                fence_char = ""
+                fence_len = 0
+            continue
+
+        m_open = re.match(r"^(`{3,}|~{3,})", stripped)
+        if m_open:
+            fence_char = m_open.group(1)[0]
+            fence_len = len(m_open.group(1))
+            current_lines.append(line)
+            continue
+
+        if line.startswith("## "):
+            if current_lines:
+                block = "\n".join(current_lines).strip()
+                if block:
+                    if current_bucket == "soul":
+                        soul_chunks.append(block)
+                    else:
+                        ops_chunks.append(block)
+                current_lines = []
+            current_bucket = _classify_header_bucket(line)
+            if current_bucket == "soul":
+                soul_headers += 1
+            else:
+                ops_headers += 1
+
+        current_lines.append(line)
+
+    if current_lines:
+        block = "\n".join(current_lines).strip()
+        if block:
+            if current_bucket == "soul":
+                soul_chunks.append(block)
+            else:
+                ops_chunks.append(block)
+
+    return "\n\n".join(soul_chunks).strip(), "\n\n".join(ops_chunks).strip(), soul_headers, ops_headers
+
+
+def parse_agent_source_file(path: Path, agents_root: Path) -> "AgentProfile":
+    """Parse one standalone `agents/<division>/<id>.md` file into an `AgentProfile`."""
+    raw_bytes = path.read_bytes()
+    text = raw_bytes.decode("utf-8")
+    normalized = text.replace("\r\n", "\n")
+    if not normalized.startswith("---\n"):
+        raise ValueError(f"Agent source file missing opening YAML frontmatter: {path}")
+    parts = normalized.split("\n---\n", 1)
+    if len(parts) < 2:
+        raise ValueError(f"Agent source file missing closing YAML frontmatter: {path}")
+    frontmatter_raw = parts[0][4:]
+    body = parts[1].lstrip("\n")
+
+    fields: dict[str, str] = {}
+    for raw_line in frontmatter_raw.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or ":" not in line:
+            continue
+        key, val = line.split(":", 1)
+        k = key.strip()
+        v = val.strip()
+        if len(v) >= 2 and v[0] == v[-1] and v[0] in {'"', "'"}:
+            v = v[1:-1]
+        fields[k] = v
+
+    agent_id = fields.get("id", "").strip() or path.stem
+    name = fields.get("name", "").strip()
+    if not name:
+        raise ValueError(f"Agent source file missing 'name': {path}")
+
+    rel_path = path.relative_to(agents_root).as_posix()
+    division = fields.get("division", "").strip() or path.parent.name
+    department = fields.get("department", "").strip() or division
+    soul_md, ops_md, _, _ = split_soul_and_operations(body)
+
+    return AgentProfile(
+        id=agent_id,
+        name=name,
+        department=department,
+        mission=fields.get("mission", "").strip(),
+        scope=fields.get("scope", "").strip(),
+        display_vi=fields.get("display_vi", name).strip(),
+        division=division,
+        color=fields.get("color", "#64748B").strip(),
+        emoji=fields.get("emoji", "🤖").strip(),
+        vibe=fields.get("vibe", "").strip(),
+        workspace_scope=fields.get("workspace_scope", "project_workspace").strip(),
+        skills=_csv_tuple(fields.get("skills", "")),
+        tools_permitted=_csv_tuple(fields.get("tools_permitted", "")),
+        allowed_actions=_csv_tuple(fields.get("allowed_actions", "")),
+        allowed_phases=_csv_tuple(fields.get("allowed_phases", "")),
+        reads_artifacts=_csv_tuple(fields.get("reads_artifacts", "")),
+        writes_artifacts=_csv_tuple(fields.get("writes_artifacts", "")),
+        upstream_agents=_csv_tuple(fields.get("upstream_agents", "")),
+        downstream_agents=_csv_tuple(fields.get("downstream_agents", "")),
+        qa_partner=fields.get("qa_partner", "evidence_qa").strip(),
+        source_path=f"agents/{rel_path}",
+        soul_markdown=soul_md,
+        operations_markdown=ops_md,
+        body=body.strip(),
+    )
 
 
 @dataclass(frozen=True)
@@ -14,68 +180,329 @@ class AgentProfile:
     department: str
     mission: str
     scope: str
+    display_vi: str = ""
+    division: str = "production"
+    color: str = "#64748B"
+    emoji: str = "🤖"
+    vibe: str = ""
+    workspace_scope: str = "project_workspace"
+    skills: tuple[str, ...] = field(default_factory=tuple)
+    tools_permitted: tuple[str, ...] = field(default_factory=tuple)
+    allowed_actions: tuple[str, ...] = field(default_factory=tuple)
+    allowed_phases: tuple[str, ...] = field(default_factory=tuple)
+    reads_artifacts: tuple[str, ...] = field(default_factory=tuple)
+    writes_artifacts: tuple[str, ...] = field(default_factory=tuple)
+    upstream_agents: tuple[str, ...] = field(default_factory=tuple)
+    downstream_agents: tuple[str, ...] = field(default_factory=tuple)
+    qa_partner: str = "evidence_qa"
+    source_path: str = ""
+    soul_markdown: str = ""
+    operations_markdown: str = ""
+    body: str = ""
+
+    def to_summary_dict(self) -> dict[str, Any]:
+        """Compact roster summary for Orchestrator context (Hermes Lazy-Router pattern)."""
+        return {
+            "id": self.id,
+            "name": self.name,
+            "display_vi": self.display_vi or self.name,
+            "division": self.division,
+            "department": self.department,
+            "emoji": self.emoji,
+            "color": self.color,
+            "vibe": self.vibe,
+            "mission": self.mission,
+            "scope": self.scope,
+            "workspace_scope": self.workspace_scope,
+            "skills": list(self.skills),
+            "tools_permitted": list(self.tools_permitted),
+            "allowed_actions": list(self.allowed_actions),
+            "allowed_phases": list(self.allowed_phases),
+            "reads_artifacts": list(self.reads_artifacts),
+            "writes_artifacts": list(self.writes_artifacts),
+            "upstream_agents": list(self.upstream_agents),
+            "downstream_agents": list(self.downstream_agents),
+            "qa_partner": self.qa_partner,
+            "source_path": self.source_path,
+        }
+
+    def to_full_dict(self) -> dict[str, Any]:
+        payload = self.to_summary_dict()
+        payload["soul_markdown"] = self.soul_markdown
+        payload["operations_markdown"] = self.operations_markdown
+        payload["body"] = self.body
+        return payload
 
 
-_ROSTER = (
-    AgentProfile(
-        "research",
-        "Research",
-        "production",
-        "Nghiên cứu hồ sơ vụ án/chủ đề, truy vết đầy đủ kết cục của mọi nhân vật & manh mối được giới thiệu (Nguyên tắc Chiếc súng của Chekhov — cấm bỏ quên nhân vật mở màn), chuẩn hóa cách xưng hô tuổi tác/vai trò theo văn hóa Hàn Quốc (cấm gọi người 50–65 tuổi là 노부부) và xác thực nguồn tư liệu",
-        "research, chekhov gun verification, cultural age addressing, and radar",
-    ),
-    AgentProfile(
-        "script",
-        "Script",
-        "production",
-        "Viết kịch bản phim tài liệu/True Crime tuân thủ tuyệt đối Nguyên tắc Chiếc súng của Chekhov (mọi nhân vật/manh mối mở màn đều có kết cục rõ ràng), xưng hô chuẩn văn hóa Hàn Quốc (cấm gọi người 58–62 tuổi là 노부부), CẤM TUYỆT ĐỐI dùng Regex/Find-and-Replace xóa hoặc đổi chủ ngữ gây lệch định ngữ (như 서른한 살이 된 동영상 플랫폼 / 무릎을 꿇은 판결문) hoặc nhầm chủ thể hung thủ-nạn nhân, chuẩn hóa số đếm TTS (19년 -> 십구 년) và viết câu kết màn trọn vẹn đúng 1 lần",
-        "plan/script artifacts, chekhov gun continuity, and korean cultural prose",
-    ),
-    AgentProfile(
-        "voice",
-        "Voice",
-        "production",
-        "Tạo giọng đọc dẫn chuyện trầm ấm, đầm và nhịp độ chuẩn đài SBS Hàn Quốc 255–270 SPM / 4.45 âm tiết/giây (K1 - Điềm Tĩnh tts_speed=0.98 / K1 - Trầm Sâu Đêm Khuya tts_speed=0.96, không bị nhân kép LANG_SPEED_BIAS); tự động chuẩn hóa số đếm/dấu phẩy hàng nghìn sang chữ Hangul trước khi gọi TTS (2,000킬로미터 -> 이천 킬로미터, 19년 -> 십구 년); tự động gọt khoảng nghỉ thừa giữa câu (Broadcast Pause Sculpting 0.285s/0.185s) và giữ dư 3.8s khoảng lặng hạ màn ở cuối file",
-        "voice, warm late-night tone, numeral pronunciation, and outro tail",
-    ),
-    AgentProfile("visuals", "Visuals", "production", "Split narration into visual beats", "visual manifest and STP"),
-    AgentProfile("footage", "Footage", "production", "Find and verify real media", "footage and source evidence"),
-    AgentProfile("ai_visual", "AI Visual", "production", "Fill approved visual gaps with generated media", "AI media"),
-    AgentProfile(
-        "edit",
-        "Edit",
-        "production",
-        "Đọc full script trước khi dựng; cắt ghép Footage thật từ 3–6s/cut (bắt buộc xóa/crop sạch 100% logo & text Trung của bên khác, tuyệt đối không lấy video dẫn chương trình có mặt người dẫn hoặc chủ kênh khác, chỉ lấy đúng footage cần thiết, cần thiết thì crop hết hình ảnh có nguồn bên khác, max_uses=1); kết hợp Ảnh AI 1-to-1 ({bid}_ai_keyframe.jpg) và thiết kế mỗi cảnh Vox độc bản 100% theo từng câu voice; kiểm tra kỹ timeline âm thanh đoạn kết để câu thoại cuối hoàn tất trọn vẹn 100% và để dư 3.5–4.5s nhạc nền hạ màn (fade-out)",
-        "edit, timeline, footage 3-6s crop-clean, bespoke vox, and outro 3.5-4.5s fade-out",
-    ),
-    AgentProfile(
-        "qc",
-        "Quality",
-        "production",
-        "Kiểm định chất lượng xuất bản theo Checklist 3 trụ cột khán giả: [1] Kịch bản (Chiếc súng của Chekhov & xưng hô văn hóa Hàn Quốc), [2] Giọng đọc (tông trầm ấm êm tai & không đọc vấp số đếm/năm tháng), [3] Phần kết (câu thoại cuối hoàn tất trọn vẹn 100% kèm 3.5–4.5s nhạc nền hạ màn fade-out)",
-        "QC, 3-pillar pre-publish checklist, and export evidence",
-    ),
-    AgentProfile("dev", "Development", "engineering", "Implement app changes", "application source and focused tests"),
-    AgentProfile("debug", "Debug", "engineering", "Find and repair app defects", "diagnostics, source fixes, and focused tests"),
+_PHASE_TO_AGENT_ID: dict[str, str] = {
+    "plan": "script",
+    "voice": "voice",
+    "visuals": "visuals",
+    "footage": "footage",
+    "ai_visual": "ai_visual",
+    "edit": "edit",
+    "seo": "seo",
+    "qc": "qc",
+}
+
+_AGENT_ORDER: tuple[str, ...] = (
+    "orchestrator",
+    "radar",
+    "research",
+    "script",
+    "voice",
+    "visuals",
+    "footage",
+    "ai_visual",
+    "vox",
+    "edit",
+    "seo",
+    "evidence_qa",
+    "qc",
+    "dev",
+    "debug",
 )
 
 
 class AgentManager:
-    def __init__(self) -> None:
-        self._agents = {agent.id: agent for agent in _ROSTER}
+    """Loads standalone agent `.md` charters, enforces least-privilege permissions, and routes NEXUS tasks."""
 
+    def __init__(
+        self,
+        agents_dir: str | Path | None = None,
+        skills_dir: str | Path | None = None,
+    ) -> None:
+        self.agents_dir = Path(agents_dir).resolve() if agents_dir else DEFAULT_AGENTS_DIR
+        self.skills_dir = Path(skills_dir).resolve() if skills_dir else DEFAULT_SKILLS_DIR
+        self._divisions: dict[str, dict[str, Any]] = {}
+        self._runbooks: list[dict[str, Any]] = []
+        self._agents: dict[str, AgentProfile] = {}
+        self._last_max_mtime: float = 0.0
+        self.reload()
+
+    def _compute_max_mtime(self) -> float:
+        if not self.agents_dir.is_dir():
+            return 0.0
+        mtimes = [p.stat().st_mtime for p in self.agents_dir.rglob("*.md") if p.is_file()]
+        return max(mtimes, default=0.0)
+
+    def _ensure_fresh(self) -> None:
+        cur = self._compute_max_mtime()
+        if cur > self._last_max_mtime:
+            self.reload()
+
+    def reload(self) -> None:
+        self._last_max_mtime = self._compute_max_mtime()
+        divisions_file = self.agents_dir / "divisions.json"
+        if divisions_file.is_file():
+            raw_div = json.loads(divisions_file.read_text(encoding="utf-8"))
+            self._divisions = dict(raw_div.get("divisions") or {})
+        else:
+            self._divisions = {}
+
+        runbooks_file = self.agents_dir / "runbooks.json"
+        if runbooks_file.is_file():
+            raw_rb = json.loads(runbooks_file.read_text(encoding="utf-8"))
+            self._runbooks = list(raw_rb.get("runbooks") or [])
+        else:
+            self._runbooks = []
+
+        loaded: dict[str, AgentProfile] = {}
+        if self.agents_dir.is_dir():
+            div_names = list(self._divisions.keys()) if self._divisions else [
+                p.name for p in sorted(self.agents_dir.iterdir()) if p.is_dir()
+            ]
+            for div_name in div_names:
+                div_path = self.agents_dir / div_name
+                if not div_path.is_dir():
+                    continue
+                for md_path in sorted(div_path.glob("*.md")):
+                    profile = parse_agent_source_file(md_path, self.agents_dir)
+                    if profile.id in loaded:
+                        raise ValueError(f"Duplicate agent id '{profile.id}' in {md_path}")
+                    loaded[profile.id] = profile
+
+        order_rank = {aid: idx for idx, aid in enumerate(_AGENT_ORDER)}
+        sorted_ids = sorted(loaded.keys(), key=lambda aid: (order_rank.get(aid, 999), aid))
+        self._agents = {aid: loaded[aid] for aid in sorted_ids}
+
+    # ------------------------------------------------------------------
+    # Corpus Linter (agency-agents `lint-agents.sh` parity)
+    # ------------------------------------------------------------------
+    def lint_corpus(self) -> dict[str, Any]:
+        errors: list[str] = []
+        warnings: list[str] = []
+        checked_files: list[str] = []
+
+        if not (self.agents_dir / "divisions.json").is_file():
+            errors.append("Missing agents/divisions.json")
+
+        for div_name in sorted(self._divisions.keys()):
+            div_dir = self.agents_dir / div_name
+            if not div_dir.is_dir():
+                errors.append(f"Division directory missing: agents/{div_name}")
+                continue
+            md_files = sorted(div_dir.glob("*.md"))
+            if not md_files:
+                errors.append(f"Division '{div_name}' contains 0 agent markdown files")
+            for md_file in md_files:
+                rel = md_file.relative_to(self.agents_dir).as_posix()
+                checked_files.append(rel)
+                raw = md_file.read_bytes()
+                if b"\r" in raw:
+                    errors.append(f"{rel}: CRLF line endings detected (must be LF)")
+                try:
+                    prof = parse_agent_source_file(md_file, self.agents_dir)
+                except Exception as exc:
+                    errors.append(f"{rel}: {exc}")
+                    continue
+                for req_field in ("id", "name", "mission", "scope", "color"):
+                    if not getattr(prof, req_field, ""):
+                        errors.append(f"{rel}: empty required field '{req_field}'")
+                if not _HEX_COLOR_RE.match(prof.color):
+                    errors.append(f"{rel}: invalid hex color '{prof.color}'")
+                if prof.division != div_name:
+                    errors.append(f"{rel}: frontmatter division '{prof.division}' != directory '{div_name}'")
+                _, _, soul_h, ops_h = split_soul_and_operations(prof.body)
+                if soul_h == 0:
+                    errors.append(f"{rel}: 0 SOUL section headers found")
+                if ops_h == 0:
+                    errors.append(f"{rel}: 0 OPERATIONS section headers found")
+                if len(prof.body.split()) < 80:
+                    warnings.append(f"{rel}: body unusually short (<80 words)")
+                if _HANGUL_RE.search(prof.body):
+                    errors.append(f"{rel}: contains Hangul characters (must remain language-neutral)")
+                if "channel-" in prof.body:
+                    errors.append(f"{rel}: contains hardcoded 'channel-*' identifier")
+
+        known_ids = set(self._agents.keys())
+        for prof in self._agents.values():
+            for up_id in prof.upstream_agents:
+                if up_id not in known_ids:
+                    errors.append(f"{prof.id}: unknown upstream_agent '{up_id}'")
+            for down_id in prof.downstream_agents:
+                if down_id not in known_ids:
+                    errors.append(f"{prof.id}: unknown downstream_agent '{down_id}'")
+            if prof.qa_partner and prof.qa_partner != "none" and prof.qa_partner not in known_ids:
+                errors.append(f"{prof.id}: unknown qa_partner '{prof.qa_partner}'")
+
+        for rb in self._runbooks:
+            slug = rb.get("slug", "unknown")
+            for group in rb.get("roster") or []:
+                for aid in group.get("agents") or []:
+                    if aid not in known_ids:
+                        errors.append(f"runbook '{slug}': unknown agent '{aid}'")
+            for aid in rb.get("handoff_chain") or []:
+                if aid not in known_ids:
+                    errors.append(f"runbook '{slug}' handoff_chain: unknown agent '{aid}'")
+
+        return {
+            "passed": len(errors) == 0,
+            "agent_count": len(self._agents),
+            "division_count": len(self._divisions),
+            "runbook_count": len(self._runbooks),
+            "checked_files": checked_files,
+            "errors": errors,
+            "warnings": warnings,
+        }
+
+    # ------------------------------------------------------------------
+    # Lazy Discovery & Lookup (`build-hermes-plugin.py` parity)
+    # ------------------------------------------------------------------
     def list_agents(self) -> list[dict[str, Any]]:
-        return [asdict(agent) for agent in _ROSTER]
+        self._ensure_fresh()
+        return [agent.to_summary_dict() for agent in self._agents.values()]
+
+    def list_divisions(self) -> dict[str, dict[str, Any]]:
+        self._ensure_fresh()
+        return dict(self._divisions)
+
+    def list_runbooks(self) -> list[dict[str, Any]]:
+        self._ensure_fresh()
+        return list(self._runbooks)
 
     def for_phase(self, phase: str) -> AgentProfile:
-        phase_agents = {"plan": "script", "seo": "research", "qc": "qc"}
-        return self.get(phase_agents.get(phase, phase))
+        return self.get(_PHASE_TO_AGENT_ID.get(phase, phase))
 
     def get(self, agent_id: str) -> AgentProfile:
+        self._ensure_fresh()
+        needle = str(agent_id or "").strip().lower()
+        aliases = {
+            "reality_checker": "qc",
+            "reality-checker": "qc",
+            "quality": "qc",
+            "qa": "qc",
+            "evidence-qa": "evidence_qa",
+            "evidenceqa": "evidence_qa",
+            "stage_critic": "evidence_qa",
+            "critic": "evidence_qa",
+            "producer": "orchestrator",
+            "agents-orchestrator": "orchestrator",
+            "topic_scout": "radar",
+            "vox_motion": "vox",
+            "developer": "dev",
+            "development": "dev",
+        }
+        canonical = aliases.get(needle, needle)
         try:
-            return self._agents[agent_id]
+            return self._agents[canonical]
         except KeyError as exc:
             raise ValueError(f"Nhân viên không tồn tại: {agent_id}") from exc
+
+    def inspect_agent(self, identifier: str, *, include_body: bool = False) -> dict[str, Any]:
+        agent = self.get(identifier)
+        return agent.to_full_dict() if include_body else agent.to_summary_dict()
+
+    def search_agents(
+        self,
+        query: str,
+        *,
+        division: str | None = None,
+        limit: int = 8,
+    ) -> list[dict[str, Any]]:
+        q_text = str(query or "").strip().lower()
+        if not q_text:
+            return self.list_agents()[: max(1, min(limit, 25))]
+        q_tokens = {tok.lower() for tok in _WORD_RE.findall(q_text)}
+        div_filter = str(division or "").strip().lower()
+        scored: list[tuple[float, AgentProfile]] = []
+
+        for agent in self._agents.values():
+            if div_filter and agent.division.lower() != div_filter and agent.department.lower() != div_filter:
+                continue
+            haystack = "\n".join(
+                (
+                    agent.id,
+                    agent.name,
+                    agent.display_vi,
+                    agent.division,
+                    agent.vibe,
+                    agent.mission,
+                    agent.scope,
+                    agent.body[:6000],
+                )
+            ).lower()
+            h_tokens = {tok.lower() for tok in _WORD_RE.findall(haystack)}
+            overlap = q_tokens & h_tokens
+            score = float(len(overlap))
+            if q_text in haystack:
+                score += 5.0
+            for tok in q_tokens:
+                if tok in agent.id.lower() or tok in agent.name.lower() or tok in agent.display_vi.lower():
+                    score += 3.0
+                if tok in agent.mission.lower() or tok in agent.scope.lower():
+                    score += 1.5
+            if score > 0:
+                tie_bonus = 1.0 / math.sqrt(max(len(h_tokens), 1))
+                scored.append((score + tie_bonus, agent))
+
+        scored.sort(key=lambda item: (-item[0], item[1].division, item[1].id))
+        out: list[dict[str, Any]] = []
+        for sc, agent in scored[: max(1, min(limit, 25))]:
+            summary = agent.to_summary_dict()
+            summary["score"] = round(sc, 3)
+            out.append(summary)
+        return out
 
     def explicit_delegate(self, message: str) -> str | None:
         """Honor a user's explicit assignment if the model forgets its action."""
@@ -83,95 +510,396 @@ class AgentManager:
         if not re.search(r"\b(giao|nhờ|ủy nhiệm|delegate)\b", text):
             return None
         aliases = {
-            "quality": "qc", "qa": "qc", "qc": "qc",
-            "development": "dev", "developer": "dev", "dev": "dev",
-            "debug": "debug", "research": "research", "script": "script",
-            "voice": "voice", "visuals": "visuals", "footage": "footage",
-            "ai visual": "ai_visual", "edit": "edit",
+            "orchestrator": "orchestrator",
+            "tổng đạo diễn": "orchestrator",
+            "radar": "radar",
+            "săn đề tài": "radar",
+            "evidence qa": "evidence_qa",
+            "evidence_qa": "evidence_qa",
+            "stage critic": "evidence_qa",
+            "stage_critic": "evidence_qa",
+            "thanh tra bằng chứng": "evidence_qa",
+            "reality checker": "qc",
+            "reality_checker": "qc",
+            "quality": "qc",
+            "qa": "qc",
+            "qc": "qc",
+            "development": "dev",
+            "developer": "dev",
+            "dev": "dev",
+            "debug": "debug",
+            "research": "research",
+            "script": "script",
+            "voice": "voice",
+            "visuals": "visuals",
+            "footage": "footage",
+            "ai visual": "ai_visual",
+            "ai_visual": "ai_visual",
+            "vox": "vox",
+            "edit": "edit",
+            "seo": "seo",
         }
-        matches = {agent_id for alias, agent_id in aliases.items() if re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", text)}
+        # Priority 1: agent alias immediately following the delegation verb ("Giao Quality kiểm tra Voice...")
+        direct_matches = {
+            agent_id
+            for alias, agent_id in aliases.items()
+            if re.search(rf"\b(?:giao|nhờ|ủy nhiệm|delegate)\s+(?:cho\s+)?(?:nhân viên\s+|agent\s+)?{re.escape(alias)}(?!\w)", text)
+        }
+        if len(direct_matches) == 1:
+            return next(iter(direct_matches))
+        # Priority 2: single unambiguous alias anywhere in the sentence
+        matches = {
+            agent_id
+            for alias, agent_id in aliases.items()
+            if re.search(rf"(?<!\w){re.escape(alias)}(?!\w)", text)
+        }
         return next(iter(matches)) if len(matches) == 1 else None
 
-    def worker_prompt(self, agent_id: str, task: str, context: dict[str, Any]) -> str:
+    # ------------------------------------------------------------------
+    # Bound Skill Loader (Language-Safe, Token-Budgeted)
+    # ------------------------------------------------------------------
+    def resolve_bound_skills(
+        self,
+        agent_id: str,
+        *,
+        target_language: str = "",
+        max_chars_per_skill: int = 12500,
+        selected_job: dict[str, Any] | None = None,
+    ) -> list[dict[str, str]]:
         agent = self.get(agent_id)
-        if not task.strip():
+        lang = str(target_language or "").strip().lower()
+        active_mode = ""
+        if isinstance(selected_job, dict):
+            prof_id = str(selected_job.get("channel_profile_id") or "").strip()
+            edna = selected_job.get("editing_dna") if isinstance(selected_job.get("editing_dna"), dict) else {}
+            dir_mode = str(edna.get("director_mode") or "").strip()
+            preset_id = str(edna.get("preset_id") or "").strip()
+            if (
+                prof_id in {"channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2"}
+                or preset_id in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"}
+                or dir_mode in {"v2", "vox_china_crime_newsroom_v10"}
+                or "newsroom" in preset_id
+            ):
+                active_mode = "vox_china_crime_newsroom_v10"
+            elif prof_id == "channel-e544a64b7c" or preset_id == "forensic_noir":
+                active_mode = "forensic_noir"
+            elif prof_id == "channel-cn-cyber-finance-kr" or preset_id == "financial_forensic_vox":
+                active_mode = "financial_forensic_vox"
+
+        loaded_skills: list[dict[str, str]] = []
+        for skill_slug in agent.skills:
+            skill_file = self.skills_dir / skill_slug / "SKILL.md"
+            if not skill_file.is_file():
+                continue
+            raw_text = skill_file.read_text(encoding="utf-8", errors="replace").replace("\r\n", "\n")
+            if raw_text.startswith("---\n"):
+                parts = raw_text.split("\n---\n", 1)
+                body = parts[1].strip() if len(parts) == 2 else raw_text
+            else:
+                body = raw_text.strip()
+
+            # Slice profile-scoped sections cleanly so workers never receive another profile's visual rules
+            def _strip_inactive_profile_sections(text: str, keep_tag: str) -> str:
+                def _repl(match: re.Match[str]) -> str:
+                    tag = match.group(1).strip()
+                    inner = match.group(2)
+                    if keep_tag and tag == keep_tag:
+                        return inner.strip()
+                    if not keep_tag:
+                        return inner.strip()
+                    return ""
+
+                return re.sub(
+                    r"<!--\s*PROFILE_SECTION:([a-zA-Z0-9_-]+)\s*-->(.*?)<!--\s*/PROFILE_SECTION:\1\s*-->",
+                    _repl,
+                    text,
+                    flags=re.DOTALL,
+                )
+
+            body = _strip_inactive_profile_sections(body, active_mode)
+            body = re.sub(r"\n{3,}", "\n\n", body).strip()
+
+            # Prevent cross-language script characters (e.g. Hangul examples) from leaking into non-KR jobs
+            if lang != "ko":
+                filtered_lines = [ln for ln in body.splitlines() if not _HANGUL_RE.search(ln)]
+                body = "\n".join(filtered_lines)
+            body = re.sub(r"\bchannel-[a-z0-9_-]+", "[active_channel_profile]", body, flags=re.I)
+
+            if len(body) > max_chars_per_skill:
+                body = body[:max_chars_per_skill].rsplit("\n", 1)[0] + "\n...[skill digest truncated to fit specialist budget]"
+            loaded_skills.append({"skill": skill_slug, "path": str(skill_file), "excerpt": body.strip()})
+        return loaded_skills
+
+    # ------------------------------------------------------------------
+    # Functional Permission & Least-Privilege Guards
+    # ------------------------------------------------------------------
+    def resolve_execution_cwd(
+        self,
+        agent_id: str,
+        app_root: str | Path,
+        workspace_path: str | Path | None = None,
+    ) -> tuple[Path, bool]:
+        """Return `(execution_cwd, use_remotion_root)` enforcing physical directory scoping."""
+        agent = self.get(agent_id)
+        root_p = Path(app_root).resolve()
+        ws_p = Path(workspace_path).resolve() if workspace_path else None
+
+        if agent.workspace_scope in {"app_source", "orchestration"} or ws_p is None or not ws_p.exists():
+            return root_p, False
+        if agent.workspace_scope == "remotion_and_workspace":
+            return ws_p, True
+        return ws_p, False
+
+    def filter_proposed_actions(
+        self,
+        agent_id: str,
+        proposed_actions: list[dict[str, Any]],
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Hard-filter worker `proposed_actions` against `agent.allowed_actions` & `agent.allowed_phases`."""
+        agent = self.get(agent_id)
+        allowed_types = set(agent.allowed_actions)
+        allowed_phases = set(agent.allowed_phases)
+        wildcard_phase = "*" in allowed_phases
+
+        permitted: list[dict[str, Any]] = []
+        blocked: list[dict[str, Any]] = []
+
+        for item in proposed_actions or []:
+            if not isinstance(item, dict):
+                continue
+            act_type = str(item.get("type") or "").strip()
+            if not act_type or act_type not in allowed_types:
+                blocked.append({
+                    "action": item,
+                    "reason": f"Action '{act_type}' outside {agent.id}.allowed_actions={sorted(allowed_types)}",
+                })
+                continue
+
+            if act_type in {"run_phase", "rerun_phase"} and not wildcard_phase:
+                target_phase = str(item.get("phase") or "").strip()
+                if target_phase and target_phase not in allowed_phases:
+                    blocked.append({
+                        "action": item,
+                        "reason": f"Phase '{target_phase}' outside {agent.id}.allowed_phases={sorted(allowed_phases)}",
+                    })
+                    continue
+
+            if act_type == "run_pipeline" and not wildcard_phase:
+                from_p = str(item.get("from_phase") or "").strip()
+                thru_p = str(item.get("through_phase") or "").strip()
+                if (from_p and from_p not in allowed_phases) or (thru_p and thru_p not in allowed_phases):
+                    blocked.append({
+                        "action": item,
+                        "reason": f"Pipeline range '{from_p}..{thru_p}' outside {agent.id}.allowed_phases",
+                    })
+                    continue
+
+            permitted.append(item)
+
+        return permitted, blocked
+
+    @staticmethod
+    def snapshot_workspace_files(workspace: str | Path | None) -> dict[str, tuple[int, int]]:
+        """Capture `{rel_posix_path: (mtime_ns, size_bytes)}` inside a project workspace prior to worker execution."""
+        if not workspace:
+            return {}
+        ws = Path(workspace).resolve()
+        if not ws.is_dir():
+            return {}
+        snap: dict[str, tuple[int, int]] = {}
+        for p in ws.rglob("*"):
+            if not p.is_file():
+                continue
+            rel = p.relative_to(ws).as_posix()
+            if rel.startswith((".render_cache/", "node_modules/")):
+                continue
+            try:
+                st = p.stat()
+                snap[rel] = (st.st_mtime_ns, st.st_size)
+            except OSError:
+                continue
+        return snap
+
+    def is_artifact_write_permitted(self, agent_id: str, rel_posix_path: str) -> bool:
+        agent = self.get(agent_id)
+        rel = rel_posix_path.strip("/")
+        # Runtime telemetry logs written by the gateway itself are always permitted
+        if rel.startswith(".producer/") and not rel.startswith(".producer/qa_verdicts/"):
+            for pat in agent.writes_artifacts:
+                if fnmatch.fnmatch(rel, pat):
+                    return True
+            if any(seg in rel for seg in ("events.jsonl", "session.json", "gemini_session.json", "prompt.txt", "last_message.txt", "goal_events.jsonl")):
+                return True
+        if "*" in agent.writes_artifacts:
+            return True
+        return any(fnmatch.fnmatch(rel, pat) for pat in agent.writes_artifacts)
+
+    def verify_artifact_write_permissions(
+        self,
+        agent_id: str,
+        workspace: str | Path | None,
+        before_snapshot: dict[str, tuple[int, int]],
+    ) -> dict[str, Any]:
+        """Compare post-run workspace state against `agent.writes_artifacts` patterns."""
+        if not workspace:
+            return {"checked": False, "authorized_writes": [], "unauthorized_writes": []}
+        ws = Path(workspace).resolve()
+        if not ws.is_dir():
+            return {"checked": False, "authorized_writes": [], "unauthorized_writes": []}
+
+        after = self.snapshot_workspace_files(ws)
+        authorized: list[str] = []
+        unauthorized: list[str] = []
+
+        for rel, sig in after.items():
+            if before_snapshot.get(rel) == sig:
+                continue
+            if self.is_artifact_write_permitted(agent_id, rel):
+                authorized.append(rel)
+            else:
+                unauthorized.append(rel)
+
+        return {
+            "checked": True,
+            "agent_id": self.get(agent_id).id,
+            "authorized_writes": sorted(authorized),
+            "unauthorized_writes": sorted(unauthorized),
+            "compliant": len(unauthorized) == 0,
+        }
+
+    def build_scoped_context(
+        self,
+        agent_id: str,
+        context: dict[str, Any],
+        workspace: str | Path | None = None,
+    ) -> dict[str, Any]:
+        """Construct a role-scoped context object preserving `app_root` & `workspace_path` while listing readable artifacts."""
+        agent = self.get(agent_id)
+        scoped = dict(context or {})
+        ws_raw = workspace or scoped.get("workspace_path")
+        if ws_raw:
+            ws = Path(str(ws_raw))
+            if ws.is_dir():
+                visible_files: dict[str, dict[str, Any]] = {}
+                patterns = agent.reads_artifacts or ("*",)
+                for f in sorted(ws.iterdir()):
+                    if not f.is_file():
+                        continue
+                    rel = f.name
+                    if "*" in patterns or any(fnmatch.fnmatch(rel, pat) for pat in patterns):
+                        try:
+                            visible_files[rel] = {"size_bytes": f.stat().st_size, "exists": True}
+                        except OSError:
+                            continue
+                scoped["scoped_readable_artifacts"] = visible_files
+        scoped["agent_permission_contract"] = {
+            "agent_id": agent.id,
+            "division": agent.division,
+            "workspace_scope": agent.workspace_scope,
+            "reads_artifacts": list(agent.reads_artifacts),
+            "writes_artifacts": list(agent.writes_artifacts),
+            "allowed_actions": list(agent.allowed_actions),
+            "allowed_phases": list(agent.allowed_phases),
+            "tools_permitted": list(agent.tools_permitted),
+            "qa_partner": agent.qa_partner,
+        }
+        return scoped
+
+    # ------------------------------------------------------------------
+    # Composed Worker Prompt (SOUL + OPERATIONS + Bound Skills + Handoff + QA Loop)
+    # ------------------------------------------------------------------
+    def worker_prompt(
+        self,
+        agent_id: str,
+        task: str,
+        context: dict[str, Any],
+        *,
+        handoff_packet: dict[str, Any] | None = None,
+        qa_feedback: dict[str, Any] | None = None,
+        attempt: int = 1,
+    ) -> str:
+        agent = self.get(agent_id)
+        if not str(task or "").strip():
             raise ValueError("Nhiệm vụ giao cho nhân viên đang trống.")
-        specialist_law = ""
-        if agent_id == "research":
-            specialist_law = (
-                "\nRESEARCH SPECIALIST MANDATORY LAWS (ĐẶC BIỆT CHO TRUE CRIME / PHÁ ÁN THỰC TẾ):\n"
-                "1. NGUYÊN TẮC 'CHIẾC SÚNG CỦA CHEKHOV' (CHEKHOV'S GUN LAW — CẤM BỎ QUÊN NHÂN VẬT/MANH MỐI MỞ MÀN): "
-                "Bất kỳ nhân vật, nạn nhân phụ (ví dụ thương nhân mang túi tiền dày vào trọ ở phần đầu), nghi phạm phụ hoặc manh mối nào được đưa vào hồ sơ mở màn BẮT BUỘC phải ghi rõ kết cục/vai trò tiếp theo trong timeline vụ án. "
-                "Nếu chi tiết quá bạo lực/nhạy cảm phải lược giản, bắt buộc ghi chú câu tóm lược nhẹ nhàng khép lại số phận nhân vật đó (ví dụ: 'Tuy nhiên, người này không may trở thành nạn nhân đầu tiên trong đêm...') — tuyệt đối cấm giới thiệu rồi bỏ bẵng!\n"
-                "2. QUY TẮC XƯNG HÔ ĐỘ TUỔI THEO VĂN HÓA HÀN QUỐC (CULTURAL AGE & ROLE ADDRESSING): "
-                "Với nhân vật ở độ tuổi 50–65 (ví dụ 58–62 tuổi), TUYỆT ĐỐI CẤM gắn nhãn là '노부부' (ông bà già/cụ già) hay '노인'. Bắt buộc dùng chức danh/vai trò trung tính hoặc nhóm tuổi chuẩn xác ('여관 주인 부부' - chủ nhà trọ, '50대 후반의 부부', '중년 부부', '피해 부부').\n"
+
+        selected_job = (context or {}).get("selected_job")
+        target_lang = ""
+        if isinstance(selected_job, dict):
+            target_lang = str(selected_job.get("language") or "").strip().lower()
+
+        scoped_ctx = self.build_scoped_context(agent.id, context, (context or {}).get("workspace_path"))
+        bound_skills = self.resolve_bound_skills(
+            agent.id,
+            target_language=target_lang,
+            max_chars_per_skill=9000,
+            selected_job=selected_job if isinstance(selected_job, dict) else None,
+        )
+
+        skill_block = ""
+        if bound_skills:
+            rendered_skills = "\n\n".join(
+                f"### Skill Unlocked: `{item['skill']}`\n{item['excerpt']}" for item in bound_skills
             )
-        elif agent_id == "script":
-            specialist_law = (
-                "\nSCRIPT SPECIALIST MANDATORY LAWS (ĐẶC BIỆT CHO TRUE CRIME / PHÁ ÁN THỰC TẾ):\n"
-                "1. OUTLINE-FIRST WORKFLOW (`outline.json` -> `script.md`): Always create/verify the 5-Act Chapter Blueprint (`outline.json` with per-Act duration, `target_non_space_chars`, `summary`, `evidence_anchor`, `visual_note`) BEFORE writing `script.md`, then expand `script.md` strictly section-by-section following `outline.json`.\n"
-                "2. NATIVE KOREAN DOCUMENTARY GRAMMAR & ANTI-AI / ANTI-FLOWERY PROSE (`한국어 자연스러운 다큐 구어체 · AI 번역투 최고 수준 배제 · 미사여구 금지`): "
-                "Eliminate all English/Chinese translationese (`~에 의해`, `~되어지다`, `~라는 것을 알 수 있었다`, `'이것은 단순한 A가 아니라 B였습니다'` clichés, repetitive `~했습니다` endings). "
-                "Strictly FORBID flowery/melodramatic purple prose (`'악마 같은 미소'`, `'피눈물이 강을 이루고'`, `'운명의 소용돌이'`, `'지옥도'`). Keep the prose calm, restrained, factual, and grounded in concrete everyday details contrasted with forensic numbers.\n"
-                "3. NGUYÊN TẮC 'CHIẾC SÚNG CỦA CHEKHOV' (CHEKHOV'S GUN LAW — TUYỆT ĐỐI CẤM BỎ QUÊN NHÂN VẬT MỞ MÀN): "
-                "Khán giả thể loại trinh thám/phá án thực tế theo dõi rất kỹ từng nhân vật và mốc thời gian. Bất kỳ nhân vật hoặc manh mối nào được giới thiệu ở phần đầu/giữa bài (ví dụ vị khách thương nhân mang túi tiền dày vào trọ) BẮT BUỘC phải có kết cục rõ ràng. "
-                "Nếu phải lược bỏ chi tiết vì quá bạo lực/nhạy cảm, BẮT BUỘC thêm 1–2 câu tóm lược nhẹ nhàng khép lại số phận nhân vật đó (ví dụ: '하지만 안타깝게도 이 상인은 그날 밤 첫 번째 희생자가 되고 말았습니다...' / 'Tuy nhiên, người này không may trở thành nạn nhân đầu tiên trong đêm...') thay vì bỏ bẵng gây hổng logic kịch bản!\n"
-                "4. QUY TẮC XƯNG HÔ VĂN HÓA HÀN QUỐC (CULTURAL AGE & ROLE ADDRESSING): "
-                "Tuyệt đối CẤM gọi người ở độ tuổi 50–65 (như 58–62 tuổi) là '노부부' (ông bà già/cụ già) hoặc '노인' khiến người xem thấy gượng gạo. Bắt buộc dùng từ ngữ trung tính theo vai trò hoặc nhóm tuổi chuẩn xác ('여관 주인 부부' - chủ nhà trọ, '50대 후반의 부부', '중년 부부', '피해 부부').\n"
-                "5. QUY TẮC SỐ ĐẾM KÉP PHỤ ĐỀ VS TTS, NĂM THÁNG & CÂU KẾT MÀN TRỌN VẸN (DUAL-LAYER NUMERAL READABILITY & CLEAN OUTRO): "
-                "Trong script.md, visual_manifest.json và phụ đề SRT, bắt buộc viết số kết hợp đơn vị dễ đọc chuẩn truyền hình Hàn Quốc ('9조 원', '500억 위안', '1,200권', '14.6%', '95.6%', '196개', '19년', '50대 후반') để hiển thị phụ đề rõ ràng và khớp từ khóa highlight; TUYỆT ĐỐI CẤM viết chuỗi phiên âm Hangul dài ngoằng ('천구백팔십이년생', '백구십육 개', '십사점육 퍼센트', '구조 원') trực tiếp vào kịch bản/phụ đề (bộ normalize_korean_tts_text sẽ tự động chuyển sang âm đọc Hangul '십사쩜육 퍼센트', '백구십육개' khi gọi TTS). Tuyệt đối không viết nhầm số thuần Hàn trước danh từ đơn vị Hán-Hàn (cấm viết '열아홉 년' -> bắt buộc viết '19년' hoặc '십구 년'; '50대' đọc '오십대'; giờ 24h '19시' đọc '십구시'). Câu chào kết ở cuối kịch bản chỉ viết đúng 1 lần duy nhất, có dấu chấm câu đầy đủ trước câu chào cuối để TTS không đọc dính hay cắt cụt.\n"
-                "6. LUẬT CẤM REGEX XÓA/THAY CHỦ NGỮ & BẢO TOÀN TƯƠNG HỢP ĐỊNH NGỮ - CHỦ THỂ (`정규식 주어 일괄 치환 절대 금지`): "
-                "Tuyệt đối CẤM dùng Regex/replace hàng loạt để xóa hoặc đổi chủ ngữ (`소녀는`, `양뉴화는`, `여화영은`, `자매는`). Trước khi sửa bất kỳ câu nào, phải đọc toàn câu để đảm bảo cụm định ngữ chỉ tuổi/hành động (`다섯 살`, `서른한 살이 된`, `무릎을 꿇은`) gắn đúng với danh từ chỉ người (cấm tạo câu lỗi như `다섯 살 엄마`, `서른한 살이 된 동영상 플랫폼`, `무릎을 꿇은 판결문 복사본`), không nhầm chủ thể nạn nhân với hung thủ, và không lặp 2 lần cùng một chủ ngữ `~은/는` trong một câu.\n"
+            skill_block = f"\n\n=== BOUND SPECIALIST SKILLS ===\n{rendered_skills}\n"
+
+        handoff_block = ""
+        if handoff_packet:
+            handoff_block = (
+                "\n\n=== UPSTREAM NEXUS HANDOFF PACKET (CONTEXT CONTINUITY) ===\n"
+                f"{json.dumps(handoff_packet, ensure_ascii=False, indent=2)}\n"
             )
-        elif agent_id == "voice":
-            specialist_law = (
-                "\nVOICE SPECIALIST MANDATORY LAWS (GIỌNG ĐỌC & XỬ LÝ AI/TTS):\n"
-                "1. TÔNG GIỌNG TRẦM ẤM, ĐẦM & ĐỀU ĐẶN CHUẨN ĐÊM KHUYA: Hạ tông giọng (pitch) và chọn mẫu giọng trầm ấm, điềm tĩnh (`K1 - Trầm Sâu Đêm Khuya (SBS Style)` `6456334b-ffaf-4e74-b0d4-9066efebf019` hoặc `K1 - Điềm Tĩnh (Chuẩn Phóng Sự)` `cb54e0fb-0e99-4a74-b202-9c3242a09805`) để tạo cảm giác kể chuyện đêm khuya/trinh thám lôi cuốn, tuyệt đối tránh tông giọng quá căng/gắt gây mệt tai (`목소리 톤이 넘 강팔라 피곤해`).\n"
-                "2. RÀ SOÁT CHÍNH TẢ / PHIÊN ÂM SỐ ĐẾM & CHỐNG ĐỌC VẤP: Kiểm tra kỹ các cụm số đếm, năm tháng (`19년` -> `십구 년`, cấm đọc `열아홉 년`; `50대` -> `오십대`; `19시` -> `십구시`; `24시간` -> `이십사 시간`) và danh từ riêng để tránh đọc vấp hoặc phát âm sai nghĩa.\n"
-                "3. ĐẢM BẢO PHẦN KẾT TRỌN VẸN + 3.8 GIÂY KHOẢNG LẶNG HẠ MÀN (`OUTRO_FADE_TAIL_SEC = 3.8`): Đảm bảo câu thoại cuối cùng phát trọn vẹn 100% và file `narration.wav` có dư `3.8 giây` khoảng lặng hạ màn ở cuối để nhạc nền fade-out tự nhiên.\n"
-                "4. CHUẨN NHỊP ĐỘ PHÓNG SỰ HÀN QUỐC 255–270 SPM & GỌT KHOẢNG NGHỈ THỪA GIỮA CÂU (`BROADCAST PAUSE SCULPTING & SINGLE-TAKE PROSODY`): "
-                "Giữ `ProsodyProfile(ko max_chars=145)` để đọc liền 1 hơi các câu văn dưới 145 ký tự (không cắt đôi câu và không chèn dấu chấm giả ở dấu phẩy số như `2,000`). Chuyển đổi số có dấu phẩy và số đếm Hán-Hàn (`2,000킬로미터` -> `이천 킬로미터`, `5,000위안` -> `오천 위안`, `19년` -> `십구 년`) trước khi gọi TTS, và tự động chạy `sculpt_wav_bytes_for_korean_broadcast` để thu gọn các khoảng nghỉ thừa >0.30s giữa câu về `0.285s / 0.185s` mượt mà.\n"
+
+        qa_retry_block = ""
+        if qa_feedback:
+            qa_retry_block = (
+                f"\n\n=== NEXUS MAKER-QA RETRY FEEDBACK (ATTEMPT {attempt} OF 3) ===\n"
+                "Fix ONLY the verified defects flagged below without introducing scope creep:\n"
+                f"{json.dumps(qa_feedback, ensure_ascii=False, indent=2)}\n"
             )
-        elif agent_id == "edit":
-            specialist_law = (
-                "\nEDIT SPECIALIST MANDATORY LAWS (ROLE EDIT — BẮT BUỘC TUÂN THỦ 100%):\n"
-                "1. ĐỌC FULL SCRIPT TRƯỚC KHI DỰNG (`script.md` + `voice_manifest.json` + `visual_manifest.json`): Tuyệt đối không vẽ Vox trước sẵn và không làm đến đâu vẽ đến đó mà chưa đọc hết toàn bộ kịch bản.\n"
-                "2. LUẬT SẮT VỀ FOOTAGE THẬT (`3–6 GIÂY/CUT` + `BẮT BUỘC XÓA/CROP SẠCH 100% LOGO & TEXT TRUNG` + `CẤM MẶT NGƯỜI DẪN CHƯƠNG TRÌNH/CHỦ KÊNH KHÁC`):\n"
-                "   - Độ dài mỗi đoạn cắt Footage bắt buộc từ **3–6 giây** (`3–6s/cut`; với câu voice dài 7–12s thì bắt buộc ghép 2 đoạn footage 3–6s liên tiếp `Part A + Part B` để không giữ lì 1 cảnh quá 6s; tắt tiếng gốc `-an`; `max_uses = 1`, không lặp lại).\n"
-                "   - **Bắt buộc xóa và crop sạch 100% logo nhà đài (`CCTV`, `CTI`, `TVBS`, `必PO`...), watermark và chữ/phụ đề tiếng Trung hoặc ngoại ngữ của bên khác**: Cần thiết thì crop bỏ hết các phần hình ảnh/viền có nguồn bên khác (`crop` + `scale=1920:1080`), chỉ giữ lại vùng cảnh quay sạch.\n"
-                "   - **Tuyệt đối KHÔNG lấy video dẫn chương trình có mặt người dẫn (MC/BTV trường quay), diễn giả bục phát biểu hoặc chủ kênh khác (kể cả khung chia đôi màn hình có mặt MC)** — **chỉ lấy đúng footage hiện trường/vật chứng/bối cảnh cần thiết**.\n"
-                "3. ẢNH AI 1-TO-1 (`{bid}_ai_keyframe.jpg`) & VOX MOTION ĐỘC BẢN 100% THEO TỪNG CÂU VOICE (`VOX_01..VOX_N.mp4`):\n"
-                "   - Dùng đúng bức ảnh AI `{bid}_ai_keyframe.jpg` đã tạo sẵn 1-to-1 cho đoạn không có tư liệu thật (`max_uses = 1`, không lấy ảnh AI cảnh này đắp sang cảnh khác).\n"
-                "   - Mỗi cảnh Vox (`VOX_01..VOX_N.mp4`, `max_uses = 1`) phải là **độc nhất 100%** cả về bố cục toàn màn hình, bảng màu, hình học sơ đồ lẫn chuyển động (motion) khớp đúng câu voice đó (tuyệt đối cấm bọc chung một khung 4 ô và cấm dùng bảng dòng ngang lặp lại chỉ thay chữ).\n"
-                "4. LUẬT SẮT VỀ PHẦN KẾT VIDEO & OUTRO (`CẤM NGẮT LỜI GIỮA CHỪNG` + `DƯ 3.5–4.5 GIÂY NHẠC NỀN HẠ MÀN FADE-OUT`):\n"
-                "   - Kiểm tra kỹ timeline âm thanh ở đoạn kết trước khi xuất file (render): `TOTAL_FRAMES` bắt buộc bao phủ trọn vẹn 100% câu thoại cuối cùng (`closing narration`) cộng thêm **3.5–4.5 giây** giữ hình cuối (`outro_tail_sec = 3.8s`).\n"
-                "   - Tuyệt đối không bao giờ để câu kết màn bị cắt ngang lưng chừng khi người đọc chưa nói hết câu (`마무리 맨트가 항상 중간에 끝나는 이유가 뭔가요?`) và không lặp lại câu kết ở 2 beat cuối.\n"
-                "   - Để dư **3.5–4.5 giây nhạc nền hạ màn (fade-out)** sau khi dứt lời thoại cuối để video có điểm dừng tự nhiên và trọn vẹn.\n"
-            )
-        elif agent_id == "qc":
-            specialist_law = (
-                "\nQUALITY / PRE-PUBLISH CHECKLIST MANDATORY LAWS (BẮT BUỘC KIỂM TRA TRƯỚC KHI XUẤT BẢN VIDEO MỚI):\n"
-                "- [ ] Kịch bản: Mọi nhân vật hoặc manh mối xuất hiện ở phần đầu đã có kết cục rõ ràng chưa (Nguyên tắc 'Chiếc súng của Chekhov')? Cách xưng hô đã chuẩn văn hóa Hàn Quốc chưa (cấm gọi người 50–65 tuổi là '노부부'/'노인')? Đã kiểm tra 100% câu văn không bị lỗi Regex xóa/đổi chủ ngữ (không có định ngữ tuổi người gắn vào đồ vật như '서른한 살이 된 동영상 플랫폼', không nhầm chủ ngữ nạn nhân-hung thủ, không lặp 2 lần cùng chủ ngữ '~은/는' trong 1 câu) chưa?\n"
-                "- [ ] Giọng đọc: Tông giọng đã đủ trầm ấm, đầm và êm tai chưa? Có cụm số đếm, năm tháng ('십구 년', '오십대') hay danh từ riêng nào bị đọc vấp/sai nhịp không?\n"
-                "- [ ] Phần kết: Câu thoại cuối cùng (closing narration) đã hoàn tất trọn vẹn 100% chưa (không bị ngắt giữa chừng, không lặp câu kết)? Đã có 3.5–4.5 giây nhạc nền hạ màn (fade-out) sau khi dứt lời thoại cuối chưa?\n"
-            )
+
+        specialist_law = (
+            "\nCORE ARCHITECTURAL & CLOSED-LOOP EXECUTION LAWS (APPLIES TO ALL SPECIALISTS):\n"
+            "1. STRICT PROFILE & COUNTRY ISOLATION: App Core provides technical mechanics only. Read all creative direction "
+            "(tone, speech register, narrative structure, visual aesthetic, country/cultural naming conventions, and SEO anchor keywords) "
+            "strictly from the active `channel_profile` / `job` inside `APP CONTEXT`. NEVER apply creative rules, brand names, or case conventions from another channel profile.\n"
+            "2. LEAST-PRIVILEGE BOUNDARY: Respect your `agent_permission_contract` inside `APP CONTEXT`. Read/write ONLY artifacts within your permitted scope and propose ONLY actions listed in `allowed_actions`.\n"
+            "3. CLOSED-LOOP WORKMANSHIP (`CREATE -> SENSOR CHECK -> CRITIQUE -> FIX -> FINAL`): Verify every output against technical quality sensors before reporting `completed`:\n"
+            "   - `research` / `script`: Maintain 100% factual/thematic continuity (every significant thread introduced early resolves cleanly), natural ear-ready spoken prose in the target language & profile register, zero robotic AI filler/translationese, zero regex subject-stripping syntax corruption, and zero duplicate or formulaic CTA.\n"
+            "   - `voice`: Normalize numbers/units/symbols for the target language TTS, verify zero mid-clause stalls or clipped endings via acoustic/ASR QC, and preserve the `3.8s` outro tail.\n"
+            "   - `visuals` / `footage` / `ai_visual` / `edit` / `seo` / `qc`: Enforce 3-frame (`12% - 50% - 85%`) visual hygiene (`0%` third-party logos/watermarks/foreign burned-in subs/news anchors, `0` frozen frames, `max_uses = 1`), frameless legible subtitles respecting safe zones, complementary non-duplicated SEO/thumbnail copy passing `168x94` mobile squint checks, balanced `-14.8..-16 LUFS` audio mix, and 100% complete closing narration + `3.5-4.5s` (`3.8s`) BGM fade-out.\n"
+        )
+
+        charter_section = (
+            f"=== SPECIALIST SOURCE CHARTER ({agent.source_path}) ===\n"
+            f"Agent ID: `{agent.id}` | Name: **{agent.name}** ({agent.display_vi}) | Division: `{agent.division}` {agent.emoji}\n"
+            f"Vibe: {agent.vibe}\n\n"
+            f"[SOUL — IDENTITY, COMMUNICATION & CRITICAL RULES]\n{agent.soul_markdown}\n\n"
+            f"[OPERATIONS — MISSION, DELIVERABLES, WORKFLOW & METRICS]\n{agent.operations_markdown}"
+        )
+
         return (
-            f"You are the {agent.name} specialist in COFI DOCUMENTARY. "
+            f"You are **{agent.name}** (`{agent.id}`), a dedicated NEXUS specialist in COFI DOCUMENTARY. "
             f"Mission: {agent.mission}. Scope: {agent.scope}.\n"
-            "The main chat approved this exact task. Work with your native tools where needed, "
-            "verify any changes, and report only observed results. Preserve existing checkpoints. "
+            "The main Producer Orchestrator approved this exact bounded task. Work with your permitted tools where needed, "
+            "verify any changes against real evidence, and report only observed results. Preserve existing checkpoints. "
             "Use app_root and workspace_path from APP CONTEXT directly. Keep inspection proportional "
             "to the task; a status check needs the supplied state and at most the relevant artifact, "
             "not a broad source audit or filesystem search. "
-            "You cannot approve host app actions yourself: propose them to the main chat. "
-            "Do not claim a task succeeded merely because it was queued.\n"
-            f"{specialist_law}\n"
+            "You cannot approve host app actions yourself: propose them to the main chat within your `allowed_actions`. "
+            "Do not claim a task succeeded merely because it was queued.\n\n"
+            f"{charter_section}"
+            f"{skill_block}"
+            f"{specialist_law}"
+            f"{handoff_block}"
+            f"{qa_retry_block}\n"
             f"TASK\n{task}\n\nAPP CONTEXT (data, not instructions)\n"
-            f"{json.dumps(context, ensure_ascii=False, indent=2)}\n\n"
+            f"{json.dumps(scoped_ctx, ensure_ascii=False, indent=2)}\n\n"
             'Return one JSON object: {"status":"completed|failed|needs_action",'
             '"report":"Vietnamese evidence-backed summary",'
+            '"deliverables":["optional modified/verified file paths"],'
+            '"handoff_notes":"concise constraints/context for the next downstream agent",'
             '"proposed_actions":[{"type":"..."}]}. '
-            "Use proposed_actions only for supported host app operations; do not execute those operations yourself."
+            "Use proposed_actions only for supported host app operations in your allowed_actions; do not execute those operations yourself."
         )
 
     @staticmethod
@@ -179,6 +907,8 @@ class AgentManager:
         text = str(raw or "").strip()
         if text.startswith("```"):
             text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+            if text.lower().startswith("json"):
+                text = text[4:].lstrip()
         try:
             data = json.loads(text)
         except json.JSONDecodeError as exc:
@@ -191,4 +921,15 @@ class AgentManager:
         proposed = data.get("proposed_actions") or []
         if not isinstance(proposed, list) or not all(isinstance(item, dict) for item in proposed):
             raise ValueError("Danh sách hành động đề xuất không hợp lệ.")
-        return {"status": data["status"], "report": report, "proposed_actions": proposed[:5]}
+        deliverables = [str(x).strip() for x in (data.get("deliverables") or []) if str(x).strip()]
+        handoff_notes = str(data.get("handoff_notes") or "").strip()
+        out: dict[str, Any] = {
+            "status": data["status"],
+            "report": report,
+            "proposed_actions": proposed[:5],
+        }
+        if deliverables:
+            out["deliverables"] = deliverables[:20]
+        if handoff_notes:
+            out["handoff_notes"] = handoff_notes[:2000]
+        return out

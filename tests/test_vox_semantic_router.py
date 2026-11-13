@@ -477,7 +477,7 @@ class TestFinancialForensicVoxAndProfileIntegration:
         assert cyber_prof["editing_dna"]["visual_mix"]["motion"] == 0.30
         assert cyber_prof["editing_dna"]["visual_mix"]["ai"] == 0.25
         assert len(cyber_prof["editorial_dna"]["narrative"]["structure_30m"]) == 5
-        assert cyber_prof["editorial_dna"]["narrative"]["cta_architecture"]["mode"] == "dynamic_case_adaptive_2_touchpoints"
+        assert cyber_prof["editorial_dna"]["narrative"]["cta_architecture"]["mode"] == "story_driven_zero_repeat_organic_cta"
 
         svc = EditingDnaService()
         presets = svc.get_presets()
@@ -543,14 +543,16 @@ class TestFinancialForensicVoxAndProfileIntegration:
 
         workspace = Path(job["workspace"])
         plan_prompt = build_phase_prompt(job, "plan", workspace, tmp_path / "remotion")
-        assert "TRUE-CRIME-GRADE FULL AI UPFRONT + REAL CASE FOOTAGE & BESPOKE VOX AT EDIT STRATEGY" in plan_prompt
+        assert "CYBER-FINANCIAL AUDIT + 3-TIER COMPOSABLE LEGO VOX MOTION GRAMMAR STRATEGY" in plan_prompt
         assert "edit_footage_fetcher" in plan_prompt
+        assert "VOX_COMPOSABLE_LEGO_GRAMMAR_DIRECTOR_V13" in plan_prompt
 
         edit_prompt = build_phase_prompt(job, "edit", workspace, tmp_path / "remotion")
-        assert "TRUE-CRIME-GRADE FULL-SCRIPT-DRIVEN EDIT & BESPOKE VOX MODE" in edit_prompt
-        assert "documentary.edit_footage_fetcher" in edit_prompt
-        assert "VOX_01..VOX_N.mp4" in edit_prompt
-        assert "50% Footage Thật + 30% Vox Motion + 10% Ảnh AI + 10% Linh Hoạt" in edit_prompt
+        assert "CYBER-FINANCIAL AUDIT + 3-TIER COMPOSABLE LEGO VOX EDIT MODE" in edit_prompt
+        assert "VOX_COMPOSABLE_LEGO_GRAMMAR_DIRECTOR_V13" in edit_prompt
+        assert "#040C18" in edit_prompt
+        assert "validate-vox-newsroom-ast.mjs --preset financial_forensic_vox" in edit_prompt
+        assert "SPATIAL_DARK_CINEMA_DIRECTOR" not in edit_prompt
 
     def test_dna_mix_50_footage_30_vox_10_ai_10_flexible_strictly_enforced(self):
         from collections import Counter
@@ -613,6 +615,48 @@ class TestFinancialForensicVoxAndProfileIntegration:
         assert slot_counts_tc["vox_motion"] == 12         # 30%
         assert slot_counts_tc["ai_visual"] == 4           # 10%
         assert slot_counts_tc["flexible_reserve"] == 4    # 10%
+
+    def test_two_layer_visual_prompts_and_real_footage_vox_binding(self):
+        from documentary.vox_engine import VoxSemanticRouter, is_vox_satellite_enabled
+
+        assert is_vox_satellite_enabled({"channel_profile_id": "channel-kr-truecrime-director-v2"}) is True
+        router = VoxSemanticRouter()
+        beats = [
+            {
+                "beat_id": "B001-V01",
+                "narration_text": "이 집은 산비탈을 깎아 지은 구조여서 창문 바로 아래가 평지가 아니라 사 미터가 넘는 절벽이었습니다.",
+                "prompt": "AI keyframe prompt for B001",
+            },
+            {
+                "beat_id": "B002-V01",
+                "narration_text": "진흙 위에 찍힌 운동화 자국은 삼십팔 호 크기였고, 오른쪽 뒤꿈치 바깥쪽이 유독 심하게 닳아 있었습니다.",
+                "prompt": "AI keyframe prompt for B002",
+            },
+            {
+                "beat_id": "B003-V01",
+                "narration_text": "다리가 부러진 채 붙잡힌 사내의 낡은 배낭 바닥에서는, 작은 검은색 비닐 수첩 하나가 나왔습니다.",
+                "prompt": "AI keyframe prompt for B003",
+            },
+        ]
+        routed = router.route_timeline(beats, {"channel_profile_id": "channel-kr-truecrime-director-v2"})
+        seen_vox_prompts = set()
+        seen_sigs = set()
+        for idx, b in enumerate(routed):
+            assert "visual_layers" in b
+            assert "layer_1_ai_visual" in b["visual_layers"]
+            assert "layer_2_vox_design" in b["visual_layers"]
+            assert b["vox_design_prompt"]
+            assert b["ai_cutout_prop_prompt"]
+            spec = b["vox_blueprint_spec"]
+            assert spec["evidence_media_mode"] == "real_footage_broadcast_motion"
+            assert spec["real_footage_binding"]["clip_id"] == f"S_F{idx + 1:03d}"
+            assert spec["real_footage_binding"]["forbid_synthetic_pil_drawing"] is True
+            assert spec["real_footage_binding"]["forbid_blind_svg_scribble"] is True
+            assert len(spec["clauses_t1_t2_t3"]) == 3
+            assert b["vox_design_prompt"] not in seen_vox_prompts
+            assert spec["vox_scene_signature"] not in seen_sigs
+            seen_vox_prompts.add(b["vox_design_prompt"])
+            seen_sigs.add(spec["vox_scene_signature"])
 
 
 if __name__ == "__main__":

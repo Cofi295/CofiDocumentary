@@ -1129,8 +1129,8 @@ def test_gemini_gateway_hidden_console_tree_keeps_terminal_children_off_desktop(
 
     creationflags, startupinfo = gateway._launch_window_options(str(agy_real))
 
-    assert creationflags & getattr(__import__("subprocess"), "CREATE_NEW_CONSOLE", 0)
-    assert not (creationflags & getattr(__import__("subprocess"), "CREATE_NO_WINDOW", 0))
+    assert creationflags & getattr(__import__("subprocess"), "CREATE_NO_WINDOW", 0)
+    assert not (creationflags & getattr(__import__("subprocess"), "CREATE_NEW_CONSOLE", 0))
     assert startupinfo is not None
     assert startupinfo.dwFlags & getattr(__import__("subprocess"), "STARTF_USESHOWWINDOW", 1)
     assert startupinfo.wShowWindow == getattr(__import__("subprocess"), "SW_HIDE", 0)

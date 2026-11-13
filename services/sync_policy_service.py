@@ -22,7 +22,7 @@ JOBS_DIR = DATA_DIR / "jobs"
 
 _file_lock = threading.RLock()
 
-# Multi-language prohibited / violent graphic tokens
+# Multi-language prohibited / violent graphic & yellow-dollar tokens
 PROHIBITED_TERMS = [
     # Vietnamese
     "máu me",
@@ -32,17 +32,28 @@ PROHIBITED_TERMS = [
     "vũ khí sát thương",
     "man rợ",
     "phanh thây",
+    "phân xác",
     "xác chết phân hủy",
+    "hiếp dâm",
+    "cưỡng hiếp",
     # Korean
     "참수",
     "토막 살인",
-    "선혈",
-    "유혈 낭자",
+    "토막살인",
+    "시신 훼손",
     "시체 훼손",
+    "사체 훼손",
+    "피투성이 시신",
+    "선혈이 낭자",
+    "유혈 낭자",
+    "성폭행",
+    "강간",
+    "아동 학대",
     # English
     "decapitation",
     "dismemberment",
     "bloody corpse",
+    "mutilated body",
     "extreme gore",
     "graphic murder scene",
 ]
@@ -126,8 +137,9 @@ class SyncPolicyService:
             dur = float(beat.get("duration_sec", beat.get("target_duration_sec", 5.0)))
             total_duration += dur
 
-            # Hold freeze check (> 8.0s without motion override)
-            if dur > 8.0 and not beat.get("has_motion_override", False):
+            # Hold freeze check (> 8.0s without motion override or motivated static_tripod)
+            motivated_static = beat.get("camera_mode") == "static_tripod" or beat.get("motivated_static_tripod")
+            if dur > 8.0 and not beat.get("has_motion_override", False) and not motivated_static:
                 holds_over_8s.append({
                     "beat_id": beat.get("beat_id", f"B{i+1:03d}"),
                     "duration_sec": dur,
@@ -143,13 +155,16 @@ class SyncPolicyService:
                     "remedy": "assign_contextual_fallback_asset",
                 })
 
-        # 2. Beat to SRT timestamp alignment
+        # 2. Beat to SRT timestamp alignment (honoring intentional J-Cut / L-Cut split-edits & voiceless bridges)
         for i, beat in enumerate(beats):
+            if beat.get("voiceless_bridge") or beat.get("split_edit"):
+                continue
             if i < len(srt_segments):
                 srt_dur = float(srt_segments[i].get("end", 0) - srt_segments[i].get("start", 0))
                 beat_dur = float(beat.get("duration_sec", beat.get("target_duration_sec", 5.0)))
+                split_allowance = float(beat.get("audio_lead_sec") or 0.0) + float(beat.get("visual_linger_sec") or 0.0)
                 drift = abs(beat_dur - srt_dur)
-                if drift > 0.5:
+                if drift > (0.5 + split_allowance):
                     misaligned.append({
                         "beat_id": beat.get("beat_id", f"B{i+1:03d}"),
                         "beat_duration": round(beat_dur, 2),
@@ -167,7 +182,16 @@ class SyncPolicyService:
         # 4. Editorial overlay ratio
         motion_beats = sum(
             1 for b in beats
-            if b.get("visual_type") in {"motion", "hud", "2.5d_map", "annotated_footage"}
+            if b.get("visual_type") in {
+                "motion",
+                "hud",
+                "2.5d_map",
+                "annotated_footage",
+                "vox_25d_scene",
+                "vox_newsroom_motion_text",
+                "cinema_text",
+                "remotion_motion",
+            }
             or b.get("has_motion_override")
             or b.get("telemetry_hud_overlay")
         )

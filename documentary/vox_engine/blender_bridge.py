@@ -9,6 +9,10 @@ import shutil
 from pathlib import Path
 from typing import Any
 
+from .composable_scene_graph import (
+    LOCKED_VOX_STYLE_DNA,
+    build_composable_vox_scene_spec,
+)
 from .renderer import VoxSceneRenderer
 from .semantic_router import VOX_ARCHETYPE_RULES, build_voice_spec_for_beat
 
@@ -50,8 +54,9 @@ ARCHETYPE_PREVIEW_URLS: dict[str, str] = {
 }
 
 
-def map_archetype_to_blender_3d_scene(archetype_id: str) -> dict[str, Any] | None:
-    return None
+def map_archetype_to_blender_3d_scene(archetype_id: str, beat: dict[str, Any] | None = None) -> dict[str, Any] | None:
+    spec = build_composable_vox_scene_spec(beat=beat or {"scene_archetype": archetype_id})
+    return spec.get("blender_3d_stage")
 
 
 class VoxBlenderBridge:
@@ -117,6 +122,12 @@ class VoxBlenderBridge:
             voice_spec = dict(beat.get("voice_spec") or build_voice_spec_for_beat(beat, beat_index=idx))
             voice_spec["beat_id"] = beat_id
             voice_spec["vox_slot_index"] = idx
+            composable_spec = build_composable_vox_scene_spec(beat=beat, voice_spec=voice_spec)
+            voice_spec["sfx_events"] = composable_spec["sfx_events"]
+            voice_spec["semantic"] = composable_spec["semantic"]
+            voice_spec["blender_3d_stage"] = composable_spec["blender_3d_stage"]
+            beat["vox_sfx_events"] = composable_spec["sfx_events"]
+            beat["composable_scene_spec"] = composable_spec
             beat_duration = float(voice_spec.get("duration_sec") or 6.0)
             narration = str(voice_spec.get("narration_text") or "").strip()
             preview_url = ARCHETYPE_PREVIEW_URLS.get(arch, "/static/vox_studio/preview_00_cinema_open.jpg")

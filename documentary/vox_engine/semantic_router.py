@@ -1,13 +1,40 @@
 """True Crime Animated Vox & Real Satellite Semantic Scene Router.
 
-Analyzes spoken voice narration (Korean / Vietnamese) to semantically route beats to matching animated Vox & Satellite Map scenes with sliding-window variety, voice-duration & clause synchronization (`voice_spec`), and channel profile isolation to channel-e544a64b7c.
+Analyzes spoken voice narration (Korean / Vietnamese) to semantically route beats to matching animated Vox & Satellite Map scenes with sliding-window variety, voice-duration & clause synchronization (`voice_spec`), and preset/visual strategy isolation.
 """
 
 from __future__ import annotations
 
+import importlib
 import re
+import sys
 from typing import Any, Dict, List, Optional
 from documentary.audio_library_manager import select_contextual_sfx_for_beat
+
+_reloaded_submods: dict[str, Any] = {}
+for _submod_name in (
+    "documentary.vox_engine.typography",
+    "documentary.vox_engine.archetypes",
+    "documentary.vox_engine.composable_scene_graph",
+    "documentary.store",
+    "documentary.ai_visual",
+    "documentary.footage",
+    "documentary.thumbnail_studio",
+):
+    try:
+        _submod = sys.modules.get(_submod_name)
+        if _submod is not None:
+            _reloaded_submods[_submod_name] = importlib.reload(_submod)
+        else:
+            _reloaded_submods[_submod_name] = importlib.import_module(_submod_name)
+    except Exception:
+        pass
+try:
+    from documentary.hot_reload import _rebind_live_instances
+    if _reloaded_submods:
+        _rebind_live_instances(_reloaded_submods)
+except Exception:
+    pass
 
 
 VOX_ARCHETYPE_RULES: dict[str, dict[str, Any]] = {
@@ -75,17 +102,17 @@ VOX_ARCHETYPE_RULES: dict[str, dict[str, Any]] = {
         "priority_score": 96,
     },
     "#M1": {
-        "cluster": "satellite_zoom",
-        "label": "Zoom x16 Tactical Rooftop Store / Compound",
+        "cluster": "satellite_corridor",
+        "label": "Tactical Rooftop Store / Compound Satellite Plate (0% Camera Zoom)",
         "regex_ko": r"(매점|학교|캠퍼스|지붕|옥상|건물|급습|현장\s*포위|주소|골목\s*안|매점\s*주인|아파트\s*단지|산스화위안|4동)",
         "regex_vi": r"(tiệm\s*tạp\s*hóa|mái\s*nhà|trường\s*học|khuôn\s*viên|nóc\s*nhà|đột\s*kích|bao\s*vây|tạp\s*hóa\s*trường|khu\s*chung\s*cư|tòa\s*4)",
         "priority_score": 92,
     },
     "#M6": {
-        "cluster": "satellite_zoom",
-        "label": "Split Dual Satellite (Macro vs Micro)",
-        "regex_ko": r"(광역.*좁혀졌|도심.*매점|위성.*분할|확대.*포착|줌인|광역.*정밀|항저우.*단지)",
-        "regex_vi": r"(thu\s*hẹp.*phạm\s*vi|vệ\s*tinh.*phóng\s*to|từ\s*toàn\s*cảnh.*đến\s*chi\s*tiết|chia\s*đôi\s*vệ\s*tinh|vệ\s*tinh\s*kép)",
+        "cluster": "satellite_corridor",
+        "label": "Split Dual Satellite Plate (Macro vs Micro, 0% Camera Zoom)",
+        "regex_ko": r"(광역.*좁혀졌|도심.*매점|위성.*분할|포착|광역.*정밀|항저우.*단지)",
+        "regex_vi": r"(thu\s*hẹp.*phạm\s*vi|từ\s*toàn\s*cảnh.*đến\s*chi\s*tiết|chia\s*đôi\s*vệ\s*tinh|vệ\s*tinh\s*kép)",
         "priority_score": 88,
     },
     "#M2": {
@@ -259,7 +286,7 @@ def split_narration_into_clauses(narration_text: str, max_clauses: int = 5) -> l
     """Splits a spoken narration sentence into 1..N (up to max_clauses) natural broadcast clauses for flexible progressive reveal."""
     text = str(narration_text or "").strip()
     if not text:
-        return ["수사 기록 정밀 분석 진행 중"]
+        return ["Evidence Analysis In Progress"]
 
     # Step 1: Split on sentence punctuation, em-dashes, commas, or Korean connective transitions
     raw_parts = re.split(
@@ -338,7 +365,8 @@ def _extract_clause_focus_tag(clause_text: str, idx: int) -> str:
         return f"{words[0]} {words[1]}"[:16]
     if words:
         return words[0][:16]
-    return f"핵심 요지 0{idx + 1}"
+    is_ko = any("\uac00" <= c <= "\ud7a3" for c in clause_text)
+    return f"핵심 요지 0{idx + 1}" if is_ko else f"Key Point 0{idx + 1}"
 
 
 def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict[str, Any]:
@@ -383,6 +411,11 @@ def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict
 
     clause_focus_tags = [_extract_clause_focus_tag(c, i) for i, c in enumerate(clauses)]
 
+    is_ko = (
+        str(beat.get("language") or "").lower().startswith("ko")
+        or any("\uac00" <= c <= "\ud7a3" for c in narration)
+    )
+
     metrics = []
     for m in _METRIC_RE.findall(narration):
         m_clean = m.strip()
@@ -393,14 +426,16 @@ def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict
             metrics.append(c_tag)
     if not metrics:
         words = [w.strip(".,?!\"'") for w in narration.split() if len(w.strip(".,?!\"'")) >= 2]
-        metrics = words[:4] if words else ["수사 단서", "정밀 분석", "증거 대조"]
+        fallback_metrics = ["수사 단서", "정밀 분석", "증거 대조"] if is_ko else ["FORENSIC EVIDENCE", "DETAILED ANALYSIS", "CROSS-CHECK"]
+        metrics = words[:4] if words else fallback_metrics
 
     beat_id = str(beat.get("beat_id") or beat.get("id") or f"B{beat_index + 1:03d}").strip()
     act_label = str(beat.get("act") or beat.get("chapter") or f"ACT {(beat_index // 65) + 1}").strip()
-    location_label = str(beat.get("location") or beat.get("header_ko") or "형사 과학수사 증거 분석실").strip()
+    default_loc = "형사 과학수사 증거 분석실" if is_ko else "FORENSIC ANALYSIS LAB"
+    location_label = str(beat.get("location") or beat.get("header_ko") or default_loc).strip()
     is_callback = bool(beat.get("is_purposeful_callback") or _CALLBACK_RE.search(narration))
 
-    # Build a concise Korean header from the first clause or beat title
+    # Build a concise header from the first clause or beat title
     first_clause = clauses[0] if clauses else narration
     header_ko = str(beat.get("vox_header_ko") or first_clause[:28]).strip()
     sub_ko = str(beat.get("vox_sub_ko") or (clauses[1][:42] if len(clauses) > 1 else first_clause[:42])).strip()
@@ -421,16 +456,28 @@ def build_voice_spec_for_beat(beat: dict[str, Any], beat_index: int = 0) -> dict
         "sub_ko": sub_ko,
         "is_purposeful_callback": is_callback,
         "variation_seed": beat_index * 37 + sum(ord(c) for c in beat_id),
-        "contextual_sfx": select_contextual_sfx_for_beat(narration, str(beat.get("scene_archetype") or ""), beat_index),
+        "contextual_sfx": select_contextual_sfx_for_beat(
+            narration,
+            str(beat.get("scene_archetype") or beat.get("voxArchetype") or beat.get("archetype") or "").strip(),
+            beat_index=beat_index,
+        ),
     }
 
 
 def is_vox_satellite_enabled(job: dict[str, Any], profile: dict[str, Any] | None = None) -> bool:
     """Verifies whether Vox & Satellite engine should activate for this job/profile.
 
-    Strictly activates for True Crime profile (channel-e544a64b7c) or forensic_noir preset,
-    while strictly protecting non-crime profiles (channel-1e24de3ab5, channel-aa913eb90d, channel-f6ec4dfff3).
+    Strictly activates for forensic_noir / true_crime_noir presets or visual strategies,
+    while protecting non-crime profiles from unintended activation.
     """
+    for cand_ed in (
+        job.get("editing_dna"),
+        (profile or {}).get("editing_dna") if isinstance(profile, dict) else None,
+        (job.get("channel_profile_snapshot") or {}).get("editing_dna") if isinstance(job.get("channel_profile_snapshot"), dict) else None,
+    ):
+        if isinstance(cand_ed, dict) and isinstance(cand_ed.get("vox_satellite_enabled"), bool):
+            return bool(cand_ed["vox_satellite_enabled"])
+
     profile_id = str(
         job.get("channel_profile_id")
         or (profile or {}).get("id")
@@ -438,8 +485,8 @@ def is_vox_satellite_enabled(job: dict[str, Any], profile: dict[str, Any] | None
         or ""
     ).strip()
 
-    # Strict whitelist for True Crime & Chinese High-Tech/Financial Crime channels
-    if profile_id == "channel-e544a64b7c":
+    # Legacy fallback when job dict has only channel_profile_id without editing_dna snapshot
+    if profile_id in {"channel-e544a64b7c", "channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2"}:
         return True
 
     # Strict blacklist for known non-crime channels
@@ -450,9 +497,10 @@ def is_vox_satellite_enabled(job: dict[str, Any], profile: dict[str, Any] | None
     preset_id = str(
         (job.get("editing_dna") or {}).get("preset_id")
         or ((profile or {}).get("editing_dna") or {}).get("preset_id")
+        or ((job.get("channel_profile_snapshot") or {}).get("editing_dna") or {}).get("preset_id")
         or ""
     ).strip().lower()
-    if preset_id == "forensic_noir":
+    if preset_id in {"forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10"}:
         return True
 
     strategy = str(
@@ -464,6 +512,23 @@ def is_vox_satellite_enabled(job: dict[str, Any], profile: dict[str, Any] | None
         return True
 
     return False
+
+
+def calculate_proportional_vox_scenes(duration_minutes: float) -> int:
+    """Calculate dynamic script-proportional Vox scene count based on duration (replaces fixed 31 quota).
+    - 12 min -> 8–15 scenes
+    - 20 min -> 16–24 scenes
+    - 30 min -> 25–38 scenes
+    """
+    m = float(duration_minutes or 20.0)
+    if m <= 0.0:
+        return 10
+    if m <= 14.0:
+        return max(8, min(15, int(round(m * 0.95))))
+    elif m <= 24.0:
+        return max(16, min(24, int(round(m * 0.95))))
+    else:
+        return max(25, min(38, int(round(m * 1.0))))
 
 
 class VoxSemanticRouter:
@@ -517,9 +582,8 @@ class VoxSemanticRouter:
             if arch_id == "cinema_full":
                 continue
             if arch_id.startswith("#FIN"):
-                _meta_prof = str((metadata or {}).get("channel_profile_id") or "").strip()
                 _meta_preset = str((metadata or {}).get("preset_id") or "").strip()
-                if _meta_prof != "channel-cn-cyber-finance-kr" and _meta_preset != "financial_forensic_vox":
+                if _meta_preset != "financial_forensic_vox":
                     continue
 
             match_ko = bool(re.search(rule["regex_ko"], text, re.IGNORECASE))
@@ -593,8 +657,7 @@ class VoxSemanticRouter:
 
         Enforces:
         1. Universal 4-Tier Semantic Visual Priority Rule (Real Video -> Real Photo -> Blender Vox -> AI Image).
-        2. Locked Channel DNA Visual Mix (50% Real Footage + 30% Vox Motion + 10% AI Visual + 10% Flexible Reserve)
-           in full documentaries (`len(beats) > 15`), spacing out Vox beats (`min_vox_gap >= 2`) so Vox never exceeds 30%.
+        2. Dynamic Script-Proportional Vox Scene Counts: scales naturally with episode duration (replaces fixed 31 limits).
         3. Full Voice Duration & Clause Sync: attaches `voice_spec` (`duration_sec`, `clauses`,
            `clause_windows`, `clause_focus_tags`, `metrics`, `variation_seed`) to every beat.
         """
@@ -606,7 +669,17 @@ class VoxSemanticRouter:
         used_archetypes: dict[str, int] = {}
         total_beats = len(beats)
         is_full_documentary = total_beats > 15
-        vox_quota = max(1, round(total_beats * 0.30)) if is_full_documentary else total_beats
+        target_dur = float(
+            job.get("target_duration_minutes")
+            or (profile or {}).get("target_duration_minutes")
+            or 0.0
+        )
+        if target_dur > 0 and is_full_documentary:
+            vox_quota = min(total_beats, calculate_proportional_vox_scenes(target_dur))
+        elif is_full_documentary:
+            vox_quota = max(1, round(total_beats * 0.30))
+        else:
+            vox_quota = total_beats
 
         _prof_id = str(
             job.get("channel_profile_id")
@@ -656,15 +729,51 @@ class VoxSemanticRouter:
                         "voice_spec": voice_spec,
                     }
                 )
+            prev_vox_spec: dict[str, Any] | None = None
+            for idx, r_beat in enumerate(routed_beats):
+                attach_two_layer_visual_prompts(
+                    r_beat,
+                    beat_index=idx,
+                    total_beats=total_beats,
+                    prev_vox_spec=prev_vox_spec,
+                )
+                if str(r_beat.get("dna_visual_slot") or "") == "vox_motion":
+                    prev_vox_spec = r_beat.get("vox_blueprint_spec")
             return routed_beats
 
-        # Full-documentary pass: score all beats first, then pick strictly 30% Vox beats spaced across timeline
-        pre_scores: list[tuple[float, int]] = []
+        # Meaning-driven flexible pass (0% fixed quota cap, 0% periodic min_gap spacing):
+        # Priority #1: Real archival footage (`real_footage`) when authentic footage applies.
+        # Priority #2: VOX illustration (`vox_motion` — <Desk> or <GeoJson3DMapStage>) whenever real footage is absent.
+        # Priority #3 (Last Resort Only): AI image (`ai_visual`) strictly for closed-room psychological beats.
         voice_specs: list[dict[str, Any]] = []
+        selected_vox_indices: set[int] = set()
         for idx, beat in enumerate(beats):
             text = str(beat.get("narration_text") or beat.get("text") or "").strip()
             v_spec = build_voice_spec_for_beat(beat, beat_index=idx)
             voice_specs.append(v_spec)
+            vtype = str(beat.get("visual_type") or "").strip().lower()
+            vroute = str(beat.get("visual_route") or "").strip().lower()
+            intent = str(beat.get("framing_motion_intent") or "").strip()
+            src_prio = str(beat.get("source_priority") or "").strip().lower()
+
+            if (
+                vtype in {"vox", "vox_motion"}
+                or vroute in {"vox", "vox_motion"}
+                or intent.startswith(("[VOX_NEWSROOM", "V23 "))
+            ):
+                selected_vox_indices.add(idx)
+                continue
+
+            if vtype == "cinema_text" or vroute == "cinema_text" or intent.startswith(("[CINEMA_TEXT", "FramelessCinemaTextBeat")):
+                continue
+
+            if intent.startswith(("AUTHENTIC_CASE_ARCHIVAL_FOOTAGE_BACKBONE", "[REAL_FTG")) or src_prio in {"must_real", "footage_only"}:
+                continue
+
+            if intent.startswith(("CLOSED_ROOM_PROFILE_AI_RECONSTRUCTION", "[AI_IMAGE")) or vroute == "ai_visual" or vtype in {"ai_reconstruction", "ai_visual"}:
+                continue
+
+            # For beats without explicit real footage or closed-room AI lock, probe semantic VOX match
             self.reset_history()
             probe = self.route_beat(
                 text,
@@ -676,24 +785,8 @@ class VoxSemanticRouter:
                 },
             )
             p_score = float(probe.get("score") or 0.0) if probe.get("archetype") != "cinema_full" else 0.0
-            if re.search(r"\d", text):
-                p_score += 4.0
-            pre_scores.append((p_score, idx))
-
-        selected_vox_indices: set[int] = set()
-        sorted_candidates = sorted(pre_scores, key=lambda x: (-x[0], x[1]))
-        for min_gap in (2, 1):
-            for sc, idx in sorted_candidates:
-                if len(selected_vox_indices) >= vox_quota:
-                    break
-                if idx in selected_vox_indices:
-                    continue
-                if min_gap == 2 and sc <= 0.0:
-                    continue
-                if all(abs(idx - chosen) >= min_gap for chosen in selected_vox_indices):
-                    selected_vox_indices.add(idx)
-            if len(selected_vox_indices) >= vox_quota:
-                break
+            if p_score >= 95.0 and vroute != "footage":
+                selected_vox_indices.add(idx)
 
         self.reset_history()
         for idx, beat in enumerate(beats):
@@ -744,14 +837,38 @@ class VoxSemanticRouter:
             )
 
         assign_non_vox_dna_slots(routed_beats, total_beats)
+        prev_vox_spec: dict[str, Any] | None = None
+        for idx, r_beat in enumerate(routed_beats):
+            attach_two_layer_visual_prompts(
+                r_beat,
+                beat_index=idx,
+                total_beats=total_beats,
+                prev_vox_spec=prev_vox_spec,
+            )
+            if str(r_beat.get("dna_visual_slot") or "") == "vox_motion":
+                prev_vox_spec = r_beat.get("vox_blueprint_spec")
         return routed_beats
 
 
 _GEO_SATELLITE_MAP_NEEDED_RE = re.compile(
-    r"(톈진|미얀마|두바이|런던|운남|쿤밍|베이징|바이인|국경|위성|지도|경로|루트|도주|이동|해외|캄보디아|필리핀|동남아|대륙\s*횡단|"
-    r"Thiên\s*Tân|Myanmar|Dubai|London|Vân\s*Nam|Bắc\s*Kinh|biên\s*giới|vệ\s*tinh|bản\s*đồ|lộ\s*trình|đường\s*trốn|xuyên\s*quốc\s*gia)",
+    r"(escape\s*route|escape\s*vector|fled\s*to|infiltrat|extradit|police\s*pursuit|dragnet|stakeout\s*route|"
+    r"도주\s*경로|도주\s*루트|탈출\s*경로|잠입|도피\s*행각|압송|호송|추적망|포위망|수색망.*확대|기동대.*출동|건너가|넘어가|숨어들었|"
+    r"검문소.*통과|검문소.*뚫|국도를\s*따라|산악.*도주|산길로\s*도주|이동\s*경로|"
+    r"đường\s*trốn|lộ\s*trình\s*đào\s*tẩu|lẩn\s*trốn\s*từ|xâm\s*nhập\s*vào|áp\s*giải|truy\s*kích|khép\s*vòng\s*vây|mở\s*rộng\s*truy\s*xét)",
     re.IGNORECASE,
 )
+
+_GEO_NON_MOVEMENT_EXCLUDE_RE = re.compile(
+    r"(사투리|억양|방언|말투|목소리|노래를|가수|무대\s*진행|참가\s*신청서|원서|이력서|심리|표정|눈빛|법정에서|재판장|중환자실|부검\s*결과)",
+    re.IGNORECASE,
+)
+
+
+def _is_voice_movement_or_pursuit_sentence(text: str) -> bool:
+    clean = str(text or "").strip()
+    if not clean or _GEO_NON_MOVEMENT_EXCLUDE_RE.search(clean):
+        return False
+    return bool(_GEO_SATELLITE_MAP_NEEDED_RE.search(clean))
 
 
 def resolve_scene_motion_treatment(
@@ -761,56 +878,24 @@ def resolve_scene_motion_treatment(
     clauses: list[str],
     beat_index: int = 0,
 ) -> tuple[str, bool]:
-    """Resolves the 30% Motion + Map slot under Option B:
-    - Drops static/newspaper/table Vox boards (`render_vox_board = False`) and uses direct scene motion
-      on Real Footage / AI Keyframes (`kinetic_metric_overlay`, `split_screen_ab`, `forensic_macro_loupe`,
-      `multi_cut_clause_montage`, `optical_depth_push`).
-    - Enables `render_vox_board = True` (`satellite_gis_map_flight`) ONLY when a geographic/satellite map
-      is genuinely needed by the spoken narration.
+    """Resolves the bespoke VOX motion treatment for a spoken sentence (`0%` modulo fallback):
+    - Routes to `satellite_gis_map_flight` (`<GeoJson3DMapStage>`) ONLY when the sentence genuinely
+      describes a suspect escape/infiltration route or police pursuit/dragnet/extradition route.
+    - Otherwise routes to a bespoke per-sentence `<Desk>` cut-and-paste illustration derived from the sentence's meaning.
     """
     text = str(narration_text or "").strip()
-    is_map_arch = (
-        cluster in {"gis_map", "satellite", "map"}
-        or arch_id.startswith("#M")
-        or "GIS" in arch_id
-        or "SATELLITE" in arch_id
-    )
-    if is_map_arch and _GEO_SATELLITE_MAP_NEEDED_RE.search(text):
-        return ("satellite_gis_map_flight", True)
-    if _GEO_SATELLITE_MAP_NEEDED_RE.search(text) and re.search(r"(지도|위성|루트|경로|횡단|bản\s*đồ|vệ\s*tinh|lộ\s*trình)", text, re.IGNORECASE):
+    if _is_voice_movement_or_pursuit_sentence(text):
         return ("satellite_gis_map_flight", True)
 
-    if re.search(r"(출금\s*정지|마비|멈춰|증발|폭락|붕괴|돌려막기|러그풀|rug\s*pull|đóng\s*băng|sập\s*sàn)", text, re.IGNORECASE):
-        return ("exchange_candlestick_crash", False)
-    if re.search(r"(믹서|텀블러|차명\s*계좌|세탁|분산|쪼개|페이퍼컴퍼니|익명\s*지갑|mixer|tumbler|rửa\s*tiền)", text, re.IGNORECASE):
-        return ("crypto_tumbler_splitter", False)
-    if re.search(r"(블록체인|온체인|원장|해시|스마트\s*컨트랙트|콜드월렛|비트코인|이더리움|테더|BTC|ETH|USDT|0\.3초|on-chain|blockchain|ví\s*lạnh)", text, re.IGNORECASE):
-        return ("crypto_onchain_ledger_trace", False)
-    if re.search(r"(95\.6%|207개|196개|비율|비중|유령\s*회사|유령\s*법인|전수\s*실사|tỷ\s*lệ|công\s*ty\s*ma)", text, re.IGNORECASE):
-        return ("donut_matrix_audit_chart", False)
-    if re.search(r"(환수|적자|결손|차이|비교|대비|총\s*모집|thâm\s*hụt|thu\s*hồi)", text, re.IGNORECASE):
-        return ("waterfall_bar_chart", False)
-    if re.search(r"(수익률|이율|이자|연\s*\d+%|금리|배당|격차|괴리|lãi\s*suất|phân\s*kỳ)", text, re.IGNORECASE):
-        return ("dual_spline_divergence_chart", False)
-    if re.search(r"(달리|반면|대조|겉으로는|실제로는|양면|VS|ngược\s*lại|đối\s*chiếu)", text, re.IGNORECASE):
-        return ("split_screen_ab", False)
-    if re.search(r"(화면|장부|통장|단서|포착|확대|수첩|영수증|지문|CCTV|근접|cận\s*cảnh|phóng\s*đại|vật\s*chứng)", text, re.IGNORECASE):
-        return ("forensic_macro_loupe", False)
-    if re.search(r"(\d[\d,\.]*\s*(조|억|만|천|백|원|위안|달러|%|개|명|배|초|분|시간))", text, re.IGNORECASE):
-        return ("kinetic_metric_overlay", False)
-    if len(clauses) >= 3:
-        return ("multi_cut_clause_montage", False)
-    fallbacks = (
-        "dual_spline_divergence_chart",
-        "waterfall_bar_chart",
-        "donut_matrix_audit_chart",
-        "exchange_candlestick_crash",
-        "crypto_tumbler_splitter",
-        "crypto_onchain_ledger_trace",
-        "kinetic_metric_overlay",
-        "forensic_macro_loupe",
-    )
-    return (fallbacks[beat_index % len(fallbacks)], False)
+    if re.search(r"(달리|반면|대조|겉으로는|실제로는|양면|VS|비교|불일치|모순|ngược\s*lại|đối\s*chiếu|mâu\s*thuẫn|contrast|versus)", text, re.IGNORECASE):
+        return ("bespoke_desk_contradiction_compare", True)
+    if re.search(r"(화면|장부|통장|단서|포착|확대|수첩|영수증|지문|CCTV|근접|점|흉터|얼굴|인상착의|cận\s*cảnh|phóng\s*đại|vật\s*chứng|fingerprint|loupe|증거|검증)", text, re.IGNORECASE):
+        return ("bespoke_desk_clue_isolation", True)
+    if re.search(r"(가명|신분|위장|숨기|감추|뒤집|드러나|실체|정체|서류|신청서|수배|전단|판결|선고)", text, re.IGNORECASE):
+        return ("bespoke_desk_layer_peel_dossier", True)
+    if re.search(r"(\d[\d,\.]*\s*(년|월|일|시|분|초|조|억|만|천|백|원|위안|달러|%|개|명|배|km|미터|cm|세))", text, re.IGNORECASE):
+        return ("bespoke_desk_chrono_metric_trace", True)
+    return ("bespoke_desk_cutout_collage", True)
 
 
 DNA_VISUAL_MIX_50_30_10_10: dict[str, float] = {
@@ -851,48 +936,605 @@ def assign_non_vox_dna_slots(routed_beats: list[dict[str, Any]], total_beats: in
     if m == 0:
         return
 
+    has_explicit_plan_slots = any(
+        str(routed_beats[i].get("visual_type") or "").strip().lower() in {"cinema_text", "ai_reconstruction"}
+        or str(routed_beats[i].get("visual_route") or "").strip().lower() == "ai_visual"
+        for i in non_vox_indices
+    )
+    if has_explicit_plan_slots and any(
+        str(routed_beats[i].get("visual_type") or "").strip().lower() == "cinema_text"
+        for i in non_vox_indices
+    ):
+        from .typography import resolve_contextual_motion_text_design
+
+        prev_mt_design: dict[str, Any] | None = None
+        for idx in non_vox_indices:
+            b = routed_beats[idx]
+            b["dna_mix_target"] = dict(DNA_VISUAL_MIX_50_30_10_10)
+            vtype = str(b.get("visual_type") or "").strip().lower()
+            vroute = str(b.get("visual_route") or "").strip().lower()
+            if vroute == "ai_visual" or vtype == "ai_reconstruction":
+                b["dna_visual_slot"] = "ai_visual"
+                b["editorial_layer"] = "AI_MASCOT"
+            elif vtype == "cinema_text":
+                b["dna_visual_slot"] = "flexible_reserve"
+                b["editorial_layer"] = "CINEMA_TEXT"
+                mt_design = resolve_contextual_motion_text_design(
+                    narration_text=str(b.get("narration_text") or b.get("text") or ""),
+                    beat_id=str(b.get("beat_id") or f"B{idx + 1:03d}"),
+                    beat_index=idx,
+                    prev_design=prev_mt_design,
+                )
+                b["motion_text_spec"] = mt_design
+                prev_mt_design = mt_design
+            else:
+                b["dna_visual_slot"] = "real_footage"
+                b["editorial_layer"] = "REAL_FTG"
+        for idx, b in enumerate(routed_beats):
+            if str(b.get("dna_visual_slot") or "") == "vox_motion":
+                b["editorial_layer"] = "VOX_NEWSROOM"
+        return
+
+    from .typography import resolve_contextual_motion_text_design
+
     ai_quota = min(m, max(1 if m >= 3 else 0, round(n * 0.10)))
-    flex_quota = min(max(0, m - ai_quota), max(1 if m >= 4 else 0, round(n * 0.10)))
 
     for idx in non_vox_indices:
         routed_beats[idx]["dna_visual_slot"] = "real_footage"
         routed_beats[idx]["dna_mix_target"] = dict(DNA_VISUAL_MIX_50_30_10_10)
 
-    # Pick `ai_quota` evenly spaced buckets among non_vox_indices with highest AI reconstruction affinity
+    # Pick closed-room candidates purely by sentence meaning (0% periodic bucket spacing)
     chosen_ai: set[int] = set()
     if ai_quota > 0:
-        for b_idx in range(ai_quota):
-            start_pos = int(round(b_idx * m / ai_quota))
-            end_pos = int(round((b_idx + 1) * m / ai_quota))
-            bucket = non_vox_indices[max(0, start_pos):max(start_pos + 1, end_pos)]
-            if not bucket:
+        scored_ai_candidates: list[tuple[int, int]] = []
+        for i in non_vox_indices:
+            txt_i = str(routed_beats[i].get("narration_text") or routed_beats[i].get("text") or "")
+            vroute_i = str(routed_beats[i].get("visual_route") or "").strip().lower()
+            vtype_i = str(routed_beats[i].get("visual_type") or "").strip().lower()
+            affinity = 0
+            if vroute_i == "ai_visual" or vtype_i == "ai_reconstruction":
+                affinity += 100
+            if _AI_RECONSTRUCTION_SLOT_RE.search(txt_i):
+                affinity += 50
+            if affinity > 0:
+                scored_ai_candidates.append((affinity, i))
+        scored_ai_candidates.sort(key=lambda item: (-item[0], item[1]))
+        for _, cand_i in scored_ai_candidates:
+            if len(chosen_ai) >= ai_quota:
+                break
+            if any(abs(cand_i - prev_i) < 3 for prev_i in chosen_ai):
                 continue
-            best_i = max(
-                bucket,
-                key=lambda i: (
-                    1 if _AI_RECONSTRUCTION_SLOT_RE.search(str(routed_beats[i].get("narration_text") or routed_beats[i].get("text") or "")) else 0,
-                    1 if str(routed_beats[i].get("visual_route") or "") == "ai_visual" else 0,
-                    -abs(i - bucket[len(bucket) // 2]),
-                ),
-            )
-            chosen_ai.add(best_i)
-            routed_beats[best_i]["dna_visual_slot"] = "ai_visual"
+            chosen_ai.add(cand_i)
+            routed_beats[cand_i]["dna_visual_slot"] = "ai_visual"
 
+    # Flexible Narrative Drop-Point Placement for Motion Text (0% mechanical periodic bucket spacing):
+    # Attach `flexible_reserve` / `CINEMA_TEXT` strictly at genuine narrative drop points (`is_valid_drop_point`)
+    # with at least >= 4 beats separation and 100% context-matched font/color/layout/motion.
     remaining_indices = [i for i in non_vox_indices if i not in chosen_ai]
-    r_len = len(remaining_indices)
-    if flex_quota > 0 and r_len > 0:
-        for b_idx in range(min(flex_quota, r_len)):
-            start_pos = int(round(b_idx * r_len / flex_quota))
-            end_pos = int(round((b_idx + 1) * r_len / flex_quota))
-            bucket = remaining_indices[max(0, start_pos):max(start_pos + 1, end_pos)]
-            if not bucket:
-                continue
-            best_i = max(
-                bucket,
-                key=lambda i: (
-                    1 if _FLEXIBLE_RESERVE_SLOT_RE.search(str(routed_beats[i].get("narration_text") or routed_beats[i].get("text") or "")) else 0,
-                    1 if (routed_beats[i].get("voice_spec") or {}).get("is_purposeful_callback") else 0,
-                    -abs(i - bucket[len(bucket) // 2]),
-                ),
-            )
-            routed_beats[best_i]["dna_visual_slot"] = "flexible_reserve"
+    last_ct_beat_idx = -999
+    prev_mt_design = None
+    max_flexible_drop_points = max(1, round(n * 0.10))
+    chosen_ct_count = 0
+    for idx in remaining_indices:
+        if chosen_ct_count >= max_flexible_drop_points:
+            break
+        if idx - last_ct_beat_idx < 4:
+            continue
+        b = routed_beats[idx]
+        nar_txt = str(b.get("narration_text") or b.get("text") or "")
+        is_callback = bool((b.get("voice_spec") or {}).get("is_purposeful_callback"))
+        mt_design = resolve_contextual_motion_text_design(
+            narration_text=nar_txt,
+            beat_id=str(b.get("beat_id") or f"B{idx + 1:03d}"),
+            beat_index=idx,
+            prev_design=prev_mt_design,
+        )
+        if mt_design.get("is_valid_drop_point") or is_callback:
+            b["dna_visual_slot"] = "flexible_reserve"
+            b["editorial_layer"] = "CINEMA_TEXT"
+            b["motion_text_spec"] = mt_design
+            prev_mt_design = mt_design
+            last_ct_beat_idx = idx
+            chosen_ct_count += 1
+
+
+_LENS_AND_ANGLE_RIGS: tuple[str, ...] = (
+    "35mm anamorphic low-angle ground-level tracking shot with shallow depth of field",
+    "85mm portrait telephoto tight over-the-shoulder documentary framing",
+    "24mm wide architectural interior perspective with dramatic chiaroscuro doorway shadows",
+    "100mm macro forensic close-up at 15-degree oblique inspection angle under raking side-light",
+    "50mm eye-level observational handheld documentary framing through rain-streaked glass",
+    "Overhead 90-degree bird's-eye tabletop evidence flat-lay under warm 3200K tungsten cone",
+    "Split-diopter dual-plane focus linking foreground physical clue to background silhouette",
+    "High-angle stairwell/corridor surveillance perspective with cold sodium-vapor rim light",
+    "Dutch-tilt 12-degree tense investigative corridor shot with flashlight beam cutting mist",
+    "Extreme close-up profile framing capturing micro-tension, sweat, and fabric texture",
+    "Medium-wide forensic reconstruction shot with crime-scene scale ruler in foreground",
+    "Telephoto compressed exterior night-watch framing through dense mountain bamboo foliage",
+)
+
+_VOX_DESK_SPATIAL_LAYOUT_CATALOG: tuple[dict[str, Any], ...] = (
+    {
+        "layout_id": "direct_50_50_collision_seam",
+        "stage_component": "TornPaperSplitReveal",
+        "layout_variant": "peelDirection='horizontal'",
+        "board_surface": "SplitVersusBoard (#EFECE3 left vs #1B1B1A right)",
+        "layout_summary": "50/50 Direct Horizontal Collision across central red-yarn seam (Left A x:95..915 vs Right B x:965..1800)",
+        "entry_sequence": ("scissors_slide_left", "scissors_slide_right", "sticker_peel_up"),
+        "regex": r"(달리|반면|대조|겉으로는|실제로는|양면|VS|비교|불일치|모순|두\s*얼굴|이중생활)",
+    },
+    {
+        "layout_id": "stepped_seesaw_balance",
+        "stage_component": "ScrapbookCollageAssembly",
+        "layout_variant": "variant='center_pinned_web'",
+        "board_surface": "BlackCard (#1B1B1A darkroom contrast board)",
+        "layout_summary": "Stepped Seesaw Balance (High-Left card y:72..415 vs Low-Right card y:340..685 bridged by Center-Pinned RGBA Cutout)",
+        "entry_sequence": ("slap_drop_top", "sticker_peel_up", "diagonal_toss_spin"),
+        "regex": r"(가명|신분\s*세탁|위장|거짓말|탄로|들통|정체|실체|가면|속이|은폐)",
+    },
+    {
+        "layout_id": "trifold_accordion_pamphlet",
+        "stage_component": "PaperUnfoldCollage",
+        "layout_variant": "variant='dossier_spread'",
+        "board_surface": "ManilaKraftBoard (#C8AD82 archival kraft dossier)",
+        "layout_summary": "3-Panel Tri-Fold Accordion Dossier Pamphlet (Left x:95..625 | Center x:635..1265 | Right x:1275..1805)",
+        "entry_sequence": ("accordion_fold_left", "unroll_scroll_down", "accordion_fold_right"),
+        "regex": r"(수첩|수배령|현상금|수배\s*전단|공안부|판결|선고|보고서|진술서|신청서|원서|문서|기록부)",
+    },
+    {
+        "layout_id": "vertical_scroll_plus_pedestal",
+        "stage_component": "PaperUnfoldCollage",
+        "layout_variant": "variant='evidence_triptych'",
+        "board_surface": "Desk (#E4DDCF warm newsprint copy-stand)",
+        "layout_summary": "Tall Vertical Unrolling Scroll on Left (x:100..860, h=665) + Isolated Right Cutout Pedestal (x:960..1800)",
+        "entry_sequence": ("unroll_scroll_down", "slap_drop_top", "scissors_slide_right"),
+        "regex": r"(목록|명단|계좌|장부|내역|통장|영수증|이력|편지|일기|메모|자백서)",
+    },
+    {
+        "layout_id": "poker_fan_3_cards_hand",
+        "stage_component": "PaperUnfoldCollage",
+        "layout_variant": "variant='ledger_unfold'",
+        "board_surface": "BlackCard (#1B1B1A darkroom contrast board)",
+        "layout_summary": "3-Card Poker Fan-Out Hand from Bottom-Center Pivot (-13deg Left, 0deg Center, +13deg Right)",
+        "entry_sequence": ("fan_deal_bottom", "scissors_slide_left", "scissors_slide_right"),
+        "regex": r"(세\s*가지|3대|연속|차례로|하나씩|여러\s*건|일련의|종류|각각|첫째|둘째)",
+    },
+    {
+        "layout_id": "macro_loupe_left_half",
+        "stage_component": "LoupePhotoCutout",
+        "layout_variant": "loupeFocusX=0.36, loupeFocusY=0.44",
+        "board_surface": "ManilaKraftBoard (#C8AD82 archival kraft dossier)",
+        "layout_summary": "Giant Left Half-Screen Macro Forensic Plate (x:100..915) + 140px Gliding OpticalLoupe (0% camera zoom) + Right Cutout & Verdict",
+        "entry_sequence": ("accordion_fold_left", "slap_drop_top", "scissors_slide_right"),
+        "regex": r"(지문|특징점|사마귀|점|흉터|혈흔|유전자|DNA|미세|돋보기|확대|정밀\s*감식)",
+    },
+    {
+        "layout_id": "macro_loupe_right_half",
+        "stage_component": "LoupePhotoCutout",
+        "layout_variant": "loupeFocusX=0.68, loupeFocusY=0.48",
+        "board_surface": "BlackCard (#1B1B1A darkroom contrast board)",
+        "layout_summary": "Left Die-Cut Subject & Clipping (x:100..925) + Giant Right Half-Screen Macro Forensic Plate (x:965..1810) + 140px Gliding OpticalLoupe (0% camera zoom)",
+        "entry_sequence": ("scissors_slide_left", "accordion_fold_right", "sticker_peel_up"),
+        "regex": r"(단서|포착|발견|흔적|결정적|일치|대조|조흔|번호판|안경|시계|반지)",
+    },
+    {
+        "layout_id": "diagonal_3_step_staircase",
+        "stage_component": "TornPaperSplitReveal",
+        "layout_variant": "peelDirection='diagonal'",
+        "board_surface": "ManilaKraftBoard (#C8AD82 archival kraft dossier)",
+        "layout_summary": "Diagonal 3-Step Staircase Cascade (Step 1 Top-Left x:95,y:68 -> Step 2 Center x:650,y:215 -> Step 3 Bottom-Right x:1080,y:455)",
+        "entry_sequence": ("diagonal_toss_spin", "slap_drop_top", "fan_deal_bottom"),
+        "regex": r"(시간|분\s*단위|순서|이어서|직후|년\s*뒤|개월|단계|과정|흐름|연쇄)",
+    },
+    {
+        "layout_id": "architectural_l_shape_frame",
+        "stage_component": "TornPaperSplitReveal",
+        "layout_variant": "peelDirection='vertical'",
+        "board_surface": "BlueprintGridBoard (#F4F0E6 architectural grid)",
+        "layout_summary": "Architectural L-Shape Frame (Tall Left Pillar x:95..615, h=660 + Wide Bottom Bar x:645..1800, y:490..755) enclosing Upper-Right Focal Cutout",
+        "entry_sequence": ("unroll_scroll_down", "scissors_slide_right", "sticker_peel_up"),
+        "regex": r"(건물|아파트|방\s*안|구조|지하|창문|출입구|복도|현장|밀실|내부|골목)",
+    },
+    {
+        "layout_id": "cinema_monitor_68_plus_right_tower",
+        "stage_component": "ScrapbookCollageAssembly",
+        "layout_variant": "variant='corkboard_grid'",
+        "board_surface": "Desk (#E4DDCF warm newsprint copy-stand)",
+        "layout_summary": "68%-Wide Archival Cinema Monitor Plate on Left (x:95..1175, w=1080, h=620) + Narrow Right Vertical Evidence Tower (x:1220..1810)",
+        "entry_sequence": ("scissors_slide_left", "slap_drop_top", "sticker_peel_up"),
+        "regex": r"(방송|뉴스|TV|프로그램|화면|영상|카메라|인터뷰|취재|보도|언론|시청자)",
+    },
+    {
+        "layout_id": "inverted_triangle_corkboard_web",
+        "stage_component": "ScrapbookCollageAssembly",
+        "layout_variant": "variant='diagonal_cascade'",
+        "board_surface": "ManilaKraftBoard (#C8AD82 archival kraft dossier)",
+        "layout_summary": "Inverted Triangle Investigation Web (2 Upper Corner Plates Top-Left & Top-Right converging via <TwistedRedYarn> into Bottom-Center Apex Cutout)",
+        "entry_sequence": ("scissors_slide_left", "scissors_slide_right", "fan_deal_bottom"),
+        "regex": r"(공범|조직|관계|연결|배후|친척|가족|아내|남편|피해자|목격자|제보자)",
+    },
+    {
+        "layout_id": "center_monolith_diagonal_satellites",
+        "stage_component": "CutoutPopOutStage",
+        "layout_variant": "layoutVariant='center_split'",
+        "board_surface": "BlackCard (#1B1B1A darkroom contrast board)",
+        "layout_summary": "Center Spotlight Monolith (x:580..1340) flanked by Top-Left (x:90..540) and Bottom-Right (x:1365..1815) Diagonal Satellites",
+        "entry_sequence": ("slap_drop_top", "diagonal_toss_spin", "scissors_slide_right"),
+        "regex": r"(핵심|결국|마침내|드디어|체포|검거|자백|충격|진실|결론|비극)",
+    },
+    {
+        "layout_id": "horizontal_top_bottom_split",
+        "stage_component": "CutoutPopOutStage",
+        "layout_variant": "layoutVariant='right_hero'",
+        "board_surface": "ManilaKraftBoard (#C8AD82 archival kraft dossier)",
+        "layout_summary": "Top-vs-Bottom Horizontal Split (Panoramic Upper Evidence Strip y:68..385 + Lower Split Cutout & Verdict Deck y:420..760)",
+        "entry_sequence": ("unroll_scroll_down", "scissors_slide_left", "accordion_fold_right"),
+        "regex": r"(전국|전역|확산|여론|사회|충격파|이후|결과|상황|수사망)",
+    },
+    {
+        "layout_id": "asymmetric_left_bleed_52_48",
+        "stage_component": "CutoutPopOutStage",
+        "layout_variant": "layoutVariant='left_hero'",
+        "board_surface": "Desk (#E4DDCF warm newsprint copy-stand)",
+        "layout_summary": "2-Block Asymmetric 52/48 Split (Giant Left Bleed Archival Plate x:95..880 + Overlapping Right RGBA Cutout & Korean Clipping x:960..1800)",
+        "entry_sequence": ("scissors_slide_left", "slap_drop_top", "sticker_peel_up"),
+        "regex": r".*",
+    },
+)
+
+
+def _select_diverse_desk_layout_and_entry(
+    text: str,
+    beat_index: int,
+    prev_vox_spec: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Selects a sentence-matched `<Desk>` Spatial Layout (`bố cục`) and 12fps Cut-and-Paste Entrance Sequence
+    (`hiệu ứng cắt dán xuất hiện`), guaranteeing ZERO consecutive repetition of layout or entrance sequence
+    and 0% camera zoom-in/zoom-out.
+    """
+    prev_layout_id = str((prev_vox_spec or {}).get("spatial_layout") or "").strip()
+    prev_entry_sig = str((prev_vox_spec or {}).get("entry_reveal") or "").strip()
+    prev_stage_comp = str((prev_vox_spec or {}).get("stage_component") or "").strip()
+
+    scored: list[tuple[int, int, dict[str, Any]]] = []
+    for idx_cat, item in enumerate(_VOX_DESK_SPATIAL_LAYOUT_CATALOG[:-1]):
+        matched = bool(re.search(item["regex"], text, re.IGNORECASE))
+        score = 100 if matched else 10
+        # Deterministic sentence-hash tie-breaker so different sentences naturally spread across all 14 layouts
+        sent_hash = (beat_index * 7 + sum(ord(ch) for ch in text[:24])) % 13
+        if idx_cat == sent_hash:
+            score += 25
+        entry_sig = " -> ".join(item["entry_sequence"])
+        if item["layout_id"] == prev_layout_id:
+            score -= 500
+        if entry_sig == prev_entry_sig:
+            score -= 300
+        if item["stage_component"] == prev_stage_comp:
+            score -= 45
+        scored.append((score, -idx_cat, item))
+
+    scored.sort(key=lambda x: (x[0], x[1]), reverse=True)
+    chosen = scored[0][2]
+    entry_seq = list(chosen["entry_sequence"])
+    entry_sig = " -> ".join(entry_seq)
+
+    # Extra safeguard: if entry_sig still matches prev_entry_sig, rotate the entrance modes
+    all_entry_modes = (
+        "scissors_slide_left",
+        "scissors_slide_right",
+        "slap_drop_top",
+        "sticker_peel_up",
+        "unroll_scroll_down",
+        "accordion_fold_left",
+        "accordion_fold_right",
+        "diagonal_toss_spin",
+        "fan_deal_bottom",
+    )
+    if entry_sig == prev_entry_sig:
+        base_idx = (beat_index * 3 + len(text)) % len(all_entry_modes)
+        entry_seq = [
+            all_entry_modes[base_idx % len(all_entry_modes)],
+            all_entry_modes[(base_idx + 2) % len(all_entry_modes)],
+            all_entry_modes[(base_idx + 5) % len(all_entry_modes)],
+        ]
+        entry_sig = " -> ".join(entry_seq)
+
+    return {
+        "spatial_layout": chosen["layout_id"],
+        "stage_component": chosen["stage_component"],
+        "layout_variant": chosen["layout_variant"],
+        "board_surface": chosen["board_surface"],
+        "layout_summary": chosen["layout_summary"],
+        "entry_sequence": entry_seq,
+        "entry_reveal": entry_sig,
+    }
+
+
+def _infer_sentence_specific_vox_mechanism(
+    narration: str,
+    clauses: list[str],
+    metrics: list[str],
+    arch_id: str,
+    beat_id: str,
+    beat_index: int,
+    visual_description: str = "",
+    purpose: str = "",
+    prev_vox_spec: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Derives a 100% independent per-sentence VOX design specification (`MỖI CẢNH LÀ ĐỘC LẬP. MỖI VIDEO LÀ ĐỘC LẬP`):
+    - 0% Camera Zoom-In / Zoom-Out (`camera_zoom_policy: "FORBIDDEN_0_PERCENT_ZOOM_IN_OR_ZOOM_OUT"`).
+    - No fixed template list, no `beat_index % N` modulo cloning, and no banned `<Broadcast*>` dashboard boxes.
+    - Routes to `<GeoJson3DMapStage>` ONLY when the spoken sentence describes a suspect escape/infiltration route
+      or a police dispatch/dragnet/stakeout/extradition route (with constant locked zoom `startZoom == endZoom`).
+    - For all other VOX beats, derives a bespoke `<Desk>` / `<BlackCard>` / `<ManilaKraftBoard>` paper-collage
+      specification with a unique sentence-matched **Spatial Layout (`bố cục`)** and **12fps Cut-and-Paste Entrance
+      Sequence (`hiệu ứng cắt dán xuất hiện`)**, plus purposeful `<RedCircle>` ONLY when needed.
+    """
+    text = str(narration or "").strip()
+    c1 = clauses[0] if clauses else text
+    c2 = clauses[1] if len(clauses) > 1 else c1
+    c3 = clauses[2] if len(clauses) > 2 else (clauses[-1] if clauses else text)
+    primary_metric = metrics[0] if metrics else ""
+    vis_clean = re.sub(r"\s+", " ", str(visual_description or "")).strip()
+    if "clear physical foreground prop focus" in vis_clean or "Noir Chibi 2D Detective Documentary style" in vis_clean:
+        vis_clean = ""
+    bid_tag = beat_id.replace("-", "_")
+    clip_id = f"S_F{beat_index + 1:03d}"
+
+    needs_red_circle = bool(
+        re.search(
+            r"(지목|포착|발견|단서|흔적|특징|흉터|사마귀|점|지문|번호|숫자|일치|결정적|바로\s*이|주목|확대|정확히)",
+            text,
+            re.IGNORECASE,
+        )
+    )
+    circle_directive = (
+        f"Draw 12fps `<RedCircle>` around the exact target clue in '{c3}' (100px-grid locked, 0px drift)"
+        if needs_red_circle
+        else "No `<RedCircle>` needed for this sentence (use `<Highlight>` / `<Underline>` / `<TwistedRedYarn>` without unnecessary circles)"
+    )
+
+    if _is_voice_movement_or_pursuit_sentence(text):
+        is_police_route = bool(re.search(r"(압송|호송|추적|포위|출동|잠복|수색망|공안|형사|경찰|검거)", text))
+        map_actor = "police_pursuit_or_extradition" if is_police_route else "suspect_escape_or_infiltration"
+        grammar = "BESPOKE_3D_SATELLITE_ROUTE_MAP"
+        verb = f"GEO_ROUTE_TRACE_{bid_tag}"
+        spatial_layout = f"satellite_route_{map_actor}"
+        entry_reveal = "constant_altitude_route_trace -> pin_drop_lock -> sat_loupe_cutout_pop"
+        stage_component = "GeoJson3DMapStage"
+        layout_variant = map_actor
+        geom = (
+            f"[<GeoJson3DMapStage> · {map_actor} · 0% CAMERA ZOOM-IN/ZOOM-OUT (`startZoom === endZoom`)] "
+            f"100% voice-matched Esri satellite map (Web Mercator 0.00px lock + authentic road/rail polyline >=12 vertices, 0% synthetic sine curve): "
+            f"t1 locks origin pin for '{c1}', t2 traces exact real-world route corridor for '{c2}', "
+            f"and t3 pops in destination cutout & 4x `satLoupe` for '{c3}'."
+        )
+        prop_desc = f"High-resolution Esri satellite plate & authentic road/rail GeoJSON route matching '{c1} -> {c3}' for {beat_id}."
+        ftg_role = f"Verified geographic route & landmark plate for `{beat_id}` ({map_actor})"
+    else:
+        desk_plan = _select_diverse_desk_layout_and_entry(text, beat_index=beat_index, prev_vox_spec=prev_vox_spec)
+        spatial_layout = desk_plan["spatial_layout"]
+        stage_component = desk_plan["stage_component"]
+        layout_variant = desk_plan["layout_variant"]
+        board_surface = desk_plan["board_surface"]
+        layout_summary = desk_plan["layout_summary"]
+        entry_seq = desk_plan["entry_sequence"]
+        entry_reveal = desk_plan["entry_reveal"]
+        e1, e2, e3 = entry_seq[0], entry_seq[1], entry_seq[2]
+
+        grammar = f"BESPOKE_DESK_{spatial_layout.upper()}"
+        verb = f"CUT_AND_PASTE_{spatial_layout.upper()}_{bid_tag}"
+        context_note = f" ({vis_clean[:100]})" if vis_clean and vis_clean != text else ""
+        geom = (
+            f"[<Desk> · <{stage_component} {layout_variant}> on {board_surface} · BỐ CỤC `{spatial_layout}` · 0% CAMERA ZOOM-IN/ZOOM-OUT (`z=1.0, transform='none'`)]{context_note}: "
+            f"{layout_summary}. "
+            f"Cut-and-Paste 12fps Entrance Choreography (`voxDiverseEntry12`): "
+            f"t1 enters via `{e1}` placing primary archival cutout (`<VoxVideoPaper>` / `<VoxPhotoPaper>`) for '{c1}'; "
+            f"t2 enters via `{e2}` pasting RGBA die-cut prop (`<DieCutSticker>`) & `<Tape>` for '{c2}'; "
+            f"t3 enters via `{e3}` + 12fps `<Highlight color='#DACF08'>` / `<Stamp>` on '{c3}'{f' ({primary_metric})' if primary_metric else ''}. "
+            f"{circle_directive}."
+        )
+        prop_desc = (
+            f"Bespoke RGBA die-cut evidence prop (`<DieCutSticker>`) & archival photo/clipping arranged in `{spatial_layout}` "
+            f"with `{entry_reveal}` 12fps cut-and-paste entrance strictly illustrating '{c1}' and '{c2}' for {beat_id} (0% camera zoom, 0% decorative clutter)."
+        )
+        ftg_role = f"Authentic case archival media (`footage/{clip_id}.mp4`) mounted inside `<{stage_component} {layout_variant}>` (`{spatial_layout}`) on `<Desk>`"
+
+    return {
+        "broadcast_grammar": grammar,
+        "dominant_verb": verb,
+        "spatial_layout": spatial_layout,
+        "stage_component": stage_component,
+        "layout_variant": layout_variant,
+        "entry_reveal": entry_reveal,
+        "camera_zoom_policy": "FORBIDDEN_0_PERCENT_ZOOM_IN_OR_ZOOM_OUT",
+        "stage_geometry_description": geom,
+        "cutout_prop_description": prop_desc,
+        "real_footage_role": ftg_role,
+        "needs_red_circle": needs_red_circle,
+    }
+
+
+def build_bespoke_ai_scene_prompt(
+    beat: dict[str, Any],
+    beat_index: int = 0,
+) -> str:
+    """Builds a 100% sentence-specific Layer-1 AI visual reconstruction prompt with unique camera rig,
+    lens focal length, physical foreground subject, and lighting derived from the exact Korean sentence.
+    """
+    beat_id = str(beat.get("beat_id") or f"B{beat_index + 1:03d}-V01").strip()
+    narration = str(beat.get("narration_text") or beat.get("text") or "").strip()
+    vis_desc = re.sub(r"\s+", " ", str(beat.get("visual_description") or "")).strip()
+    if "clear physical foreground prop focus" in vis_desc or "Noir Chibi 2D Detective Documentary style" in vis_desc:
+        vis_desc = ""
+    purpose = re.sub(r"\s+", " ", str(beat.get("purpose") or "")).strip()
+    queries = [str(q).strip() for q in (beat.get("footage_search_queries") or []) if str(q).strip()]
+    vspec = beat.get("voice_spec") if isinstance(beat.get("voice_spec"), dict) else build_voice_spec_for_beat(beat, beat_index=beat_index)
+    clauses = list(vspec.get("clauses") or split_narration_into_clauses(narration, max_clauses=3))
+    c1 = clauses[0] if clauses else narration
+    c2 = clauses[1] if len(clauses) > 1 else c1
+    c3 = clauses[2] if len(clauses) > 2 else (clauses[-1] if clauses else narration)
+    rig = _LENS_AND_ANGLE_RIGS[beat_index % len(_LENS_AND_ANGLE_RIGS)]
+    q_hint = queries[0] if queries else c1
+    detail_clause = (
+        vis_desc
+        if (vis_desc and vis_desc != narration)
+        else f"opening on '{c1}', shifting physical focus to '{c2}', and resolving on '{c3}' (archival anchor: {q_hint}; narrative function: {purpose or 'forensic progression'})"
+    )
+    return (
+        f"[TẦNG 1 · AI VISUAL KEYFRAME · {beat_id}] {rig}, Forensic Noir 35mm archival film grain (zero text/logos/watermarks): "
+        f"depicting the exact moment \"{narration}\" — {detail_clause}, with tactile foreground lighting on '{c1}'."
+    )
+
+
+def build_bespoke_vox_design_prompt(
+    beat: dict[str, Any],
+    beat_index: int = 0,
+    total_beats: int = 192,
+    prev_vox_spec: dict[str, Any] | None = None,
+) -> tuple[str, dict[str, Any], str]:
+    """Builds Layer 2 (`vox_design_prompt` + `vox_blueprint_spec`) and Layer 1's `ai_cutout_prop_prompt`
+    for a single voice beat with:
+    - 0% Camera Zoom-In / Zoom-Out (`camera_zoom_policy: "FORBIDDEN_0_PERCENT_ZOOM_IN_OR_ZOOM_OUT"`).
+    - Sentence-specific Spatial Layout (`spatial_layout` / `bố cục`) and 12fps Cut-and-Paste Entrance Effect (`entry_reveal` / `hiệu ứng cắt dán xuất hiện`).
+    """
+    beat_id = str(beat.get("beat_id") or f"B{beat_index + 1:03d}-V01").strip()
+    narration = str(beat.get("narration_text") or beat.get("text") or "").strip()
+    vspec = beat.get("voice_spec") if isinstance(beat.get("voice_spec"), dict) else build_voice_spec_for_beat(beat, beat_index=beat_index)
+    clauses = list(vspec.get("clauses") or split_narration_into_clauses(narration, max_clauses=3))
+    windows = list(vspec.get("clause_windows") or [(0.0, 0.34), (0.34, 0.68), (0.68, 1.0)])
+    metrics = list(vspec.get("metrics") or [])
+    focus_tags = list(vspec.get("clause_focus_tags") or [])
+    arch_id = str(beat.get("scene_archetype") or "#D1").strip()
+    editorial_layer = str(beat.get("editorial_layer") or "").strip()
+    dna_slot = str(beat.get("dna_visual_slot") or "").strip()
+    is_vox_beat = editorial_layer == "VOX_NEWSROOM" or dna_slot == "vox_motion" or (arch_id != "cinema_full" and arch_id != "")
+
+    c1 = clauses[0] if clauses else narration
+    c2 = clauses[1] if len(clauses) > 1 else c1
+    c3 = clauses[2] if len(clauses) > 2 else (clauses[-1] if clauses else narration)
+    w0 = windows[0] if windows else (0.0, 0.33)
+    w1 = windows[1] if len(windows) > 1 else (0.33, 0.67)
+    w2 = windows[2] if len(windows) > 2 else (0.67, 1.0)
+
+    mech = _infer_sentence_specific_vox_mechanism(
+        narration=narration,
+        clauses=clauses,
+        metrics=metrics,
+        arch_id=arch_id,
+        beat_id=beat_id,
+        beat_index=beat_index,
+        visual_description=str(beat.get("visual_description") or ""),
+        purpose=str(beat.get("purpose") or ""),
+        prev_vox_spec=prev_vox_spec,
+    )
+
+    clip_id = f"S_F{beat_index + 1:03d}"
+    footage_path = str(beat.get("footage_path") or f"footage/{clip_id}.mp4").strip()
+    queries = list(beat.get("footage_search_queries") or [narration[:60]])
+    micro_labels = [t for t in (metrics[:2] + focus_tags[:2]) if t][:3]
+    if not micro_labels:
+        micro_labels = [c1[:14], c2[:14]]
+
+    vox_scene_signature = f"VOX_BROADCAST_{beat_id.replace('-', '_')}_{mech['dominant_verb']}"
+    ai_cutout_prop_prompt = (
+        f"[AUTHENTIC ARCHIVAL PLATE CROP · {beat_id} · max_uses=1] {mech['cutout_prop_description']} "
+        f"Extracted directly from verified archival video `{footage_path}` (0% synthetic PIL drawing, 0% AI cartoon stickers)."
+    )
+
+    vox_design_prompt = (
+        f"[VOX CUT-AND-PASTE COLLAGE PROMPT · {beat_id} ({beat_index + 1}/{total_beats}) · layout={mech['spatial_layout']} · entry={mech['entry_reveal']} · zoom=0%_FORBIDDEN · sig={vox_scene_signature}] "
+        f"1. EXACT WORD-TIMESTAMP CHOREOGRAPHY (`voice_manifest.json` frame lock): \"{narration}\" -> "
+        f"t1 ({w0[0]:.2f}-{w0[1]:.2f}): \"{c1}\" | "
+        f"t2 ({w1[0]:.2f}-{w1[1]:.2f}): \"{c2}\" ({mech['dominant_verb']}) | "
+        f"t3 ({w2[0]:.2f}-{w2[1]:.2f}): \"{c3}\". "
+        f"2. ZERO ZOOM-IN / ZOOM-OUT (`camera_zoom_policy={mech['camera_zoom_policy']}`): Camera is 100% locked overhead (`z=1.0, transform='none'`); NEVER zoom in or zoom out on VOX! "
+        f"3. SENTENCE-SPECIFIC SPATIAL LAYOUT (`{mech['spatial_layout']}`) & 12FPS CUT-AND-PASTE ENTRANCE (`{mech['entry_reveal']}`): {mech['stage_geometry_description']} "
+        f"4. MANDATORY REAL ARCHIVAL MEDIA: {mech['real_footage_role']} (`{footage_path}`, queries={queries[:2]}, max_uses=1). "
+        f"5. ZERO-TRUNCATION LABELS (KR): {' | '.join(micro_labels)} (0% text ellipsis, 0px bounding-box overlap, y <= 785px)."
+    )
+
+    existing_spec = beat.get("vox_blueprint_spec") if isinstance(beat.get("vox_blueprint_spec"), dict) else {}
+    vox_blueprint_spec: dict[str, Any] = {
+        **existing_spec,
+        "beat_id": beat_id,
+        "beat_index": beat_index,
+        "is_active_vox_scene": is_vox_beat,
+        "vox_scene_signature": vox_scene_signature,
+        "broadcast_grammar": mech["broadcast_grammar"],
+        "spatial_layout": mech["spatial_layout"],
+        "stage_component": mech["stage_component"],
+        "layout_variant": mech["layout_variant"],
+        "entry_reveal": mech["entry_reveal"],
+        "camera_zoom_policy": mech["camera_zoom_policy"],
+        "evidence_media_mode": "real_footage_broadcast_motion",
+        "real_footage_binding": {
+            **(existing_spec.get("real_footage_binding") if isinstance(existing_spec.get("real_footage_binding"), dict) else {}),
+            "clip_id": clip_id,
+            "footage_path": footage_path,
+            "role_in_vox": mech["real_footage_role"],
+            "footage_search_queries": queries,
+            "require_authentic_case_media": True,
+            "forbid_synthetic_pil_drawing": True,
+            "forbid_blind_svg_scribble": True,
+            "max_uses": 1,
+        },
+        "dominant_physical_verb": mech["dominant_verb"],
+        "stage_geometry_description": mech["stage_geometry_description"],
+        "cutout_prop_description": mech["cutout_prop_description"],
+        "ai_cutout_prop_prompt": ai_cutout_prop_prompt,
+        "clauses_t1_t2_t3": [
+            {"phase": "t1", "window": list(w0), "clause_ko": c1, "role": "input_evidence_state"},
+            {"phase": "t2", "window": list(w1), "clause_ko": c2, "role": "dominant_physical_verb"},
+            {"phase": "t3", "window": list(w2), "clause_ko": c3, "role": "visible_consequence_reticle_lock"},
+        ],
+        "micro_labels_ko": existing_spec.get("micro_labels_ko") or micro_labels,
+        "max_korean_words_cap": 15,
+        "min_geometry_screen_share": 0.80,
+    }
+    return vox_design_prompt, vox_blueprint_spec, ai_cutout_prop_prompt
+
+
+def attach_two_layer_visual_prompts(
+    beat: dict[str, Any],
+    beat_index: int = 0,
+    total_beats: int = 192,
+    prev_vox_spec: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Attaches explicit Two-Layer Visual Prompts (`ai_visual_layer` + `vox_design_layer`)
+    to a beat dictionary in-place and returns it.
+    """
+    vox_design_prompt, vox_blueprint_spec, ai_cutout_prop_prompt = build_bespoke_vox_design_prompt(
+        beat,
+        beat_index=beat_index,
+        total_beats=total_beats,
+        prev_vox_spec=prev_vox_spec,
+    )
+    raw_ai = str(beat.get("ai_prompt") or beat.get("prompt") or "").strip()
+    if (
+        not raw_ai
+        or "clear physical foreground prop focus on the exact action/evidence described in the sentence" in raw_ai
+        or raw_ai.startswith("[TẦNG 2 · VOX DESIGN PROMPT")
+    ):
+        ai_prompt = build_bespoke_ai_scene_prompt(beat, beat_index=beat_index)
+    else:
+        ai_prompt = raw_ai
+    beat["ai_prompt"] = ai_prompt
+    beat["ai_cutout_prop_prompt"] = ai_cutout_prop_prompt
+    beat["vox_design_prompt"] = vox_design_prompt
+    beat["vox_blueprint_spec"] = vox_blueprint_spec
+    beat["visual_layers"] = {
+        "layer_1_ai_visual": {
+            "role": "closed_room_ai_reconstruction_and_cutout_prop",
+            "ai_prompt": ai_prompt,
+            "ai_cutout_prop_prompt": ai_cutout_prop_prompt,
+            "max_uses": 1,
+        },
+        "layer_2_vox_design": {
+            "role": "sentence_specific_vox_stage_and_real_footage_mechanism",
+            "vox_design_prompt": vox_design_prompt,
+            "vox_blueprint_spec": vox_blueprint_spec,
+        },
+    }
+    return beat
+

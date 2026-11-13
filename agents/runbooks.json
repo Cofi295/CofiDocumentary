@@ -1,0 +1,184 @@
+{
+  "_note": "Machine-readable CofiDocumentary Studio multi-agent runbooks connecting all 15 bespoke specialists.",
+  "runbooks": [
+    {
+      "slug": "investigative_evidence_documentary",
+      "title": "Investigative Evidence + AI Documentary Pipeline",
+      "title_vi": "Dây Chuyền Phim Tài Liệu Bằng Chứng Xác Thực + Tái Dựng Điện Ảnh",
+      "mode": "CofiStudio-Production",
+      "visual_strategies": [
+        "evidence_footage",
+        "hybrid"
+      ],
+      "summary": "End-to-end closed-loop broadcast production pairing verified archival evidence with style-locked AI cinematography, composable Vox scenes, and 2-tier QC.",
+      "roster": [
+        {
+          "group": "Direction & Editorial Core",
+          "activation": "phase_1_to_3",
+          "agents": [
+            "orchestrator",
+            "radar",
+            "research",
+            "script",
+            "voice"
+          ]
+        },
+        {
+          "group": "Visual & Post-Production Crew",
+          "activation": "phase_4_to_7",
+          "agents": [
+            "visuals",
+            "footage",
+            "ai_visual",
+            "vox",
+            "edit",
+            "seo"
+          ]
+        },
+        {
+          "group": "Quality & Certification Gatekeepers",
+          "activation": "continuous_and_final",
+          "agents": [
+            "evidence_qa",
+            "qc"
+          ]
+        }
+      ],
+      "handoff_chain": [
+        "radar",
+        "research",
+        "script",
+        "voice",
+        "visuals",
+        "footage",
+        "ai_visual",
+        "vox",
+        "edit",
+        "seo",
+        "qc"
+      ]
+    },
+    {
+      "slug": "full_footage_archival_documentary",
+      "title": "100% Authentic Archival Footage Documentary",
+      "title_vi": "Dây Chuyền Phim Tài Liệu 100% Tư Liệu Thật Lưu Trữ",
+      "mode": "CofiStudio-Production",
+      "visual_strategies": [
+        "full_footage",
+        "edit_direct_footage"
+      ],
+      "summary": "Pure archival documentary workflow enforcing 3-frame visual hygiene, zero watermarks/anchors, and organic cutaway rhythm.",
+      "roster": [
+        {
+          "group": "Core Production",
+          "activation": "always",
+          "agents": [
+            "orchestrator",
+            "radar",
+            "research",
+            "script",
+            "voice",
+            "visuals",
+            "footage",
+            "vox",
+            "edit",
+            "seo"
+          ]
+        },
+        {
+          "group": "Verification Gate",
+          "activation": "continuous_and_final",
+          "agents": [
+            "evidence_qa",
+            "qc"
+          ]
+        }
+      ],
+      "handoff_chain": [
+        "radar",
+        "research",
+        "script",
+        "voice",
+        "visuals",
+        "footage",
+        "vox",
+        "edit",
+        "seo",
+        "qc"
+      ]
+    },
+    {
+      "slug": "full_ai_cinematic_documentary",
+      "title": "Full AI Cinematographic Documentary",
+      "title_vi": "Dây Chuyền Phim Tài Liệu Điện Ảnh Full AI Đồng Nhất Mỹ Thuật",
+      "mode": "CofiStudio-Production",
+      "visual_strategies": [
+        "full_ai"
+      ],
+      "summary": "Style-locked full AI visual narrative with pixel-entropy & defect sensors, bespoke motion choreography, and transparent AI disclosure.",
+      "roster": [
+        {
+          "group": "Core Production",
+          "activation": "always",
+          "agents": [
+            "orchestrator",
+            "radar",
+            "research",
+            "script",
+            "voice",
+            "visuals",
+            "ai_visual",
+            "vox",
+            "edit",
+            "seo"
+          ]
+        },
+        {
+          "group": "Verification Gate",
+          "activation": "continuous_and_final",
+          "agents": [
+            "evidence_qa",
+            "qc"
+          ]
+        }
+      ],
+      "handoff_chain": [
+        "radar",
+        "research",
+        "script",
+        "voice",
+        "visuals",
+        "ai_visual",
+        "vox",
+        "edit",
+        "seo",
+        "qc"
+      ]
+    },
+    {
+      "slug": "app_core_incident_repair",
+      "title": "Pure Technical Core Diagnostics & Repair",
+      "title_vi": "Điều Tra Lỗi Gốc & Nâng Cấp Cốt Lõi Kỹ Thuật App",
+      "mode": "CofiStudio-Micro",
+      "visual_strategies": [],
+      "summary": "Root-cause forensic debugging, minimal-diff core repair without hardcoding channel DNA, and regression pytest verification.",
+      "roster": [
+        {
+          "group": "Engineering Strike Team",
+          "activation": "always",
+          "agents": [
+            "orchestrator",
+            "debug",
+            "dev",
+            "evidence_qa"
+          ]
+        }
+      ],
+      "handoff_chain": [
+        "debug",
+        "dev",
+        "evidence_qa"
+      ]
+    }
+  ]
+}

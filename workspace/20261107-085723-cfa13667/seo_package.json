@@ -1,0 +1,275 @@
+{
+  "recommended_title": "[중국 실화 사건] 10개 성을 돌며 13년간 가짜 이름으로 살아온 A급 수배범의 지문 하나 | 성루이룽 추적 사건",
+  "title_options": [
+    "[중국 실화 사건] 10개 성을 돌며 13년간 가짜 이름으로 살아온 A급 수배범의 지문 하나 | 성루이룽 추적 사건",
+    "[중국 실화 사건] 간저우 감방에 숨어 4년간 모범수로 지낸 1급 수배범 성루이룽, 열 손가락 지문이 밝힌 진실",
+    "[중국 실화 사건] 가짜 이름 다섯 개로 13년을 버틴 유령 수배범, 광둥산 담배 한 개비에 무너진 사연",
+    "[중국 실화 사건] 공안부 A급 수배령을 피해 교도소 안으로 걸어 들어간 남자의 마지막 심문 기록"
+  ],
+  "ab_test_title_pack": [
+    {
+      "slot": "A",
+      "angle": "identity_contradiction_and_forensic_clue",
+      "title": "[중국 실화 사건] 10개 성을 돌며 13년간 가짜 이름으로 살아온 A급 수배범의 지문 하나 | 성루이룽 추적 사건",
+      "rationale_ko": "10개 성 도주·13년 위장 신분이라는 시간적 무게감과 '지문 하나'라는 결정적 과학수사 단서를 대비시켜 클릭 유도력을 극대화함."
+    },
+    {
+      "slot": "B",
+      "angle": "prison_camouflage_irony",
+      "title": "[중국 실화 사건] 간저우 감방에 숨어 4년간 모범수로 지낸 1급 수배범 성루이룽, 열 손가락 지문이 밝힌 진실",
+      "rationale_ko": "수배를 피하려고 오히려 교도소 감방 안으로 숨어들었다는 역설적 실화 포인트를 전면에 배치함."
+    },
+    {
+      "slot": "C",
+      "angle": "interrogation_psychological_turn",
+      "title": "[중국 실화 사건] 가짜 이름 다섯 개로 13년을 버틴 유령 수배범, 광둥산 담배 한 개비에 무너진 사연",
+      "rationale_ko": "포산 형사 두추파가 건넨 고향 담배 한 개비와 광둥 사투리 심문이라는 인간적·심리적 전환점을 강조함."
+    }
+  ],
+  "description": "[중국 실화 사건] 2009년 5월 장시성 간저우 교도소, 출소를 불과 몇 달 앞둔 모범 수감자 '저우취안'의 열 손가락 지문이 광둥성 포산 공안국의 미제 지문 데이터베이스와 99.99% 일치하며 경보가 울립니다.\n\n1996년 광둥성 난하이에서 시작해 1998년 포산 야간 순찰 검문 사건으로 공안부 A급 수배령이 내려진 이후, 무려 13년 동안 중국 10개 성을 떠돌며 다섯 개의 가짜 이름으로 살아온 성루이룽(成瑞龙).\n그는 신분증 검문을 피하기 위해 스스로 고아 출신 절도범 '저우취안'을 자처하며 감방 안으로 숨어드는 기상천외한 위장을 택했습니다. 묵비권으로 버티던 그의 차가운 미소가 포산 형사 두추파가 건넨 광둥산 담배 한 개비와 고향 사투리 앞에서 어떻게 무너졌는지, 14년에 걸친 집요한 형사 추적과 과학수사 기록을 다큐멘터리로 재구성했습니다.\n\n⏱️ 챕터 타임라인 (Chapters)\n00:00 간저우 교도소의 미소 짓는 수감자 '저우취안'과 지문 감식실의 적색경보\n03:07 1996년 난하이에서 1998년 포산의 밤까지, A급 수배령의 시작\n10:25 10개 성을 가로지른 유령의 철칙과 감방 속으로 숨은 수배범\n16:24 광둥산 담배 한 개비와 고향 사투리가 무너뜨린 13년의 가면\n21:55 2010년 포산 법정의 최종 판결과 지문 반쪽이 남긴 연쇄 추적 기록\n\n#중국실화사건 #특급수배록 #중국미제사건 #실화사건 #성루이룽 #과학수사 #지문감식 #해외실화 #다큐멘터리\n\n---\n본 다큐멘터리는 사실에 기반한 역사적 사건 기록이며, 일부 장면은 시각적 이해를 돕기 위해 AI 재구성 및 극화 연출 기법이 사용되었습니다.",
+  "chapters": [
+    {
+      "timestamp": "00:00",
+      "start_sec": 0.0,
+      "beat_id": "B001-V01",
+      "title": "간저우 교도소의 미소 짓는 수감자 '저우취안'과 지문 감식실의 적색경보"
+    },
+    {
+      "timestamp": "03:07",
+      "start_sec": 187.683,
+      "beat_id": "B034-V01",
+      "title": "1996년 난하이에서 1998년 포산의 밤까지, A급 수배령의 시작"
+    },
+    {
+      "timestamp": "10:25",
+      "start_sec": 625.567,
+      "beat_id": "B107-V01",
+      "title": "10개 성을 가로지른 유령의 철칙과 감방 속으로 숨은 수배범"
+    },
+    {
+      "timestamp": "16:24",
+      "start_sec": 984.34,
+      "beat_id": "B162-V01",
+      "title": "광둥산 담배 한 개비와 고향 사투리가 무너뜨린 13년의 가면"
+    },
+    {
+      "timestamp": "21:55",
+      "start_sec": 1315.574,
+      "beat_id": "B213-V01",
+      "title": "2010년 포산 법정의 최종 판결과 지문 반쪽이 남긴 연쇄 추적 기록"
+    }
+  ],
+  "tags": [
+    "중국 실화 사건",
+    "특급수배록",
+    "중국 미제사건",
+    "실화사건",
+    "해외 실화 다큐",
+    "성루이룽",
+    "중국 범죄 실화",
+    "A급 수배범",
+    "지문 감식",
+    "과학수사 다큐",
+    "포산 공안국",
+    "간저우 교도소",
+    "두추파 형사",
+    "13년 도주",
+    "다큐멘터리",
+    "중국실화사건",
+    "중국미제사건",
+    "실제사건파일",
+    "공안수사기록",
+    "중국강력범죄실화",
+    "그것이알고싶다",
+    "범죄실화"
+  ],
+  "hashtags": [
+    "#중국실화사건",
+    "#특급수배록",
+    "#중국미제사건",
+    "#실화사건",
+    "#성루이룽",
+    "#과학수사",
+    "#해외실화",
+    "#다큐멘터리"
+  ],
+  "Pinned_Comment_Hook": "수배망을 피하기 위해 오히려 교도소 감방 안으로 숨어들었던 '저우취안(성루이룽)'. 13년간 다섯 개의 가짜 이름으로 버틴 그의 가면이 고향 담배 한 개비와 열 손가락 지문 앞에서 무너진 순간, 여러분에게 가장 강렬하게 남은 장면은 어디였나요?",
+  "thumbnail": {
+    "concept": "특급수배록(@특급수배록) 시그니처 다크 차콜 스튜디오(좌측 62% #070B10) + 우측 38% 성루이룽(成瑞龙) 실존 공판 인물 클로즈업 (#FDE68A 골든 크림 림 글로우 외곽선) + 좌측 상단 네온 그린 헤더 '특급수배 · 중국 실화사건' + 이중 폴라로이드 실제 아카이브 증거 사진(2010년 포산 법정 구치소 조끼 체포 장면 + 2009년 호송 기록) + 우측 피고인 얼굴을 직접 가리키는 3D 적색 곡선 화살표와 점선 원(dotted_orbit) + 하단 2줄 고대비 헤드라인(“수배 피하려 감방에 숨었다” / 출소 직전 들통난 1급 수배범!)",
+    "prompt": "Korean investigative true-crime broadcast thumbnail for @특급수배록 featuring 성루이룽 (成瑞龙) with exact facial identity and exact facial likeness verified from archival source https://www.youtube.com/watch?v=4afxF5sK5s0 (local_path: media/thumbnail/thumb_inset_real_01_court_vest.jpg). People and text first composition with plain minimal dark charcoal studio background (#070B10, background policy minimal or none) on the left 62%, high-contrast real archival portrait of 성루이룽 (成瑞龙) on the right 38% outlined with warm #FDE68A rim glow, dual archival evidence PiP frames on the left with red dotted orbit circle and 3D red curved pointer arrow, and high-contrast bottom Korean overlay text: “수배 피하려 감방에 숨었다” / 출소 직전 들통난 1급 수배범!",
+    "overlay_text": "“수배 피하려 감방에 숨었다”\n출소 직전 들통난 1급 수배범!",
+    "badge_text": "특급수배 · 중국 실화사건",
+    "line_1": "“수배 피하려 감방에 숨었다”",
+    "line_2": "출소 직전 들통난 1급 수배범!",
+    "overlay_text_options": [
+      {
+        "badge": "특급수배 · 중국 실화사건",
+        "line_1": "“수배 피하려 감방에 숨었다”",
+        "line_2": "출소 직전 들통난 1급 수배범!",
+        "archetype": "evidence_spotlight",
+        "paired_title": "[중국 실화 사건] 10개 성을 돌며 13년간 가짜 이름으로 살아온 A급 수배범의 지문 하나 | 성루이룽 추적 사건",
+        "keyword_anchor_vi": "중국 실화 사건 (Vụ Án Có Thật ở Trung Quốc)",
+        "synergy_vi": "Tam giác bổ trợ 3 chiều: [Bối cảnh ảnh hiện trường/nhân vật] + [Text Hook trên Thumb kích thích nghịch lý] + [Tiêu đề chứa từ khóa chính của hồ sơ kênh] bổ trợ chặt chẽ với 0% lặp từ."
+      },
+      {
+        "badge": "특급수배 · 중국 실화사건",
+        "line_1": "“가짜 신분 다섯 개로 4년 복역”",
+        "line_2": "열 손가락에 무너진 완벽 위장!",
+        "archetype": "split_duality",
+        "paired_title": "[중국 실화 사건] 간저우 감방에 숨어 4년간 모범수로 지낸 1급 수배범 성루이룽, 열 손가락 지문이 밝힌 진실",
+        "keyword_anchor_vi": "중국 실화 사건 (Vụ Án Có Thật ở Trung Quốc)",
+        "synergy_vi": "Tam giác bổ trợ 3 chiều: [Bối cảnh ảnh hiện trường/nhân vật] + [Text Hook trên Thumb kích thích nghịch lý] + [Tiêu đề chứa từ khóa chính của hồ sơ kênh] bổ trợ chặt chẽ với 0% lặp từ."
+      },
+      {
+        "badge": "특급수배 · 중국 실화사건",
+        "line_1": "“고향 담배 맛은 기억하겠지?”",
+        "line_2": "사투리 한마디에 굳어버린 미소!",
+        "archetype": "broadcast_left_heavy",
+        "paired_title": "[중국 실화 사건] 가짜 이름 다섯 개로 13년을 버틴 유령 수배범, 광둥산 담배 한 개비에 무너진 사연",
+        "keyword_anchor_vi": "중국 실화 사건 (Vụ Án Có Thật ở Trung Quốc)",
+        "synergy_vi": "Tam giác bổ trợ 3 chiều: [Bối cảnh ảnh hiện trường/nhân vật] + [Text Hook trên Thumb kích thích nghịch lý] + [Tiêu đề chứa từ khóa chính của hồ sơ kênh] bổ trợ chặt chẽ với 0% lặp từ."
+      },
+      {
+        "badge": "특급수배 · 중국 실화사건",
+        "line_1": "“두 다리 뻗고 잔 적이 없었다”",
+        "line_2": "교도소에 숨었던 주범의 최후!",
+        "archetype": "right_heavy_confrontation",
+        "paired_title": "[중국 실화 사건] 공안부 A급 수배령을 피해 교도소 안으로 걸어 들어간 남자의 마지막 심문 기록",
+        "keyword_anchor_vi": "중국 실화 사건 (Vụ Án Có Thật ở Trung Quốc)",
+        "synergy_vi": "Tam giác bổ trợ 3 chiều: [Bối cảnh ảnh hiện trường/nhân vật] + [Text Hook trên Thumb kích thích nghịch lý] + [Tiêu đề chứa từ khóa chính của hồ sơ kênh] bổ trợ chặt chẽ với 0% lặp từ."
+      }
+    ],
+    "visual_priority": "people_and_text_first",
+    "background_policy": "minimal_or_none",
+    "style_key": "teukgeup_archival_polaroid",
+    "featured_real_people": [
+      "성루이룽 (成瑞龙)"
+    ],
+    "identity_references": [
+      {
+        "name": "성루이룽 (成瑞龙)",
+        "role": "Primary subject / Class-A fugitive accused at 2010 Foshan Intermediate People's Court trial",
+        "source_url": "https://www.youtube.com/watch?v=4afxF5sK5s0",
+        "local_path": "media/thumbnail/thumb_inset_real_01_court_vest.jpg",
+        "visually_verified": true,
+        "verification_basis": "Verified directly from archival trial broadcast (4afxF5sK5s0 / trial_002.jpg) showing Cheng Ruilong (成瑞龙) in glasses and blue Foshan Detention Center vest flanked by courtroom bailiffs, cross-checked against 1998 Class-A wanted mugshot (wtB_010.jpg) and 2009 Foshan police escort archival footage (P69CMC-VCXM)."
+      }
+    ]
+  },
+  "reference_analysis": {
+    "channel_profile_id": "channel-kr-truecrime-director-v2",
+    "target_channel_handle": "@특급수배록",
+    "own_channel_references_analyzed": 0,
+    "competitor_references_analyzed": 0,
+    "title_pattern_summary": "Starts with locked series prefix '[중국 실화 사건]', pairs the 13-year 10-province multi-alias evasion hook with the single decisive forensic fingerprint match ('지문 하나'), and closes with '| 성루이룽 추적 사건' under 80 characters.",
+    "thumbnail_pattern_summary": "Follows @특급수배록 Winner DNA (own_channel_04.jpg & own_channel_06.jpg): dark charcoal studio left 62% (#070B10), right 38% cutout portrait of real subject Cheng Ruilong with warm #FDE68A rim glow, top-left neon green header '특급수배 · 중국 실화사건', Dual Polaroid real archival PiPs with red dotted_orbit circle + 3D red curved pointer arrow, and 2 bottom lines of high-contrast Paperlogy ExtraBold copy with 0% verbatim overlap against the title.",
+    "curiosity_gap_mechanism": "The title establishes the 13-year 10-province chase and fingerprint match, while the thumbnail reveals the shocking irony that he hid inside a prison cell ('“수배 피하려 감방에 숨었다” / 출소 직전 들통난 1급 수배범!') without repeating any title phrasing."
+  },
+  "altered_or_synthetic_content_disclosure_required": true,
+  "text_overlay_variants": [
+    {
+      "label": "A",
+      "angle": "paradox_quote_prison_hideout",
+      "badge": "특급수배 · 충격 실화사건",
+      "badge_vi": "Truy nã đặc biệt · Kỳ án có thật gây sốc",
+      "line_1": "*“수배 피하려* 감방에 숨었다”",
+      "line_1_vi": "“Để trốn truy nã, hắn trốn luôn vào phòng giam”",
+      "line_2": "출소 직전 들통난 *1급 수배범!*",
+      "line_2_vi": "Tội phạm truy nã cấp 1 bị lộ tẩy ngay trước ngày ra tù!",
+      "paired_title": "“수배 피하려 감옥에 숨었다” 가짜 이름으로 복역하다 출소 직전 들통난 1급 수배범 성루이룽 | 중국 대륙을 경악시킨 13명 연쇄살인극",
+      "paired_title_vi": "“Trốn truy nã bằng cách... vào tù” Tội phạm truy nã cấp 1 Thành Thụy Long dùng tên giả ngồi tù bị lộ ngay trước ngày mãn hạn | Vụ thảm sát 13 người làm rúng động Trung Quốc"
+    },
+    {
+      "label": "B",
+      "angle": "five_fake_identities_fingerprint",
+      "badge": "실화사건 · 1급 수배록",
+      "badge_vi": "Vụ án có thật · Hồ sơ truy nã cấp 1",
+      "line_1": "*“가짜 신분 5개로* 4년 복역”",
+      "line_1_vi": "“Dùng 5 thân phận giả ngồi tù suốt 4 năm”",
+      "line_2": "지문 대조에 끝난 *13명 연쇄살인!*",
+      "line_2_vi": "Kẻ sát hại 13 mạng người lộ mặt vì một lần đối chiếu vân tay!",
+      "paired_title": "13명 죽이고 다른 감옥에서 모범수로 살던 남자의 소름 돋는 정체 | 11년 완벽 범죄를 무너뜨린 결정적 단서 하나",
+      "paired_title_vi": "Thân phận rợn người của gã đàn ông giết 13 người rồi sống như phạm nhân gương mẫu trong trại giam khác | Manh mối duy nhất đập tan 11 năm tội ác hoàn hảo"
+    },
+    {
+      "label": "C",
+      "angle": "prison_safest_sanctuary_irony",
+      "badge": "특급수배 · 미제사건 추적",
+      "badge_vi": "Truy nã đặc biệt · Truy dấu kỳ án",
+      "line_1": "*“감옥이 가장* 안전했다”",
+      "line_1_vi": "“Nhà tù là nơi ẩn náu an toàn nhất”",
+      "line_2": "11년 도주 끝판왕의 *소름 돋는 최후!*",
+      "line_2_vi": "Kết cục rợn người của trùm trốn chạy suốt 11 năm!",
+      "paired_title": "경찰도 속인 5개의 가짜 이름… 경찰관까지 살해하고 감방으로 숨어들었던 최악의 연쇄살인범 성루이룽 사건 전말",
+      "paired_title_vi": "5 cái tên giả qua mặt cả cảnh sát… Toàn cảnh vụ án sát nhân hàng loạt tồi tệ nhất Thành Thụy Long sát hại cảnh sát rồi trốn vào phòng giam"
+    },
+    {
+      "label": "D",
+      "angle": "fingerprint_match_before_release",
+      "badge": "극비파일 · 중국 실화사건",
+      "badge_vi": "Hồ sơ tuyệt mật · Kỳ án có thật Trung Quốc",
+      "line_1": "*“출소 직전* 지문 한 장에”",
+      "line_1_vi": "“Chỉ vì một dấu vân tay ngay trước ngày ra tù”",
+      "line_2": "가짜 이름 뒤에 숨은 *악마의 실체!*",
+      "line_2_vi": "Chân tướng ác quỷ ẩn sau những cái tên giả!",
+      "paired_title": "출소 직전 지문 한 장에 무너진 11년의 연극 | 사형 직전까지 웃음을 잃지 않았던 냉혈 살인마의 마지막 자백",
+      "paired_title_vi": "Vở kịch 11 năm sụp đổ vì một dấu vân tay trước ngày ra tù | Lời thú tội cuối cùng của kẻ sát nhân máu lạnh vẫn mỉm cười trước giờ hành quyết"
+    }
+  ],
+  "title_thumbnail_pairs": [
+    {
+      "label": "A",
+      "title": "“수배 피하려 감옥에 숨었다” 가짜 이름으로 복역하다 출소 직전 들통난 1급 수배범 성루이룽 | 중국 대륙을 경악시킨 13명 연쇄살인극",
+      "title_vi": "“Trốn truy nã bằng cách... vào tù” Tội phạm truy nã cấp 1 Thành Thụy Long dùng tên giả ngồi tù bị lộ ngay trước ngày mãn hạn | Vụ thảm sát 13 người làm rúng động Trung Quốc",
+      "paired_title_vi": "“Trốn truy nã bằng cách... vào tù” Tội phạm truy nã cấp 1 Thành Thụy Long dùng tên giả ngồi tù bị lộ ngay trước ngày mãn hạn | Vụ thảm sát 13 người làm rúng động Trung Quốc",
+      "thumbnail_badge": "특급수배 · 충격 실화사건",
+      "badge_vi": "Truy nã đặc biệt · Kỳ án có thật gây sốc",
+      "thumbnail_line_1": "*“수배 피하려* 감방에 숨었다”",
+      "line_1_vi": "“Để trốn truy nã, hắn trốn luôn vào phòng giam”",
+      "thumbnail_line_2": "출소 직전 들통난 *1급 수배범!*",
+      "line_2_vi": "Tội phạm truy nã cấp 1 bị lộ tẩy ngay trước ngày ra tù!"
+    },
+    {
+      "label": "B",
+      "title": "13명 죽이고 다른 감옥에서 모범수로 살던 남자의 소름 돋는 정체 | 11년 완벽 범죄를 무너뜨린 결정적 단서 하나",
+      "title_vi": "Thân phận rợn người của gã đàn ông giết 13 người rồi sống như phạm nhân gương mẫu trong trại giam khác | Manh mối duy nhất đập tan 11 năm tội ác hoàn hảo",
+      "paired_title_vi": "Thân phận rợn người của gã đàn ông giết 13 người rồi sống như phạm nhân gương mẫu trong trại giam khác | Manh mối duy nhất đập tan 11 năm tội ác hoàn hảo",
+      "thumbnail_badge": "실화사건 · 1급 수배록",
+      "badge_vi": "Vụ án có thật · Hồ sơ truy nã cấp 1",
+      "thumbnail_line_1": "*“가짜 신분 5개로* 4년 복역”",
+      "line_1_vi": "“Dùng 5 thân phận giả ngồi tù suốt 4 năm”",
+      "thumbnail_line_2": "지문 대조에 끝난 *13명 연쇄살인!*",
+      "line_2_vi": "Kẻ sát hại 13 mạng người lộ mặt vì một lần đối chiếu vân tay!"
+    },
+    {
+      "label": "C",
+      "title": "경찰도 속인 5개의 가짜 이름… 경찰관까지 살해하고 감방으로 숨어들었던 최악의 연쇄살인범 성루이룽 사건 전말",
+      "title_vi": "5 cái tên giả qua mặt cả cảnh sát… Toàn cảnh vụ án sát nhân hàng loạt tồi tệ nhất Thành Thụy Long sát hại cảnh sát rồi trốn vào phòng giam",
+      "paired_title_vi": "5 cái tên giả qua mặt cả cảnh sát… Toàn cảnh vụ án sát nhân hàng loạt tồi tệ nhất Thành Thụy Long sát hại cảnh sát rồi trốn vào phòng giam",
+      "thumbnail_badge": "특급수배 · 미제사건 추적",
+      "badge_vi": "Truy nã đặc biệt · Truy dấu kỳ án",
+      "thumbnail_line_1": "*“감옥이 가장* 안전했다”",
+      "line_1_vi": "“Nhà tù là nơi ẩn náu an toàn nhất”",
+      "thumbnail_line_2": "11년 도주 끝판왕의 *소름 돋는 최후!*",
+      "line_2_vi": "Kết cục rợn người của trùm trốn chạy suốt 11 năm!"
+    },
+    {
+      "label": "D",
+      "title": "출소 직전 지문 한 장에 무너진 11년의 연극 | 사형 직전까지 웃음을 잃지 않았던 냉혈 살인마의 마지막 자백",
+      "title_vi": "Vở kịch 11 năm sụp đổ vì một dấu vân tay trước ngày ra tù | Lời thú tội cuối cùng của kẻ sát nhân máu lạnh vẫn mỉm cười trước giờ hành quyết",
+      "paired_title_vi": "Vở kịch 11 năm sụp đổ vì một dấu vân tay trước ngày ra tù | Lời thú tội cuối cùng của kẻ sát nhân máu lạnh vẫn mỉm cười trước giờ hành quyết",
+      "thumbnail_badge": "극비파일 · 중국 실화사건",
+      "badge_vi": "Hồ sơ tuyệt mật · Kỳ án có thật Trung Quốc",
+      "thumbnail_line_1": "*“출소 직전* 지문 한 장에”",
+      "line_1_vi": "“Chỉ vì một dấu vân tay ngay trước ngày ra tù”",
+      "thumbnail_line_2": "가짜 이름 뒤에 숨은 *악마의 실체!*",
+      "line_2_vi": "Chân tướng ác quỷ ẩn sau những cái tên giả!"
+    }
+  ],
+  "titles_vi": [
+    "“Trốn truy nã bằng cách... vào tù” Tội phạm truy nã cấp 1 Thành Thụy Long dùng tên giả ngồi tù bị lộ ngay trước ngày mãn hạn | Vụ thảm sát 13 người làm rúng động Trung Quốc",
+    "Thân phận rợn người của gã đàn ông giết 13 người rồi sống như phạm nhân gương mẫu trong trại giam khác | Manh mối duy nhất đập tan 11 năm tội ác hoàn hảo",
+    "5 cái tên giả qua mặt cả cảnh sát… Toàn cảnh vụ án sát nhân hàng loạt tồi tệ nhất Thành Thụy Long sát hại cảnh sát rồi trốn vào phòng giam",
+    "Vở kịch 11 năm sụp đổ vì một dấu vân tay trước ngày ra tù | Lời thú tội cuối cùng của kẻ sát nhân máu lạnh vẫn mỉm cười trước giờ hành quyết"
+  ]
+}

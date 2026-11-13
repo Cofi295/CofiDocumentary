@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import queue
+import re
 import subprocess
 import threading
 import time
@@ -82,8 +83,8 @@ class GoalTurnResult:
 
 
 class AntigravityGoalSession:
-    DEFAULT_MAX_CONTEXT_TOKENS = 150_000
-    DEFAULT_MAX_STEPS = 250
+    DEFAULT_MAX_CONTEXT_TOKENS = 65_000
+    DEFAULT_MAX_STEPS = 80
     HANDOFF_MAX_CHARS = 6000
 
     def __init__(self, gateway: Any, workspace: str | Path, label: str):
@@ -338,6 +339,12 @@ class AntigravityGoalSession:
                 startupinfo=startupinfo,
                 bufsize=1,
             )
+            try:
+                from .render_cache import apply_background_worker_qos
+
+                apply_background_worker_qos(self.proc)
+            except Exception:
+                pass
             threading.Thread(target=self._reader, args=(self.proc, self._events), daemon=True, name=f"goal-{self.label}").start()
 
     def _reader(self, proc: subprocess.Popen, events: "queue.Queue[dict[str, Any] | None]") -> None:
@@ -432,7 +439,7 @@ class AntigravityGoalSession:
                 self._transcript_offset = handle.tell()
             if not chunk:
                 return
-            for raw_line in chunk.decode("utf-8", errors="replace").splitlines():
+            for raw_line in chunk.decode("utf-8", errors="replace").split("\n"):
                 raw_line = raw_line.strip()
                 if not raw_line:
                     continue
@@ -495,6 +502,85 @@ class AntigravityGoalSession:
                 break
         return changed
 
+    def _poll_active_subagents(
+        self,
+        subagent_offsets: dict[str, int],
+        on_line: Callable[[str], None] | None,
+    ) -> None:
+        if not on_line or not self.conversation_id:
+            return
+        self._sync_transcript_steps(self.conversation_id)
+        for row in list(self._transcript_steps.values())[-12:]:
+            if not isinstance(row, dict):
+                continue
+            raw_text = str(row.get("content") or "")
+            if "conversationId" not in raw_text:
+                continue
+            for match in re.findall(r'"conversationId"\s*:\s*"([0-9a-fA-F-]{32,40})"', raw_text):
+                if match and match != self.conversation_id and match not in subagent_offsets:
+                    subagent_offsets[match] = 0
+        for sub_cid in list(subagent_offsets.keys()):
+            path = self._brain_transcript_path(sub_cid)
+            if path is None:
+                continue
+            try:
+                with path.open("rb") as handle:
+                    handle.seek(subagent_offsets[sub_cid])
+                    chunk = handle.read()
+                    subagent_offsets[sub_cid] = handle.tell()
+                if not chunk:
+                    continue
+                for raw_line in chunk.decode("utf-8", errors="replace").split("\n"):
+                    raw_line = raw_line.strip()
+                    if not raw_line:
+                        continue
+                    try:
+                        srow = json.loads(raw_line)
+                    except json.JSONDecodeError:
+                        continue
+                    if not isinstance(srow, dict):
+                        continue
+                    sidx = srow.get("step_index")
+                    stype = str(srow.get("type") or "").upper()
+                    tcalls = srow.get("tool_calls") if isinstance(srow.get("tool_calls"), list) else []
+                    thinking = str(srow.get("thinking") or "").strip()
+                    if tcalls and isinstance(tcalls[0], dict):
+                        tc = tcalls[0]
+                        tname = str(tc.get("name") or "tool")
+                        targs = tc.get("args") if isinstance(tc.get("args"), dict) else {}
+                        tsum = str(targs.get("toolSummary") or targs.get("toolAction") or targs.get("Path") or targs.get("CommandLine") or "")[:140]
+                        synth = {
+                            "type": "step_update",
+                            "conversation_id": self.conversation_id,
+                            "step_update": {
+                                "conversation_id": self.conversation_id,
+                                "subagent_conversation_id": sub_cid,
+                                "step_index": int(sidx or 0),
+                                "step_type": tname,
+                                "status": "RUNNING",
+                                "tool_name": tname,
+                                "tool_summary": f"[Subagent] {tsum}" if tsum else f"[Subagent] {tname}",
+                                "thinking": thinking[:400] if thinking else "",
+                            },
+                        }
+                        on_line(json.dumps(synth, ensure_ascii=False))
+                    elif stype == "PLANNER_RESPONSE" and thinking:
+                        synth = {
+                            "type": "step_update",
+                            "conversation_id": self.conversation_id,
+                            "step_update": {
+                                "conversation_id": self.conversation_id,
+                                "subagent_conversation_id": sub_cid,
+                                "step_index": int(sidx or 0),
+                                "step_type": "agent_response",
+                                "status": "DONE",
+                                "thinking": f"[Subagent] {thinking[:400]}",
+                            },
+                        }
+                        on_line(json.dumps(synth, ensure_ascii=False))
+            except OSError:
+                pass
+
     @staticmethod
     def _conversation_id_of(event: dict[str, Any]) -> str:
         for candidate in (
@@ -539,6 +625,7 @@ class AntigravityGoalSession:
             self.stop()
             return GoalTurnResult("exited", error=f"Không gửi được tin nhắn tới Antigravity: {exc}", conversation_id=self.conversation_id, compacted=compacted)
         text_parts: list[str] = []
+        subagent_offsets: dict[str, int] = {}
         while True:
             if cancel_event is not None and cancel_event.is_set():
                 self.stop()
@@ -546,6 +633,7 @@ class AntigravityGoalSession:
             try:
                 event = events.get(timeout=0.5)
             except queue.Empty:
+                self._poll_active_subagents(subagent_offsets, on_line)
                 continue
             if event is None:
                 code = proc.poll()

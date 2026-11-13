@@ -14,7 +14,9 @@ PLAN_MANIFEST_NAME = "plan_visual_manifest.json"
 STP_MANIFEST_SOURCE = "visuals_stp_after_voice"
 _STP_UNIT_FIELDS = (
     "parent_beat_id", "narration_text", "start_sec", "end_sec", "target_duration_sec",
-    "visual_route", "prompt", "ai_media_mode", "ai_motion_required",
+    "visual_route", "prompt", "ai_prompt", "ai_cutout_prop_prompt",
+    "vox_design_prompt", "vox_blueprint_spec", "visual_layers",
+    "ai_media_mode", "ai_motion_required",
 )
 
 
@@ -68,8 +70,14 @@ def load_plan_manifest(workspace: str | Path) -> dict[str, Any]:
     return _collapse_stp_units(current)
 
 
+def _strip_markdown_headings(text: str) -> str:
+    return "\n".join(
+        line for line in str(text or "").splitlines() if not line.strip().startswith("#")
+    )
+
+
 def _compact(text: str) -> str:
-    return "".join(str(text or "").split())
+    return "".join(_strip_markdown_headings(text).split())
 
 
 def _split_long_clause(text: str, max_chars: int) -> list[str]:
@@ -171,19 +179,126 @@ def _route_for(
     source_priority: str,
     metadata: dict[str, Any] | None = None,
     unit: str = "",
+    visual_mix: dict[str, Any] | None = None,
 ) -> str:
+    """3-Tier Meaning-Driven Visual Priority Router:
+    - Priority #1: Authentic archival footage (`footage` / `REAL_FTG`) when real case footage exists.
+    - Priority #2: Bespoke VOX illustration (`vox` / `<Desk>` / `<GeoJson3DMapStage>`) whenever real footage is absent.
+    - Priority #3 (Last Resort Only): AI image (`ai_visual` / `AI_IMAGE`) strictly for closed-room psychological moments where neither real footage nor VOX illustration applies.
+    """
     if strategy == "full_ai":
         return "ai_visual"
     if strategy in {"full_footage", "footage_first"}:
         return "footage"
+    intent = str((metadata or {}).get("framing_motion_intent") or "").strip()
+    plan_route = str((metadata or {}).get("visual_route") or "").strip().lower()
+    vtype = str((metadata or {}).get("visual_type") or "").strip().lower()
+    p = str(source_priority or "").strip().lower()
+
+    if (
+        plan_route in {"vox", "vox_motion"}
+        or vtype in {"vox", "vox_motion"}
+        or intent.startswith(("[VOX_NEWSROOM", "V23 "))
+    ):
+        return "vox"
+    if (
+        plan_route == "cinema_text"
+        or vtype == "cinema_text"
+        or intent.startswith(("[CINEMA_TEXT", "FramelessCinemaTextBeat"))
+    ):
+        return "footage"
+
+    is_explicit_closed_room_ai = (
+        intent.startswith(("CLOSED_ROOM_PROFILE_AI_RECONSTRUCTION", "[AI_IMAGE"))
+        or plan_route == "ai_visual"
+        or vtype in {"ai_reconstruction", "ai_visual"}
+        or p in {"must_ai", "prefer_ai"}
+    )
+
     if strategy in {"semi_content", "ban_content", "edit_footage", "edit_direct_footage"}:
-        vtype = str((metadata or {}).get("visual_type") or "").strip().lower()
-        if str(source_priority or "").strip().lower() == "ai_ok" or vtype == "ai_reconstruction":
+        if (
+            intent.startswith(("AUTHENTIC_CASE_ARCHIVAL_FOOTAGE_BACKBONE", "[REAL_FTG"))
+            or plan_route == "footage"
+            or p in {"must_real", "footage_only"}
+        ):
+            return "footage"
+        if is_explicit_closed_room_ai:
             return "ai_visual"
         return "footage"
+
     if strategy in {"evidence_footage", "selective_footage", "evidence_first"}:
-        return "footage" if _is_core_evidence_or_character(metadata, unit) else "ai_visual"
-    return "ai_visual" if str(source_priority or "").strip().lower() == "ai_ok" else "footage"
+        if _is_core_evidence_or_character(metadata, unit):
+            return "footage"
+        # Priority #2 when real footage is absent: route to VOX unless explicitly closed-room AI
+        return "ai_visual" if is_explicit_closed_room_ai else "vox"
+
+    # hybrid / story-driven 3-tier priority: #1 footage -> #2 vox -> #3 ai_visual last resort
+    if p in {"must_real", "footage_only"} or plan_route == "footage":
+        return "footage"
+    if is_explicit_closed_room_ai:
+        return "ai_visual"
+    return "footage"
+
+
+def resolve_visual_strategy(job: dict[str, Any], workspace: Path | None = None) -> tuple[str, dict[str, Any]]:
+    profile = job.get("profile") or job.get("channel_profile") or job.get("channel_profile_snapshot")
+    if not isinstance(profile, dict):
+        profile = {}
+    channel_profile_id = str(job.get("channel_profile_id") or profile.get("id") or profile.get("channel_profile_id") or "").strip()
+    if channel_profile_id and (not profile.get("visual_strategy") or not profile.get("editing_dna")):
+        try:
+            from services.channel_profile_service import ChannelProfileService
+            fetched = ChannelProfileService().get_profile(channel_profile_id)
+            if isinstance(fetched, dict):
+                profile = {**fetched, **profile}
+        except Exception:
+            try:
+                prof_path = Path(__file__).resolve().parent.parent / "data" / "channel_profiles.json"
+                if prof_path.exists():
+                    p_data = json.loads(prof_path.read_text(encoding="utf-8"))
+                    for p in p_data.get("profiles", []):
+                        if str(p.get("id")) == channel_profile_id or str(p.get("channel_profile_id")) == channel_profile_id:
+                            profile = {**p, **profile}
+                            break
+            except Exception:
+                pass
+
+    editing_dna = job.get("editing_dna") or profile.get("editing_dna") or {}
+    if not isinstance(editing_dna, dict):
+        editing_dna = {}
+    visual_mix = editing_dna.get("visual_mix") if isinstance(editing_dna.get("visual_mix"), dict) else {}
+    preset_id = str(editing_dna.get("preset_id") or "").strip()
+    prof_ed_vs = str(
+        (profile.get("editorial_dna") or {}).get("visual_strategy")
+        or profile.get("default_visual_strategy")
+        or ""
+    ).strip().lower()
+
+    strategy = str(
+        job.get("visual_strategy")
+        or profile.get("visual_strategy")
+        or profile.get("default_visual_strategy")
+        or (job.get("production_recipe") or {}).get("visual_strategy")
+        or visual_mix.get("preferred_routing")
+        or "full_footage"
+    ).strip().lower()
+
+    if preset_id in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"} and prof_ed_vs in {
+        "edit_direct_footage",
+        "semi_content",
+        "ban_content",
+        "edit_footage",
+    }:
+        strategy = "edit_direct_footage"
+
+    if strategy == "footage_first":
+        strategy = "full_footage"
+    elif strategy in {"selective_footage", "evidence_first"}:
+        strategy = "evidence_footage"
+    elif strategy in {"semi_content", "ban_content", "edit_footage"}:
+        strategy = "edit_direct_footage"
+
+    return strategy, visual_mix
 
 
 def _clean_ai_scene_focus(unit: str, visual: str) -> str:
@@ -226,8 +341,13 @@ def _prompt_for(
     style_mode = str(style.get("style_mode") or "auto").strip().lower()
     style_preset = str(style.get("style_preset") or "").strip()
     style_prompt = str(style.get("style_prompt") or "").strip()
+    style_prompt_lower = style_prompt.lower()
+    forbids_cartoon = any(
+        tok in style_prompt_lower
+        for tok in ("0% cartoon", "0% stickman", "realistic human anatomy")
+    )
     style_ref = str(style.get("style_reference_image") or "").strip()
-    has_ref = bool(style_ref and Path(style_ref).is_file())
+    has_ref = bool(style_ref and Path(style_ref).is_file()) and not forbids_cartoon
     no_text_rule = (
         "SCENE FOCUS RULE: Depict the physical scene, characters, environment, lighting, and action of this moment in a unified full-bleed 16:9 frame."
     )
@@ -272,7 +392,7 @@ class VisualsCoordinator:
 
     def run(self, job: dict[str, Any], workspace: str | Path) -> StageResult:
         workspace = Path(workspace)
-        script = (workspace / "script.md").read_text(encoding="utf-8").strip()
+        script = _strip_markdown_headings((workspace / "script.md").read_text(encoding="utf-8")).strip()
         voice = self._read_json(workspace / "voice_manifest.json")
         current_manifest = self._read_json(workspace / "visual_manifest.json")
         if str(current_manifest.get("source") or "") != STP_MANIFEST_SOURCE:
@@ -283,8 +403,16 @@ class VisualsCoordinator:
         if not voice_beats:
             raise RuntimeError("voice_manifest.json has no beats for Visuals/STP")
         voice_text = " ".join(str(item.get("text") or "").strip() for item in voice_beats).strip()
+        broad_text = " ".join(
+            str(item.get("narration_text") or item.get("voice_text") or item.get("text") or "").strip()
+            for item in (broad.get("beats") or [])
+            if isinstance(item, dict)
+        ).strip()
         if _compact(voice_text) != _compact(script):
-            raise RuntimeError("Voice text does not cover 100% of script.md; rerun Voice before Visuals/STP")
+            if broad_text and _compact(voice_text) == _compact(broad_text):
+                script = broad_text
+            else:
+                raise RuntimeError("Voice text does not cover 100% of script.md; rerun Voice before Visuals/STP")
 
         plan_by_id: dict[str, dict[str, Any]] = {}
         for item in (broad.get("beats") or []):
@@ -293,44 +421,56 @@ class VisualsCoordinator:
             parent_id = str(item.get("parent_beat_id") or item.get("beat_id") or "").strip()
             if parent_id and parent_id not in plan_by_id:
                 plan_by_id[parent_id] = item
-        strategy = str(job.get("visual_strategy") or "full_footage").strip().lower()
-        if strategy == "footage_first":
-            strategy = "full_footage"
-        elif strategy in {"selective_footage", "evidence_first"}:
-            strategy = "evidence_footage"
-        elif strategy in {"semi_content", "ban_content", "edit_footage"}:
-            strategy = "edit_direct_footage"
+        strategy, visual_mix = resolve_visual_strategy(job, workspace)
         style_settings = self._load_style_settings(workspace, job)
         ai_media_mode = str(
             style_settings.get("ai_media_mode")
             or job.get("ai_media_mode")
             or (job.get("ai_visual") or {}).get("ai_media_mode")
-            or ("image" if strategy == "edit_direct_footage" else "mixed")
+            or ("image" if strategy in {"edit_direct_footage", "full_ai"} else "mixed")
         ).strip().lower()
         if ai_media_mode not in {"image", "video", "mixed"}:
-            ai_media_mode = "image" if strategy == "edit_direct_footage" else "mixed"
+            ai_media_mode = "image" if strategy in {"edit_direct_footage", "full_ai"} else "mixed"
 
-        profile_id = str(
-            job.get("channel_profile_id")
-            or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
-            or ""
-        ).strip()
-        if profile_id == "channel-e544a64b7c" or profile_id == "channel-cn-cyber-finance-kr":
-            # Vẽ FULL 100% ảnh AI từ đầu giống True Crime (mỗi beat có sẵn 1 ảnh AI 4D khớp 100% cảnh đó), đồng thời vẫn auto skip Step 4
-            strategy = "full_ai"
+        editing_dna = job.get("editing_dna") or (job.get("channel_profile_snapshot") or {}).get("editing_dna") or {}
+        preset_id = str(editing_dna.get("preset_id") or "").strip()
+        if preset_id in {"forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10", "financial_forensic_vox"} and not job.get("ai_media_mode"):
             ai_media_mode = "image"
+        has_explicit_closed_room_intents = any(
+            str((b or {}).get("framing_motion_intent") or "").strip().startswith("CLOSED_ROOM_PROFILE_AI_RECONSTRUCTION")
+            or str((b or {}).get("visual_type") or "").strip().lower() in {"ai_visual", "ai_reconstruction"}
+            for b in plan_by_id.values()
+        )
         if strategy == "edit_direct_footage":
-            max_selective_ai_beats = max(4, min(20, max(1, len(voice_beats) // 7)))
+            if preset_id in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"}:
+                max_selective_ai_beats = max(24, int(round(len(voice_beats) * 0.35)))
+            else:
+                max_selective_ai_beats = (
+                    max(4, int(round(len(voice_beats) * 0.18)))
+                    if has_explicit_closed_room_intents
+                    else max(4, min(20, max(1, len(voice_beats) // 7)))
+                )
         else:
             max_selective_ai_beats = 0
         selective_ai_count = 0
+
+        if plan_by_id and all("is_verbatim_quote" not in b and "is_quote" not in b for b in plan_by_id.values()):
+            try:
+                from .script import tag_verbatim_quotes
+                tagged_plan = tag_verbatim_quotes(list(plan_by_id.values()))
+                for b in tagged_plan:
+                    pid = str(b.get("beat_id") or "")
+                    if pid in plan_by_id:
+                        plan_by_id[pid]["is_verbatim_quote"] = b.get("is_verbatim_quote", False)
+            except Exception:
+                pass
 
         refined: list[dict[str, Any]] = []
         prompt_rows: list[dict[str, Any]] = []
         for parent_index, voice_beat in enumerate(voice_beats, 1):
             parent_id = str(voice_beat.get("beat_id") or f"B{parent_index:03d}").strip()
             text = str(voice_beat.get("text") or "").strip()
-            units = [text] if ((profile_id == "channel-e544a64b7c" or profile_id == "channel-cn-cyber-finance-kr") and len(text) <= 180) else split_visual_text(text, self.max_chars)
+            units = [text] if ((preset_id in {"forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10", "financial_forensic_vox"} or strategy in {"evidence_footage", "full_ai"}) and len(text) <= 360) else split_visual_text(text, self.max_chars)
             if not units:
                 continue
             metadata = dict(plan_by_id.get(parent_id) or {})
@@ -344,17 +484,37 @@ class VisualsCoordinator:
                 beat_id = f"{parent_id}-V{unit_index:02d}"
                 unit_end = end if unit_index == len(units) else cursor + total_duration * weight / total_weight
                 source_priority = str(metadata.get("source_priority") or "prefer_real")
-                route = _route_for(strategy, source_priority, metadata=metadata, unit=unit)
+                route = _route_for(strategy, source_priority, metadata=metadata, unit=unit, visual_mix=visual_mix)
                 if strategy == "edit_direct_footage":
                     if route == "ai_visual":
                         if unit_index > 1 or selective_ai_count >= max_selective_ai_beats:
-                            route = "footage"
+                            # Priority #2 when real footage is absent: route to VOX before AI
+                            route = "vox"
                         else:
                             selective_ai_count += 1
-                    elif unit_index == 1 and selective_ai_count < max_selective_ai_beats and (parent_index == 1 or parent_index % 8 == 0):
-                        route = "ai_visual"
-                        selective_ai_count += 1
+                plan_vtype = str(metadata.get("visual_type") or "").strip().lower()
+                plan_vroute = str(metadata.get("visual_route") or "").strip().lower()
+                plan_intent = str(metadata.get("framing_motion_intent") or "").strip()
+                is_plan_vox = (
+                    route == "vox"
+                    or plan_vtype in {"vox", "vox_motion"}
+                    or plan_vroute in {"vox", "vox_motion"}
+                    or plan_intent.startswith(("[VOX_NEWSROOM", "V23 "))
+                )
+                is_plan_cinema_text = (
+                    plan_vtype == "cinema_text"
+                    or plan_vroute == "cinema_text"
+                    or plan_intent.startswith(("[CINEMA_TEXT", "FramelessCinemaTextBeat"))
+                )
+                if is_plan_vox and route != "ai_visual":
+                    resolved_vtype = "vox"
+                    route = "vox"
+                elif is_plan_cinema_text and route != "ai_visual":
+                    resolved_vtype = "cinema_text"
+                else:
+                    resolved_vtype = "ai_reconstruction" if route == "ai_visual" else "sourced_video"
                 prompt = _prompt_for(unit, metadata, route, style_settings=style_settings)
+                is_quote = bool(metadata.get("is_verbatim_quote") or metadata.get("is_quote"))
                 beat = {
                     **metadata,
                     "beat_id": beat_id,
@@ -365,13 +525,16 @@ class VisualsCoordinator:
                     "target_duration_sec": round(max(0.001, unit_end - cursor), 3),
                     "source_priority": source_priority,
                     "visual_route": route,
-                    "visual_type": "ai_reconstruction" if route == "ai_visual" else "sourced_video",
+                    "visual_type": resolved_vtype,
                     "visual_description": str(metadata.get("visual_description") or unit).strip(),
                     "footage_search_queries": metadata.get("footage_search_queries") or [unit],
                     "framing_motion_intent": str(metadata.get("framing_motion_intent") or "").strip(),
                     "ai_media_mode": ai_media_mode,
                     "ai_motion_required": route == "ai_visual" and ai_media_mode == "video",
                     "prompt": prompt,
+                    "is_verbatim_quote": is_quote,
+                    "visual_strategy": strategy,
+                    "visual_mix": visual_mix,
                 }
                 refined.append(beat)
                 prompt_rows.append({
@@ -386,7 +549,7 @@ class VisualsCoordinator:
                 })
                 cursor = unit_end
 
-        from .vox_engine import VoxSemanticRouter, is_vox_satellite_enabled
+        from .vox_engine import VoxSemanticRouter, attach_two_layer_visual_prompts, is_vox_satellite_enabled
         from .financial_vox_engine import FinancialVoxSemanticRouter, is_financial_vox_enabled
         vox_enabled = is_vox_satellite_enabled(job)
         fin_vox_enabled = is_financial_vox_enabled(job)
@@ -396,16 +559,32 @@ class VisualsCoordinator:
         elif fin_vox_enabled:
             fin_router = FinancialVoxSemanticRouter()
             refined = fin_router.route_timeline(refined, job)
-        if vox_enabled or fin_vox_enabled:
-            for row in prompt_rows:
-                bid = row.get("beat_id")
-                matching = next((b for b in refined if b.get("beat_id") == bid), None)
-                if matching and matching.get("scene_archetype"):
+
+        total_refined = len(refined)
+        for idx_b, b_item in enumerate(refined):
+            if not b_item.get("vox_design_prompt") or not b_item.get("visual_layers"):
+                attach_two_layer_visual_prompts(b_item, beat_index=idx_b, total_beats=total_refined)
+
+        for row in prompt_rows:
+            bid = row.get("beat_id")
+            matching = next((b for b in refined if b.get("beat_id") == bid), None)
+            if matching:
+                if matching.get("scene_archetype"):
                     row["scene_archetype"] = matching["scene_archetype"]
                     row["archetype_label"] = matching.get("archetype_label")
-                    if matching.get("dna_visual_slot"):
-                        row["dna_visual_slot"] = matching["dna_visual_slot"]
+                if matching.get("dna_visual_slot"):
+                    row["dna_visual_slot"] = matching["dna_visual_slot"]
+                if matching.get("editorial_layer"):
+                    row["editorial_layer"] = matching["editorial_layer"]
+                row["ai_prompt"] = matching.get("ai_prompt") or row.get("prompt") or ""
+                row["ai_cutout_prop_prompt"] = matching.get("ai_cutout_prop_prompt") or ""
+                row["vox_design_prompt"] = matching.get("vox_design_prompt") or ""
+                row["vox_blueprint_spec"] = matching.get("vox_blueprint_spec") or {}
+                row["visual_layers"] = matching.get("visual_layers") or {}
 
+        from .critic_loops import audit_and_refine_storyboard_sequence
+
+        audit_and_refine_storyboard_sequence(refined, prompt_rows, job, workspace)
         if _compact("".join(item["narration_text"] for item in refined)) != _compact(script):
             raise RuntimeError("Visuals/STP did not preserve 100% of script.md")
 
@@ -413,14 +592,20 @@ class VisualsCoordinator:
         self._write_json(workspace / "visual_manifest.json", {
             "version": 2,
             "source": "visuals_stp_after_voice",
+            "lead_agent": "visuals",
+            "co_lead_agent": "vox" if (vox_enabled or fin_vox_enabled) else None,
             "target_duration_sec": round(duration, 3),
             "visual_strategy": strategy,
+            "visual_mix": visual_mix,
             "ai_media_mode": ai_media_mode,
             "beats": refined,
         })
         self._write_json(workspace / "visual_prompts.json", {
             "version": 1,
+            "lead_agent": "visuals",
+            "co_lead_agent": "vox" if (vox_enabled or fin_vox_enabled) else None,
             "visual_strategy": strategy,
+            "visual_mix": visual_mix,
             "ai_media_mode": ai_media_mode,
             "style": {k: v for k, v in style_settings.items() if k != "style_presets"},
             "prompts": prompt_rows,

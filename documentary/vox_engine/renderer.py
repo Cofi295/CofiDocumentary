@@ -22,6 +22,10 @@ from .archetypes import (
     fit_crop,
     get_fallback_image,
 )
+from .composable_scene_graph import (
+    build_composable_vox_scene_spec,
+    render_composable_vox_frame,
+)
 
 
 class VoxSceneRenderer:
@@ -64,15 +68,27 @@ class VoxSceneRenderer:
     ) -> Image.Image:
         """Renders one 1920x1080 frame for the specified archetype and voice_spec."""
         arch = str(archetype_id or "").strip()
+        inputs = dict(media_inputs or {})
+        effective_voice_spec = voice_spec or inputs.get("voice_spec")
+
+        if arch in {"#V_COMPOSABLE", "COMPOSABLE_VOX", "#V_BESPOKE_VOICE_SCENE"} or bool((effective_voice_spec or {}).get("composable_mode")):
+            fa = self._resolve_image(inputs.get("frame_a") or inputs.get("frame_main") or inputs.get("frame_left"), "EVIDENCE A")
+            fb = self._resolve_image(inputs.get("frame_b") or inputs.get("frame_right") or inputs.get("frame_a"), "EVIDENCE B")
+            spec_with_hint = dict(effective_voice_spec or {})
+            spec_with_hint.setdefault("scene_archetype", arch)
+            canvas = render_composable_vox_frame(progress, fa, fb, subtitle_text=subtitle_text, voice_spec=spec_with_hint)
+            if out_path:
+                p = Path(out_path)
+                p.parent.mkdir(parents=True, exist_ok=True)
+                canvas.save(p, quality=95)
+            return canvas
+
         renderer_fn = ARCHETYPE_RENDERERS.get(arch)
         if not renderer_fn and arch.startswith("#FIN"):
             from documentary.financial_vox_engine import FINANCIAL_ARCHETYPE_RENDERERS
             renderer_fn = FINANCIAL_ARCHETYPE_RENDERERS.get(arch)
         if not renderer_fn:
             renderer_fn = ARCHETYPE_RENDERERS["cinema_full"]
-
-        inputs = dict(media_inputs or {})
-        effective_voice_spec = voice_spec or inputs.get("voice_spec")
 
         if arch.startswith("#FIN") or arch in {"#V_POPOUT_HIGHLIGHT", "#V_CLAUSE_TIMELINE", "#V_FORENSIC_CROSS_SECTION", "#V_SAT_ZONE_DRAW", "#V_BLENDER_3D_STAGE", "#V_SAT_LOUPE_ZOOM", "#V_DOSSIER_BOARD", "#V_VERDICT_PROCLAMATION", "#V_FULLSCREEN_GIS_FLIGHT", "#V_FULLSCREEN_SATELLITE_RECON", "S3_FULLSCREEN_GIS_FLIGHT", "S4_FULLSCREEN_SATELLITE_RECON"}:
             fa = self._resolve_image(inputs.get("frame_a") or inputs.get("frame_main") or inputs.get("frame_left"), "EVIDENCE A")
@@ -183,14 +199,18 @@ class VoxSceneRenderer:
         cmd = [
             "ffmpeg", "-y", "-f", "rawvideo", "-vcodec", "rawvideo",
             "-s", f"{W}x{H}", "-pix_fmt", "rgb24", "-r", str(fps),
-            "-i", "-", "-c:v", "libx264", "-pix_fmt", "yuv420p",
-            "-preset", "ultrafast", "-crf", "18", str(out_path),
+            "-i", "-", "-c:v", "libx264", "-profile:v", "high", "-pix_fmt", "yuv420p",
+            "-preset", "fast", "-crf", "14", str(out_path),
         ]
+        popen_kwargs: dict[str, Any] = {}
+        if os.name == "nt":
+            popen_kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
         proc = subprocess.Popen(
             cmd,
             stdin=subprocess.PIPE,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            **popen_kwargs,
         )
         assert proc.stdin is not None
         preview_step = int(steps * 0.78)

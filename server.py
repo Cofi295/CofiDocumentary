@@ -243,7 +243,14 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
                 except Exception:
                     pass
 
-            return job_service.create_job(payload)
+            created = job_service.create_job(payload)
+            try:
+                if hasattr(doc_service, "_record_ui_action"):
+                    doc_service._record_ui_action({"type": "select_job", "job_id": created["id"]})
+                    doc_service._record_ui_action({"type": "navigate", "tab": "script"})
+            except Exception:
+                pass
+            return created
         except HTTPException:
             raise
         except KeyError as exc:
@@ -614,6 +621,270 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail=str(exc)) from exc
         except Exception as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    @router.get("/api/agency/roster")
+    def get_agency_roster():
+        """Return the full 15-Specialist CofiDocumentary Studio Multi-Agent Roster, Divisions, Runbooks, Departments, and Lint Report."""
+        from documentary.agent_departments import build_live_departments_projection, get_department_for_agent
+
+        am = doc_service.agent_manager
+        raw_agents = am.list_agents()
+        enriched_roster = []
+        for ag in raw_agents:
+            dept_info = get_department_for_agent(ag.get("id", ""))
+            enriched_roster.append({
+                **ag,
+                "department_hierarchy": dept_info,
+            })
+        dept_proj = build_live_departments_projection(raw_agents)
+        return {
+            "status": "ok",
+            "architecture": "cofi_single_model_multi_agent",
+            "agent_count": len(enriched_roster),
+            "divisions": am.list_divisions(),
+            "runbooks": am.list_runbooks(),
+            "agents": enriched_roster,
+            "departments": dept_proj["departments"],
+            "departments_summary": dept_proj["summary"],
+            "lint": am.lint_corpus(),
+        }
+
+    @router.get("/api/agent-departments")
+    @router.get("/api/agency/departments")
+    @router.get("/api/agents/departments")
+    def get_agent_departments_endpoint(job_id: str | None = None):
+        """Return the 15 Agent Departments hierarchy with Lead, Deputy, and Specialist Mini-Agents live status."""
+        return doc_service.get_agent_departments(job_id=job_id)
+
+    @router.post("/api/agent-departments/dispatch-parallel")
+    @router.post("/api/agency/dispatch-parallel")
+    @router.post("/api/agents/dispatch-parallel")
+    async def dispatch_department_parallel_endpoint(request: Request):
+        """Execute parallel specialist batches for one or all 15 departments using ThreadPoolExecutor."""
+        from documentary.agent_departments import execute_department_parallel_batches
+        from documentary.agent_office import build_live_office_snapshot
+
+        try:
+            try:
+                body = await request.json()
+            except Exception:
+                body = {}
+            if not isinstance(body, dict):
+                body = {}
+            dept_id = body.get("dept_id") or body.get("department_id") or body.get("agent_id") or "all"
+            req_job_id = str(body.get("job_id") or "").strip() or None
+
+            all_jobs = doc_service.list_jobs()
+            selected_job = None
+            if req_job_id:
+                try:
+                    selected_job = doc_service.get_job(req_job_id)
+                except Exception:
+                    selected_job = next((j for j in all_jobs if j.get("id") == req_job_id), None)
+            if selected_job is None:
+                selected_job = next(
+                    (j for j in all_jobs if str(j.get("status") or "").lower() in {"running", "queued"}),
+                    all_jobs[0] if all_jobs else None,
+                )
+
+            workspace_dir: Path | None = None
+            if selected_job and selected_job.get("workspace"):
+                workspace_dir = Path(str(selected_job["workspace"]))
+            elif selected_job and selected_job.get("id"):
+                workspace_dir = ROOT / "workspaces" / str(selected_job["id"])
+
+            exec_state = execute_department_parallel_batches(
+                workspace_dir=workspace_dir,
+                dept_id=dept_id,
+                job_snapshot=selected_job,
+            )
+            office_snap = build_live_office_snapshot(
+                doc_service,
+                job_id=selected_job.get("id") if selected_job else req_job_id,
+            )
+            return {
+                "status": "ok",
+                "ok": True,
+                "job_id": selected_job.get("id") if selected_job else req_job_id,
+                "dept_id": dept_id,
+                "parallel_execution": exec_state,
+                "departments": office_snap.get("departments", []),
+                "summary": office_snap.get("departments_summary", {}),
+                "active_parallel_workers": office_snap.get("active_parallel_workers", []),
+                "agent_office": office_snap,
+            }
+        except HTTPException:
+            raise
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Không chạy được luồng song song phòng ban: {exc}") from exc
+
+    @router.get("/api/state")
+    def get_studio_state_endpoint(job_id: str | None = None):
+        """Return live studio state including jobs and the 15 Agent Departments hierarchy."""
+        from documentary.agent_office import build_live_office_snapshot
+
+        office_snap = build_live_office_snapshot(doc_service, job_id=job_id)
+        return {
+            "status": "ok",
+            "selected_job": office_snap.get("selected_job"),
+            "jobs": office_snap.get("jobs_list", []),
+            "agent_office": office_snap,
+            "agent_departments": office_snap.get("departments", []),
+            "agent_departments_summary": office_snap.get("departments_summary", {}),
+        }
+
+    @router.get("/api/agency/search")
+    def search_agency_specialists(q: str = "", division: str | None = None, limit: int = 8):
+        """Lazy-discovery keyword search across the standalone `agents/<division>/<id>.md` corpus."""
+        results = doc_service.agent_manager.search_agents(q, division=division, limit=limit)
+        return {"query": q, "division": division, "count": len(results), "results": results}
+
+    @router.get("/api/agency/agents/{agent_id}")
+    def inspect_agency_specialist(agent_id: str, include_body: bool = True):
+        """Inspect one specialist's standalone source charter (`SOUL` + `OPERATIONS` + permission contract + Department Hierarchy)."""
+        from documentary.agent_departments import get_department_for_agent
+
+        try:
+            spec = doc_service.agent_manager.inspect_agent(agent_id, include_body=include_body)
+            dept_info = get_department_for_agent(agent_id)
+            if isinstance(spec, dict) and dept_info:
+                spec = {**spec, "department_hierarchy": dept_info}
+            return spec
+        except ValueError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @router.post("/api/agency/delegate")
+    async def delegate_agency_specialist(request: Request):
+        """Invoke one CofiDocumentary specialist in an isolated permission-scoped session (with `evidence_qa` gate by default)."""
+        try:
+            body = await request.json()
+            if not isinstance(body, dict):
+                body = {}
+            return doc_service.delegate_specialist(body)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    @router.post("/api/agency/delegate-squad")
+    async def delegate_agency_squad(request: Request):
+        """Invoke an ordered 2..6 specialist handoff squad with structured Handoff Packets between hops."""
+        try:
+            body = await request.json()
+            if not isinstance(body, dict):
+                body = {}
+            return doc_service.delegate_specialist_squad(body)
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    @router.get("/api/jobs/{job_id}/nexus-ledger")
+    def get_job_nexus_ledger(job_id: str):
+        """Retrieve the NEXUS Inter-Agent Handoff Ledger, EvidenceQA phase gates, and trace spans for a project."""
+        try:
+            job = doc_service.get_job(job_id)
+            return doc_service.nexus_coordinator.get_project_nexus_state(job["workspace"])
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=f"Không tìm thấy dự án: {job_id}") from exc
+
+    @router.get("/api/agency/office-live")
+    @router.get("/api/studio/office-live")
+    def get_agency_office_live(job_id: str | None = None, pinned: bool = False):
+        """Return 100% truth-grounded real-time Studio Agent Office state, active desks, critique/rework gates, and live tool stream."""
+        from documentary.agent_office import build_live_office_snapshot
+
+        return build_live_office_snapshot(doc_service, job_id=job_id, pinned=bool(pinned))
+
+    # ==========================================================================
+    # VOICEOVER & STORYTELLING RHYTHM SPECIALIST ENDPOINTS
+    # ==========================================================================
+
+    @router.get("/api/voice-specialist/masters")
+    def get_voice_specialist_masters():
+        """List clean 1st-generation master voices (including K1 clean for KR) for bespoke profile voice sculpting."""
+        from services.voice_rhythm_specialist import VoiceRhythmSpecialistService
+
+        svc = VoiceRhythmSpecialistService()
+        return {
+            "status": "ok",
+            "default_kr_master_id": "09c70cc1-cc86-4905-b65b-3967209c3175",
+            "masters": svc.list_clean_master_voices(),
+        }
+
+    @router.post("/api/voice-specialist/analyze")
+    async def analyze_profile_voice_rhythm(request: Request):
+        """Analyze draft or saved Channel Profile attributes and return 3-Layer Storytelling Rhythm DNA + Voice Color Spec."""
+        from services.voice_rhythm_specialist import VoiceRhythmSpecialistService
+
+        try:
+            body = await request.json()
+            if not isinstance(body, dict):
+                raise ValueError("Payload must be a JSON object")
+            profile_payload = body.get("profile") if isinstance(body.get("profile"), dict) else body
+            custom_dir = str(body.get("custom_direction") or profile_payload.get("voice_custom_direction") or "").strip()
+            pref_base = str(body.get("base_voice_id") or profile_payload.get("base_voice_id") or "").strip() or None
+            svc = VoiceRhythmSpecialistService()
+            rhythm_dna = svc.analyze_profile_rhythm_dna(
+                profile_payload,
+                custom_direction=custom_dir,
+                preferred_base_voice_id=pref_base,
+            )
+            return {
+                "status": "ok",
+                "rhythm_dna": rhythm_dna,
+                "masters": svc.list_clean_master_voices(),
+            }
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=500, detail=f"Không phân tích được nhịp kể hồ sơ: {exc}") from exc
+
+    @router.post("/api/radar/channel-profiles/{profile_id}/design-voice-rhythm")
+    async def design_channel_profile_voice_rhythm(profile_id: str, request: Request):
+        """Sculpt or clone a dedicated 1-of-1 voice color + 3-layer Rhythm DNA for `profile_id` and bind it live."""
+        from services.voice_rhythm_specialist import VoiceRhythmSpecialistService
+
+        try:
+            existing = profile_service.get_profile(profile_id)
+            body = await request.json()
+            if not isinstance(body, dict):
+                body = {}
+            draft_overrides = body.get("profile_overrides") if isinstance(body.get("profile_overrides"), dict) else {}
+            merged_profile = {**existing, **draft_overrides, "id": existing.get("id") or profile_id}
+
+            source_mode = str(body.get("source_mode") or body.get("voice_source_mode") or "base_voice").strip()
+            base_voice_id = str(body.get("base_voice_id") or "").strip() or None
+            sample_b64 = str(body.get("sample_audio_base64") or body.get("audio_base64") or "").strip() or None
+            sample_fname = str(body.get("sample_filename") or body.get("filename") or "sample.wav").strip()
+            ref_text = str(body.get("ref_text") or "").strip() or None
+            custom_dir = str(body.get("custom_direction") or "").strip()
+            synthesize_preview = bool(body.get("synthesize_preview", True))
+
+            svc = VoiceRhythmSpecialistService()
+            result = svc.design_and_bind_profile_voice(
+                merged_profile,
+                profile_service=profile_service,
+                source_mode=source_mode,
+                base_voice_id=base_voice_id,
+                sample_audio_base64=sample_b64,
+                sample_filename=sample_fname,
+                ref_text=ref_text,
+                custom_direction=custom_dir,
+                persist_to_profile=True,
+                synthesize_preview=synthesize_preview,
+            )
+            return {"status": "ok", **result}
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ kênh") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Không thiết kế được màu giọng cho hồ sơ: {exc}") from exc
 
     api.include_router(router)
     return api

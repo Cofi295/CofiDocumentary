@@ -4,11 +4,28 @@ import os
 import sys
 
 if os.name == "nt":
+    os.environ.setdefault("AGY_CLI_DISABLE_AUTO_UPDATE", "1")
     try:
         import ctypes
         ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
     except Exception:
         pass
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        import subprocess as _sp
+        if not getattr(_sp.Popen, "_cofi_no_console_guard", False):
+            _orig_popen_init = _sp.Popen.__init__
+            _NO_WIN = getattr(_sp, "CREATE_NO_WINDOW", 0x08000000)
+            _NEW_CON = getattr(_sp, "CREATE_NEW_CONSOLE", 0x00000010)
+            _DETACHED = getattr(_sp, "DETACHED_PROCESS", 0x00000008)
+
+            def _silent_popen_init(self, *args, **kwargs):
+                flags = int(kwargs.get("creationflags") or 0)
+                flags = (flags & ~_NEW_CON & ~_DETACHED) | _NO_WIN
+                kwargs["creationflags"] = flags
+                return _orig_popen_init(self, *args, **kwargs)
+
+            _sp.Popen.__init__ = _silent_popen_init  # type: ignore[method-assign]
+            _sp.Popen._cofi_no_console_guard = True  # type: ignore[attr-defined]
 
 import json
 import socket
@@ -16,7 +33,31 @@ import threading
 import time
 import urllib.request
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
+
+
+def _ensure_stdio_bound() -> None:
+    log_path = os.environ.get("COFI_RUNTIME_LOG")
+    if not log_path and (sys.stdout is None or sys.stderr is None):
+        try:
+            from runtime_logs import prepare_log
+            log_path = str(prepare_log(Path(__file__).resolve().parent, "desktop"))
+        except Exception:
+            log_path = str(Path(__file__).resolve().parent / "logs" / "desktop-fallback.log")
+    if log_path and (sys.stdout is None or sys.stderr is None):
+        try:
+            Path(log_path).parent.mkdir(parents=True, exist_ok=True)
+            stream = open(log_path, "a", encoding="utf-8", buffering=1)
+            if sys.stdout is None:
+                sys.stdout = stream
+            if sys.stderr is None:
+                sys.stderr = stream
+        except Exception:
+            pass
+
+
+_ensure_stdio_bound()
 
 
 DEFAULT_PORT = int(os.environ.get("COFI_DOCUMENTARY_PORT", "8878"))
@@ -294,9 +335,53 @@ def ensure_chosen_file_extension(chosen_path: str, default_ext: str) -> str:
     return cleaned
 
 
-def install_smart_webview_download_handler() -> None:
-    """Upgrade pywebview EdgeChrome download dialog so file format/extension is always preserved."""
+def resolve_local_media_source_from_uri(uri: str, root_dir: Path | None = None) -> Path | None:
+    """If ``uri`` is a local ``/api/jobs/{job_id}/media?path=...`` URL, return the on-disk file Path."""
+    import re
+    import urllib.parse
+
+    uri_str = str(uri or "").strip()
+    if not uri_str or uri_str.startswith("data:"):
+        return None
     try:
+        parsed = urllib.parse.urlsplit(uri_str)
+        m = re.match(r"^/api/jobs/([^/]+)/media$", parsed.path or "")
+        if not m:
+            return None
+        job_id = urllib.parse.unquote(m.group(1)).strip()
+        qs = urllib.parse.parse_qs(parsed.query)
+        raw_path = str((qs.get("path") or [""])[0] or "").strip()
+        if not job_id or not raw_path:
+            return None
+
+        base_root = (root_dir or Path(__file__).resolve().parent).resolve()
+        workspace = base_root / "workspaces" / job_id
+        job_json = base_root / "data" / "jobs" / job_id / "job.json"
+        if job_json.is_file():
+            try:
+                job_data = json.loads(job_json.read_text(encoding="utf-8"))
+                if isinstance(job_data, dict) and job_data.get("workspace"):
+                    workspace = Path(str(job_data["workspace"]))
+            except Exception:
+                pass
+        workspace = workspace.resolve()
+        candidate = Path(raw_path)
+        if not candidate.is_absolute():
+            candidate = workspace / candidate
+        resolved = candidate.resolve()
+        if resolved != workspace and workspace not in resolved.parents:
+            return None
+        if resolved.is_file():
+            return resolved
+    except Exception:
+        return None
+    return None
+
+
+def install_smart_webview_download_handler() -> None:
+    """Upgrade pywebview EdgeChrome download dialog so file format/extension is always preserved and local files copy directly on disk."""
+    try:
+        import shutil
         import winreg
         import webview.platforms.edgechromium as ec
         from webview import settings as webview_settings
@@ -348,7 +433,19 @@ def install_smart_webview_download_handler() -> None:
 
             result = dialog.ShowDialog(self.form)
             if result == ec.WinForms.DialogResult.OK:
-                args.ResultFilePath = ensure_chosen_file_extension(dialog.FileName, default_ext)
+                target_path = ensure_chosen_file_extension(dialog.FileName, default_ext)
+                local_src = resolve_local_media_source_from_uri(uri)
+                if local_src is not None:
+                    try:
+                        dest = Path(target_path).resolve()
+                        dest.parent.mkdir(parents=True, exist_ok=True)
+                        if dest != local_src:
+                            shutil.copy2(local_src, dest)
+                        args.Cancel = True
+                        return
+                    except Exception:
+                        pass
+                args.ResultFilePath = target_path
             else:
                 args.Cancel = True
 
@@ -357,7 +454,73 @@ def install_smart_webview_download_handler() -> None:
         pass
 
 
+_SINGLE_INSTANCE_MUTEX_HANDLE: Any = None
+
+
+def release_single_instance_mutex() -> None:
+    """Release the Windows Named Mutex when the desktop window exits."""
+    global _SINGLE_INSTANCE_MUTEX_HANDLE
+    if os.name == "nt" and _SINGLE_INSTANCE_MUTEX_HANDLE:
+        try:
+            import ctypes
+
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+            kernel32.CloseHandle.restype = ctypes.c_bool
+            kernel32.CloseHandle(_SINGLE_INSTANCE_MUTEX_HANDLE)
+        except Exception:
+            pass
+        _SINGLE_INSTANCE_MUTEX_HANDLE = None
+
+
+def acquire_single_instance_mutex(mutex_name: str = "Local\\CofiDocumentaryDesktopAppMutex") -> bool:
+    """Acquire a Windows Named Mutex so duplicate desktop_app.py instances exit and focus the existing window."""
+    global _SINGLE_INSTANCE_MUTEX_HANDLE
+    if os.name != "nt":
+        return True
+    try:
+        import ctypes
+
+        kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+        kernel32.CreateMutexW.argtypes = [ctypes.c_void_p, ctypes.c_bool, ctypes.c_wchar_p]
+        kernel32.CreateMutexW.restype = ctypes.c_void_p
+        ctypes.set_last_error(0)
+        handle = kernel32.CreateMutexW(None, False, mutex_name)
+        last_error = ctypes.get_last_error()
+        if not handle:
+            return True
+        _SINGLE_INSTANCE_MUTEX_HANDLE = handle
+        # ERROR_ALREADY_EXISTS == 183
+        if last_error == 183:
+            try:
+                user32 = ctypes.WinDLL("user32", use_last_error=True)
+                user32.FindWindowW.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p]
+                user32.FindWindowW.restype = ctypes.c_void_p
+                hwnd = user32.FindWindowW(None, "COFI DOCUMENTARY")
+                if not hwnd:
+                    time.sleep(0.8)
+                    hwnd = user32.FindWindowW(None, "COFI DOCUMENTARY")
+                if hwnd:
+                    # SW_RESTORE = 9, SW_SHOW = 5
+                    if user32.IsIconic(hwnd):
+                        user32.ShowWindow(hwnd, 9)
+                    else:
+                        user32.ShowWindow(hwnd, 5)
+                    user32.SetForegroundWindow(hwnd)
+                    return False
+                # Existing mutex holder has no window (zombie process); allow new window to launch
+                return True
+            except Exception:
+                return True
+        return True
+    except Exception:
+        return True
+
+
 def main() -> None:
+    if not acquire_single_instance_mutex():
+        return
+
     import webview
 
     port, owned = resolve_backend_port()
@@ -385,6 +548,10 @@ def main() -> None:
         webview.start(gui="edgechromium", debug=False)
     finally:
         backend.stop()
+        release_single_instance_mutex()
+        if not os.environ.get("PYTEST_CURRENT_TEST"):
+            os._exit(0)
+
 
 
 if __name__ == "__main__":

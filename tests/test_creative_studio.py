@@ -227,7 +227,7 @@ def test_cyber_finance_outline_first_and_korean_natural_prose_prompt(tmp_path: P
     create_res = client.post(
         "/api/jobs",
         json={
-            "title": "[중국 사기 실화] 12만 명의 노후 자금 8조 원을 USB 하나에 담아 사라진 여인",
+            "title": "[중국 첨단사기 실화 사건] 12만 명 노후 자금 8조 원을 USB에 담아 사라진 여인",
             "market": "KR",
             "language": "ko",
             "channel_profile_id": "channel-cn-cyber-finance-kr",
@@ -254,8 +254,8 @@ def test_cyber_finance_outline_first_and_korean_natural_prose_prompt(tmp_path: P
     assert "미사여구 · 과장된 수식어 · 신파조 절대 금지" in plan_prompt
 
     edit_prompt = build_phase_prompt(updated_job, "edit", updated_job["workspace"], tmp_path)
-    assert "BƯỚC 6.1 — ĐỌC FULL SCRIPT & TỔNG HỢP KẾ HOẠCH" in edit_prompt
-    assert "BƯỚC 6.2 —" in edit_prompt
+    assert "SPATIAL DARK-CINEMA DIRECTOR ROLE & CASE-LOCKED EDIT MODE" in edit_prompt
+    assert "1. LUẬT SẮT VỀ TƯ LIỆU THẬT" in edit_prompt
     for forbidden in (
         "Bước 5 tạo ~20% ảnh AI",
         "xoay vòng 6 mẫu",
@@ -269,3 +269,61 @@ def test_cyber_finance_outline_first_and_korean_natural_prose_prompt(tmp_path: P
 
 
 
+def test_cyber_financial_forensic_thumbnail_concept_distinct_from_sister_channel(tmp_path: Path) -> None:
+    import json
+    from documentary.thumbnail_studio import (
+        _enforce_title_primary_keyword,
+        build_default_thumbnail_design,
+        render_variant_to_pil,
+    )
+
+    profiles_path = Path(__file__).resolve().parents[1] / "data" / "channel_profiles.json"
+    profiles = {p["id"]: p for p in json.loads(profiles_path.read_text(encoding="utf-8"))["profiles"]}
+    cyber_prof = profiles["channel-cn-cyber-finance-kr"]
+    sister_prof = profiles["channel-e544a64b7c"]
+
+    assert cyber_prof["seo_keyword_dna"]["primary_title_keyword"] == "중국 첨단사기 실화 사건"
+    assert sister_prof["seo_keyword_dna"]["primary_title_keyword"] == "중국 실화 사건"
+
+    enforced = _enforce_title_primary_keyword(
+        "[중국 사기 실화] 연 24% 이자에 퇴직금 넣자 벌어진 일",
+        "중국 첨단사기 실화 사건",
+        "smart_seo_flexible",
+    )
+    assert enforced.startswith("[중국 첨단사기 실화 사건] ")
+    assert "[중국 사기 실화]" not in enforced
+
+    ws = tmp_path / "ws"
+    ws.mkdir(parents=True, exist_ok=True)
+    job = {
+        "id": "job-cyber-test",
+        "title": enforced,
+        "market": "KR",
+        "language": "ko",
+        "channel_profile_id": "channel-cn-cyber-finance-kr",
+        "seo_keyword_dna": cyber_prof["seo_keyword_dna"],
+        "thumbnail_dna": cyber_prof["thumbnail_dna"],
+    }
+    design = build_default_thumbnail_design(
+        "job-cyber-test",
+        ws,
+        job,
+        seo_pack={"title": enforced},
+        thumbnail_dna=cyber_prof["thumbnail_dna"],
+    )
+    assert design["channel_thumbnail_dna"]["style_preset"] == "cyber_financial_forensic_duality"
+    assert len(design["variants"]) >= 3
+    v0 = design["variants"][0]
+    assert v0["badge_text"] == "중국 첨단사기 실화 사건"
+
+    badge_lyr = next(l for l in v0["layers"] if l["id"] == "badge")
+    assert badge_lyr["bgColor"] != "transparent"
+    assert badge_lyr["borderWidth"] >= 3
+    assert "Paperlogy" in badge_lyr["fontFamily"]
+    assert "Gmarket" not in badge_lyr["fontFamily"]
+
+    hud_layers = [l for l in v0["layers"] if l.get("type") == "inset_image" and l.get("visible")]
+    assert hud_layers and all(l.get("frameStyle") == "financial_audit_hud" and l.get("angle") == 0 for l in hud_layers)
+
+    img = render_variant_to_pil(ws, design, v0)
+    assert img.size == (1280, 720)

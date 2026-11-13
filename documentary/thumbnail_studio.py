@@ -53,7 +53,100 @@ ARCHETYPES: dict[str, dict[str, Any]] = {
         "vignette_style": "right_heavy",
         "vignette_opacity": 0.84,
     },
+    "dual_pip_evidence_board": {
+        "id": "dual_pip_evidence_board",
+        "name": "Bảng Hồ Sơ Kép (2 Khung PiP + Chữ Đáy)",
+        "description": "2 khung tư liệu thật xếp lớp bên trái + Chân dung hung thủ bên phải + 2 dòng Hook đáy nổi bật.",
+        "vignette_style": "bottom_heavy",
+        "vignette_opacity": 0.94,
+    },
+    "wanted_dossier_header": {
+        "id": "wanted_dossier_header",
+        "name": "Lệnh Truy Nã Cấp A (Wanted Dossier)",
+        "description": "Tag Lệnh truy nã cấp A sát đỉnh + Khung lệnh truy nã & vật chứng + Chữ giật tít dưới đáy.",
+        "vignette_style": "bottom_heavy",
+        "vignette_opacity": 0.92,
+    },
+    "cctv_surveillance_grid": {
+        "id": "cctv_surveillance_grid",
+        "name": "Camera Thiên Võng (CCTV + Tâm Ngắm)",
+        "description": "Khung màn hình camera giám sát REC góc trái + Vòng ngắm khóa mục tiêu + Mũi tên chỉ điểm.",
+        "vignette_style": "left_heavy",
+        "vignette_opacity": 0.86,
+    },
+    "center_symmetrical_impact": {
+        "id": "center_symmetrical_impact",
+        "name": "Chính Diện Tâm Điểm (Chữ Căn Giữa)",
+        "description": "Bố cục đối xứng điện ảnh, cụm tiêu đề cỡ đại căn giữa phía dưới làm bật thần thái nhân vật.",
+        "vignette_style": "bottom_heavy",
+        "vignette_opacity": 0.92,
+    },
+    "top_headline_banner": {
+        "id": "top_headline_banner",
+        "name": "Bản Tin Đặc Biệt (Chữ Đỉnh + Hiện Trường Dưới)",
+        "description": "Dành cho cảnh hiện trường rộng ở nửa dưới: đặt cụm chữ và nhãn khẩn cấp ở nửa trên khung hình.",
+        "vignette_style": "left_heavy",
+        "vignette_opacity": 0.84,
+    },
 }
+
+NON_INDIVIDUAL_ARCHETYPES = [
+    "context_and_crisis_first",
+    "engineering_first",
+    "scene_first",
+]
+
+
+def determine_thumbnail_archetype_for_topic(
+    topic: dict[str, Any] | str,
+    *,
+    rotation_index: int = 0,
+) -> str:
+    """When a topic centers on a location, system, or organization rather than a single individual,
+    naturally rotate across compatible non-individual archetypes:
+    ('context_and_crisis_first', 'engineering_first', 'scene_first').
+    For individual-centric topics, returns 'people_and_text_first' or 'hybrid_context_and_person'.
+    """
+    if isinstance(topic, str):
+        topic_obj = {"title": topic}
+    elif isinstance(topic, dict):
+        topic_obj = topic
+    else:
+        topic_obj = {}
+
+    entity_type = str(topic_obj.get("entity_type") or "").strip().lower()
+    title = str(topic_obj.get("title") or topic_obj.get("name") or "").lower()
+
+    non_individual_types = {
+        "infrastructure_system",
+        "financial_syndicate",
+        "geographic_region",
+        "group_organization",
+        "location",
+        "system",
+        "organization",
+        "institution",
+        "facility",
+        "disaster",
+        "engineering_failure",
+        "infrastructure",
+    }
+    non_individual_keywords = [
+        "bridge", "dam", "collapse", "tunnel", "highway", "canal", "facility",
+        "plant", "reactor", "subway", "metro", "station", "building", "tower",
+        "system", "syndicate", "bank", "exchange", "fund", "scheme", "network",
+        "붕괴", "교량", "댐", "터널", "지하철", "사고", "시스템", "조직",
+    ]
+
+    is_non_individual = (
+        entity_type in non_individual_types
+        or (not entity_type and any(kw in title for kw in non_individual_keywords))
+    )
+
+    if is_non_individual:
+        return NON_INDIVIDUAL_ARCHETYPES[rotation_index % len(NON_INDIVIDUAL_ARCHETYPES)]
+
+    return "people_and_text_first"
 
 
 def _now_iso() -> str:
@@ -129,6 +222,41 @@ def discover_job_candidate_images(job_id: str, workspace: Path, job: dict[str, A
         "24_tongjiaqiao_cordon_tape": "Dải phong tỏa ngõ Đồng Gia Kiều",
         "25_tongjiaqiao_alley_body": "Hiện trường hẻm Đồng Gia Kiều",
         "26_tongjiaqiao_ground_evidence": "Tang vật thu giữ tại hẻm",
+        "01_silencer_pistol": "[SÚNG] 4 Ống giảm thanh tự chế tiện ren",
+        "02_knit_hat_dna": "[VẬT CHỨNG] Mũ len đen & vỏ đạn thu giữ",
+        "02_ski_mask": "[VẬT CHỨNG] Mũ trùm đầu len đen bỏ lại hiện trường",
+        "03_courtroom_dock": "[HẦU TÒA] Từ Lợi đứng trước vành móng ngựa",
+        "03_oasis_gold_heist": "[VẬT CHỨNG] Dây chuyền vàng bị cướp tại tiệm Oasis",
+        "04_fingerprint_match": "[PHÁP Y] Dấu vân tay nửa mảnh lưu giữ 22 năm",
+        "05_interrogation_chair": "[BẮT GIỮ] Từ Lợi bị còng trên ghế sắt thẩm vấn",
+        "06_type54_pistol": "[SÚNG] Cận cảnh Súng ngắn K54 cải tạo trong túi vật chứng",
+        "07_cctv_red_circle": "[CCTV] Khoanh đỏ dáng đi nghi phạm trên phố",
+        "08_climbing_rope": "[BẮT GIỮ] Trinh sát áp giải Từ Lợi ra xe cảnh sát",
+        "gun_01_type54_pistol_closeup": "[SÚNG 01] Cận cảnh Súng ngắn K54 cải tạo trong túi vật chứng",
+        "gun_02_police_holding_silencer_gun": "[SÚNG 02] Cảnh sát cầm Súng & Ống giảm thanh tự chế",
+        "gun_03_silencer_barrel_baffles": "[SÚNG 03] Ống giảm thanh tự chế & vách ngăn tháo rời",
+        "gun_04_weapon_kit_black_mat": "[SÚNG 04] Bộ Súng ống giảm thanh & đồ nghề hiện trường",
+        "gun_05_four_silencer_tubes": "[SÚNG 05] 4 Ống thép giảm thanh tiện ren chính xác",
+        "gun_06_type54_dossier_tag": "[SÚNG 06] Túi niêm phong ghi rõ Súng ngắn K54 (五四手枪)",
+        "arrest_01_handcuffing_wrists": "[BẮT GIỮ 01] Cảnh sát tra còng số 8 vào tay Từ Lợi",
+        "arrest_02_escort_to_police_car": "[BẮT GIỮ 02] Hai trinh sát bẻ quặt tay áp giải Từ Lợi ra xe",
+        "arrest_03_mahjong_raid_takedown": "[BẮT GIỮ 03] Khoảnh khắc ập vào khống chế tại quán mạt chược",
+        "arrest_04_locking_interrogation_chair": "[BẮT GIỮ 04] Khóa tay chân Từ Lợi vào ghế sắt thẩm vấn",
+        "arrest_05_interrogation_chair_face": "[BẮT GIỮ 05] Từ Lợi ngồi ghế thẩm vấn đối diện điều tra viên",
+        "arrest_06_courtroom_dock": "[BẮT GIỮ 06] Từ Lợi đứng hầu tòa giữa dàn cảnh sát tư pháp",
+        "new_01_raid_takedown": "[BẮT GIỮ] Đặc nhiệm đột kích khóa còng Lưu Chiêu Hoa tại ẩn khu Phúc An",
+        "new_02_handcuffed_smirk": "[THẨM VẤN] Lưu Chiêu Hoa mặc áo giam cam cười ngạo nghễ trước ống kính",
+        "new_03_court_trial": "[HIỆN TRƯỜNG] Thùng nhựa chứa đầy tinh thể ma túy đá nguyên chất thu giữ",
+        "new_04_seized_12tons_meth": "[HIỆN TRƯỜNG] Cảnh sát kiểm đếm núi bao tải 12,36 tấn ma túy đá Quảng Châu",
+        "new_05_fuan_meth_factory": "[HIỆN TRƯỜNG] Biệt thự 3 tầng ven sông Phúc An — vỏ bọc xưởng điều chế ngầm",
+        "arrest_01": "[BẮT GIỮ] Lưu Chiêu Hoa cười trên xe thùng cảnh sát vũ trang",
+        "arrest_02": "[BẮT GIỮ] Cảnh sát áp giải Lưu Chiêu Hoa trong đêm tại ngõ Phúc An",
+        "arrest_03": "[BẮT GIỮ] Nghi phạm cúi đầu tại trại tạm giam",
+        "arrest_04": "[BẮT GIỮ] Cận cảnh Lưu Chiêu Hoa lúc vừa bị khống chế",
+        "evidence_01": "[HỒ SƠ] Ảnh thẻ truy nã Lưu Chiêu Hoa",
+        "evidence_02": "[VẬT CHỨNG] Thùng carton chứa tinh thể ma túy đá thu giữ",
+        "evidence_03": "[VẬT CHỨNG] Phễu chiết hóa chất trong phòng thí nghiệm",
+        "evidence_04": "[TƯ LIỆU] Hiện trường đạp xe vượt chốt kiểm soát",
     }
     if (workspace / "media" / "thumbnail").is_dir():
         for bg_file in sorted(
@@ -138,18 +266,20 @@ def discover_job_candidate_images(job_id: str, workspace: Path, job: dict[str, A
             stem_lower = bg_file.stem.lower()
             if stem_lower == "thumbnail" or stem_lower.startswith("thumbnail_"):
                 continue
-            if stem_lower.startswith("thumb_inset_real_"):
-                suffix_key = stem_lower.replace("thumb_inset_real_", "")
+            if stem_lower.startswith(("ref_", "id_ref_", "style_ref")):
+                add_candidate(bg_file, f"Ảnh tham chiếu nhân vật ({bg_file.name})", "style_reference", priority=15)
+            elif stem_lower.startswith("thumb_inset_real_") or stem_lower.startswith("pip_"):
+                suffix_key = re.sub(r"^(thumb_inset_real_|pip_)", "", stem_lower)
                 num_m = re.match(r"^(\d+)_", suffix_key)
                 num_tag = f"#{num_m.group(1)} " if num_m else ""
                 desc_vi = real_pip_labels.get(suffix_key, suffix_key.replace("_", " "))
-                add_candidate(bg_file, f"📸 Tư liệu thật {num_tag}· {desc_vi}", "thumbnail_inset", priority=98)
+                add_candidate(bg_file, f"📸 Tư liệu thật {num_tag}· {desc_vi}", "thumbnail_inset", priority=99)
             elif stem_lower.startswith("thumb_inset"):
                 add_candidate(bg_file, f"📸 Ảnh phụ PiP ({bg_file.name})", "thumbnail_inset", priority=96)
-            elif stem_lower.startswith(("zhou_", "raw_portrait_", "mugshot_", "evidence_")):
+            elif stem_lower.startswith(("zhou_", "raw_portrait_", "mugshot_", "evidence_", "arrest_", "court_", "scene_")):
                 add_candidate(bg_file, f"📸 Hồ sơ nhân vật ({bg_file.name})", "thumbnail_inset", priority=95)
             else:
-                v_match = re.search(r"thumb_bg_v(\d+)", stem_lower)
+                v_match = re.search(r"thumb[_-]?bg[_-]?v(\d+)", stem_lower)
                 prio = 105 - int(v_match.group(1)) if v_match else 100
                 add_candidate(bg_file, f"🖼 Ảnh nền sạch ({bg_file.name})", "thumbnail_bg", priority=prio)
 
@@ -241,7 +371,10 @@ def build_clean_background_prompt(seo_pack: dict[str, Any], job: dict[str, Any])
 
     clean_suffix = (
         " IMPORTANT: Clean base image only — DO NOT render any text, letters, words, hangul, numbers, watermarks, logos, arrows, circles, or inset frames anywhere in the image. "
-        "Keep 35-40% intentional dark negative space on the bottom third or left side so external vector typography, arrows, and circles pop with maximum contrast."
+        "Keep 35-40% intentional dark negative space on the bottom third or left side so external vector typography, arrows, and circles pop with maximum contrast. "
+        "ANTI-CLONE & NATURAL EXPRESSION RULE: Preserve only the culprit's core facial identity features (bone structure, proportions, hairline, age) from reference photos; "
+        "NEVER copy the stiff mugshot/ID-photo pose, character-sheet standing posture, head angle, or frozen facial expression from any reference image or sample thumbnail. "
+        "Render a 100% candid, unposed, natural real-life documentary expression and posture matching the situational moment."
     )
     if "do not render any text" not in cleaned.lower():
         cleaned = f"{cleaned}\n\n{clean_suffix}".strip()
@@ -285,8 +418,8 @@ def build_variant_layers(
         }
     ]
 
-    badge_label = str(badge_text or "중국 실화 사건").strip()
-    badge_auto_w = max(340, min(680, int(len(badge_label) * 34 + 68)))
+    badge_label = str(badge_text or "").strip()
+    badge_auto_w = max(340, min(680, int(max(len(badge_label), 6) * 34 + 68)))
 
     if arch_id == "broadcast_left_heavy":
         layers.extend([
@@ -488,7 +621,7 @@ def build_variant_layers(
             {
                 "id": "badge",
                 "type": "textbox",
-                "name": "Tag góc trái trên (Xanh lá @판세의이면)",
+                "name": "Tag góc trái trên (Xanh lá Neon)",
                 "text": badge_label,
                 "left": 44,
                 "top": 36,
@@ -884,7 +1017,7 @@ def build_variant_layers(
                 "id": "badge",
                 "type": "badge",
                 "name": "Nhãn Chuyên mục (Badge)",
-                "text": badge_text or "중국 실화 사건",
+                "text": str(badge_text or "").strip(),
                 "left": 860,
                 "top": 170,
                 "width": 340,
@@ -950,6 +1083,132 @@ def build_variant_layers(
     return layers
 
 
+_KO_SCRIPT_NUM_NORMALIZATION: list[tuple[str, str]] = [
+    ("사백만", "400만"),
+    ("삼백만", "300만"),
+    ("이백만", "200만"),
+    ("백육십만", "160만"),
+    ("백오십만", "150만"),
+    ("백이십만", "120만"),
+    ("백만", "100만"),
+    ("오십만", "50만"),
+    ("삼십만", "30만"),
+    ("오만 위안", "5만 위안"),
+    ("사천여 명", "4,000명 4000명"),
+    ("사천 명", "4,000명 4000명"),
+    ("사천", "4,000 4000"),
+    ("이십팔 년", "28년"),
+    ("이십육 년", "26년"),
+    ("이십이 년", "22년"),
+    ("이십일 년", "21년"),
+    ("이십 년", "20년"),
+    ("십팔 년", "18년"),
+    ("십칠 년", "17년"),
+    ("십육 년", "16년"),
+    ("십오 년", "15년"),
+    ("십삼 년", "13년"),
+    ("십이 년", "12년"),
+    ("석 달", "3개월"),
+    ("열엿새", "16일"),
+    ("보름", "15일"),
+    ("열흘", "10일"),
+    ("여드레", "8일"),
+    ("백구십이 시간", "192시간"),
+    ("십일 킬로그램", "11kg"),
+    ("사백 킬로미터", "400km"),
+    ("삼백 킬로미터", "300km"),
+    ("삼십 퍼센트", "30%"),
+    ("99.99퍼센트", "99.99%"),
+    ("사십 도", "40도"),
+    ("사십이 호", "42호"),
+    ("백여 개", "100개"),
+    ("열여섯 개", "16개"),
+    ("서른두 개", "32개"),
+    ("서른 장", "30장"),
+    ("오만 장", "5만 장"),
+    ("삼만 팔천 위안", "3만 8,000위안"),
+    ("십일 구", "11구"),
+    ("아홉 개의 특징점", "9개 특징점"),
+    ("아홉 개", "9개"),
+    ("아홉 대", "9대"),
+    ("일곱 건", "7건"),
+    ("여섯 점", "6점"),
+    ("네 건", "4건"),
+    ("네 개", "4개"),
+    ("네 대", "4대"),
+    ("일층", "1층"),
+    ("이층", "2층"),
+    ("삼층", "3층"),
+    ("영 건", "0건"),
+    ("한 장도 없이", "0장 0건"),
+    ("열지도 않았", "0건"),
+    ("일 급", "1급"),
+    ("일급", "1급"),
+    ("에이급", "A급 1급"),
+    ("제일호", "제1호"),
+]
+
+
+def _verify_thumbnail_against_script(
+    job_id: str,
+    t1: str,
+    t2: str,
+    paired_title: str = "",
+) -> tuple[bool, str]:
+    """Cross-check thumbnail hook numbers, forensic phrasing, and plot anchors against script.md."""
+    combined_thumb = f"{t1} {t2}".strip()
+    if not combined_thumb:
+        return True, "Chưa có text hook để đối chiếu kịch bản."
+
+    issues: list[str] = []
+    if re.search(r"지문\s*(?:아홉|9)\s*점", combined_thumb):
+        issues.append("Cụm '지문 아홉 점' dễ hiểu nhầm thành '9 dấu vân tay' — chuẩn pháp y Hàn phải dùng '9개 특징점' hoặc '반쪽 지문'.")
+
+    if job_id:
+        ws_dir = Path(__file__).resolve().parent.parent / "workspaces" / job_id
+        script_path = ws_dir / "script.md"
+        research_path = ws_dir / "research.md"
+        corpus_parts: list[str] = []
+        if script_path.exists():
+            try:
+                corpus_parts.append(script_path.read_text(encoding="utf-8", errors="ignore"))
+            except Exception:
+                pass
+        if research_path.exists():
+            try:
+                corpus_parts.append(research_path.read_text(encoding="utf-8", errors="ignore"))
+            except Exception:
+                pass
+        if corpus_parts:
+            norm_corpus = "\n".join(corpus_parts)
+            for ko_word, num_word in _KO_SCRIPT_NUM_NORMALIZATION:
+                norm_corpus = norm_corpus.replace(ko_word, f"{ko_word} {num_word}")
+            norm_corpus_compact = re.sub(r"\s+", "", norm_corpus).lower()
+
+            combined_all = f"{t1} {t2} {paired_title}".strip()
+            # Check quantitative metrics in thumbnail text (t1 + t2 + paired_title)
+            quant_matches = re.findall(
+                r"\d+(?:,\d+)?(?:\.\d+)?\s*(?:만\s*장|만\s*명|만\s*위안|만\s*원|억|만|년|개월|일|명|구|장|건|개|점|kg|km|급|%)",
+                combined_all,
+                flags=re.IGNORECASE,
+            )
+            for qm in quant_matches:
+                qm_compact = re.sub(r"\s+", "", qm).lower()
+                num_only = re.match(r"^\d+(?:,\d+)?(?:\.\d+)?(?:만|억|년|kg|km|급|%)?", qm_compact)
+                token_check = num_only.group(0) if num_only else qm_compact
+                if token_check and token_check not in norm_corpus_compact:
+                    issues.append(f"Con số '{qm.strip()}' trên Thumbnail/Tiêu đề lệch với kịch bản script.md.")
+
+            # Check specific location/object hallucinations not in script.md
+            for suspect_phrase in ("지하 금고", "지하금고", "엘리베이터 통로", "엘리베이터통로"):
+                if suspect_phrase in combined_all and re.sub(r"\s+", "", suspect_phrase) not in norm_corpus_compact:
+                    issues.append(f"Chi tiết '{suspect_phrase}' không có trong script.md (kiểm tra lại tình tiết thực tế trong kịch bản video).")
+
+    if issues:
+        return False, " | ".join(issues)
+    return True, "Khớp 100% con số, tình tiết vật chứng và thuật ngữ pháp y với kịch bản script.md."
+
+
 def evaluate_variant_ctr(
     variant: dict[str, Any],
     design: dict[str, Any] | None = None,
@@ -977,7 +1236,7 @@ def evaluate_variant_ctr(
         top = float(text_layer.get("top") or 0)
         box_width = float(text_layer.get("width") or 600)
         height = float(text_layer.get("height") or 100)
-        txt_str = str(text_layer.get("text") or "").strip()
+        txt_str = str(text_layer.get("text") or "").replace("*", "").strip()
         fs_val = float(text_layer.get("fontSize") or 72)
         est_w = min(box_width, max(180.0, len(txt_str) * fs_val * 0.68)) if txt_str else box_width
         align = str(text_layer.get("textAlign") or "left").strip().lower()
@@ -1003,8 +1262,8 @@ def evaluate_variant_ctr(
         warnings.append("Chữ bị lấn vào vùng cấm YouTube timestamp (1065x625)")
 
     # Check 2: Mobile 120px Readability (Font size, stroke, word count)
-    t1 = str(line_1.get("text") or "").strip()
-    t2 = str(line_2.get("text") or "").strip()
+    t1 = str(line_1.get("text") or "").replace("*", "").strip()
+    t2 = str(line_2.get("text") or "").replace("*", "").strip()
     fs1 = float(line_1.get("fontSize") or 72)
     fs2 = float(line_2.get("fontSize") or 80)
     sw1 = float(line_1.get("strokeWidth") or 14)
@@ -1092,10 +1351,11 @@ def evaluate_variant_ctr(
     curiosity_gap_score = 88
     combined_text = f"{t1} {t2} {badge.get('text', '')}".lower()
     hook_anchors = [
-        "13", "28", "30", "23", "20", "93", "17", "89", "1", "2", "3",
-        "đại án", "truy nã", "hung thủ", "vỏ bọc", "dấu vân tay", "bí mật", "hồ sơ",
+        "13", "28", "30", "23", "20", "93", "17", "89", "1", "2", "3", "6", "9",
+        "đại án", "truy nã", "hung thủ", "vỏ bọc", "dấu vân tay", "bí mật", "hồ sơ", "lừa đảo",
         "경악", "진실", "범인", "수배범", "조연", "배우", "정체", "비밀", "단서", "지문", "숨어",
-        "?", "!", "\"",
+        "사기", "장부", "유령", "증발", "무기징역", "자백", "추격", "발굴", "비어",
+        "?", "!", "\"", "“", "%",
     ]
     found_anchors = [a for a in hook_anchors if a in combined_text]
     if len(found_anchors) >= 2:
@@ -1154,6 +1414,20 @@ def evaluate_variant_ctr(
     elif not is_contextual_bg:
         warnings.append("Ảnh nền đang dùng ảnh tham chiếu nhân vật thay vì bối cảnh câu chuyện")
 
+    # Check 10: Script Ground-Truth & Forensic Fact Alignment (Đối chiếu Con số & Tình tiết Kịch bản script.md)
+    job_id_str = str(design.get("job_id") or variant.get("job_id") or "").strip()
+    script_fact_ok, script_fact_detail = _verify_thumbnail_against_script(job_id_str, t1, t2, paired_title)
+    checks.append({
+        "id": "script_fact_alignment",
+        "label": "Đối chiếu Sự thật & Con số Kịch bản (Script Ground-Truth Check)",
+        "passed": script_fact_ok,
+        "detail": script_fact_detail,
+    })
+    if script_fact_ok:
+        strengths.append("Khớp 100% con số, vật chứng & thuật ngữ pháp y với kịch bản script.md")
+    else:
+        warnings.append(script_fact_detail)
+
     # Composite Readiness Score (0 - 100)
     readiness_score = int(round(
         0.30 * dna_consistency_score +
@@ -1166,6 +1440,8 @@ def evaluate_variant_ctr(
     if not has_bg or not is_contextual_bg:
         readiness_score = max(40, readiness_score - 10)
     if not policy_ok:
+        readiness_score = max(40, readiness_score - 20)
+    if not script_fact_ok:
         readiness_score = max(40, readiness_score - 20)
 
     # Predicted CTR Percentage (typical high-performing benchmark: 8.0% - 14.5%)
@@ -1214,67 +1490,78 @@ def evaluate_thumbnail_ctr(design: dict[str, Any], channel_dna: dict[str, Any] |
 
 
 YOUTUBE_POLICY_REPLACEMENTS_ALL: list[tuple[str, str]] = [
-    # Korean YouTube policy-sensitive / yellow-dollar terms -> High-CTR Broadcast Forensic terms
+    # Korean YouTube policy-sensitive / yellow-dollar terms -> 100% Green-Dollar Broadcast Forensic terms
     ("연쇄살인사건", "최악의 미제사건"),
     ("연쇄 살인 사건", "최악의 미제사건"),
-    ("연쇄살인마", "극악의 1급 수배범"),
-    ("연쇄살인범", "극악의 1급 수배범"),
+    ("연쇄살인마", "1급 수배범"),
+    ("연쇄살인범", "1급 수배범"),
     ("연쇄살인", "연쇄 미제사건"),
-    ("토막살인", "엽기 미제사건"),
-    ("살인사건", "강력 사건"),
-    ("살해사건", "강력 사건"),
+    ("토막살인", "특급 미제사건"),
+    ("살인사건", "실화 미제사건"),
+    ("살해사건", "실화 사건"),
     ("살인마", "1급 수배범"),
     ("살인범", "핵심 용의자"),
-    ("살인극", "강력 범죄"),
-    ("살인", "강력 범죄"),
+    ("살인극", "미제 사건"),
+    ("살인", "중대 사건"),
     ("살해", "범행"),
-    ("백골 시신", "백골 흔적"),
-    ("머리 없는 시신", "훼손된 현장 흔적"),
-    ("시체", "현장 흔적"),
-    ("사체", "수습된 흔적"),
-    ("토막", "훼손"),
-    ("참수", "극단적 범행"),
-    ("피투성이", "처참한 현장"),
-    ("선혈", "현장 혈흔"),
-    ("자살", "극단적 선택"),
+    ("백골 시신", "봉인된 단서"),
+    ("백골", "오래된 단서"),
+    ("머리 없는 시신", "은폐된 현장 단서"),
+    ("시신", "현장 단서"),
+    ("시체", "현장 단서"),
+    ("사체", "수습된 단서"),
+    ("토막", "은폐"),
+    ("참수", "중대 범행"),
+    ("피투성이", "충격적 현장"),
+    ("선혈", "결정적 흔적"),
+    ("혈흔", "미세 흔적"),
+    ("총살", "최종 집행"),
+    ("법정 최고형수", "사형수"),
+    ("극단적 선택", "스스로 멈춘 진술"),
+    ("자살", "스스로 멈춘 진술"),
     ("성폭행", "중대 범죄"),
     ("강간", "중대 범죄"),
-    ("고문", "가혹 행위"),
-    ("학살", "대규모 참사"),
-    ("마약", "금지 약물"),
+    ("아동 학대", "중대 사건"),
+    ("고문", "강압 추궁"),
+    ("학살", "대규모 사건"),
+    ("엽기", "기이한"),
+    ("마약", "금지 물질"),
     # Vietnamese YouTube policy-sensitive terms -> Safe investigative terms
-    ("giết người hàng loạt", "đại án chấn động"),
-    ("sát nhân hàng loạt", "hung thủ truy nã đặc biệt"),
+    ("giết người hàng loạt", "đại án bí ẩn"),
+    ("sát nhân hàng loạt", "kẻ truy nã đặc biệt"),
     ("vụ án giết người", "kỳ án hình sự"),
     ("kẻ giết người", "kẻ thủ ác"),
-    ("sát nhân", "hung thủ"),
+    ("sát nhân", "nghi phạm"),
     ("giết người", "gây án"),
     ("thi thể không đầu", "dấu vết hiện trường"),
+    ("thi thể", "dấu vết"),
     ("xác chết", "hiện trường"),
+    ("hài cốt", "manh mối cổ"),
     ("phân xác", "phi tang"),
-    ("chặt đầu", "ra tay tàn độc"),
+    ("chặt đầu", "phi tang"),
     ("máu me", "ám ảnh"),
     ("đẫm máu", "chấn động"),
-    ("tự tử", "kết cục bi kịch"),
-    ("tự sát", "kết cục bi kịch"),
-    ("hiếp dâm", "xâm hại"),
-    ("cưỡng hiếp", "xâm hại"),
-    ("tra tấn", "bạo hành"),
-    ("thảm sát", "bi kịch chấn động"),
+    ("tự tử", "kết cục khép lại"),
+    ("tự sát", "kết cục khép lại"),
+    ("hiếp dâm", "trọng tội"),
+    ("cưỡng hiếp", "trọng tội"),
+    ("tra tấn", "ép cung"),
+    ("thảm sát", "đại án chấn động"),
     # English YouTube policy-sensitive terms -> Safe investigative terms
     ("serial killer", "most wanted fugitive"),
-    ("mass murder", "shocking cold case"),
-    ("murder case", "criminal investigation"),
+    ("mass murder", "major cold case"),
+    ("murder case", "cold case investigation"),
     ("murderer", "prime suspect"),
-    ("decapitated", "mutilated"),
+    ("decapitated", "concealed trace"),
     ("dismembered", "concealed"),
-    ("dead body", "crime scene evidence"),
-    ("corpse", "forensic remains"),
-    ("suicide", "tragic end"),
-    ("sexual assault", "felony offense"),
-    ("rape", "felony offense"),
-    ("torture", "brutal interrogation"),
-    ("gore", "graphic evidence"),
+    ("dead body", "scene evidence"),
+    ("corpse", "key trace"),
+    ("skeletal remains", "sealed trace"),
+    ("suicide", "silent end"),
+    ("sexual assault", "major offense"),
+    ("rape", "major offense"),
+    ("torture", "coercion"),
+    ("gore", "sealed evidence"),
 ]
 
 STALE_FALLBACK_TEXT_MARKERS: set[str] = {
@@ -1318,8 +1605,8 @@ def _enforce_title_primary_keyword(title: str, primary_kw: str, placement_rule: 
         return t
     if rule == "suffix_pipe":
         return f"{t} | {kw}"
-    if kw == "중국 실화 사건" or rule in ("prefix_bracket", "smart_seo_flexible"):
-        # Replace generic brackets like [중국에서 있었던 실제 사례] if present
+    if kw in ("중국 실화 사건", "중국 첨단사기 실화 사건") or rule in ("prefix_bracket", "smart_seo_flexible"):
+        # Replace generic brackets like [중국에서 있었던 실제 사례] or legacy [중국 사기 실화] if present
         t = re.sub(r"^\[[^\]]*중국[^\]]*\]\s*", "", t).strip()
         if kw not in t:
             return f"[{kw}] {t}"
@@ -1351,6 +1638,21 @@ def enforce_seo_package_expert_rules(
     replaced_log: list[str] = []
 
     # 1. Sanitize & enforce primary keyword on recommended_title
+    job_raw_title = str(job.get("title") or "").strip()
+    if job_raw_title and primary_kw and primary_kw in job_raw_title:
+        ko_part = re.sub(r"\s*\(\[Vụ Án.*\)\s*$", "", job_raw_title).strip()
+        vi_match = re.search(r"\((\[Vụ Án.*)\)\s*$", job_raw_title)
+        if ko_part:
+            seo_pack["recommended_title"] = ko_part
+            if isinstance(seo_pack.get("title_options"), list) and seo_pack["title_options"]:
+                seo_pack["title_options"][0] = ko_part
+            changed = True
+        if vi_match:
+            vi_part = vi_match.group(1).strip()
+            seo_pack["recommended_title_vi"] = vi_part
+            if isinstance(seo_pack.get("title_options_vi"), list) and seo_pack["title_options_vi"]:
+                seo_pack["title_options_vi"][0] = vi_part
+            changed = True
     rec_title = str(seo_pack.get("recommended_title") or "").strip()
     if rec_title:
         clean_t, hits = sanitize_youtube_policy_text(rec_title)
@@ -1493,24 +1795,520 @@ def enforce_seo_package_expert_rules(
     if seo_pack.get("youtube_policy_guardrail") != guardrail:
         seo_pack["youtube_policy_guardrail"] = guardrail
         changed = True
+    topic_data = ref_context.get("topic") or job.get("topic") or {}
+    if not topic_data and (ref_context.get("entity_type") or job.get("entity_type")):
+        topic_data = {"entity_type": ref_context.get("entity_type") or job.get("entity_type"), "title": str(job.get("title") or "")}
+    if topic_data:
+        topic_arch = determine_thumbnail_archetype_for_topic(topic_data)
+        if topic_arch in NON_INDIVIDUAL_ARCHETYPES:
+            if not isinstance(seo_pack.get("thumbnail"), dict):
+                seo_pack["thumbnail"] = {}
+            cur_p = str(seo_pack["thumbnail"].get("visual_priority") or "").strip()
+            if cur_p not in NON_INDIVIDUAL_ARCHETYPES:
+                seo_pack["thumbnail"]["visual_priority"] = topic_arch
+                changed = True
+
+    try:
+        from .seo import apply_synthetic_media_disclosure, detect_ai_usage_in_project
+        uses_ai_vis, uses_ai_tts = detect_ai_usage_in_project(job)
+        lang = str(job.get("language") or (job.get("channel_profile_snapshot") or {}).get("language") or "ko").strip().lower()
+        seo_pack, disc_changed = apply_synthetic_media_disclosure(
+            seo_pack,
+            uses_ai_visuals=uses_ai_vis,
+            uses_ai_tts=uses_ai_tts,
+            language=lang,
+        )
+        if disc_changed:
+            changed = True
+    except Exception:
+        pass
+
+    seo_pack, bi_changed = _ensure_bilingual_seo_fields(seo_pack, job, ref_context)
+    if bi_changed:
+        changed = True
 
     return seo_pack, changed
+
+
+_VI_DIACRITIC_RE = re.compile(
+    r"[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]",
+    flags=re.IGNORECASE,
+)
+
+
+def _is_hook_placeholder_vi(text: str) -> bool:
+    s = str(text or "").strip()
+    if not s:
+        return True
+    return bool(
+        re.match(r"^Variant\s+[A-D]\b", s, flags=re.IGNORECASE)
+        or re.match(r"^(?:Nghịch lý|Hai mặt|Nhân vật\s*&\s*Vật chứng|Tiêu điểm Pháp y)\s*\(", s, flags=re.IGNORECASE)
+    )
+
+
+def _split_bilingual_title_pair(raw_title: str, explicit_vi: str = "") -> tuple[str, str]:
+    raw = re.sub(r"^(?:🇰🇷\s*)?(?:KR\s+)+", "", str(raw_title or "").strip(), flags=re.IGNORECASE).strip()
+    vi = str(explicit_vi or "").strip()
+    m_paren = re.match(r"^(.*?)\s*\(([^()]+)\)\s*$", raw)
+    if m_paren and _VI_DIACRITIC_RE.search(m_paren.group(2)):
+        raw = m_paren.group(1).strip()
+        if not vi:
+            vi = re.sub(
+                r"^(?:🇻🇳\s*)?(?:VN|VI|Tiếng\s*Việt|Nghĩa(?:\s+Tiếng\s+Việt)?)\s*[:\-–—]?\s*",
+                "",
+                m_paren.group(2).strip(),
+                flags=re.IGNORECASE,
+            ).strip()
+    parts = re.split(r"\n+|\s+//\s+", raw)
+    if len(parts) >= 2 and _VI_DIACRITIC_RE.search(parts[-1]) and not re.search(r"[가-힣]", parts[-1]):
+        if not vi:
+            vi = re.sub(
+                r"^(?:🇻🇳\s*)?(?:VN|VI|Tiếng\s*Việt|Nghĩa(?:\s+Tiếng\s+Việt)?)\s*[:\-–—]?\s*",
+                "",
+                parts[-1].strip(),
+                flags=re.IGNORECASE,
+            ).strip()
+        raw = " ".join(parts[:-1]).strip()
+    return raw, vi
+
+
+def _ensure_bilingual_seo_fields(
+    seo_pack: dict[str, Any],
+    job: dict[str, Any],
+    ref_context: dict[str, Any] | None = None,
+) -> tuple[dict[str, Any], bool]:
+    """Ensure every foreign-market SEO package has complete Vietnamese translations (title_vi, 8 title_variants, description_vi, chapters_vi, thumbnail_text_vi)."""
+    if not isinstance(seo_pack, dict) or not seo_pack:
+        return seo_pack, False
+    ref_context = ref_context if isinstance(ref_context, dict) else {}
+    snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    market = str(job.get("market") or snap.get("market") or "").strip().upper()
+    lang = str(job.get("language") or snap.get("language") or "ko").strip().lower()
+    if market == "VN" or lang == "vi":
+        return seo_pack, False
+
+    changed = False
+    seo_dna = (
+        (ref_context.get("seo_keyword_dna") if isinstance(ref_context.get("seo_keyword_dna"), dict) else None)
+        or (job.get("seo_keyword_dna") if isinstance(job.get("seo_keyword_dna"), dict) else None)
+        or (snap.get("seo_keyword_dna") if isinstance(snap.get("seo_keyword_dna"), dict) else None)
+        or {}
+    )
+    primary_kw = str(seo_dna.get("primary_title_keyword") or "중국 실화 사건").strip()
+    primary_kw_vi = str(seo_dna.get("primary_title_keyword_meaning_vi") or "Vụ án có thật Trung Quốc").strip()
+    brief = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
+    job_title_vi = str(
+        job.get("title_vi")
+        or brief.get("title_vi")
+        or brief.get("working_title_vi")
+        or (job.get("title") if _VI_DIACRITIC_RE.search(str(job.get("title") or "")) else "")
+        or (job.get("topic") if _VI_DIACRITIC_RE.search(str(job.get("topic") or "")) else "")
+        or ""
+    ).strip()
+
+    # Build lookup map of known Korean -> Vietnamese titles across all fields in seo_pack
+    vi_by_ko: dict[str, str] = {}
+
+    def _reg_pair(k_raw: Any, v_raw: Any) -> None:
+        k_clean, v_clean = _split_bilingual_title_pair(str(k_raw or ""), str(v_raw or ""))
+        if k_clean and v_clean and k_clean not in vi_by_ko:
+            vi_by_ko[k_clean] = v_clean
+
+    raw_opts = seo_pack.get("title_options") if isinstance(seo_pack.get("title_options"), list) else []
+    raw_opts_vi = seo_pack.get("title_options_vi") if isinstance(seo_pack.get("title_options_vi"), list) else []
+    raw_titles_vi = seo_pack.get("titles_vi") if isinstance(seo_pack.get("titles_vi"), list) else []
+    raw_details = seo_pack.get("title_options_details") if isinstance(seo_pack.get("title_options_details"), list) else []
+    raw_tvars = seo_pack.get("title_variants") if isinstance(seo_pack.get("title_variants"), list) else []
+    raw_abvars = seo_pack.get("ab_variants") if isinstance(seo_pack.get("ab_variants"), list) else []
+    raw_pairs = seo_pack.get("title_thumbnail_pairs") if isinstance(seo_pack.get("title_thumbnail_pairs"), list) else []
+    raw_tov = seo_pack.get("text_overlay_variants") if isinstance(seo_pack.get("text_overlay_variants"), list) else []
+    raw_abpack = seo_pack.get("ab_test_title_pack") if isinstance(seo_pack.get("ab_test_title_pack"), list) else []
+    thumb_dict = seo_pack.get("thumbnail") if isinstance(seo_pack.get("thumbnail"), dict) else {}
+    raw_ov_opts = thumb_dict.get("overlay_text_options") if isinstance(thumb_dict.get("overlay_text_options"), list) else []
+
+    for lst in (raw_details, raw_tvars, raw_abvars, raw_pairs, raw_tov, raw_abpack, raw_ov_opts):
+        for item in lst:
+            if isinstance(item, dict):
+                _reg_pair(
+                    item.get("title_ko") or item.get("kr") or item.get("title") or item.get("paired_title"),
+                    item.get("title_vi") or item.get("vi") or item.get("paired_title_vi"),
+                )
+    for idx, t_item in enumerate(raw_opts):
+        t_ko = t_item.get("title_ko") or t_item.get("kr") or t_item.get("title") if isinstance(t_item, dict) else t_item
+        t_vi = (
+            (t_item.get("title_vi") or t_item.get("vi")) if isinstance(t_item, dict) else ""
+        ) or (raw_opts_vi[idx] if idx < len(raw_opts_vi) else "")
+        _reg_pair(t_ko, t_vi)
+
+    # Collect up to 8 distinct title options
+    collected_ko: list[str] = []
+    collected_vi: list[str] = []
+
+    def _add_candidate(k_raw: Any, v_raw: Any = "") -> None:
+        k_clean, v_clean = _split_bilingual_title_pair(str(k_raw or ""), str(v_raw or ""))
+        if not k_clean:
+            return
+        if not v_clean:
+            v_clean = vi_by_ko.get(k_clean, "")
+        if k_clean not in collected_ko:
+            collected_ko.append(k_clean)
+            collected_vi.append(v_clean)
+        else:
+            pos = collected_ko.index(k_clean)
+            if not collected_vi[pos] and v_clean:
+                collected_vi[pos] = v_clean
+
+    rec_ko_raw = str(seo_pack.get("recommended_title") or "").strip()
+    rec_vi_raw = str(seo_pack.get("recommended_title_vi") or seo_pack.get("title_vi") or "").strip()
+    rec_ko_clean, rec_vi_clean = _split_bilingual_title_pair(rec_ko_raw, rec_vi_raw)
+
+    for idx, t_item in enumerate(raw_opts):
+        if isinstance(t_item, dict):
+            _add_candidate(
+                t_item.get("title_ko") or t_item.get("kr") or t_item.get("title"),
+                t_item.get("title_vi") or t_item.get("vi") or (raw_opts_vi[idx] if idx < len(raw_opts_vi) else ""),
+            )
+        else:
+            _add_candidate(
+                t_item,
+                (raw_opts_vi[idx] if idx < len(raw_opts_vi) else "")
+                or (raw_titles_vi[idx] if idx < len(raw_titles_vi) else ""),
+            )
+
+    for lst in (raw_tvars, raw_abvars, raw_details, raw_pairs, raw_tov, raw_abpack, raw_ov_opts):
+        for item in lst:
+            if len(collected_ko) >= 8:
+                break
+            if isinstance(item, dict):
+                _add_candidate(
+                    item.get("title_ko") or item.get("kr") or item.get("title") or item.get("paired_title"),
+                    item.get("title_vi") or item.get("vi") or item.get("paired_title_vi"),
+                )
+
+    if rec_ko_clean and rec_ko_clean not in collected_ko:
+        collected_ko.insert(0, rec_ko_clean)
+        collected_vi.insert(0, rec_vi_clean)
+
+    # Pad to 8 options if fewer than 8 exist
+    base_topic_vi = job_title_vi or rec_vi_clean or (collected_vi[0] if collected_vi and collected_vi[0] else f"Hồ sơ điều tra vụ án có thật ({primary_kw_vi})")
+    fallback_ko_templates = [
+        f"[{primary_kw}] 치밀한 추적으로 밝혀진 결정적 단서 하나 | 사건 전체 기록",
+        f"[{primary_kw}] 가짜 신분 뒤에 숨겨진 충격적인 전말과 과학수사 추적기",
+        f"[{primary_kw}] 끝까지 침묵하던 용의자가 마지막 심문에서 무너진 이유",
+        f"[{primary_kw}] 미궁에 빠질 뻔한 사건을 뒤집은 단 하나의 물리적 증거",
+        f"[{primary_kw}] 완벽한 위장이라 믿었던 범인의 치명적 실수 | 수사 기록 재구성",
+        f"[{primary_kw}] 베테랑 형사들의 집요한 추적 끝에 드러난 사건의 진실",
+        f"[{primary_kw}] 수년간 이어진 도주극의 마침표를 찍은 결정적 순간",
+        f"[{primary_kw}] 법정에서 밝혀진 전체 타임라인과 최종 판결 기록",
+    ]
+    fallback_vi_templates = [
+        f"[{primary_kw_vi}] Manh mối quyết định phơi bày qua cuộc truy vết tỉ mỉ | Toàn bộ hồ sơ vụ án ({base_topic_vi})",
+        f"[{primary_kw_vi}] Toàn cảnh sự thật chấn động ẩn sau vỏ bọc giả và hành trình khoa học hình sự ({base_topic_vi})",
+        f"[{primary_kw_vi}] Lý do nghi phạm ngoan cố im lặng đến phút chót phải sụp đổ trong phòng thẩm vấn ({base_topic_vi})",
+        f"[{primary_kw_vi}] Bằng chứng vật lý duy nhất lật ngược vụ án tưởng chừng rơi vào bế tắc ({base_topic_vi})",
+        f"[{primary_kw_vi}] Sai lầm chí mạng của kẻ thủ ác tự tin vào màn ngụy trang hoàn hảo ({base_topic_vi})",
+        f"[{primary_kw_vi}] Sự thật phơi bày sau cuộc truy lùng bền bỉ của đội ngũ điều tra viên kỳ cựu ({base_topic_vi})",
+        f"[{primary_kw_vi}] Khoảnh khắc định mệnh đặt dấu chấm hết cho hành trình trốn chạy nhiều năm ({base_topic_vi})",
+        f"[{primary_kw_vi}] Toàn bộ dòng thời gian sự kiện và phán quyết cuối cùng tại phiên tòa ({base_topic_vi})",
+    ]
+    for idx in range(len(collected_ko)):
+        if not collected_vi[idx]:
+            if idx < len(raw_titles_vi) and raw_titles_vi[idx]:
+                collected_vi[idx] = str(raw_titles_vi[idx]).strip()
+            else:
+                collected_vi[idx] = fallback_vi_templates[idx % len(fallback_vi_templates)]
+    while len(collected_ko) < 8:
+        slot_idx = len(collected_ko)
+        cand_ko = fallback_ko_templates[slot_idx % len(fallback_ko_templates)]
+        cand_vi = fallback_vi_templates[slot_idx % len(fallback_vi_templates)]
+        if cand_ko not in collected_ko:
+            collected_ko.append(cand_ko)
+            collected_vi.append(cand_vi)
+        else:
+            collected_ko.append(f"{cand_ko} #{slot_idx + 1}")
+            collected_vi.append(cand_vi)
+
+    collected_ko = collected_ko[:8]
+    collected_vi = collected_vi[:8]
+
+    if not rec_vi_clean:
+        rec_vi_clean = collected_vi[0] if collected_vi else base_topic_vi
+    if rec_ko_clean and seo_pack.get("recommended_title") != rec_ko_clean:
+        seo_pack["recommended_title"] = rec_ko_clean
+        changed = True
+    if rec_vi_clean and seo_pack.get("recommended_title_vi") != rec_vi_clean:
+        seo_pack["recommended_title_vi"] = rec_vi_clean
+        changed = True
+    if rec_vi_clean and seo_pack.get("title_vi") != rec_vi_clean:
+        seo_pack["title_vi"] = rec_vi_clean
+        changed = True
+
+    if seo_pack.get("title_options") != collected_ko:
+        seo_pack["title_options"] = collected_ko
+        changed = True
+    if seo_pack.get("title_options_vi") != collected_vi:
+        seo_pack["title_options_vi"] = collected_vi
+        changed = True
+    if seo_pack.get("titles_vi") != collected_vi:
+        seo_pack["titles_vi"] = collected_vi
+        changed = True
+
+    new_details: list[dict[str, Any]] = []
+    new_tvars: list[dict[str, Any]] = []
+    for idx in range(len(collected_ko)):
+        existing_d = raw_details[idx] if idx < len(raw_details) and isinstance(raw_details[idx], dict) else {}
+        slot_lbl = f"{['A', 'B', 'C', 'D'][idx % 4]}{(idx // 4) + 1}"
+        paired_v = str(existing_d.get("paired_variant") or f"v{(idx % 4) + 1}").strip()
+        kw_anc = str(existing_d.get("keyword_anchor") or f"{primary_kw} ({primary_kw_vi})").strip()
+        syn_txt = str(
+            existing_d.get("synergy_vi")
+            or f"Ghép chuẩn BẢN {['A', 'B', 'C', 'D'][idx % 4]}: Bổ trợ trực tiếp với chữ trên Thumbnail, 0% trùng lặp câu từ."
+        ).strip()
+        d_entry = {
+            **existing_d,
+            "index": idx + 1,
+            "slot": slot_lbl,
+            "paired_variant": paired_v,
+            "title_ko": collected_ko[idx],
+            "title_vi": collected_vi[idx],
+            "kr": collected_ko[idx],
+            "vi": collected_vi[idx],
+            "keyword_anchor": kw_anc,
+            "synergy_vi": syn_txt,
+        }
+        new_details.append(d_entry)
+        new_tvars.append({
+            "index": idx + 1,
+            "slot": slot_lbl,
+            "paired_variant": paired_v,
+            "kr": collected_ko[idx],
+            "vi": collected_vi[idx],
+            "title_ko": collected_ko[idx],
+            "title_vi": collected_vi[idx],
+        })
+
+    if seo_pack.get("title_options_details") != new_details:
+        seo_pack["title_options_details"] = new_details
+        changed = True
+    if seo_pack.get("title_variants") != new_tvars:
+        seo_pack["title_variants"] = new_tvars
+        changed = True
+    if seo_pack.get("ab_variants") != new_tvars:
+        seo_pack["ab_variants"] = new_tvars
+        changed = True
+
+    # Ensure chapters & chapters_vi have Vietnamese translations
+    raw_chapters = seo_pack.get("chapters") if isinstance(seo_pack.get("chapters"), list) else []
+    raw_chapters_vi = seo_pack.get("chapters_vi") if isinstance(seo_pack.get("chapters_vi"), list) else []
+    outline_obj = job.get("outline") if isinstance(job.get("outline"), dict) else {}
+    outline_chapters = outline_obj.get("chapters") if isinstance(outline_obj.get("chapters"), list) else []
+
+    if raw_chapters:
+        norm_chapters: list[dict[str, Any]] = []
+        norm_chapters_vi: list[dict[str, Any]] = []
+        for idx, ch in enumerate(raw_chapters):
+            if not isinstance(ch, dict):
+                continue
+            ch_vi_item = raw_chapters_vi[idx] if idx < len(raw_chapters_vi) else {}
+            ts = str(ch.get("timestamp") or "00:00").strip()
+            ko_t = str(ch.get("title") or ch.get("title_ko") or "").strip()
+            vi_t = str(
+                ch.get("title_vi")
+                or (ch_vi_item.get("title_vi") or ch_vi_item.get("title") if isinstance(ch_vi_item, dict) else ch_vi_item)
+                or ""
+            ).strip()
+            if not vi_t and idx < len(outline_chapters) and isinstance(outline_chapters[idx], dict):
+                ol_ch = outline_chapters[idx]
+                cand_ol = str(ol_ch.get("title_vi") or ol_ch.get("title") or ol_ch.get("summary_vi") or "").strip()
+                if _VI_DIACRITIC_RE.search(cand_ol):
+                    vi_t = cand_ol
+            if not vi_t:
+                vi_t = f"Chương {idx + 1} ({ts}): Diễn biến & tình tiết điều tra trọng tâm"
+            new_ch = {**ch, "timestamp": ts, "title": ko_t, "title_vi": vi_t}
+            norm_chapters.append(new_ch)
+            norm_chapters_vi.append({
+                "timestamp": ts,
+                "start_sec": ch.get("start_sec", 0.0),
+                "beat_id": ch.get("beat_id", ""),
+                "title_ko": ko_t,
+                "title_vi": vi_t,
+                "title": vi_t,
+            })
+        if seo_pack.get("chapters") != norm_chapters:
+            seo_pack["chapters"] = norm_chapters
+            changed = True
+        if seo_pack.get("chapters_vi") != norm_chapters_vi:
+            seo_pack["chapters_vi"] = norm_chapters_vi
+            changed = True
+
+    # Ensure description_vi is populated
+    desc_vi = str(seo_pack.get("description_vi") or "").strip()
+    if not desc_vi and str(seo_pack.get("description") or "").strip():
+        ch_lines_vi = [
+            f"{c.get('timestamp', '00:00')} {c.get('title_vi') or c.get('title') or ''}".strip()
+            for c in (seo_pack.get("chapters_vi") or seo_pack.get("chapters") or [])
+            if isinstance(c, dict)
+        ]
+        chapters_block = "\n".join(ch_lines_vi)
+        summary_vi = str(
+            brief.get("summary_vi")
+            or brief.get("logline_vi")
+            or brief.get("opening_hook_vi")
+            or rec_vi_clean
+            or base_topic_vi
+        ).strip()
+        hashtags_str = " ".join(str(h).strip() for h in (seo_pack.get("hashtags") or []) if str(h).strip())
+        desc_vi_parts = [
+            f"[{primary_kw_vi}] {rec_vi_clean}",
+            summary_vi if summary_vi != rec_vi_clean else "Bộ phim tài liệu tái hiện toàn bộ hồ sơ điều tra, quá trình truy vết bằng khoa học hình sự và phán quyết cuối cùng của vụ án.",
+        ]
+        if chapters_block:
+            desc_vi_parts.append(f"⏱️ Mốc thời gian các chương (Chapters)\n{chapters_block}")
+        if hashtags_str:
+            desc_vi_parts.append(hashtags_str)
+        desc_vi_parts.append(
+            "---\nBộ phim tài liệu này dựa trên hồ sơ sự kiện lịch sử có thật; một số phân cảnh được tái dựng bằng công nghệ AI và diễn họa nhằm hỗ trợ người xem hình dung trực quan."
+        )
+        seo_pack["description_vi"] = "\n\n".join(p for p in desc_vi_parts if p)
+        changed = True
+
+    # Ensure thumbnail.overlay_text_options and thumbnail_text_vi have Vietnamese fields
+    if isinstance(thumb_dict.get("overlay_text_options"), list):
+        thumb_text_vi_list: list[dict[str, Any]] = []
+        for idx, opt in enumerate(thumb_dict["overlay_text_options"]):
+            if not isinstance(opt, dict):
+                continue
+            tov_item = raw_tov[idx] if idx < len(raw_tov) and isinstance(raw_tov[idx], dict) else {}
+            pair_item = raw_pairs[idx] if idx < len(raw_pairs) and isinstance(raw_pairs[idx], dict) else {}
+            b_vi = str(opt.get("badge_vi") or tov_item.get("badge_vi") or pair_item.get("badge_vi") or "").strip()
+            l1_vi = str(opt.get("line_1_vi") or tov_item.get("line_1_vi") or pair_item.get("line_1_vi") or "").strip()
+            l2_vi = str(opt.get("line_2_vi") or tov_item.get("line_2_vi") or pair_item.get("line_2_vi") or "").strip()
+            if _is_hook_placeholder_vi(l1_vi):
+                l1_vi = str(tov_item.get("line_1_vi") or pair_item.get("line_1_vi") or "").strip()
+            if _is_hook_placeholder_vi(l2_vi):
+                l2_vi = str(tov_item.get("line_2_vi") or pair_item.get("line_2_vi") or "").strip()
+            if b_vi and opt.get("badge_vi") != b_vi:
+                opt["badge_vi"] = b_vi
+                changed = True
+            if l1_vi and opt.get("line_1_vi") != l1_vi:
+                opt["line_1_vi"] = l1_vi
+                changed = True
+            if l2_vi and opt.get("line_2_vi") != l2_vi:
+                opt["line_2_vi"] = l2_vi
+                changed = True
+            pt_vi = str(
+                opt.get("paired_title_vi")
+                or (collected_vi[idx] if idx < len(collected_vi) else rec_vi_clean)
+                or tov_item.get("paired_title_vi")
+                or pair_item.get("title_vi")
+                or ""
+            ).strip()
+            if pt_vi and opt.get("paired_title_vi") != pt_vi:
+                opt["paired_title_vi"] = pt_vi
+                changed = True
+            thumb_text_vi_list.append({
+                "label": f"BẢN {['A', 'B', 'C', 'D'][idx % 4]}",
+                "badge_ko": str(opt.get("badge") or ""),
+                "badge_vi": b_vi,
+                "line_1_ko": str(opt.get("line_1") or ""),
+                "line_1_vi": l1_vi,
+                "line_2_ko": str(opt.get("line_2") or ""),
+                "line_2_vi": l2_vi,
+            })
+        if thumb_text_vi_list and not seo_pack.get("thumbnail_text_vi"):
+            seo_pack["thumbnail_text_vi"] = thumb_text_vi_list
+            changed = True
+
+    return seo_pack, changed
+
+
+def _split_meaning_vi_lines(
+    meaning_vi: str,
+    badge_vi: str = "",
+    line_1_vi: str = "",
+    line_2_vi: str = "",
+) -> tuple[str, str, str]:
+    """Extract (badge_vi, line_1_vi, line_2_vi) from composite meaning_vi strings when individual fields are empty."""
+    b_vi = str(badge_vi or "").strip()
+    l1_vi = str(line_1_vi or "").strip()
+    l2_vi = str(line_2_vi or "").strip()
+    if _is_hook_placeholder_vi(l1_vi):
+        l1_vi = ""
+    if _is_hook_placeholder_vi(l2_vi):
+        l2_vi = ""
+    raw = str(meaning_vi or "").strip()
+    if not raw or _is_hook_placeholder_vi(raw):
+        return b_vi, l1_vi, l2_vi
+
+    m_badge = re.search(r"(?:\[)?(?:Tag[^:\]|]*|Badge[^:\]|]*):\s*([^\]|]+)", raw, flags=re.IGNORECASE)
+    m_l1 = re.search(r"(?:\[)?(?:Dòng\s*1|Line\s*1)[^:\]|]*:\s*([^\]|]+)", raw, flags=re.IGNORECASE)
+    m_l2 = re.search(r"(?:\[)?(?:Dòng\s*2|Line\s*2)[^:\]|]*:\s*([^\]|]+)", raw, flags=re.IGNORECASE)
+    if m_badge and not b_vi:
+        b_vi = m_badge.group(1).strip()
+    if m_l1 and not l1_vi:
+        l1_vi = m_l1.group(1).strip()
+    if m_l2 and not l2_vi:
+        l2_vi = m_l2.group(1).strip()
+
+    if not l1_vi and not l2_vi:
+        rest = raw
+        lead_bracket = re.match(r"^\[([^\]]+)\]\s*(.+)$", rest)
+        if lead_bracket:
+            if not b_vi:
+                b_vi = re.sub(r"^(?:Tag|Badge)\s*:\s*", "", lead_bracket.group(1), flags=re.IGNORECASE).strip()
+            rest = lead_bracket.group(2).strip()
+        if not _is_hook_placeholder_vi(rest):
+            parts = [p.strip() for p in re.split(r"\s*/\s*|\s*\|\s*|\n+", rest) if p.strip()]
+            if len(parts) >= 2:
+                l1_vi = parts[0]
+                l2_vi = " / ".join(parts[1:])
+            else:
+                quote_dot = re.match(r"^([“\"'][^”\"']+[”\"'])\s*[·—–-]\s*(.+)$", rest)
+                if quote_dot:
+                    l1_vi = quote_dot.group(1).strip()
+                    l2_vi = quote_dot.group(2).strip()
+                elif rest:
+                    l1_vi = rest
+    return b_vi, l1_vi, l2_vi
 
 
 def _extract_overlay_options(seo_pack: dict[str, Any], job: dict[str, Any]) -> list[dict[str, Any]]:
     thumb = seo_pack.get("thumbnail") if isinstance(seo_pack.get("thumbnail"), dict) else {}
     framework = seo_pack.get("channel_framework") if isinstance(seo_pack.get("channel_framework"), dict) else {}
     seo_dna = job.get("seo_keyword_dna") if isinstance(job.get("seo_keyword_dna"), dict) else {}
-    default_badge = str(
-        framework.get("series_key")
-        or seo_dna.get("primary_title_keyword")
-        or "중국 실화 사건"
-    ).strip()
+    job_tdna = job.get("thumbnail_dna") if isinstance(job.get("thumbnail_dna"), dict) else {}
+    dna_preset_str = str(job_tdna.get("preset") or (job.get("editing_dna") or {}).get("preset_id") or "").strip().lower()
+    visual_strat_str = str(job.get("visual_strategy") or "").strip().lower()
+    is_cyber_fin = (
+        dna_preset_str in ("cyber_financial_forensic_duality", "cyber_financial_audit_command", "financial_forensic_vox")
+        or "cyber_finance" in visual_strat_str
+        or str(job.get("channel_profile_id") or "").strip() == "channel-cn-cyber-finance-kr"
+    )
     lang = str(job.get("language") or "ko").lower()
-    if lang == "vi" and default_badge == "중국 실화 사건":
-        default_badge = "HỒ SƠ TRỌNG ÁN"
-    elif lang == "en" and default_badge == "중국 실화 사건":
-        default_badge = "TRUE CRIME FILE"
+    snap_seo_dna = (
+        ((job.get("channel_profile_snapshot") or {}).get("seo_keyword_dna") or {})
+        if isinstance(job.get("channel_profile_snapshot"), dict)
+        else {}
+    )
+    snap_tdna = (
+        ((job.get("channel_profile_snapshot") or {}).get("thumbnail_dna") or {})
+        if isinstance(job.get("channel_profile_snapshot"), dict)
+        else {}
+    )
+    is_fin_fugitive_prof = str(job.get("channel_profile_id") or "") == "channel-kr-financial-fugitive-director-v2"
+    neutral_lang_badge = "PHÓNG SỰ" if lang == "vi" else ("DOCUMENTARY" if lang != "ko" else "다큐멘터리")
+    default_badge = str(
+        job_tdna.get("badge_text_default")
+        or snap_tdna.get("badge_text_default")
+        or framework.get("series_key")
+        or seo_dna.get("primary_title_keyword")
+        or (snap_seo_dna.get("primary_title_keyword") if isinstance(snap_seo_dna, dict) else "")
+        or ("중국 첨단사기 실화 사건" if is_cyber_fin else ("금고추적 · 중국 실화사건" if is_fin_fugitive_prof else neutral_lang_badge))
+    ).strip()
+    if is_cyber_fin and ("특급수배" in default_badge or default_badge == "중국 사기 실화"):
+        default_badge = "중국 첨단사기 실화 사건"
+    elif is_fin_fugitive_prof and "특급수배" in default_badge:
+        default_badge = str(snap_tdna.get("badge_text_default") or "금고추적 · 중국 실화사건").strip()
 
     hooks_meta = [
         {
@@ -1544,6 +2342,8 @@ def _extract_overlay_options(seo_pack: dict[str, Any], job: dict[str, Any]) -> l
         tv_list = seo_pack["thumbnail_variants"]
         if not raw_options or any(str(x.get("badge") or "").startswith(("“", "\"")) for x in raw_options if isinstance(x, dict)):
             raw_options = tv_list
+    if (not raw_options or not any(isinstance(x, dict) for x in raw_options)) and isinstance(seo_pack.get("thumbnail_text_vi"), list) and seo_pack["thumbnail_text_vi"]:
+        raw_options = seo_pack["thumbnail_text_vi"]
     titles_list = seo_pack.get("title_options") if isinstance(seo_pack.get("title_options"), list) else []
     titles_vi_list = seo_pack.get("title_options_vi") if isinstance(seo_pack.get("title_options_vi"), list) else []
     rec_title = str(seo_pack.get("recommended_title") or job.get("title") or job.get("topic") or "").strip()
@@ -1551,11 +2351,21 @@ def _extract_overlay_options(seo_pack: dict[str, Any], job: dict[str, Any]) -> l
 
     normalized: list[dict[str, Any]] = []
     for idx, item in enumerate(raw_options):
+        if isinstance(item, str):
+            parts_slash = [p.strip() for p in item.split("/") if p.strip()]
+            if len(parts_slash) >= 2:
+                item = {"line_1": parts_slash[0], "line_2": parts_slash[1]}
+            else:
+                continue
         if not isinstance(item, dict):
             continue
-        b, _ = sanitize_youtube_policy_text(str(item.get("badge_text") or item.get("badge") or default_badge).strip())
-        l1, _ = sanitize_youtube_policy_text(str(item.get("line_1") or "").strip())
-        l2, _ = sanitize_youtube_policy_text(str(item.get("line_2") or "").strip())
+        b, _ = sanitize_youtube_policy_text(str(item.get("badge_text") or item.get("badge_ko") or item.get("badge") or default_badge).strip())
+        if is_cyber_fin and ("특급수배" in b or b == "중국 사기 실화"):
+            b = default_badge
+        elif is_fin_fugitive_prof and "특급수배" in b:
+            b = default_badge
+        l1, _ = sanitize_youtube_policy_text(str(item.get("line_1") or item.get("line_1_ko") or "").strip())
+        l2, _ = sanitize_youtube_policy_text(str(item.get("line_2") or item.get("line_2_ko") or "").strip())
         mv = str(item.get("meaning_vi") or "").strip()
         paired_t, _ = sanitize_youtube_policy_text(
             str(item.get("paired_title") or (titles_list[idx] if idx < len(titles_list) else rec_title)).strip()
@@ -1565,14 +2375,21 @@ def _extract_overlay_options(seo_pack: dict[str, Any], job: dict[str, Any]) -> l
         )
         meta = hooks_meta[idx % len(hooks_meta)]
         if l1 or l2:
+            eff_mv = mv or meta["meaning_vi"]
+            b_vi, l1_vi, l2_vi = _split_meaning_vi_lines(
+                eff_mv,
+                badge_vi=str(item.get("badge_vi") or "").strip(),
+                line_1_vi=str(item.get("line_1_vi") or "").strip(),
+                line_2_vi=str(item.get("line_2_vi") or "").strip(),
+            )
             entry = {
                 "badge": b or default_badge,
-                "badge_vi": str(item.get("badge_vi") or "").strip(),
+                "badge_vi": b_vi,
                 "line_1": l1,
-                "line_1_vi": str(item.get("line_1_vi") or "").strip(),
+                "line_1_vi": l1_vi,
                 "line_2": l2,
-                "line_2_vi": str(item.get("line_2_vi") or "").strip(),
-                "meaning_vi": mv or meta["meaning_vi"],
+                "line_2_vi": l2_vi,
+                "meaning_vi": eff_mv,
                 "paired_title": paired_t,
                 "paired_title_vi": paired_t_vi,
                 "keyword_anchor_vi": str(item.get("keyword_anchor_vi") or default_badge).strip(),
@@ -1808,6 +2625,21 @@ def sync_thumbnail_design_with_seo_pack(
                 if not v.get(meta_key) and opt.get(meta_key):
                     v[meta_key] = opt[meta_key]
                     changed = True
+            b_vi, l1_vi, l2_vi = _split_meaning_vi_lines(
+                str(v.get("meaning_vi") or ""),
+                badge_vi=str(v.get("badge_vi") or ""),
+                line_1_vi=str(v.get("line_1_vi") or ""),
+                line_2_vi=str(v.get("line_2_vi") or ""),
+            )
+            if b_vi and not v.get("badge_vi"):
+                v["badge_vi"] = b_vi
+                changed = True
+            if l1_vi and not v.get("line_1_vi"):
+                v["line_1_vi"] = l1_vi
+                changed = True
+            if l2_vi and not v.get("line_2_vi"):
+                v["line_2_vi"] = l2_vi
+                changed = True
 
         # Replace variant style_reference background with contextual background if available
         v_bg_path = str(v.get("background_path") or "")
@@ -1823,11 +2655,21 @@ def sync_thumbnail_design_with_seo_pack(
 
         v_inset_url = str(v.get("inset_image_url") or "")
         if contextual_cands and ("style_reference" in v_inset_url or not v_inset_url) and contextual_cands[0].get("category") != "style_reference":
-            inset_c = contextual_cands[(idx + 1) % len(contextual_cands)]
-            v["inset_image_url"] = str(inset_c.get("url") or "")
-            for layer in v.get("layers") or []:
-                if isinstance(layer, dict) and layer.get("type") == "inset_image":
-                    layer["src"] = str(inset_c.get("url") or "")
+            existing_inset_srcs = [
+                str(l.get("src") or "").strip()
+                for l in (v.get("layers") or [])
+                if isinstance(l, dict) and l.get("type") in ("inset_image", "inset_photo") and str(l.get("src") or "").strip()
+            ]
+            if existing_inset_srcs and not any("style_reference" in s for s in existing_inset_srcs):
+                v["inset_image_url"] = existing_inset_srcs[0]
+            else:
+                inset_c = contextual_cands[(idx + 1) % len(contextual_cands)]
+                v["inset_image_url"] = str(inset_c.get("url") or "")
+                for layer in v.get("layers") or []:
+                    if isinstance(layer, dict) and layer.get("type") in ("inset_image", "inset_photo"):
+                        l_src = str(layer.get("src") or "").strip()
+                        if not l_src or "style_reference" in l_src:
+                            layer["src"] = str(inset_c.get("url") or "")
             changed = True
 
     if seo_generated_at and design.get("seo_pack_synced_at") != seo_generated_at:
@@ -1856,6 +2698,11 @@ def build_default_thumbnail_design(
         if c.get("category") not in ("thumbnail_inset", "style_reference")
     ] or [c for c in candidates if c.get("category") != "thumbnail_inset"] or candidates
     inset_cands = [c for c in candidates if c.get("category") == "thumbnail_inset"]
+    if len(inset_cands) >= 2:
+        inset_cands.sort(key=lambda c: (1 if "atm_cctv" in str(c.get("rel_path") or "").lower() else 0))
+    _arrest_kw_re = re.compile(r"(arrest|escort|custody|extradit|handcuff|raid|cuff|capture)", re.IGNORECASE)
+    arrest_inset_cands = [c for c in inset_cands if _arrest_kw_re.search(str(c.get("rel_path") or ""))]
+    evidence_inset_cands = [c for c in inset_cands if c not in arrest_inset_cands]
 
     primary_bg = contextual_cands[0] if contextual_cands else None
     secondary_bg = inset_cands[0] if inset_cands else (contextual_cands[1] if len(contextual_cands) > 1 else primary_bg)
@@ -1940,15 +2787,15 @@ def build_default_thumbnail_design(
         "Macro photorealistic forensic engineering close-up on the corroded/damaged structural foundation on the right/upper frame, deep dark shadows below.",
     ] if is_bottom_cinematic_dna else (
         [
-            "Hyper-realistic 4D Cinema 4D Octane forensic reconstruction: smooth matte obsidian-charcoal FACELESS figure in a bespoke dark suit on the right third holding a silver metal USB cold wallet, dark navy financial audit background on the left 60% and dark bottom 35% for giant two-line Korean impact typography.",
-            "Hyper-realistic 4D forensic reconstruction: warm ivory-alabaster FACELESS elderly figure in a knitted cardigan holding an open red paper bank passbook on the right third, glowing smartphone and dark negative space on the left and bottom third.",
-            "Hyper-realistic 4D forensic reconstruction: towering metal racks of 24,000 glowing smartphone motherboards with dark-slate FACELESS operators and a silver-grey FACELESS cyber-police investigator, dark shadowy bottom 35% for two-line yellow/red impact text.",
-            "Macro 4D forensic spotlight on a metallic hardware crypto cold wallet USB and burgundy passports on a dark marble desk, deep navy-black negative space on the left and bottom.",
-        ] if dna_preset == "cyber_financial_forensic_duality" else [
-            "Close-up dramatic portrait of the main subject on the right third of the frame, dark negative space on the left 60%.",
-            "Wide cinematic crime-scene / investigative atmosphere in the upper two-thirds, dark shadowy negative space across the bottom 35%.",
-            "High-tension forensic confrontation shot on the left/center with cold rim lighting and dark atmospheric background.",
-            "Macro spotlight on key forensic clue / dossier evidence on the right side, deep dark shadows on the left side.",
+            "Blurred deep midnight cyber-navy case backdrop (#040C18, blur_radius=10.0, brightness=0.45) behind an ultra-sharp 8K real portrait of the financial mastermind on the LEFT 1/3 facing right with cold ice-cyan (#38BDF8) forensic rim lighting, clean dark negative space on the right 58% for a 0-degree straight financial_audit_hud monitor and dark bottom 34% for two-line Paperlogy ExtraBold Korean broadcast typography.",
+            "Full-bleed dramatic night forensic raid scene (excavators / raided vault / server room) with cold steel-blue spotlight contrast, clean top-right space for a straight financial_audit_hud evidence screen and dark lower-third audit gradient.",
+            "Crisp 50/50 vertical confrontation dossier split: luxury financial executive on the left half (warm dark gold bokeh) vs tearful defendant in detention vest on the right half (cold steel-cyan slate) separated by a razor-sharp glowing #38BDF8 vertical divider, dark lower third.",
+            "Blurred dark courtroom backdrop (#040C18) behind an ultra-sharp 8K real bowed portrait of the convicted mastermind in prison vest on the LEFT 1/3 with cold steel-cyan (#38BDF8) rim light, clean space on the right 58% for dual straight financial_audit_hud courtroom & evidence monitors.",
+        ] if (dna_preset in ("cyber_financial_forensic_duality", "cyber_financial_audit_command") or "cyber_finance" in str(job.get("visual_strategy") or "").lower() or str(job.get("channel_profile_id") or "") == "channel-cn-cyber-finance-kr") else [
+            "Variant A (Courtroom Verdict Moment — Lúc Ra Tòa Nhận Phán Quyết): Candid, unposed chest-up photorealistic portrait of the real culprit on the RIGHT 38% standing at the courtroom dock hearing the verdict with a natural shaken, remorseful expression (heavy eyelids, trembling gaze, slightly bowed head — NEVER copy the stiff pose or expression of any reference photo), crisp key lighting and warm golden-cream outer rim glow against a dark courtroom/slate backdrop (#050A0F), leaving clean dark negative space across the LEFT 62% and lower third.",
+            "Variant B (Arrest & Unmasking Moment — Lúc Bị Bắt Giữ Tại Hiện Trường): Candid, unposed photorealistic medium-close shot of the culprit on the RIGHT 38% at the exact instant police officers close in and handcuff him, capturing a hyper-natural expression of frozen shock, cold sweat, and dazed realization as his disguise collapses (0% cloned pose/expression from reference photos), dark shadowy negative space across the LEFT 62% and bottom 35%.",
+            "Variant C (Interrogation Room Confrontation — Lúc Bị Thẩm Vấn Đối Chất): Candid, unposed photorealistic portrait of the culprit seated in a cold interrogation room facing investigators and case evidence, natural psychological micro-expression (tense jaw, tightly pressed lips, wavering gaze under cold desk lamp rim light — 0% reference-pose cloning), dark negative space on the opposite side and bottom third.",
+            "Variant D (Candid Disguise / Paradox Moment — Khoảnh Khắc Đời Thực Trong Vỏ Bọc): Candid, unposed photorealistic shot of the culprit living inside the case's specific disguise or crime-scene context with a natural lifelike expression that hides a chilling psychological contrast (0% stiff ID/reference pose), deep dark negative space reserved for broadcast typography.",
         ]
     )
 
@@ -1963,13 +2810,24 @@ def build_default_thumbnail_design(
         v_font = variant_fonts[idx % len(variant_fonts)]
         vid_num = idx + 1
         cand_bg = (
-            next((c for c in contextual_cands if f"thumb_bg_v{vid_num}" in str(c.get("rel_path") or "").lower()), None)
+            next(
+                (
+                    c for c in contextual_cands
+                    if f"thumb_bg_v{vid_num}" in str(c.get("rel_path") or "").lower()
+                    or f"thumb-bg-v{vid_num}" in str(c.get("rel_path") or "").lower()
+                ),
+                None,
+            )
             or (contextual_cands[idx % len(contextual_cands)] if contextual_cands else None)
         )
         cand_inset = (
-            inset_cands[idx % len(inset_cands)]
-            if inset_cands
-            else (contextual_cands[(idx + 1) % len(contextual_cands)] if len(contextual_cands) > 1 else cand_bg)
+            arrest_inset_cands[idx % len(arrest_inset_cands)]
+            if arrest_inset_cands
+            else (
+                inset_cands[idx % len(inset_cands)]
+                if inset_cands
+                else (contextual_cands[(idx + 1) % len(contextual_cands)] if len(contextual_cands) > 1 else cand_bg)
+            )
         )
         v_bg_url = str(cand_bg.get("url") or "") if cand_bg else ""
         v_bg_path = str(cand_bg.get("rel_path") or "") if cand_bg else ""
@@ -2002,74 +2860,392 @@ def build_default_thumbnail_design(
                     lyr["visible"] = True
                     lyr["borderColor"] = "#ffffff"
                     lyr["borderWidth"] = 6
-        elif dna_preset == "teukgeup_archival_polaroid" or str(job.get("channel_profile_id") or "") == "channel-e544a64b7c":
+        elif (
+            dna_preset in ("cyber_financial_forensic_duality", "cyber_financial_audit_command")
+            or "cyber_finance" in str(job.get("visual_strategy") or "").lower()
+            or str(job.get("channel_profile_id") or "") == "channel-cn-cyber-finance-kr"
+        ):
             cand_inset2 = (
-                inset_cands[(idx + 1) % len(inset_cands)]
-                if len(inset_cands) > 1
-                else (contextual_cands[(idx + 2) % len(contextual_cands)] if len(contextual_cands) > 2 else cand_inset)
+                evidence_inset_cands[idx % len(evidence_inset_cands)]
+                if evidence_inset_cands
+                else (
+                    inset_cands[(idx + 1) % len(inset_cands)]
+                    if len(inset_cands) > 1
+                    else (contextual_cands[(idx + 2) % len(contextual_cands)] if len(contextual_cands) > 2 else cand_inset)
+                )
             )
             v_inset2_url = str(cand_inset2.get("url") or "") if cand_inset2 else v_inset_url
+            raw_b_default = str(channel_dna.get("badge_text_default") or "중국 첨단사기 실화 사건").strip()
+            if not raw_b_default or raw_b_default == "중국 사기 실화" or "특급수배" in raw_b_default:
+                raw_b_default = "중국 첨단사기 실화 사건"
+            cyber_font_stack = "'Paperlogy ExtraBold', 'Pretendard ExtraBold', 'Malgun Gothic', sans-serif"
             for lyr in layers:
                 if not isinstance(lyr, dict):
                     continue
                 lid = lyr.get("id")
-                if lid == "inset_photo":
+                if lid == "stamp":
+                    lyr["visible"] = False
+                elif lid == "vignette":
                     lyr.update({
                         "visible": True,
-                        "left": 42,
-                        "top": 44,
-                        "width": 320,
-                        "height": 226,
-                        "angle": -2,
-                        "frameStyle": "vintage_paper",
-                        "borderColor": "#f4ebd9",
-                        "borderWidth": 14,
+                        "style": "bottom_heavy",
+                        "opacity": 0.84,
                     })
+                elif lid == "badge":
+                    if idx == 1:
+                        b_left, b_top, b_bg, b_bd, b_fill = 38, 20, "#991b1b", "#facc15", "#ffffff"
+                    elif idx == 2:
+                        b_left, b_top, b_bg, b_bd, b_fill = 424, 18, "#061a2e", "#38bdf8", "#ffe600"
+                    else:
+                        b_left, b_top, b_bg, b_bd, b_fill = 556, 18, "#061a2e", "#38bdf8", "#ffe600"
+                    lyr.update({
+                        "visible": True,
+                        "text": raw_b_default,
+                        "left": b_left,
+                        "top": b_top,
+                        "width": 432,
+                        "height": 58,
+                        "fontSize": 33,
+                        "fontFamily": cyber_font_stack,
+                        "bgColor": b_bg,
+                        "fill": b_fill,
+                        "stroke": "#000000",
+                        "borderColor": b_bd,
+                        "borderWidth": 4,
+                        "borderRadius": 8,
+                    })
+                elif lid == "inset_photo":
+                    if idx == 0:
+                        lyr.update({
+                            "visible": True,
+                            "left": 556,
+                            "top": 94,
+                            "width": 684,
+                            "height": 342,
+                            "angle": 0,
+                            "frameStyle": "financial_audit_hud",
+                            "borderColor": "#38bdf8",
+                            "borderWidth": 6,
+                        })
+                    elif idx == 1:
+                        lyr.update({
+                            "visible": True,
+                            "left": 816,
+                            "top": 24,
+                            "width": 426,
+                            "height": 248,
+                            "angle": 0,
+                            "frameStyle": "financial_audit_hud",
+                            "borderColor": "#facc15",
+                            "borderWidth": 6,
+                        })
+                    elif idx == 2:
+                        lyr.update({
+                            "visible": True,
+                            "left": 484,
+                            "top": 248,
+                            "width": 312,
+                            "height": 182,
+                            "angle": 0,
+                            "frameStyle": "financial_audit_hud",
+                            "borderColor": "#38bdf8",
+                            "borderWidth": 5,
+                        })
+                    else:
+                        lyr.update({
+                            "visible": True,
+                            "left": 548,
+                            "top": 92,
+                            "width": 430,
+                            "height": 240,
+                            "angle": 0,
+                            "frameStyle": "financial_audit_hud",
+                            "borderColor": "#38bdf8",
+                            "borderWidth": 6,
+                        })
+                elif lid == "forensic_circle":
+                    if idx == 1:
+                        lyr.update({
+                            "visible": True,
+                            "left": 542,
+                            "top": 286,
+                            "width": 216,
+                            "height": 178,
+                            "circleStyle": "crosshair_sniper",
+                            "stroke": "#ff3b30",
+                            "outerStroke": "#040c18",
+                            "strokeWidth": 8,
+                        })
+                    else:
+                        lyr["visible"] = False
                 elif lid == "forensic_arrow":
-                    lyr.update({
-                        "visible": True,
-                        "left": 382,
-                        "top": 215,
-                        "width": 120,
-                        "height": 64,
-                        "stroke": "#ff1f1f",
-                        "strokeWidth": 9,
-                        "angle": 8,
-                    })
-                elif lid == "badge_bg":
-                    lyr.update({"left": 72, "top": 536})
-                elif lid == "badge_text":
-                    lyr.update({"left": 98, "top": 546})
+                    if idx == 0:
+                        lyr.update({
+                            "visible": True,
+                            "left": 432,
+                            "top": 318,
+                            "width": 122,
+                            "height": 54,
+                            "arrowStyle": "double_chevron",
+                            "fill": "#facc15",
+                            "stroke": "#040c18",
+                            "strokeWidth": 6,
+                            "angle": 0,
+                            "flipX": False,
+                            "flipY": False,
+                        })
+                    elif idx == 1:
+                        lyr.update({
+                            "visible": True,
+                            "left": 698,
+                            "top": 214,
+                            "width": 156,
+                            "height": 62,
+                            "arrowStyle": "sharp_tactical",
+                            "fill": "#facc15",
+                            "stroke": "#040c18",
+                            "strokeWidth": 6,
+                            "angle": 128,
+                            "flipX": False,
+                            "flipY": False,
+                        })
+                    elif idx == 3:
+                        lyr.update({
+                            "visible": True,
+                            "left": 424,
+                            "top": 344,
+                            "width": 118,
+                            "height": 52,
+                            "arrowStyle": "double_chevron",
+                            "fill": "#38bdf8",
+                            "stroke": "#040c18",
+                            "strokeWidth": 6,
+                            "angle": -12,
+                            "flipX": False,
+                            "flipY": False,
+                        })
+                    else:
+                        lyr["visible"] = False
                 elif lid == "line_1":
                     lyr.update({
-                        "left": 70,
-                        "top": 616,
-                        "fontSize": 108,
-                        "fill": "#ffffff" if idx in (0, 2) else "#ffe600",
+                        "left": 38,
+                        "top": 468,
+                        "width": 1020,
+                        "fontSize": 72,
+                        "strokeWidth": 20,
+                        "fontFamily": cyber_font_stack,
+                        "fill": "#ffffff",
+                        "highlightFill": "#ffe600" if idx in (0, 2) else "#38bdf8",
                     })
                 elif lid == "line_2":
                     lyr.update({
-                        "left": 70,
-                        "top": 760,
-                        "fontSize": 126,
-                        "fill": "#ffe800" if idx in (0, 2) else "#ff2424",
+                        "left": 38,
+                        "top": 574,
+                        "width": 1010,
+                        "fontSize": 82,
+                        "strokeWidth": 22,
+                        "fontFamily": cyber_font_stack,
+                        "fill": "#ffe600" if idx in (0, 3) else "#38bdf8",
+                        "highlightFill": "#ff3b30" if idx in (0, 3) else "#ffe600",
                     })
-            if not any(isinstance(l, dict) and l.get("id") == "inset_photo_2" for l in layers):
+            if idx == 3 and not any(isinstance(l, dict) and l.get("id") == "inset_photo_2" for l in layers):
                 layers.insert(
                     2,
                     {
                         "id": "inset_photo_2",
                         "type": "inset_image",
-                        "name": "Ảnh Phụ Polaroid #2 (Trái-Dưới)",
+                        "name": "Màn Hình Kiểm Toán #2 (Góc Phải Dưới)",
                         "src": v_inset2_url,
-                        "left": 52,
-                        "top": 292,
-                        "width": 310,
-                        "height": 218,
-                        "angle": 2,
-                        "frameStyle": "vintage_paper",
+                        "left": 824,
+                        "top": 226,
+                        "width": 418,
+                        "height": 228,
+                        "angle": 0,
+                        "frameStyle": "financial_audit_hud",
+                        "borderColor": "#facc15",
+                        "borderWidth": 6,
+                        "cornerRadius": 6,
+                        "shadowColor": "rgba(0,0,0,0.92)",
+                        "shadowBlur": 24,
+                        "visible": True,
+                    },
+                )
+        elif (
+            dna_preset in ("teukgeup_archival_polaroid", "forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10")
+            or str(job.get("visual_strategy") or "").lower() in ("true_crime_noir_ai", "evidence_footage")
+            or str(job.get("channel_profile_id") or "") in ("channel-e544a64b7c", "channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2")
+        ):
+            is_cyber_fin_dna = False
+            is_director_v2_dna = (
+                dna_preset in ("teukgeup_archival_polaroid", "forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10")
+                or str(job.get("channel_profile_id") or "") in ("channel-e544a64b7c", "channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2")
+            )
+            cand_inset2 = (
+                evidence_inset_cands[idx % len(evidence_inset_cands)]
+                if evidence_inset_cands
+                else (
+                    inset_cands[(idx + 1) % len(inset_cands)]
+                    if len(inset_cands) > 1
+                    else (contextual_cands[(idx + 2) % len(contextual_cands)] if len(contextual_cands) > 2 else cand_inset)
+                )
+            )
+            v_inset2_url = str(cand_inset2.get("url") or "") if cand_inset2 else v_inset_url
+            use_dual_polaroid = (idx in (0, 1, 2, 3) and len(inset_cands) >= 2) if is_director_v2_dna else (idx in (1, 3) if not is_cyber_fin_dna else (idx == 1))
+            teukgeup_font_stack = "'Paperlogy ExtraBold', 'Pretendard ExtraBold', 'Malgun Gothic', sans-serif"
+            pip1_frames = ["cctv_hud", "caution_tape", "amber_glow_double", "cctv_hud"]
+            for lyr in layers:
+                if not isinstance(lyr, dict):
+                    continue
+                lid = lyr.get("id")
+                if lid == "stamp":
+                    lyr["visible"] = False
+                elif lid == "forensic_circle":
+                    if use_dual_polaroid and idx in (0, 2):
+                        lyr.update({
+                            "visible": True,
+                            "left": 186,
+                            "top": 128,
+                            "width": 138,
+                            "height": 148,
+                            "circleStyle": "dotted_orbit",
+                            "stroke": "#ff1a1a" if idx == 0 else "#ffe600",
+                            "outerStroke": "#000000",
+                            "strokeWidth": 9,
+                        })
+                    else:
+                        lyr["visible"] = False
+                elif lid == "badge":
+                    _is_fin_fug = str(job.get("channel_profile_id") or "") == "channel-kr-financial-fugitive-director-v2"
+                    _fallback_badge = "금고추적 · 중국 실화사건" if _is_fin_fug else "특급수배 · 중국 실화사건"
+                    _generic_badges = {"다큐멘터리", "DOCUMENTARY", "PHÓNG SỰ", "중국 실화 사건"}
+                    _cand_opt_badge = str(opt.get("badge") or "").strip()
+                    if _cand_opt_badge in _generic_badges:
+                        _cand_opt_badge = ""
+                    _cand_lyr_badge = str(lyr.get("text") or "").strip()
+                    if _cand_lyr_badge in _generic_badges:
+                        _cand_lyr_badge = ""
+                    _raw_badge_txt = str(
+                        channel_dna.get("badge_text_default")
+                        or _cand_opt_badge
+                        or _cand_lyr_badge
+                        or _fallback_badge
+                    ).strip()
+                    if _is_fin_fug and "특급수배" in _raw_badge_txt:
+                        _raw_badge_txt = str(channel_dna.get("badge_text_default") or "금고추적 · 중국 실화사건").strip()
+                    badge_txt_locked = (
+                        str(channel_dna.get("badge_text_default") or "중국 첨단사기 실화 사건").strip()
+                        if is_cyber_fin_dna
+                        else _raw_badge_txt
+                    )
+                    lyr.update({
+                        "visible": True,
+                        "text": badge_txt_locked,
+                        "left": 38,
+                        "top": 12,
+                        "width": 692,
+                        "height": 88,
+                        "fontSize": 66,
+                        "fontFamily": teukgeup_font_stack,
+                        "bgColor": "transparent",
+                        "fill": "#39ff14",
+                        "stroke": "#000000",
+                        "borderColor": "transparent",
+                        "borderWidth": 0,
+                    })
+                elif lid == "inset_photo":
+                    if use_dual_polaroid:
+                        lyr.update({
+                            "visible": True,
+                            "left": 44,
+                            "top": 112,
+                            "width": 472,
+                            "height": 344,
+                            "angle": -2 if idx != 2 else -1,
+                            "frameStyle": "amber_glow_double" if is_cyber_fin_dna else pip1_frames[idx % len(pip1_frames)],
+                            "borderColor": "#ef4444",
+                            "borderWidth": 6,
+                        })
+                    else:
+                        lyr.update({
+                            "visible": True,
+                            "left": 48,
+                            "top": 110,
+                            "width": 516,
+                            "height": 364,
+                            "angle": 0,
+                            "frameStyle": "caution_tape",
+                            "borderColor": "#ef4444",
+                            "borderWidth": 6,
+                        })
+                elif lid == "forensic_arrow":
+                    if use_dual_polaroid:
+                        lyr.update({
+                            "visible": True,
+                            "left": 552,
+                            "top": 130,
+                            "width": 228,
+                            "height": 80,
+                            "arrowStyle": "curved_pointer",
+                            "fill": "#ff1a1a",
+                            "stroke": "#ffffff",
+                            "strokeWidth": 5,
+                            "angle": -4,
+                            "flipX": False,
+                            "flipY": False,
+                        })
+                    else:
+                        lyr.update({
+                            "visible": True,
+                            "left": 546,
+                            "top": 196,
+                            "width": 196,
+                            "height": 82,
+                            "arrowStyle": "curved_pointer",
+                            "fill": "#ff1a1a",
+                            "stroke": "#ffffff",
+                            "strokeWidth": 5,
+                            "angle": -2,
+                            "flipX": False,
+                            "flipY": False,
+                        })
+                elif lid == "line_1":
+                    lyr.update({
+                        "left": 28,
+                        "top": 492,
+                        "width": 1020,
+                        "fontSize": 82,
+                        "strokeWidth": 20,
+                        "fontFamily": teukgeup_font_stack,
+                        "fill": "#ffffff" if idx in (0, 1, 3) else "#ffe600",
+                        "highlightFill": "#ffe600" if idx in (0, 1, 3) else "#ffffff",
+                    })
+                elif lid == "line_2":
+                    lyr.update({
+                        "left": 28,
+                        "top": 592,
+                        "width": 1020,
+                        "fontSize": 88,
+                        "strokeWidth": 22,
+                        "fontFamily": teukgeup_font_stack,
+                        "fill": "#ffe600" if idx in (0, 3) else "#ff2424",
+                        "highlightFill": "#ff2424" if idx in (0, 3) else "#ffe600",
+                    })
+            if use_dual_polaroid and not any(isinstance(l, dict) and l.get("id") == "inset_photo_2" for l in layers):
+                layers.insert(
+                    2,
+                    {
+                        "id": "inset_photo_2",
+                        "type": "inset_image",
+                        "name": "Ảnh Vật Chứng Xé Báo #2 (Trái-Giữa)",
+                        "src": v_inset2_url,
+                        "left": 478,
+                        "top": 248,
+                        "width": 294,
+                        "height": 214,
+                        "angle": 6,
+                        "frameStyle": "torn_newspaper",
                         "borderColor": "#f4ebd9",
-                        "borderWidth": 14,
+                        "borderWidth": 15,
                         "cornerRadius": 6,
                         "shadowColor": "rgba(0,0,0,0.88)",
                         "shadowBlur": 22,
@@ -2201,9 +3377,9 @@ def sanitize_and_repair_thumbnail_design(
                     lid = "forensic_circle"
                 elif ltype == "arrow":
                     lid = "forensic_arrow"
-                elif ltype == "inset_image":
+                elif ltype in ("inset_image", "inset_photo"):
                     lid = "inset_photo"
-                elif ltype == "textbox":
+                elif ltype in ("textbox", "text"):
                     textbox_order += 1
                     if textbox_order == 1 and "line_1" not in used_ids:
                         lid = "line_1"
@@ -2361,6 +3537,9 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
             from urllib.parse import unquote
             raw = unquote(raw.split("path=", 1)[1].split("&", 1)[0])
         raw = raw.replace("\\", "/").lstrip("/")
+        ws_prefix = f"workspaces/{workspace.name}/"
+        if raw.startswith(ws_prefix):
+            raw = raw[len(ws_prefix):]
         if "thumbnail_v" in raw:
             raw = re.sub(r"thumbnail_v([1-4])", r"thumb_bg_v\1", raw, flags=re.IGNORECASE)
         cand = (workspace / raw).resolve()
@@ -2384,6 +3563,29 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                 resized = im_rgba.resize((nw, nh), Image.Resampling.LANCZOS)
                 sx, sy = (nw - cw) // 2, (nh - ch) // 2
                 base = resized.crop((sx, sy, sx + cw, sy + ch))
+                from PIL import ImageEnhance, ImageOps
+                bg_bright = float(variant.get("bgBrightness", 100) or 100)
+                bg_contr = float(variant.get("bgContrast", 100) or 100)
+                bg_blur = float(variant.get("bgBlur", 0) or 0)
+                bg_filt = str(variant.get("bgFilter") or "none").strip().lower()
+                if abs(bg_bright - 100.0) > 1.0:
+                    base = ImageEnhance.Brightness(base).enhance(max(0.2, bg_bright / 100.0))
+                if abs(bg_contr - 100.0) > 1.0:
+                    base = ImageEnhance.Contrast(base).enhance(max(0.2, bg_contr / 100.0))
+                if bg_blur > 0.2:
+                    base = base.filter(ImageFilter.GaussianBlur(radius=min(24.0, bg_blur)))
+                if bg_filt == "grayscale":
+                    g_im = ImageOps.grayscale(base.convert("RGB"))
+                    base = ImageEnhance.Contrast(g_im).enhance(1.15).convert("RGBA")
+                elif bg_filt == "high_drama":
+                    base = ImageEnhance.Contrast(base).enhance(1.32)
+                elif bg_filt == "cold_noir":
+                    base = ImageEnhance.Color(base).enhance(0.68)
+                    tint = Image.new("RGBA", (cw, ch), (8, 28, 56, 56))
+                    base = Image.alpha_composite(base, tint)
+                elif bg_filt == "cctv_tint":
+                    tint = Image.new("RGBA", (cw, ch), (16, 185, 129, 42))
+                    base = Image.alpha_composite(base, tint)
         except Exception:
             pass
 
@@ -2412,12 +3614,12 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                     a = int(255 * opacity * max(0.05, t ** 1.35))
                     vdraw.line([(x, 0), (x, ch)], fill=(4, 7, 14, min(245, a)))
             elif style == "bottom_heavy":
-                start_y = int(ch * 0.54)
+                start_y = int(ch * 0.48)
                 for y in range(start_y, ch):
                     t = (y - start_y) / max(1, ch - start_y)
                     smooth_t = t * t * (3.0 - 2.0 * t)
-                    a = int(255 * opacity * (smooth_t ** 1.35))
-                    vdraw.line([(0, y), (cw, y)], fill=(4, 7, 14, min(240, a)))
+                    a = int(255 * opacity * (smooth_t ** 0.85))
+                    vdraw.line([(0, y), (cw, y)], fill=(3, 5, 10, min(248, a)))
             else:
                 for y in range(ch):
                     t = y / max(1, ch)
@@ -2434,7 +3636,7 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                 vig = Image.alpha_composite(vig, vig_bot)
             base = Image.alpha_composite(base, vig)
 
-        elif ltype == "inset_image":
+        elif ltype in ("inset_image", "inset_photo"):
             inset_file = (
                 _resolve_local_image(layer.get("src") or "")
                 or _resolve_local_image(variant.get("inset_image_url") or "")
@@ -2457,26 +3659,70 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                     card_w, card_h = iw + pad * 2, ih + pad * 2
                     card = Image.new("RGBA", (card_w, card_h), (0, 0, 0, 0))
                     cdraw = ImageDraw.Draw(card)
-                    bw = max(3, int(float(layer.get("borderWidth") or 6)))
+                    raw_bw = layer.get("borderWidth")
+                    bw_raw_int = int(float(raw_bw)) if raw_bw is not None else 6
+                    bw = max(3, bw_raw_int)
                     b_rgba = _hex_to_rgba(layer.get("borderColor") or "#fbbf24", 255)
+                    custom_rad = int(float(layer.get("cornerRadius"))) if layer.get("cornerRadius") is not None else None
+                    custom_feather = max(0, int(float(layer.get("featherPx") or 0)))
+                    custom_glow = max(0, int(float(layer.get("glowBlur") or 0)))
 
-                    def _crop_pip_rgba(w_t: int, h_t: int, rad: int = 12) -> tuple[Image.Image, Image.Image]:
+                    def _crop_pip_rgba(w_t: int, h_t: int, rad: int = 12, feather_override: int = 0) -> tuple[Image.Image, Image.Image]:
+                        from PIL import ImageEnhance, ImageOps
                         with Image.open(inset_file) as pim:
                             pim_rgba = pim.convert("RGBA")
                             pw, ph = pim_rgba.size
-                            sc = max(w_t / max(1, pw), h_t / max(1, ph))
+                            zoom = max(1.0, min(3.0, float(layer.get("cropZoom") or 100.0) / 100.0))
+                            pan_x = max(-1.0, min(1.0, float(layer.get("cropOffsetX") or 0.0) / 100.0))
+                            pan_y = max(-1.0, min(1.0, float(layer.get("cropOffsetY") or 0.0) / 100.0))
+                            sc = max(w_t / max(1, pw), h_t / max(1, ph)) * zoom
                             rw, rh = max(w_t, int(round(pw * sc))), max(h_t, int(round(ph * sc)))
                             resized_p = pim_rgba.resize((rw, rh), Image.Resampling.LANCZOS)
-                            cx0, cy0 = (rw - w_t) // 2, (rh - h_t) // 2
+                            max_dx = max(0, (rw - w_t) // 2)
+                            max_dy = max(0, (rh - h_t) // 2)
+                            cx0 = max(0, min(rw - w_t, (rw - w_t) // 2 + int(round(pan_x * max_dx))))
+                            cy0 = max(0, min(rh - h_t, (rh - h_t) // 2 + int(round(pan_y * max_dy))))
                             cropped = resized_p.crop((cx0, cy0, cx0 + w_t, cy0 + h_t))
+                            p_bright = float(layer.get("pipBrightness") or 100.0)
+                            p_contr = float(layer.get("pipContrast") or 100.0)
+                            p_filt = str(layer.get("pipFilter") or "none").strip().lower()
+                            if abs(p_bright - 100.0) > 1.0:
+                                cropped = ImageEnhance.Brightness(cropped).enhance(max(0.2, p_bright / 100.0))
+                            if abs(p_contr - 100.0) > 1.0:
+                                cropped = ImageEnhance.Contrast(cropped).enhance(max(0.2, p_contr / 100.0))
+                            if p_filt == "grayscale":
+                                g_p = ImageOps.grayscale(cropped.convert("RGB"))
+                                cropped = ImageEnhance.Contrast(g_p).enhance(1.15).convert("RGBA")
+                            elif p_filt == "high_contrast":
+                                cropped = ImageEnhance.Contrast(cropped).enhance(1.38)
+                            elif p_filt == "sepia":
+                                g_p = ImageOps.grayscale(cropped.convert("RGB"))
+                                sep = ImageOps.colorize(g_p, "#24180b", "#f7e7c4").convert("RGBA")
+                                cropped = sep
+                            elif p_filt == "cctv_green":
+                                tint_g = Image.new("RGBA", (w_t, h_t), (16, 185, 129, 58))
+                                cropped = Image.alpha_composite(cropped, tint_g)
+                            elif p_filt == "cold_blue":
+                                tint_b = Image.new("RGBA", (w_t, h_t), (14, 165, 233, 52))
+                                cropped = Image.alpha_composite(cropped, tint_b)
+                        use_r = custom_rad if custom_rad is not None else rad
                         mask_im = Image.new("L", (w_t, h_t), 0)
-                        if rad > 0:
-                            ImageDraw.Draw(mask_im).rounded_rectangle([0, 0, w_t - 1, h_t - 1], radius=rad, fill=255)
+                        use_f = max(custom_feather, feather_override)
+                        if use_f > 0:
+                            inset_m = min(w_t // 4, h_t // 4, max(4, use_f // 2))
+                            ImageDraw.Draw(mask_im).rounded_rectangle(
+                                [inset_m, inset_m, w_t - 1 - inset_m, h_t - 1 - inset_m],
+                                radius=max(8, use_r),
+                                fill=255,
+                            )
+                            mask_im = mask_im.filter(ImageFilter.GaussianBlur(radius=max(3, use_f // 2)))
+                        elif use_r > 0:
+                            ImageDraw.Draw(mask_im).rounded_rectangle([0, 0, w_t - 1, h_t - 1], radius=use_r, fill=255)
                         else:
                             mask_im.paste(255, [0, 0, w_t, h_t])
                         return cropped, mask_im
 
-                    if frame_style in ("torn_newspaper", "torn_paper"):
+                    if frame_style in ("torn_newspaper", "torn_paper", "torn_newspaper_deckle"):
                         # Realistic hand-ripped newspaper clipping contour (slow paper-grain drift + irregular fiber notches, never a regular sawtooth)
                         def _torn_poly(x0_p: float, y0_p: float, w_p: float, h_p: float, amp: float = 4.6, seed_off: float = 0.0, deckle_bias: float = 0.0) -> list[tuple[float, float]]:
                             def _tear_disp(pos: float, length: float, phase: float) -> float:
@@ -2683,6 +3929,49 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                             cdraw.line(c_pts, fill=(0, 0, 0, 235), width=c_w + 4, joint="curve")
                             cdraw.line(c_pts, fill=b_rgba, width=c_w, joint="curve")
 
+                    elif frame_style == "financial_audit_hud":
+                        rad = 6
+                        cdraw.rounded_rectangle([pad + 4, pad + 9, pad + iw + 4, pad + ih + 9], radius=rad, fill=(0, 0, 0, 232))
+                        cdraw.rounded_rectangle([pad - 3, pad - 3, pad + iw + 3, pad + ih + 3], radius=rad + 3, outline=(b_rgba[0], b_rgba[1], b_rgba[2], 165), width=bw + 8)
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        bar_h = 26
+                        pdraw.rectangle([0, 0, iw, bar_h], fill=(4, 12, 24, 235))
+                        pdraw.rectangle([0, 0, 14, bar_h], fill=b_rgba)
+                        pdraw.ellipse([24, 8, 34, 18], fill=(34, 197, 94, 255))
+                        for t_idx in range(4):
+                            tx0 = 44 + t_idx * 14
+                            pdraw.rectangle([tx0, 10, tx0 + 9, 16], fill=(b_rgba[0], b_rgba[1], b_rgba[2], 225 - t_idx * 35))
+                        # Right-side telemetry micro-ticks
+                        if iw >= 180:
+                            for r_idx in range(3):
+                                rx0 = iw - 54 + r_idx * 14
+                                pdraw.rectangle([rx0, 9, rx0 + 8, 17], fill=(250, 204, 21, 220 if r_idx == 0 else 135))
+                        pdraw.line([(0, bar_h), (iw, bar_h)], fill=b_rgba, width=2)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        use_bw = max(5, bw)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(4, 10, 20, 245), width=use_bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=use_bw)
+                        cdraw.rounded_rectangle([pad + use_bw, pad + use_bw, pad + iw - use_bw, pad + ih - use_bw], radius=max(2, rad - 2), outline=(255, 255, 255, 185), width=2)
+
+                        # Precision right-angle L-corner audit brackets
+                        c_len = max(20, int(min(iw, ih) * 0.16))
+                        c_w = max(4, use_bw)
+                        x0, y0, x1, y1 = pad - 3, pad - 3, pad + iw + 3, pad + ih + 3
+                        corner_col = (250, 204, 21, 255) if b_rgba[2] > b_rgba[0] else (56, 189, 248, 255)
+                        for c_pts in [
+                            [(x0, y0 + c_len), (x0, y0), (x0 + c_len, y0)],
+                            [(x1 - c_len, y0), (x1, y0), (x1, y0 + c_len)],
+                            [(x1, y1 - c_len), (x1, y1), (x1 - c_len, y1)],
+                            [(x0 + c_len, y1), (x0, y1), (x0, y1 - c_len)],
+                        ]:
+                            cdraw.line(c_pts, fill=(4, 10, 20, 240), width=c_w + 4)
+                            cdraw.line(c_pts, fill=corner_col, width=c_w)
+
                     elif frame_style == "dossier_tab":
                         rad = 12
                         cdraw.rounded_rectangle([pad + 4, pad + 9, pad + iw + 4, pad + ih + 9], radius=rad, fill=(0, 0, 0, 225))
@@ -2704,17 +3993,541 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                         cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=max(5, bw))
                         cdraw.rounded_rectangle([pad + bw, pad + bw, pad + iw - bw, pad + ih - bw], radius=max(4, rad - bw), outline=(255, 255, 255, 150), width=2)
 
+                    elif frame_style == "wanted_poster_a":
+                        rad = 8
+                        cdraw.rounded_rectangle([pad + 5, pad + 10, pad + iw + 5, pad + ih + 10], radius=rad, fill=(0, 0, 0, 235))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        top_h = max(24, min(34, int(round(ih * 0.13))))
+                        bot_h = max(18, min(26, int(round(ih * 0.095))))
+                        pdraw.rectangle([0, 0, iw, top_h], fill=(185, 28, 28, 248))
+                        for sx_p in range(int(iw * 0.52), iw + top_h, 18):
+                            pdraw.polygon(
+                                [(sx_p, top_h), (sx_p + 9, top_h), (sx_p + 9 + int(top_h * 0.6), 0), (sx_p + int(top_h * 0.6), 0)],
+                                fill=(15, 23, 42, 215),
+                            )
+                        pdraw.ellipse([10, top_h // 2 - 5, 20, top_h // 2 + 5], fill=(254, 240, 138, 255))
+                        try:
+                            w_fnt = ImageFont.truetype(str(_resolve_pil_font_path("Pretendard ExtraBold", "WANTED")), max(11, top_h - 14))
+                            pdraw.text((26, max(2, (top_h - (top_h - 12)) // 2 - 1)), "WANTED · A급", font=w_fnt, fill=(255, 255, 255, 255))
+                        except Exception:
+                            pass
+                        pdraw.line([(0, top_h), (iw, top_h)], fill=(254, 240, 138, 245), width=2)
+
+                        by0 = ih - bot_h
+                        pdraw.rectangle([0, by0, iw, ih], fill=(10, 14, 23, 240))
+                        pdraw.line([(0, by0), (iw, by0)], fill=b_rgba, width=2)
+                        for bx_i in range(12, max(24, iw - 16), 10):
+                            bw_bar = 5 if (bx_i // 10) % 2 == 0 else 2
+                            col_bar = (254, 240, 138, 235) if (bx_i // 10) % 3 == 0 else (255, 255, 255, 195)
+                            pdraw.rectangle([bx_i, by0 + 5, bx_i + bw_bar, ih - 5], fill=col_bar)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        use_bw = max(6, bw)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 245), width=use_bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=use_bw)
+                        cdraw.rounded_rectangle([pad + use_bw, pad + use_bw, pad + iw - use_bw, pad + ih - use_bw], radius=max(3, rad - 2), outline=(254, 240, 138, 225), width=2)
+
+                    elif frame_style == "film_strip_35mm":
+                        rad = 6
+                        cdraw.rounded_rectangle([pad + 5, pad + 10, pad + iw + 5, pad + ih + 10], radius=rad, fill=(0, 0, 0, 235))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        rail_h = max(20, min(28, int(round(ih * 0.115))))
+                        pdraw.rectangle([0, 0, iw, rail_h], fill=(8, 11, 18, 248))
+                        pdraw.rectangle([0, ih - rail_h, iw, ih], fill=(8, 11, 18, 248))
+                        pdraw.line([(0, rail_h), (iw, rail_h)], fill=b_rgba, width=2)
+                        pdraw.line([(0, ih - rail_h), (iw, ih - rail_h)], fill=b_rgba, width=2)
+                        hole_w, hole_h = 12, max(8, rail_h - 10)
+                        for hx in range(12, iw - 10, 24):
+                            pdraw.rounded_rectangle([hx, 5, hx + hole_w, 5 + hole_h], radius=2, fill=(248, 250, 252, 235), outline=(100, 116, 139, 200), width=1)
+                            pdraw.rounded_rectangle([hx, ih - rail_h + 5, hx + hole_w, ih - 5], radius=2, fill=(248, 250, 252, 235), outline=(100, 116, 139, 200), width=1)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 245), width=bw + 3)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=max(4, bw))
+
+                    elif frame_style == "pinned_cork_tape":
+                        cdraw.rounded_rectangle([pad + 6, pad + 11, pad + iw + 6, pad + ih + 11], radius=4, fill=(0, 0, 0, 232))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pad_side = max(11, int(float(layer.get("borderWidth") or 13)))
+                        pad_bot = max(pad_side + 6, int(round(pad_side * 1.38)))
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=4, fill=(245, 238, 220, 255), outline=(168, 150, 122, 255), width=2)
+                        ph_w = max(24, iw - pad_side * 2)
+                        ph_h = max(24, ih - pad_side - pad_bot)
+                        cropped_p, _ = _crop_pip_rgba(ph_w, ph_h, rad=0)
+                        card.paste(cropped_p, (pad + pad_side, pad + pad_side))
+                        cdraw.rectangle([pad + pad_side - 1, pad + pad_side - 1, pad + pad_side + ph_w, pad + pad_side + ph_h], outline=(45, 38, 32, 255), width=2)
+
+                        tape_tl = [(pad - 10, pad + 22), (pad + 34, pad - 10), (pad + 48, pad + 6), (pad + 4, pad + 38)]
+                        tape_br = [(pad + iw - 48, pad + ih - 6), (pad + iw - 4, pad + ih - 38), (pad + iw + 10, pad + ih - 22), (pad + iw - 34, pad + ih + 10)]
+                        cdraw.polygon(tape_tl, fill=(253, 230, 138, 185), outline=(217, 179, 84, 215))
+                        cdraw.polygon(tape_br, fill=(253, 230, 138, 185), outline=(217, 179, 84, 215))
+
+                        pin_cx, pin_cy = pad + iw // 2, pad + 6
+                        cdraw.ellipse([pin_cx - 10, pin_cy - 6, pin_cx + 14, pin_cy + 16], fill=(0, 0, 0, 165))
+                        cdraw.ellipse([pin_cx - 11, pin_cy - 11, pin_cx + 11, pin_cy + 11], fill=(185, 28, 28, 255), outline=(255, 255, 255, 210), width=2)
+                        cdraw.ellipse([pin_cx - 7, pin_cy - 8, pin_cx + 5, pin_cy + 4], fill=(239, 68, 68, 255))
+                        cdraw.ellipse([pin_cx - 4, pin_cy - 6, pin_cx + 1, pin_cy - 1], fill=(254, 202, 202, 245))
+
+                    elif frame_style == "evidence_bag_tag":
+                        rad = 10
+                        cdraw.rounded_rectangle([pad + 5, pad + 9, pad + iw + 5, pad + ih + 9], radius=rad, fill=(0, 0, 0, 228))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        seal_h = max(26, min(34, int(round(ih * 0.13))))
+                        pdraw.rectangle([0, 0, iw, seal_h], fill=(15, 23, 42, 235))
+                        tag_w = min(iw - 20, max(108, int(round(iw * 0.48))))
+                        pdraw.rectangle([0, 0, tag_w, seal_h], fill=(250, 204, 21, 255))
+                        try:
+                            ev_fnt = ImageFont.truetype(str(_resolve_pil_font_path("Pretendard ExtraBold", "EVIDENCE")), max(11, seal_h - 15))
+                            pdraw.text((10, max(3, (seal_h - (seal_h - 13)) // 2 - 1)), "EVIDENCE #01", font=ev_fnt, fill=(10, 14, 23, 255))
+                        except Exception:
+                            pass
+                        for bx_i in range(tag_w + 12, iw - 10, 8):
+                            pdraw.rectangle([bx_i, 7, bx_i + (4 if (bx_i // 8) % 2 == 0 else 2), seal_h - 7], fill=(255, 255, 255, 215))
+                        for dx_i in range(0, iw, 18):
+                            pdraw.line([(dx_i, seal_h), (min(iw, dx_i + 10), seal_h)], fill=(239, 68, 68, 255), width=3)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        use_bw = max(5, bw)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 240), width=use_bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=use_bw)
+                        cdraw.rounded_rectangle([pad + use_bw, pad + use_bw, pad + iw - use_bw, pad + ih - use_bw], radius=max(3, rad - 2), outline=(255, 255, 255, 190), width=2)
+
+                    elif frame_style == "mugshot_height_chart":
+                        rad = 8
+                        cdraw.rounded_rectangle([pad + 5, pad + 9, pad + iw + 5, pad + ih + 9], radius=rad, fill=(0, 0, 0, 232))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        ruler_w = max(20, min(28, int(round(iw * 0.085))))
+                        pdraw.rectangle([0, 0, ruler_w, ih], fill=(9, 13, 22, 195))
+                        pdraw.rectangle([iw - ruler_w, 0, iw, ih], fill=(9, 13, 22, 195))
+                        for ry_i in range(10, ih - 24, 9):
+                            is_major = (ry_i // 9) % 3 == 0
+                            t_len = int(ruler_w * (0.72 if is_major else 0.42))
+                            t_col = (255, 255, 255, 235 if is_major else 155)
+                            t_w = 2 if is_major else 1
+                            pdraw.line([(0, ry_i), (t_len, ry_i)], fill=t_col, width=t_w)
+                            pdraw.line([(iw - t_len, ry_i), (iw, ry_i)], fill=t_col, width=t_w)
+                        bot_h = max(20, min(28, int(round(ih * 0.105))))
+                        pdraw.rectangle([0, ih - bot_h, iw, ih], fill=(9, 13, 22, 238))
+                        pdraw.line([(0, ih - bot_h), (iw, ih - bot_h)], fill=b_rgba, width=2)
+                        for bx_i in range(int(iw * 0.22), int(iw * 0.78), 12):
+                            pdraw.rectangle([bx_i, ih - bot_h + 6, bx_i + 7, ih - 6], fill=(255, 255, 255, 215))
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        use_bw = max(5, bw)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 245), width=use_bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=use_bw)
+
+                    elif frame_style == "night_vision_thermal":
+                        rad = 10
+                        nv_col = (57, 255, 20, 255)
+                        cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=rad, fill=(0, 0, 0, 230))
+                        cdraw.rounded_rectangle([pad - 3, pad - 3, pad + iw + 3, pad + ih + 3], radius=rad + 3, outline=(57, 255, 20, 175), width=bw + 8)
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        pdraw.rectangle([0, 0, iw, ih], fill=(16, 185, 129, 28))
+                        for sy_i in range(0, ih, 6):
+                            pdraw.line([(0, sy_i), (iw, sy_i)], fill=(6, 78, 59, 62), width=1)
+                        pdraw.rounded_rectangle([10, 8, 92, 28], radius=5, fill=(4, 24, 14, 225), outline=nv_col, width=1)
+                        pdraw.ellipse([17, 13, 27, 23], fill=nv_col)
+                        try:
+                            nv_fnt = ImageFont.truetype(str(_resolve_pil_font_path("Pretendard ExtraBold", "NVG")), 12)
+                            pdraw.text((32, 10), "NVG · IR", font=nv_fnt, fill=nv_col)
+                        except Exception:
+                            pass
+                        mx, my = iw // 2, ih // 2
+                        pdraw.ellipse([mx - 22, my - 22, mx + 22, my + 22], outline=(57, 255, 20, 155), width=2)
+                        pdraw.line([(mx - 34, my), (mx - 12, my)], fill=(57, 255, 20, 175), width=2)
+                        pdraw.line([(mx + 12, my), (mx + 34, my)], fill=(57, 255, 20, 175), width=2)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=(4, 24, 14, 245), width=4)
+                        cdraw.rounded_rectangle([pad + 1, pad + 1, pad + iw - 1, pad + ih - 1], radius=rad, outline=b_rgba, width=max(4, bw))
+                        c_len = max(24, int(min(iw, ih) * 0.20))
+                        x0, y0, x1, y1 = pad - 2, pad - 2, pad + iw + 2, pad + ih + 2
+                        for c_pts in [
+                            [(x0, y0 + c_len), (x0, y0), (x0 + c_len, y0)],
+                            [(x1 - c_len, y0), (x1, y0), (x1, y0 + c_len)],
+                            [(x1, y1 - c_len), (x1, y1), (x1 - c_len, y1)],
+                            [(x0 + c_len, y1), (x0, y1), (x0, y1 - c_len)],
+                        ]:
+                            cdraw.line(c_pts, fill=(0, 0, 0, 235), width=bw + 6)
+                            cdraw.line(c_pts, fill=nv_col, width=max(5, bw + 1))
+
+                    elif frame_style == "classified_top_secret":
+                        rad = 8
+                        cdraw.rounded_rectangle([pad + 5, pad + 10, pad + iw + 5, pad + ih + 10], radius=rad, fill=(0, 0, 0, 235))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        band_h = max(16, min(24, int(round(ih * 0.09))))
+                        for by_pos in (0, ih - band_h):
+                            pdraw.rectangle([0, by_pos, iw, by_pos + band_h], fill=(248, 250, 252, 248))
+                            for sx_p in range(-band_h, iw + band_h, 22):
+                                pdraw.polygon(
+                                    [
+                                        (sx_p, by_pos + band_h),
+                                        (sx_p + 11, by_pos + band_h),
+                                        (sx_p + 11 + int(band_h * 0.7), by_pos),
+                                        (sx_p + int(band_h * 0.7), by_pos),
+                                    ],
+                                    fill=(220, 38, 38, 255),
+                                )
+                            pdraw.line([(0, by_pos + (band_h if by_pos == 0 else 0)), (iw, by_pos + (band_h if by_pos == 0 else 0))], fill=(15, 23, 42, 255), width=2)
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        use_bw = max(5, bw)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 245), width=use_bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=use_bw)
+
+                    elif frame_style == "shattered_glass_shock":
+                        rad = 10
+                        cdraw.rounded_rectangle([pad + 5, pad + 9, pad + iw + 5, pad + ih + 9], radius=rad, fill=(0, 0, 0, 232))
+                        cdraw.rounded_rectangle([pad - 3, pad - 3, pad + iw + 3, pad + ih + 3], radius=rad + 3, outline=(226, 232, 240, 155), width=bw + 6)
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        cracks = [
+                            [(iw, 0), (iw - int(iw * 0.22), int(ih * 0.18)), (iw - int(iw * 0.38), int(ih * 0.14)), (iw - int(iw * 0.52), int(ih * 0.28))],
+                            [(iw, 0), (iw - int(iw * 0.14), int(ih * 0.34)), (iw - int(iw * 0.26), int(ih * 0.48))],
+                            [(0, ih), (int(iw * 0.20), ih - int(ih * 0.19)), (int(iw * 0.36), ih - int(ih * 0.15)), (int(iw * 0.48), ih - int(ih * 0.30))],
+                            [(0, ih), (int(iw * 0.15), ih - int(ih * 0.36)), (int(iw * 0.08), ih - int(ih * 0.52))],
+                        ]
+                        for cr_pts in cracks:
+                            pdraw.line(cr_pts, fill=(15, 23, 42, 210), width=4, joint="curve")
+                            pdraw.line(cr_pts, fill=(255, 255, 255, 240), width=2, joint="curve")
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        use_bw = max(5, bw)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 245), width=use_bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=use_bw)
+                        cdraw.rounded_rectangle([pad + 2, pad + 2, pad + iw - 2, pad + ih - 2], radius=max(4, rad - 2), outline=(255, 255, 255, 225), width=2)
+
+                    elif frame_style == "breaking_news_tv":
+                        rad = 10
+                        cdraw.rounded_rectangle([pad + 5, pad + 9, pad + iw + 5, pad + ih + 9], radius=rad, fill=(0, 0, 0, 232))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        pdraw.rounded_rectangle([10, 8, 86, 28], radius=5, fill=(220, 38, 38, 245), outline=(255, 255, 255, 215), width=1)
+                        pdraw.ellipse([17, 14, 25, 22], fill=(255, 255, 255, 255))
+                        try:
+                            lv_fnt = ImageFont.truetype(str(_resolve_pil_font_path("Pretendard ExtraBold", "LIVE")), 12)
+                            pdraw.text((31, 10), "LIVE", font=lv_fnt, fill=(255, 255, 255, 255))
+                        except Exception:
+                            pass
+                        bot_h = max(24, min(34, int(round(ih * 0.135))))
+                        by0 = ih - bot_h
+                        pdraw.rectangle([0, by0, iw, ih], fill=(10, 15, 29, 242))
+                        red_w = min(int(iw * 0.34), 104)
+                        pdraw.rectangle([0, by0, red_w, ih], fill=(220, 38, 38, 255))
+                        pdraw.line([(0, by0), (iw, by0)], fill=(250, 204, 21, 255), width=2)
+                        pdraw.rectangle([red_w + 10, by0 + 7, min(iw - 10, red_w + int(iw * 0.45)), by0 + 13], fill=(250, 204, 21, 240))
+                        pdraw.rectangle([red_w + 10, by0 + 16, min(iw - 18, red_w + int(iw * 0.56)), by0 + 21], fill=(255, 255, 255, 215))
+
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        use_bw = max(5, bw)
+                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(5, 8, 15, 245), width=use_bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=use_bw)
+
+                    elif frame_style == "biometric_face_lock":
+                        cut = max(14, int(min(iw, ih) * 0.09))
+                        oct_pts = [
+                            (pad + cut, pad),
+                            (pad + iw - cut, pad),
+                            (pad + iw, pad + cut),
+                            (pad + iw, pad + ih - cut),
+                            (pad + iw - cut, pad + ih),
+                            (pad + cut, pad + ih),
+                            (pad, pad + ih - cut),
+                            (pad, pad + cut),
+                        ]
+                        sh_pts = [(px + 4, py + 9) for (px, py) in oct_pts]
+                        cdraw.polygon(sh_pts, fill=(0, 0, 0, 232))
+                        cdraw.line(oct_pts + [oct_pts[0]], fill=(b_rgba[0], b_rgba[1], b_rgba[2], 175), width=bw + 8)
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        pip_im, _ = _crop_pip_rgba(iw, ih, rad=0)
+                        pdraw = ImageDraw.Draw(pip_im, "RGBA")
+                        for sy_i in range(cut + 8, ih - cut - 8, 10):
+                            w_tick = 14 if (sy_i // 10) % 2 == 0 else 8
+                            col_tick = (56, 189, 248, 220) if (sy_i // 10) % 3 != 0 else (250, 204, 21, 235)
+                            pdraw.rectangle([6, sy_i, 6 + w_tick, sy_i + 4], fill=col_tick)
+                            pdraw.rectangle([iw - 6 - w_tick, sy_i, iw - 6, sy_i + 4], fill=col_tick)
+
+                        oct_mask = Image.new("L", (iw, ih), 0)
+                        local_oct = [(px - pad, py - pad) for (px, py) in oct_pts]
+                        ImageDraw.Draw(oct_mask).polygon(local_oct, fill=255)
+                        card.paste(pip_im, (pad, pad), oct_mask)
+                        cdraw.line(oct_pts + [oct_pts[0]], fill=(4, 10, 20, 245), width=bw + 5, joint="curve")
+                        cdraw.line(oct_pts + [oct_pts[0]], fill=b_rgba, width=max(5, bw), joint="curve")
+
+                    elif frame_style == "burnt_archival_edge":
+                        def _burnt_poly(x0_p: float, y0_p: float, w_p: float, h_p: float, amp: float = 5.4, seed_off: float = 0.0, bias: float = 0.0) -> list[tuple[float, float]]:
+                            pts_b: list[tuple[float, float]] = []
+                            step_b = 5
+                            for sx_b in range(0, int(w_p) + 1, step_b):
+                                d = (math.sin(sx_b * 0.041 + seed_off) * 0.6 + math.cos(sx_b * 0.13 + seed_off) * 0.4) * amp + bias
+                                pts_b.append((x0_p + sx_b, y0_p + d - bias))
+                            for sy_b in range(step_b, int(h_p) + 1, step_b):
+                                d = (math.sin(sy_b * 0.047 + seed_off + 1.5) * 0.6 + math.cos(sy_b * 0.11 + seed_off) * 0.4) * amp + bias
+                                pts_b.append((x0_p + w_p + d + bias, y0_p + sy_b))
+                            for sx_b in range(int(w_p) - step_b, -1, -step_b):
+                                d = (math.sin(sx_b * 0.039 + seed_off + 3.1) * 0.6 + math.cos(sx_b * 0.14 + seed_off) * 0.4) * amp + bias
+                                pts_b.append((x0_p + max(0, sx_b), y0_p + h_p + d + bias))
+                            for sy_b in range(int(h_p) - step_b, 0, -step_b):
+                                d = (math.sin(sy_b * 0.043 + seed_off + 4.7) * 0.6 + math.cos(sy_b * 0.12 + seed_off) * 0.4) * amp + bias
+                                pts_b.append((x0_p + d - bias, y0_p + max(0, sy_b)))
+                            return pts_b
+
+                        seed_b = float((ix * 11 + iy * 5) % 89) * 0.1
+                        outer_b = _burnt_poly(pad, pad, iw, ih, amp=5.2, seed_off=seed_b, bias=3.5)
+                        inner_b = _burnt_poly(pad, pad, iw, ih, amp=4.4, seed_off=seed_b + 0.25, bias=0.0)
+                        cdraw.polygon([(px + 6, py + 10) for (px, py) in outer_b], fill=(0, 0, 0, 236))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+                        cdraw.polygon(outer_b, fill=(28, 16, 8, 255), outline=(217, 119, 6, 235))
+                        cdraw.polygon(inner_b, fill=(232, 214, 184, 255), outline=(146, 64, 14, 255))
+                        pad_s = max(13, int(float(layer.get("borderWidth") or 14)))
+                        ph_w = max(24, iw - pad_s * 2)
+                        ph_h = max(24, ih - pad_s * 2)
+                        cropped_p, _ = _crop_pip_rgba(ph_w, ph_h, rad=0)
+                        card.paste(cropped_p, (pad + pad_s, pad + pad_s))
+                        cdraw.rectangle([pad + pad_s - 1, pad + pad_s - 1, pad + pad_s + ph_w, pad + pad_s + ph_h], outline=(41, 24, 12, 255), width=2)
+
+                    elif frame_style == "steel_handcuff_plate":
+                        rad = 12
+                        cdraw.rounded_rectangle([pad + 5, pad + 10, pad + iw + 5, pad + ih + 10], radius=rad, fill=(0, 0, 0, 235))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+
+                        metal_pad = max(10, int(float(layer.get("borderWidth") or 11)))
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, fill=(51, 65, 85, 255), outline=(203, 213, 225, 255), width=3)
+                        cdraw.rounded_rectangle([pad + 3, pad + 3, pad + iw - 3, pad + ih - 3], radius=max(4, rad - 2), outline=(15, 23, 42, 240), width=2)
+                        ph_w = max(24, iw - metal_pad * 2)
+                        ph_h = max(24, ih - metal_pad * 2)
+                        cropped_p, crop_m = _crop_pip_rgba(ph_w, ph_h, rad=max(4, rad - 6))
+                        card.paste(cropped_p, (pad + metal_pad, pad + metal_pad), crop_m)
+                        cdraw.rounded_rectangle([pad + metal_pad - 1, pad + metal_pad - 1, pad + metal_pad + ph_w, pad + metal_pad + ph_h], radius=max(4, rad - 6), outline=(226, 232, 240, 230), width=2)
+                        for rx_c, ry_c in [
+                            (pad + 10, pad + 10),
+                            (pad + iw - 10, pad + 10),
+                            (pad + iw - 10, pad + ih - 10),
+                            (pad + 10, pad + ih - 10),
+                        ]:
+                            cdraw.ellipse([rx_c - 5, ry_c - 5, rx_c + 5, ry_c + 5], fill=(226, 232, 240, 255), outline=(15, 23, 42, 255), width=2)
+
+                    elif frame_style in ("frameless_soft_feather", "frameless_edge_dissolve"):
+                        f_val = custom_feather if custom_feather > 0 else (38 if frame_style == "frameless_edge_dissolve" else 28)
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=20, feather_override=f_val)
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        if bw_raw_int > 0:
+                            cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=custom_rad or 18, outline=b_rgba, width=bw_raw_int)
+
+                    elif frame_style == "frameless_shadow_float":
+                        rad = custom_rad if custom_rad is not None else 12
+                        cdraw.rounded_rectangle([pad + 6, pad + 12, pad + iw + 6, pad + ih + 12], radius=rad, fill=(0, 0, 0, 238))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=11))
+                        cdraw = ImageDraw.Draw(card)
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        if bw_raw_int > 0:
+                            cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=bw_raw_int)
+
+                    elif frame_style == "frameless_white_cutout":
+                        rad = custom_rad if custom_rad is not None else 20
+                        cut_bw = max(4, bw_raw_int or 8)
+                        cdraw.rounded_rectangle([pad + 5, pad + 10, pad + iw + 5, pad + ih + 10], radius=rad, fill=(0, 0, 0, 235))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, fill=b_rgba)
+                        ph_w, ph_h = max(24, iw - cut_bw * 2), max(24, ih - cut_bw * 2)
+                        pip_im, pip_mask = _crop_pip_rgba(ph_w, ph_h, rad=max(4, rad - cut_bw))
+                        card.paste(pip_im, (pad + cut_bw, pad + cut_bw), pip_mask)
+
+                    elif frame_style == "frameless_glow_rim":
+                        rad = custom_rad if custom_rad is not None else 16
+                        cdraw.rounded_rectangle([pad - 4, pad - 4, pad + iw + 4, pad + ih + 4], radius=rad + 4, outline=(b_rgba[0], b_rgba[1], b_rgba[2], 220), width=max(6, bw + 6))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=10))
+                        cdraw = ImageDraw.Draw(card)
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=max(2, bw_raw_int or 3))
+                        cdraw.rounded_rectangle([pad + 2, pad + 2, pad + iw - 2, pad + ih - 2], radius=max(2, rad - 2), outline=(255, 255, 255, 220), width=1)
+
+                    elif frame_style == "neon_gradient_stroke":
+                        rad = custom_rad if custom_rad is not None else 14
+                        cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=rad, fill=(0, 0, 0, 230))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        cdraw.rounded_rectangle([pad - 1, pad - 1, pad + iw + 1, pad + ih + 1], radius=rad + 1, outline=(5, 8, 15, 235), width=bw + 4)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=bw)
+                        cdraw.rounded_rectangle([pad + 3, pad + 3, pad + iw - 3, pad + ih - 3], radius=max(3, rad - 3), outline=(255, 230, 0, 235), width=2)
+
+                    elif frame_style in ("double_dashed_forensic", "minimal_corner_ticks"):
+                        rad = custom_rad if custom_rad is not None else 8
+                        cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=rad, fill=(0, 0, 0, 230))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        c_len = max(22, int(min(iw, ih) * 0.22))
+                        for x0_c, y0_c, dx_c, dy_c in [
+                            (pad, pad, 1, 1),
+                            (pad + iw, pad, -1, 1),
+                            (pad + iw, pad + ih, -1, -1),
+                            (pad, pad + ih, 1, -1),
+                        ]:
+                            cdraw.line([(x0_c, y0_c + dy_c * c_len), (x0_c, y0_c), (x0_c + dx_c * c_len, y0_c)], fill=(5, 8, 15, 240), width=bw + 4)
+                            cdraw.line([(x0_c, y0_c + dy_c * c_len), (x0_c, y0_c), (x0_c + dx_c * c_len, y0_c)], fill=b_rgba, width=bw)
+
+                    elif frame_style in ("circle_portrait_ring", "magnifying_lens_pip", "sniper_scope_reticle"):
+                        if frame_style == "magnifying_lens_pip":
+                            cdraw.line([(pad + int(iw * 0.78), pad + int(ih * 0.78)), (pad + iw + 18, pad + ih + 18)], fill=(15, 23, 42, 245), width=bw * 2 + 8)
+                            cdraw.line([(pad + int(iw * 0.78), pad + int(ih * 0.78)), (pad + iw + 18, pad + ih + 18)], fill=(148, 163, 184, 255), width=bw * 2)
+                        cdraw.ellipse([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], fill=(0, 0, 0, 230))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+                        pip_im, _ = _crop_pip_rgba(iw, ih, rad=0)
+                        elli_mask = Image.new("L", (iw, ih), 0)
+                        ImageDraw.Draw(elli_mask).ellipse([2, 2, iw - 3, ih - 3], fill=255)
+                        card.paste(pip_im, (pad, pad), elli_mask)
+                        if frame_style == "sniper_scope_reticle":
+                            cdraw.line([(pad, pad + ih // 2), (pad + iw, pad + ih // 2)], fill=(255, 31, 31, 190), width=2)
+                            cdraw.line([(pad + iw // 2, pad), (pad + iw // 2, pad + ih)], fill=(255, 31, 31, 190), width=2)
+                        cdraw.ellipse([pad, pad, pad + iw, pad + ih], outline=(5, 8, 15, 240), width=bw + 4)
+                        cdraw.ellipse([pad + 2, pad + 2, pad + iw - 2, pad + ih - 2], outline=b_rgba, width=bw)
+                        cdraw.ellipse([pad + bw + 3, pad + bw + 3, pad + iw - bw - 3, pad + ih - bw - 3], outline=(255, 255, 255, 210), width=2)
+
+                    elif frame_style in ("slanted_comic_slash", "hexagon_network_node"):
+                        if frame_style == "slanted_comic_slash":
+                            sl = min(36, int(iw * 0.12))
+                            poly_pts = [(pad + sl, pad), (pad + iw, pad), (pad + iw - sl, pad + ih), (pad, pad + ih)]
+                        else:
+                            dx_h = int(iw * 0.16)
+                            poly_pts = [
+                                (pad + dx_h, pad),
+                                (pad + iw - dx_h, pad),
+                                (pad + iw, pad + ih // 2),
+                                (pad + iw - dx_h, pad + ih),
+                                (pad + dx_h, pad + ih),
+                                (pad, pad + ih // 2),
+                            ]
+                        cdraw.polygon([(px + 4, py + 8) for (px, py) in poly_pts], fill=(0, 0, 0, 232))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+                        pip_im, _ = _crop_pip_rgba(iw, ih, rad=0)
+                        p_mask = Image.new("L", (iw, ih), 0)
+                        ImageDraw.Draw(p_mask).polygon([(px - pad, py - pad) for (px, py) in poly_pts], fill=255)
+                        card.paste(pip_im, (pad, pad), p_mask)
+                        cdraw.line(poly_pts + [poly_pts[0]], fill=(5, 8, 15, 245), width=bw + 4, joint="curve")
+                        cdraw.line(poly_pts + [poly_pts[0]], fill=b_rgba, width=bw, joint="curve")
+
+                    elif frame_style in ("red_string_polaroid", "paperclip_archival_card"):
+                        pad_s = max(10, int(float(layer.get("borderWidth") or 13)))
+                        pad_b = max(pad_s + 10, int(pad_s * 1.55))
+                        cdraw.rounded_rectangle([pad + 5, pad + 10, pad + iw + 5, pad + ih + 10], radius=4, fill=(0, 0, 0, 232))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=9))
+                        cdraw = ImageDraw.Draw(card)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=4, fill=(245, 238, 220, 255), outline=(168, 150, 122, 255), width=2)
+                        ph_w, ph_h = max(24, iw - pad_s * 2), max(24, ih - pad_s - pad_b)
+                        pip_im, _ = _crop_pip_rgba(ph_w, ph_h, rad=0)
+                        card.paste(pip_im, (pad + pad_s, pad + pad_s))
+                        cdraw.rectangle([pad + pad_s, pad + pad_s, pad + pad_s + ph_w, pad + pad_s + ph_h], outline=(41, 37, 36, 255), width=2)
+                        if frame_style == "red_string_polaroid":
+                            pin_x, pin_y = pad + iw // 2, pad + 7
+                            cdraw.line([(pad - 12, pad + 26), (pin_x, pin_y), (pad + iw + 12, pad + 20)], fill=(220, 38, 38, 255), width=4)
+                            cdraw.ellipse([pin_x - 9, pin_y - 9, pin_x + 9, pin_y + 9], fill=(220, 38, 38, 255), outline=(255, 255, 255, 255), width=2)
+                        else:
+                            cdraw.rounded_rectangle([pad + 22, pad - 6, pad + 38, pad + 30], radius=7, outline=(203, 213, 225, 255), width=4)
+                            cdraw.rectangle([pad + iw - 72, pad + ih - pad_b - 18, pad + iw - 18, pad + ih - pad_b + 4], outline=(220, 38, 38, 235), width=3)
+
+                    elif frame_style in ("id_card_resident", "interrogation_rec_timer", "xray_medical_scan"):
+                        rad = 10
+                        cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=rad, fill=(0, 0, 0, 232))
+                        card = card.filter(ImageFilter.GaussianBlur(radius=8))
+                        cdraw = ImageDraw.Draw(card)
+                        pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
+                        if frame_style == "xray_medical_scan":
+                            tint_x = Image.new("RGBA", (iw, ih), (14, 165, 233, 46))
+                            pip_im = Image.alpha_composite(pip_im, tint_x)
+                        card.paste(pip_im, (pad, pad), pip_mask)
+                        if frame_style in ("id_card_resident", "interrogation_rec_timer"):
+                            bar_h = max(22, int(ih * 0.13))
+                            cdraw.rectangle([pad + 2, pad + 2, pad + iw - 2, pad + bar_h], fill=(15, 23, 42, 235))
+                            cdraw.rectangle([pad + 2, pad + ih - bar_h, pad + iw - 2, pad + ih - 2], fill=(15, 23, 42, 235))
+                        cdraw.rounded_rectangle([pad - 1, pad - 1, pad + iw + 1, pad + ih + 1], radius=rad + 1, outline=(5, 8, 15, 235), width=bw + 3)
+                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=bw)
+
                     else:
-                        rad = 14
+                        rad = custom_rad if custom_rad is not None else 14
                         cdraw.rounded_rectangle([pad + 4, pad + 8, pad + iw + 4, pad + ih + 8], radius=rad, fill=(0, 0, 0, 215))
-                        cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(b_rgba[0], b_rgba[1], b_rgba[2], 125), width=bw + 4)
+                        if bw_raw_int > 0:
+                            cdraw.rounded_rectangle([pad - 2, pad - 2, pad + iw + 2, pad + ih + 2], radius=rad + 2, outline=(b_rgba[0], b_rgba[1], b_rgba[2], 125), width=bw_raw_int + 4)
                         card = card.filter(ImageFilter.GaussianBlur(radius=7))
                         cdraw = ImageDraw.Draw(card)
                         pip_im, pip_mask = _crop_pip_rgba(iw, ih, rad=rad)
                         card.paste(pip_im, (pad, pad), pip_mask)
-                        cdraw.rounded_rectangle([pad - 1, pad - 1, pad + iw + 1, pad + ih + 1], radius=rad + 1, outline=(5, 8, 15, 220), width=bw + 3)
-                        cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=bw)
-                        cdraw.rounded_rectangle([pad + bw, pad + bw, pad + iw - bw, pad + ih - bw], radius=max(4, rad - bw), outline=(255, 255, 255, 140), width=1)
+                        if bw_raw_int > 0 and str(layer.get("borderDash") or "solid").lower() != "none":
+                            cdraw.rounded_rectangle([pad - 1, pad - 1, pad + iw + 1, pad + ih + 1], radius=rad + 1, outline=(5, 8, 15, 220), width=bw_raw_int + 3)
+                            cdraw.rounded_rectangle([pad, pad, pad + iw, pad + ih], radius=rad, outline=b_rgba, width=bw_raw_int)
+                            cdraw.rounded_rectangle([pad + bw_raw_int, pad + bw_raw_int, pad + iw - bw_raw_int, pad + ih - bw_raw_int], radius=max(4, rad - bw_raw_int), outline=(255, 255, 255, 140), width=1)
+
+                    # Attached PiP Caption Bar in PIL
+                    cap_text = str(layer.get("captionText") or "").strip()
+                    if cap_text:
+                        cap_pos = str(layer.get("captionPos") or "bottom").strip().lower()
+                        cap_bg = _hex_to_rgba(layer.get("captionBg") or "#dc2626", 245)
+                        cap_col = _hex_to_rgba(layer.get("captionColor") or "#ffffff", 255)
+                        cap_h = max(26, min(42, int(round(ih * 0.15))))
+                        cy_bar = pad if cap_pos == "top" else pad + ih - cap_h
+                        cdraw.rounded_rectangle(
+                            [pad + 4, cy_bar, pad + iw - 4, cy_bar + cap_h],
+                            radius=6,
+                            fill=cap_bg,
+                            outline=(255, 255, 255, 220),
+                            width=2,
+                        )
+                        cap_fs = max(12, min(22, int(round(cap_h * 0.56))))
+                        cap_font = _load_korean_font(cap_fs)
+                        tb_c = cdraw.textbbox((0, 0), cap_text, font=cap_font)
+                        tw_c = tb_c[2] - tb_c[0]
+                        th_c = tb_c[3] - tb_c[1]
+                        cdraw.text(
+                            (pad + (iw - tw_c) / 2.0, cy_bar + (cap_h - th_c) / 2.0 - 2),
+                            cap_text,
+                            font=cap_font,
+                            fill=cap_col,
+                        )
 
                     if abs(angle) > 0.3:
                         card = card.rotate(-angle, resample=Image.Resampling.BICUBIC, expand=True)
@@ -2759,7 +4572,28 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
             elif circle_style in ("dashed_forensic", "dashed") or (layer.get("dashed") and circle_style == "solid_ring"):
                 _draw_arc_segments(rx, ry, 20, 0.62, sw, color, outer_c)
             elif circle_style == "dotted_orbit":
-                _draw_arc_segments(rx, ry, 28, 0.22, max(6, sw + 2), color, outer_c)
+                ss = 2
+                pad_d = int(max(18, sw * 2 + 10))
+                pw_d = max(8, int(round(w + pad_d * 2)))
+                ph_d = max(8, int(round(h + pad_d * 2)))
+                dot_hi = Image.new("RGBA", (pw_d * ss, ph_d * ss), (0, 0, 0, 0))
+                ddraw = ImageDraw.Draw(dot_hi)
+                r_in = max(4.2, sw * 0.54) * ss
+                r_out = r_in + max(2.4, sw * 0.30) * ss
+                perim_approx = math.pi * (3.0 * (rx + ry) - math.sqrt(max(0.0, (3.0 * rx + ry) * (rx + 3.0 * ry))))
+                n_dots = max(18, min(28, int(round(perim_approx / max(16.5, sw * 2.08)))))
+                pcx = (pw_d / 2.0) * ss
+                pcy = (ph_d / 2.0) * ss
+                for d_idx in range(n_dots):
+                    ang_d = -math.pi / 2.0 + (2.0 * math.pi * d_idx) / n_dots
+                    dx_p = pcx + (rx * ss) * math.cos(ang_d)
+                    dy_p = pcy + (ry * ss) * math.sin(ang_d)
+                    ddraw.ellipse([dx_p - r_out, dy_p - r_out, dx_p + r_out, dy_p + r_out], fill=outer_c)
+                    ddraw.ellipse([dx_p - r_in, dy_p - r_in, dx_p + r_in, dy_p + r_in], fill=color)
+                dot_lo = dot_hi.resize((pw_d, ph_d), Image.Resampling.LANCZOS)
+                paste_dx = int(round(center_x - pw_d / 2.0))
+                paste_dy = int(round(center_y - ph_d / 2.0))
+                c_layer.paste(dot_lo, (paste_dx, paste_dy), dot_lo)
             elif circle_style == "double_ring":
                 cdraw.ellipse([cx, cy, cx + w, cy + h], outline=outer_c, width=sw + 6)
                 cdraw.ellipse([cx, cy, cx + w, cy + h], outline=color, width=sw)
@@ -2820,6 +4654,112 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                 hy1 = center_y + ry * 1.18
                 cdraw.line([(hx0, hy0), (hx1, hy1)], fill=outer_c, width=sw * 2 + 6)
                 cdraw.line([(hx0, hy0), (hx1, hy1)], fill=color, width=sw * 2)
+            elif circle_style == "square_target_box":
+                rad_sq = max(8, int(min(w, h) * 0.08))
+                cdraw.rounded_rectangle([cx, cy, cx + w, cy + h], radius=rad_sq, outline=outer_c, width=sw + 6)
+                cdraw.rounded_rectangle([cx, cy, cx + w, cy + h], radius=rad_sq, outline=color, width=sw)
+                tk = max(12.0, min(w, h) * 0.14)
+                for l_pts in [
+                    [(center_x, cy - tk * 0.35), (center_x, cy + tk * 0.65)],
+                    [(center_x, cy + h - tk * 0.65), (center_x, cy + h + tk * 0.35)],
+                    [(cx - tk * 0.35, center_y), (cx + tk * 0.65, center_y)],
+                    [(cx + w - tk * 0.65, center_y), (cx + w + tk * 0.35, center_y)],
+                ]:
+                    cdraw.line(l_pts, fill=outer_c, width=max(3, sw) + 4)
+                    cdraw.line(l_pts, fill=color, width=max(3, sw))
+            elif circle_style == "dashed_square_box":
+                step_d = max(16, int(sw * 2.4))
+                dash_d = max(10, int(step_d * 0.62))
+                for sx_i in range(int(cx), int(cx + w), step_d):
+                    x_end = min(cx + w, sx_i + dash_d)
+                    cdraw.line([(sx_i, cy), (x_end, cy)], fill=outer_c, width=sw + 6)
+                    cdraw.line([(sx_i, cy), (x_end, cy)], fill=color, width=sw)
+                    cdraw.line([(sx_i, cy + h), (x_end, cy + h)], fill=outer_c, width=sw + 6)
+                    cdraw.line([(sx_i, cy + h), (x_end, cy + h)], fill=color, width=sw)
+                for sy_i in range(int(cy), int(cy + h), step_d):
+                    y_end = min(cy + h, sy_i + dash_d)
+                    cdraw.line([(cx, sy_i), (cx, y_end)], fill=outer_c, width=sw + 6)
+                    cdraw.line([(cx, sy_i), (cx, y_end)], fill=color, width=sw)
+                    cdraw.line([(cx + w, sy_i), (cx + w, y_end)], fill=outer_c, width=sw + 6)
+                    cdraw.line([(cx + w, sy_i), (cx + w, y_end)], fill=color, width=sw)
+            elif circle_style == "octagon_biometric":
+                cut_o = min(w, h) * 0.28
+                oct_p = [
+                    (cx + cut_o, cy), (cx + w - cut_o, cy),
+                    (cx + w, cy + cut_o), (cx + w, cy + h - cut_o),
+                    (cx + w - cut_o, cy + h), (cx + cut_o, cy + h),
+                    (cx, cy + h - cut_o), (cx, cy + cut_o),
+                ]
+                cdraw.line(oct_p + [oct_p[0]], fill=outer_c, width=sw + 6, joint="curve")
+                cdraw.line(oct_p + [oct_p[0]], fill=color, width=sw, joint="curve")
+                _draw_arc_segments(rx * 0.72, ry * 0.72, 12, 0.55, max(2, sw // 2), color, None)
+            elif circle_style == "diamond_rhombus":
+                dia_p = [(center_x, cy), (cx + w, center_y), (center_x, cy + h), (cx, center_y)]
+                cdraw.line(dia_p + [dia_p[0]], fill=outer_c, width=sw + 6, joint="curve")
+                cdraw.line(dia_p + [dia_p[0]], fill=color, width=sw, joint="curve")
+                dia_in = [
+                    (center_x, cy + ry * 0.22),
+                    (cx + w - rx * 0.22, center_y),
+                    (center_x, cy + h - ry * 0.22),
+                    (cx + rx * 0.22, center_y),
+                ]
+                cdraw.line(dia_in + [dia_in[0]], fill=color, width=max(2, sw // 2), joint="curve")
+            elif circle_style == "radar_sweep_arc":
+                cdraw.ellipse([cx, cy, cx + w, cy + h], outline=outer_c, width=sw + 6)
+                cdraw.ellipse([cx, cy, cx + w, cy + h], outline=color, width=sw)
+                cdraw.ellipse([cx + rx * 0.45, cy + ry * 0.45, cx + w - rx * 0.45, cy + h - ry * 0.45], outline=color, width=max(2, sw // 2))
+                cdraw.line([(center_x, cy), (center_x, cy + h)], fill=(color[0], color[1], color[2], 140), width=max(2, sw // 3))
+                cdraw.line([(cx, center_y), (cx + w, center_y)], fill=(color[0], color[1], color[2], 140), width=max(2, sw // 3))
+                cdraw.pieslice([cx, cy, cx + w, cy + h], start=-65, end=-10, fill=(color[0], color[1], color[2], int(78 * opacity)))
+            elif circle_style == "red_x_eliminated":
+                cdraw.ellipse([cx, cy, cx + w, cy + h], outline=outer_c, width=sw + 6)
+                cdraw.ellipse([cx, cy, cx + w, cy + h], outline=color, width=sw)
+                off_x, off_y = w * 0.18, h * 0.18
+                for x_pts in [
+                    [(cx + off_x, cy + off_y), (cx + w - off_x, cy + h - off_y)],
+                    [(cx + w - off_x, cy + off_y), (cx + off_x, cy + h - off_y)],
+                ]:
+                    cdraw.line(x_pts, fill=outer_c, width=sw + 6)
+                    cdraw.line(x_pts, fill=color, width=sw + 1)
+            elif circle_style == "triangle_warning_lock":
+                tri_p = [(center_x, cy), (cx + w, cy + h), (cx, cy + h)]
+                cdraw.line(tri_p + [tri_p[0]], fill=outer_c, width=sw + 6, joint="curve")
+                cdraw.line(tri_p + [tri_p[0]], fill=color, width=sw, joint="curve")
+                _draw_arc_segments(rx * 0.48, ry * 0.48, 10, 0.6, max(2, sw // 2), color, None)
+            elif circle_style == "corner_double_laser":
+                bx, by = max(22.0, w * 0.28), max(22.0, h * 0.28)
+                for c_pts in [
+                    [(cx, cy + by), (cx, cy), (cx + bx, cy)],
+                    [(cx + w - bx, cy), (cx + w, cy), (cx + w, cy + by)],
+                    [(cx + w, cy + h - by), (cx + w, cy + h), (cx + w - bx, cy + h)],
+                    [(cx + bx, cy + h), (cx, cy + h), (cx, cy + h - by)],
+                ]:
+                    cdraw.line(c_pts, fill=outer_c, width=sw + 6, joint="curve")
+                    cdraw.line(c_pts, fill=color, width=sw, joint="curve")
+                in_m = min(w, h) * 0.10
+                bx2, by2 = bx * 0.72, by * 0.72
+                for c_pts2 in [
+                    [(cx + in_m, cy + in_m + by2), (cx + in_m, cy + in_m), (cx + in_m + bx2, cy + in_m)],
+                    [(cx + w - in_m - bx2, cy + in_m), (cx + w - in_m, cy + in_m), (cx + w - in_m, cy + in_m + by2)],
+                    [(cx + w - in_m, cy + h - in_m - by2), (cx + w - in_m, cy + h - in_m), (cx + w - in_m - bx2, cy + h - in_m)],
+                    [(cx + in_m + bx2, cy + h - in_m), (cx + in_m, cy + h - in_m), (cx + in_m, cy + h - in_m - by2)],
+                ]:
+                    cdraw.line(c_pts2, fill=color, width=max(2, sw // 2), joint="curve")
+            elif circle_style == "compass_degree_ring":
+                cdraw.ellipse([cx, cy, cx + w, cy + h], outline=outer_c, width=sw + 6)
+                cdraw.ellipse([cx, cy, cx + w, cy + h], outline=color, width=sw)
+                for deg_i in range(24):
+                    ang_c = (2.0 * math.pi * deg_i) / 24.0
+                    in_f = 0.76 if deg_i % 2 == 0 else 0.85
+                    p0 = (center_x + rx * in_f * math.cos(ang_c), center_y + ry * in_f * math.sin(ang_c))
+                    p1 = (center_x + rx * 0.98 * math.cos(ang_c), center_y + ry * 0.98 * math.sin(ang_c))
+                    cdraw.line([p0, p1], fill=outer_c, width=max(2, sw // 2) + 2)
+                    cdraw.line([p0, p1], fill=color, width=max(2, sw // 2))
+            elif circle_style == "pulse_shockwave":
+                cdraw.ellipse([cx + rx * 0.28, cy + ry * 0.28, cx + w - rx * 0.28, cy + h - ry * 0.28], outline=outer_c, width=sw + 5)
+                cdraw.ellipse([cx + rx * 0.28, cy + ry * 0.28, cx + w - rx * 0.28, cy + h - ry * 0.28], outline=color, width=sw)
+                _draw_arc_segments(rx * 0.86, ry * 0.86, 16, 0.58, max(3, int(sw * 0.65)), color, outer_c)
+                cdraw.ellipse([cx, cy, cx + w, cy + h], outline=(color[0], color[1], color[2], int(155 * opacity)), width=max(2, sw // 3))
             else:
                 cdraw.ellipse([cx, cy, cx + w, cy + h], outline=outer_c, width=sw + 6)
                 cdraw.ellipse([cx, cy, cx + w, cy + h], outline=color, width=sw)
@@ -2835,13 +4775,14 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
             flip_y = bool(layer.get("flipY"))
             arrow_style = str(layer.get("arrowStyle") or "curved_pointer").strip().lower()
 
-            ar_im = Image.new("RGBA", (aw + 56, ah + 56), (0, 0, 0, 0))
+            ss = 2
+            ar_im = Image.new("RGBA", ((aw + 56) * ss, (ah + 56) * ss), (0, 0, 0, 0))
             adraw = ImageDraw.Draw(ar_im)
-            sx, sy = aw / 170.0, ah / 64.0
-            ox, oy = 28.0, 28.0
+            sx, sy = (aw / 170.0) * ss, (ah / 64.0) * ss
+            ox, oy = 28.0 * ss, 28.0 * ss
             stroke_c = _hex_to_rgba(layer.get("stroke") or "#000000", int(255 * opacity))
             fill_c = _hex_to_rgba(layer.get("fill") or "#ff0000", int(255 * opacity))
-            sw_val = max(2, int(float(layer.get("strokeWidth") if layer.get("strokeWidth") is not None else 4)))
+            sw_val = max(2, int(float(layer.get("strokeWidth") if layer.get("strokeWidth") is not None else 4))) * ss
 
             polygons_list: list[list[tuple[float, float]]] = []
             if arrow_style == "block_3d":
@@ -2900,17 +4841,18 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                 for raw_pts in polygons_list
             ]
             for poly in scaled_polys:
-                sh_poly = [(px + 4, py + 7) for px, py in poly]
-                adraw.polygon(sh_poly, fill=(0, 0, 0, 215))
-            ar_im = ar_im.filter(ImageFilter.GaussianBlur(radius=4))
+                sh_poly = [(px + 4 * ss, py + 7 * ss) for px, py in poly]
+                adraw.polygon(sh_poly, fill=(0, 0, 0, 225))
+            ar_im = ar_im.filter(ImageFilter.GaussianBlur(radius=4 * ss))
             adraw = ImageDraw.Draw(ar_im)
             for poly in scaled_polys:
                 if arrow_style == "neon_hollow":
                     hollow_fill = (fill_c[0], fill_c[1], fill_c[2], int(42 * opacity))
-                    adraw.polygon(poly, fill=hollow_fill, outline=fill_c, width=max(5, sw_val + 4))
-                    adraw.polygon(poly, fill=None, outline=stroke_c, width=max(2, sw_val // 2))
+                    adraw.polygon(poly, fill=hollow_fill, outline=fill_c, width=max(5 * ss, sw_val + 4 * ss))
+                    adraw.polygon(poly, fill=None, outline=stroke_c, width=max(2 * ss, sw_val // 2))
                 else:
                     adraw.polygon(poly, fill=fill_c, outline=stroke_c, width=sw_val)
+            ar_im = ar_im.resize((aw + 56, ah + 56), Image.Resampling.LANCZOS)
             if flip_x:
                 ar_im = ar_im.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
             if flip_y:
@@ -2975,7 +4917,7 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
                     bdraw.text((tx, ty), text, font=fnt, fill=_hex_to_rgba(layer.get("fill") or "#ffffff"))
                 base = Image.alpha_composite(base, b_layer)
 
-        elif ltype == "textbox":
+        elif ltype in ("textbox", "text"):
             raw_text = str(layer.get("text") or "").strip()
             if not raw_text:
                 continue
@@ -3018,7 +4960,7 @@ def render_variant_to_pil(workspace: Path, design: dict[str, Any], variant: dict
             fill_c = _hex_to_rgba(layer.get("fill") or "#ffffff", 255)
             main_hex = str(layer.get("fill") or "#ffffff").lower()
             default_hl = "#ff2424" if main_hex in ("#ffe600", "#ffe84a", "#fbbf24", "#facc15") else "#ffe600"
-            hl_c = _hex_to_rgba(layer.get("highlightFill") or default_hl, 255)
+            hl_c = _hex_to_rgba(layer.get("highlightFill") or layer.get("highlightColor") or default_hl, 255)
 
             sh_layer = Image.new("RGBA", (cw, ch), (0, 0, 0, 0))
             sdraw = ImageDraw.Draw(sh_layer)
@@ -3276,6 +5218,51 @@ def select_thumbnail_winner(
     exports_dir.mkdir(parents=True, exist_ok=True)
     v_export = exports_dir / f"thumbnail_{variant_id}.jpg"
     img.save(v_export, format="JPEG", quality=95, optimize=True)
+
+    from PIL import Image
+
+    thumbs_dir = workspace / "thumbnails"
+    thumbs_dir.mkdir(parents=True, exist_ok=True)
+    img.save(thumbs_dir / f"thumbnail_{variant_id}.jpg", format="JPEG", quality=95, optimize=True)
+    img.resize((320, 180), Image.Resampling.LANCZOS).save(thumbs_dir / "mobile_preview_320x180.jpg", format="JPEG", quality=92, optimize=True)
+    img.resize((168, 94), Image.Resampling.LANCZOS).save(thumbs_dir / "zz_mobile_squint_168x94.jpg", format="JPEG", quality=92, optimize=True)
+
+    seo_pack_file = workspace / "seo_package.json"
+    if seo_pack_file.is_file():
+        try:
+            seo_pack = json.loads(seo_pack_file.read_text(encoding="utf-8"))
+            if isinstance(seo_pack, dict):
+                clean_l1 = re.sub(r"\*+", "", str(target_variant.get("line_1") or "")).strip()
+                clean_l2 = re.sub(r"\*+", "", str(target_variant.get("line_2") or "")).strip()
+                clean_badge = re.sub(r"\*+", "", str(target_variant.get("badge_text") or "")).strip()
+                overlay_combined = f"{clean_l1} / {clean_l2}".strip(" /")
+                thumb_meta = seo_pack.get("thumbnail") if isinstance(seo_pack.get("thumbnail"), dict) else {}
+                if overlay_combined:
+                    thumb_meta["overlay_text"] = overlay_combined
+                    thumb_meta["text_overlay"] = overlay_combined
+                if clean_badge:
+                    thumb_meta["badge_text"] = clean_badge
+                if target_variant.get("meaning_vi"):
+                    thumb_meta["overlay_text_vi"] = str(target_variant.get("meaning_vi"))
+                opts = thumb_meta.get("overlay_text_options")
+                v_idx = {"v1": 0, "v2": 1, "v3": 2, "v4": 3}.get(variant_id, 0)
+                if isinstance(opts, list) and 0 <= v_idx < len(opts) and isinstance(opts[v_idx], dict):
+                    opts[v_idx]["badge"] = clean_badge or opts[v_idx].get("badge", "")
+                    opts[v_idx]["line_1"] = str(target_variant.get("line_1") or clean_l1)
+                    opts[v_idx]["line_2"] = str(target_variant.get("line_2") or clean_l2)
+                    if target_variant.get("meaning_vi"):
+                        opts[v_idx]["meaning_vi"] = str(target_variant.get("meaning_vi"))
+                details = seo_pack.get("title_options_details")
+                if isinstance(details, list):
+                    for d in details:
+                        if isinstance(d, dict) and str(d.get("paired_variant") or "") == variant_id:
+                            d["thumb_text_ko"] = f"[{clean_badge}] {overlay_combined}".strip() if clean_badge else overlay_combined
+                            if target_variant.get("meaning_vi"):
+                                d["thumb_text_vi"] = str(target_variant.get("meaning_vi"))
+                seo_pack["thumbnail"] = thumb_meta
+                seo_pack_file.write_text(json.dumps(seo_pack, indent=2, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            pass
 
     design_file.write_text(json.dumps(design, indent=2, ensure_ascii=False), encoding="utf-8")
 

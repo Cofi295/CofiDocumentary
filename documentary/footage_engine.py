@@ -134,23 +134,68 @@ def _similarity(reference: str, candidate: str) -> float:
     return token_score * 0.72 + gram_score * 0.28
 
 
+def _safe_body_default_start(
+    duration_hint: float,
+    target_duration_sec: float,
+    seed_text: str = "",
+) -> float:
+    dur = float(duration_hint or 0.0)
+    target = max(6.0, float(target_duration_sec or 10.0))
+    if dur < 45.0:
+        return 0.0
+    if dur >= 180.0:
+        min_safe = 95.0
+        outro_margin = 90.0
+    elif dur >= 90.0:
+        min_safe = 32.0
+        outro_margin = 25.0
+    else:
+        min_safe = 12.0
+        outro_margin = 10.0
+    max_safe = max(min_safe + 2.0, dur - outro_margin - target)
+    span = max(0.0, max_safe - min_safe)
+    if span <= 1.0:
+        return round(min_safe, 3)
+    digest = hashlib.sha256((seed_text or "default").encode("utf-8", errors="ignore")).digest()
+    ratio = int.from_bytes(digest[:4], "big") / 0xFFFFFFFF
+    return round(min_safe + span * (0.08 + 0.78 * ratio), 3)
+
+
 def best_transcript_window(
     cues: list[dict[str, Any]],
     *,
     voice_text: str,
     visual_description: str = "",
     target_duration_sec: float = 10.0,
+    duration_hint: float = 0.0,
+    seed_key: str = "",
 ) -> dict[str, Any]:
-    if not cues:
-        return {"start_sec": 0.0, "end_sec": max(8.0, float(target_duration_sec)), "text": "", "score": 0.0}
     reference = " ".join(value for value in (voice_text, visual_description) if str(value).strip())
     target = max(6.0, float(target_duration_sec or 0.0))
+    dur = float(duration_hint or 0.0)
+    min_safe = 95.0 if dur >= 180.0 else (32.0 if dur >= 90.0 else 0.0)
+    outro_margin = 90.0 if dur >= 180.0 else (25.0 if dur >= 90.0 else 0.0)
+    max_safe = max(min_safe + 4.0, dur - outro_margin - target) if dur >= 90.0 else float("inf")
+    fallback_start = _safe_body_default_start(dur, target, seed_key or reference)
+    if not cues:
+        return {
+            "start_sec": fallback_start,
+            "end_sec": round(fallback_start + max(8.0, target), 3),
+            "text": "",
+            "score": 0.0,
+        }
+    usable_cues = [
+        row for row in cues
+        if min_safe <= float(row.get("start_sec") or 0.0) <= max_safe
+    ]
+    if not usable_cues:
+        usable_cues = cues
     best: dict[str, Any] | None = None
-    for index, cue in enumerate(cues):
-        start = max(0.0, float(cue.get("start_sec") or 0.0) - 2.0)
+    for index, cue in enumerate(usable_cues):
+        start = max(min_safe, float(cue.get("start_sec") or 0.0) - 2.0)
         end_limit = start + target + 4.0
         selected: list[dict[str, Any]] = []
-        for row in cues[index:]:
+        for row in usable_cues[index:]:
             row_start = float(row.get("start_sec") or 0.0)
             if row_start > end_limit and selected:
                 break
@@ -171,10 +216,15 @@ def best_transcript_window(
         }
         if best is None or candidate["score"] > best["score"]:
             best = candidate
-    if best is not None:
+    if best is not None and (float(best.get("score") or 0.0) > 0.02 or dur < 90.0):
         best["end_sec"] = min(float(best["end_sec"]), float(best["start_sec"]) + 25.0)
         return best
-    return {"start_sec": 0.0, "end_sec": target, "text": "", "score": 0.0}
+    return {
+        "start_sec": fallback_start,
+        "end_sec": round(fallback_start + target, 3),
+        "text": str((best or {}).get("text") or ""),
+        "score": float((best or {}).get("score") or 0.0),
+    }
 
 
 def _timecode(seconds: float) -> str:
@@ -386,7 +436,7 @@ class MediaRetriever:
             section,
             "--force-keyframes-at-cuts",
             "-f",
-            "bv*[height<=720]+ba/b[height<=720]/b",
+            "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b",
             "--merge-output-format",
             "mp4",
             "-o",
@@ -424,7 +474,7 @@ class MediaRetriever:
             section,
             "--force-keyframes-at-cuts",
             "-f",
-            "bv*[height<=720]+ba/b[height<=720]/b",
+            "bv*[height<=1080][ext=mp4]+ba[ext=m4a]/bv*[height<=1080]+ba/b[height<=1080]/bv*+ba/b",
             "--merge-output-format",
             "mp4",
             "-o",
@@ -577,6 +627,8 @@ class MediaRetriever:
             voice_text=str(beat.get("narration_text") or ""),
             visual_description=str(beat.get("visual_description") or ""),
             target_duration_sec=float(beat.get("target_duration_sec") or 10.0),
+            duration_hint=float(metadata.get("duration") or candidate.get("duration") or 0.0),
+            seed_key=f"{beat.get('beat_id') or ''}:{source_url}",
         )
         window_root = self._window_dir(root, float(window["start_sec"]), float(window["end_sec"]))
         clip = self._download_window(source_url, window_root, float(window["start_sec"]), float(window["end_sec"]))

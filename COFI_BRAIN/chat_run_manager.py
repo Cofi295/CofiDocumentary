@@ -118,7 +118,14 @@ class ChatRunManager:
         path = self._state_path(run_id)
         if not path.exists():
             raise KeyError(run_id)
-        return json.loads(path.read_text(encoding="utf-8"))
+        for attempt in range(8):
+            try:
+                return json.loads(path.read_text(encoding="utf-8"))
+            except PermissionError:
+                if attempt == 7:
+                    raise
+                time.sleep(min(0.03 * (2 ** attempt), 0.25))
+        raise KeyError(run_id)
 
     def _update(self, run_id: str, **changes: Any) -> dict[str, Any]:
         with self._lock:
@@ -136,8 +143,14 @@ class ChatRunManager:
             record = dict(event)
             record["seq"] = int(run.get("last_seq") or 0) + 1
             record.setdefault("at", _now())
+            serialized = (
+                json.dumps(record, ensure_ascii=False)
+                .replace("\u0085", "\\u0085")
+                .replace("\u2028", "\\u2028")
+                .replace("\u2029", "\\u2029")
+            )
             with self._events_path(run_id).open("a", encoding="utf-8") as stream:
-                stream.write(json.dumps(record, ensure_ascii=False) + "\n")
+                stream.write(serialized + "\n")
                 stream.flush()
             run["last_seq"] = record["seq"]
             run["updated_at"] = _now()
@@ -148,10 +161,12 @@ class ChatRunManager:
         self.get(run_id)
         records: list[dict[str, Any]] = []
         try:
-            lines = self._events_path(run_id).read_text(encoding="utf-8", errors="replace").splitlines()
+            lines = self._events_path(run_id).read_text(encoding="utf-8", errors="replace").split("\n")
         except OSError:
             return records
         for line in lines:
+            if not line.strip():
+                continue
             try:
                 event = json.loads(line)
             except json.JSONDecodeError:
@@ -163,8 +178,28 @@ class ChatRunManager:
     def latest_active(self, *, selected_job_id: str | None = None) -> dict[str, Any] | None:
         selected_scope = str(selected_job_id or "").strip()
         candidates: list[dict[str, Any]] = []
+        with self._lock:
+            active_ids = list(self._threads.keys())
+        for run_id in active_ids:
+            try:
+                run = self.get(run_id)
+            except Exception:
+                continue
+            payload = run.get("payload") if isinstance(run.get("payload"), dict) else {}
+            run_scope = str(payload.get("selected_job_id") or "").strip()
+            if run_scope != selected_scope or run.get("status") in TERMINAL_CHAT_RUN_STATUSES:
+                continue
+            candidates.append(run)
+        if candidates:
+            candidates.sort(key=lambda item: str(item.get("created_at") or ""), reverse=True)
+            return candidates[0]
+
+        now_ts = time.time()
         for path in self.root.glob("*/run.json"):
             try:
+                st = path.stat()
+                if now_ts - st.st_mtime > 1800 or st.st_size > 65536:
+                    continue
                 run = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 continue
@@ -253,6 +288,9 @@ class ChatRunManager:
         now_ts = time.time()
         for path in self.root.glob("*/run.json"):
             try:
+                st = path.stat()
+                if now_ts - st.st_mtime > 86400 or st.st_size > 65536:
+                    continue
                 run = json.loads(path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 continue

@@ -1,141 +1,75 @@
 {
-  "version": "2.0-contextual-dynamic",
-  "updated_at": "2026-10-25",
+  "version": "3.0-story-arc-8mood-dynamic",
+  "updated_at": "2026-11-09T07:48:35Z",
+  "mood_pools": {
+    "01_mystery_hook": {
+      "label": "Mưa đêm / Bí ẩn mở màn & Nghịch lý",
+      "folder": "audio_library/bgm/01_mystery_hook",
+      "tracks": [
+        "bgm_dark_ambient_drone.mp3",
+        "bgm_kaili_v3_corridor_suspense.mp3"
+      ]
+    },
+    "02_tragic_empathy": {
+      "label": "Bi kịch Nạn nhân / Hiện trường Tĩnh lặng",
+      "folder": "audio_library/bgm/02_tragic_empathy",
+      "tracks": [
+        "bgm_kaili_cold_case_archive.mp3"
+      ]
+    },
+    "03_cold_case_dossier": {
+      "label": "Hồ sơ Phủ bụi / Bế tắc Nhiều năm & Lưu trữ",
+      "folder": "audio_library/bgm/03_cold_case_dossier",
+      "tracks": [
+        "bgm_kaili_cold_case_archive.mp3"
+      ]
+    },
+    "04_forensic_dna_lab": {
+      "label": "Phòng Thí nghiệm / Giám định Vân tay, Đạn đạo & AI Sinh trắc",
+      "folder": "audio_library/bgm/04_forensic_dna_lab",
+      "tracks": [
+        "bgm_cendence_analysis.mp3",
+        "bgm_dark_dyne_telemetry.mp3",
+        "bgm_biometric_airport_scan.mp3"
+      ]
+    },
+    "05_double_life_dread": {
+      "label": "Vỏ bọc Hai mặt / Sự Rợn ngợp Kẻ ẩn mình 22 Năm",
+      "folder": "audio_library/bgm/05_double_life_dread",
+      "tracks": [
+        "bgm_dystopia_facade.mp3",
+        "bgm_dark_basement_shadow.mp3"
+      ]
+    },
+    "06_interrogation_manhunt": {
+      "label": "Truy kích Vây bắt / Đấu súng & Đột kích Phòng Mạt chược",
+      "folder": "audio_library/bgm/06_interrogation_manhunt",
+      "tracks": [
+        "bgm_bad_impact_sentence.mp3",
+        "bgm_kaili_afis_fingerprint_04.mp3"
+      ]
+    },
+    "07_solemn_verdict": {
+      "label": "Thẩm vấn Tâm lý & Tuyên án Tòa án Nhân dân Trung cấp",
+      "folder": "audio_library/bgm/07_solemn_verdict",
+      "tracks": [
+        "bgm_edge_of_the_sky.mp3"
+      ]
+    },
+    "08_memorial_epilogue": {
+      "label": "Khép lại Kỳ án 22 Năm & Dư âm Công lý",
+      "folder": "audio_library/bgm/08_memorial_epilogue",
+      "tracks": [
+        "bgm_floodlight_closure.mp3"
+      ]
+    }
+  },
   "sfx": {
-    "sfx_gavel_hit.mp3": {
-      "path": "audio_library/sfx/sfx_gavel_hit.mp3",
-      "category": "judicial",
-      "description": "Courtroom wooden gavel strike / verdict pronouncement",
-      "keywords": [
-        "법원",
-        "판결",
-        "선고",
-        "재판",
-        "재심",
-        "사형",
-        "법정",
-        "판사",
-        "징역",
-        "감형",
-        "무기징역",
-        "court",
-        "verdict",
-        "trial",
-        "gavel",
-        "sentence"
-      ]
-    },
-    "sfx_dossier_stamp.mp3": {
-      "path": "audio_library/sfx/sfx_dossier_stamp.mp3",
-      "category": "judicial",
-      "description": "Official ink stamp on legal/confidential dossier",
-      "keywords": [
-        "도장",
-        "직인",
-        "비준",
-        "승인",
-        "기밀",
-        "문건",
-        "공문",
-        "결정문",
-        "집행",
-        "stamp",
-        "approved",
-        "classified"
-      ]
-    },
-    "sfx_official_seal_thud.mp3": {
-      "path": "audio_library/sfx/sfx_official_seal_thud.mp3",
-      "category": "judicial",
-      "description": "Heavy institutional seal & case-closed folder thud",
-      "keywords": [
-        "최고인민법원",
-        "특허",
-        "특혜",
-        "사면",
-        "석방",
-        "집행유예",
-        "확정",
-        "최종",
-        "seal",
-        "supreme court"
-      ]
-    },
-    "sfx_court_bell_toll.mp3": {
-      "path": "audio_library/sfx/sfx_court_bell_toll.mp3",
-      "category": "judicial",
-      "description": "Solemn low bronze bell chime for final reckoning / execution",
-      "keywords": [
-        "사형 집행",
-        "처형",
-        "최후",
-        "종말",
-        "영원히",
-        "역사",
-        "정의",
-        "심판",
-        "execution",
-        "reckoning"
-      ]
-    },
-    "sfx_cell_door.mp3": {
-      "path": "audio_library/sfx/sfx_cell_door.mp3",
-      "category": "prison",
-      "description": "Heavy prison iron gate / cell door closing",
-      "keywords": [
-        "교도소",
-        "감옥",
-        "수감",
-        "독방",
-        "구치소",
-        "철창",
-        "복역",
-        "이감",
-        "prison",
-        "jail",
-        "cell"
-      ]
-    },
-    "sfx_iron_lock_latch.mp3": {
-      "path": "audio_library/sfx/sfx_iron_lock_latch.mp3",
-      "category": "prison",
-      "description": "Metallic prison lock latch / handcuff arrest click",
-      "keywords": [
-        "체포",
-        "구속",
-        "수갑",
-        "연행",
-        "압송",
-        "제1교도소",
-        "제2교도소",
-        "감방",
-        "arrest",
-        "lock",
-        "custody"
-      ]
-    },
-    "sfx_footsteps_corridor.mp3": {
-      "path": "audio_library/sfx/sfx_footsteps_corridor.mp3",
-      "category": "prison",
-      "description": "Measured footsteps in stone corridor / night patrol",
-      "keywords": [
-        "복도",
-        "밤",
-        "새벽",
-        "잠입",
-        "출입",
-        "호위",
-        "간수",
-        "행보",
-        "corridor",
-        "footsteps",
-        "walk"
-      ]
-    },
     "sfx_paper_turn.mp3": {
       "path": "audio_library/sfx/sfx_paper_turn.mp3",
-      "category": "editorial",
-      "description": "Crisp archival dossier page turn",
+      "category": "editorial_paper",
+      "motion_primitive": "paper_card_slide",
+      "description": "Crisp archival dossier page turn / index card slide",
       "keywords": [
         "기록",
         "페이지",
@@ -151,8 +85,9 @@
     },
     "sfx_newspaper_unfold.mp3": {
       "path": "audio_library/sfx/sfx_newspaper_unfold.mp3",
-      "category": "editorial",
-      "description": "Broadsheet newspaper unfolding / press exposé reveal",
+      "category": "editorial_paper",
+      "motion_primitive": "newspaper_clipping_unfold",
+      "description": "Broadsheet newspaper unfolding / archival press clipping reveal",
       "keywords": [
         "신문",
         "보도",
@@ -162,32 +97,15 @@
         "폭로",
         "헤드라인",
         "취재",
-        "기자",
         "newspaper",
         "press"
       ]
     },
-    "sfx_highlighter_swipe.mp3": {
-      "path": "audio_library/sfx/sfx_highlighter_swipe.mp3",
-      "category": "editorial",
-      "description": "Soft felt-pen marker swipe across newspaper headline",
-      "keywords": [
-        "강조",
-        "핵심",
-        "밑줄",
-        "주목",
-        "문구",
-        "적시",
-        "밝혀",
-        "드러나",
-        "highlight",
-        "marker"
-      ]
-    },
     "sfx_folder_open.mp3": {
       "path": "audio_library/sfx/sfx_folder_open.mp3",
-      "category": "editorial",
-      "description": "Case file folder opening on investigation desk",
+      "category": "editorial_paper",
+      "motion_primitive": "manila_dossier_open",
+      "description": "Heavy manila case file folder opening on investigation desk",
       "keywords": [
         "사건 파일",
         "수사 기록",
@@ -200,83 +118,60 @@
         "case file"
       ]
     },
-    "sfx_radar_ping_sonar.mp3": {
-      "path": "audio_library/sfx/sfx_radar_ping_sonar.mp3",
-      "category": "map_gis",
-      "description": "Warm tactical radar / sonar location lock pulse",
+    "sfx_notebook_page_rustle.mp3": {
+      "path": "audio_library/sfx/sfx_notebook_page_rustle.mp3",
+      "category": "editorial_paper",
+      "motion_primitive": "notebook_page_rustle",
+      "description": "Turning pages of pocket investigation notebook / ledger shuffle",
       "keywords": [
-        "위성",
-        "좌표",
-        "위치",
-        "반경",
-        "추적",
-        "거점",
-        "포착",
-        "지점",
-        "타깃",
-        "radar",
-        "satellite",
-        "pin"
+        "수첩",
+        "첫 장",
+        "펼친",
+        "공책",
+        "메모장",
+        "장부",
+        "notebook",
+        "diary",
+        "rustle"
       ]
     },
-    "sfx_map_route_sweep.mp3": {
-      "path": "audio_library/sfx/sfx_map_route_sweep.mp3",
-      "category": "map_gis",
-      "description": "Smooth cartographic camera flight & route line sweep",
+    "sfx_page_tear_notebook.mp3": {
+      "path": "audio_library/sfx/sfx_page_tear_notebook.mp3",
+      "category": "editorial_paper",
+      "motion_primitive": "page_tear_notebook",
+      "description": "Crisp paper clipping tear / redaction tape peel",
       "keywords": [
-        "이동",
-        "경로",
-        "노선",
-        "베이징",
-        "쿤밍",
-        "윈난",
-        "전역",
-        "투입",
-        "파견",
-        "지도",
-        "route",
-        "map",
-        "flight"
+        "수첩",
+        "찢어",
+        "메모",
+        "쪽지",
+        "테이프",
+        "가림막",
+        "tear",
+        "peel"
       ]
     },
-    "sfx_satellite_lock_beep.mp3": {
-      "path": "audio_library/sfx/sfx_satellite_lock_beep.mp3",
-      "category": "map_gis",
-      "description": "Subtle orbital telemetry lock chime for map pins",
+    "sfx_corkboard_pin_push.mp3": {
+      "path": "audio_library/sfx/sfx_corkboard_pin_push.mp3",
+      "category": "tactile_board",
+      "motion_primitive": "corkboard_pin_push",
+      "description": "Tactile push-pin thud into cork investigation board",
       "keywords": [
-        "관할",
-        "구역",
-        "거리",
-        "야시",
-        "나이트클럽",
-        "술집",
-        "현장",
-        "지도",
-        "zone",
-        "district"
-      ]
-    },
-    "sfx_telemetry_tick.mp3": {
-      "path": "audio_library/sfx/sfx_telemetry_tick.mp3",
-      "category": "map_gis",
-      "description": "Crisp forensic telemetry counter tick",
-      "keywords": [
-        "수치",
-        "통계",
-        "건수",
-        "비율",
-        "데이터",
-        "카운트",
-        "명단",
-        "리스트",
-        "count",
-        "metric"
+        "게시판",
+        "핀",
+        "고정",
+        "수사판",
+        "보드",
+        "사진을 붙",
+        "pin",
+        "corkboard"
       ]
     },
     "sfx_camera_shutter.mp3": {
       "path": "audio_library/sfx/sfx_camera_shutter.mp3",
-      "category": "forensic",
-      "description": "Archival evidence camera shutter click",
+      "category": "tactile_board",
+      "motion_primitive": "polaroid_photo_pin",
+      "description": "Mechanical SLR archival camera shutter click when evidence photo snaps onto desk",
       "keywords": [
         "사진",
         "현장",
@@ -290,29 +185,112 @@
         "evidence"
       ]
     },
-    "sfx_biometric_match_chime.mp3": {
-      "path": "audio_library/sfx/sfx_biometric_match_chime.mp3",
-      "category": "forensic",
-      "description": "Biometric fingerprint / DNA database match confirmation",
+    "sfx_crimson_thread_taut.mp3": {
+      "path": "audio_library/sfx/sfx_crimson_thread_taut.mp3",
+      "category": "tactile_board",
+      "motion_primitive": "crimson_thread_taut",
+      "description": "Taut crimson evidence yarn pull & snap between pinboard nodes",
       "keywords": [
-        "지문",
-        "대조",
-        "생체",
-        "일치",
-        "신분",
-        "위조",
-        "리린",
-        "리루이",
-        "호적",
-        "fingerprint",
-        "biometric",
-        "match"
+        "연결",
+        "퍼즐",
+        "하나로",
+        "겹쳐",
+        "공통점",
+        "잇는",
+        "고리",
+        "thread",
+        "string",
+        "link"
+      ]
+    },
+    "sfx_marker_circle_draw.mp3": {
+      "path": "audio_library/sfx/sfx_marker_circle_draw.mp3",
+      "category": "ink_annotation",
+      "motion_primitive": "marker_circle_draw",
+      "description": "Felt marker drawing crimson circle or arrow around evidence clue",
+      "keywords": [
+        "동그라미",
+        "표시",
+        "체크",
+        "궤적",
+        "화살표",
+        "marker",
+        "circle",
+        "draw"
+      ]
+    },
+    "sfx_highlighter_swipe.mp3": {
+      "path": "audio_library/sfx/sfx_highlighter_swipe.mp3",
+      "category": "ink_annotation",
+      "motion_primitive": "highlighter_stroke_swipe",
+      "description": "Felt-tip highlighter swipe across document clause",
+      "keywords": [
+        "강조",
+        "핵심",
+        "밑줄",
+        "주목",
+        "문구",
+        "적시",
+        "밝혀",
+        "드러나",
+        "highlight",
+        "marker"
+      ]
+    },
+    "sfx_pencil_underline.mp3": {
+      "path": "audio_library/sfx/sfx_pencil_underline.mp3",
+      "category": "ink_annotation",
+      "motion_primitive": "pencil_underline",
+      "description": "Graphite pencil stroke underlining dossier text",
+      "keywords": [
+        "밑줄",
+        "연필",
+        "기재",
+        "적힌",
+        "구절",
+        "underline",
+        "pencil"
+      ]
+    },
+    "sfx_caliper_metal_slide.mp3": {
+      "path": "audio_library/sfx/sfx_caliper_metal_slide.mp3",
+      "category": "forensic_optics",
+      "motion_primitive": "caliper_metal_slide",
+      "description": "Precision steel vernier caliper & forensic dimension bracket slide",
+      "keywords": [
+        "센티미터",
+        "밀리미터",
+        "킬로그램",
+        "치수",
+        "측정",
+        "계측",
+        "거리",
+        "단면",
+        "caliper",
+        "measure"
+      ]
+    },
+    "sfx_magnifying_lens_click.mp3": {
+      "path": "audio_library/sfx/sfx_magnifying_lens_click.mp3",
+      "category": "forensic_optics",
+      "motion_primitive": "magnifying_lens_click",
+      "description": "Optical microscope turret / forensic magnifier lens click lock",
+      "keywords": [
+        "강선",
+        "초승달",
+        "렌즈",
+        "편차",
+        "돋보기",
+        "격발 흔적",
+        "lens",
+        "loupe"
       ]
     },
     "sfx_document_scanner_hum.mp3": {
       "path": "audio_library/sfx/sfx_document_scanner_hum.mp3",
-      "category": "forensic",
-      "description": "Forensic optical document & microfilm scanner pass",
+      "category": "forensic_optics",
+      "motion_primitive": "loupe_magnifier_sweep",
+      "description": "Forensic optical loupe & microfilm scanner carriage sweep",
       "keywords": [
         "감식",
         "검증",
@@ -326,141 +304,203 @@
         "database"
       ]
     },
-    "sfx_police_radio_chirp.mp3": {
-      "path": "audio_library/sfx/sfx_police_radio_chirp.mp3",
-      "category": "forensic",
-      "description": "Subtle police dispatch / central taskforce comms tone",
+    "sfx_biometric_match_chime.mp3": {
+      "path": "audio_library/sfx/sfx_biometric_match_chime.mp3",
+      "category": "forensic_optics",
+      "motion_primitive": "dna_locus_match_lock",
+      "description": "Biometric fingerprint / 17-point minutiae / DNA locus match chime",
       "keywords": [
-        "공안",
-        "경찰",
-        "출동",
-        "신고",
-        "파출소",
-        "독도조",
-        "특수팀",
-        "수사관",
-        "체포조",
-        "police",
-        "dispatch",
-        "taskforce"
+        "지문",
+        "대조",
+        "생체",
+        "일치",
+        "DNA",
+        "유전자",
+        "융선",
+        "fingerprint",
+        "biometric",
+        "match"
       ]
     },
-    "sfx_typing_log.mp3": {
-      "path": "audio_library/sfx/sfx_typing_log.mp3",
-      "category": "forensic",
-      "description": "Mechanical investigation log typing",
+    "sfx_dossier_stamp.mp3": {
+      "path": "audio_library/sfx/sfx_dossier_stamp.mp3",
+      "category": "judicial_seal",
+      "motion_primitive": "official_seal_stamp",
+      "description": "Official rubber ink stamp pressing onto confidential dossier",
       "keywords": [
-        "작성",
-        "보고서",
-        "입력",
-        "타자",
-        "기록관",
-        "록",
-        "타이핑",
-        "log",
-        "report"
+        "도장",
+        "직인",
+        "비준",
+        "승인",
+        "기밀",
+        "문건",
+        "공문",
+        "결정문",
+        "stamp",
+        "classified"
       ]
     },
-    "sfx_data_ping.mp3": {
-      "path": "audio_library/sfx/sfx_data_ping.mp3",
-      "category": "forensic",
-      "description": "Clean analytical node connection ping",
+    "sfx_official_seal_thud.mp3": {
+      "path": "audio_library/sfx/sfx_official_seal_thud.mp3",
+      "category": "judicial_seal",
+      "motion_primitive": "heavy_seal_impact",
+      "description": "Heavy institutional wooden seal & case-closed folder thud",
       "keywords": [
-        "연결",
-        "고리",
-        "네트워크",
-        "관계도",
-        "조직도",
-        "커넥션",
-        "배후",
-        "보호막",
-        "network",
-        "node"
+        "최고인민법원",
+        "확정",
+        "최종",
+        "봉인",
+        "종결",
+        "seal",
+        "supreme court"
+      ]
+    },
+    "sfx_gavel_hit.mp3": {
+      "path": "audio_library/sfx/sfx_gavel_hit.mp3",
+      "category": "judicial_seal",
+      "motion_primitive": "verdict_gavel_strike",
+      "description": "Courtroom wooden gavel strike / verdict pronouncement",
+      "keywords": [
+        "법원",
+        "판결",
+        "선고",
+        "재판",
+        "사형",
+        "법정",
+        "징역",
+        " 무기징역",
+        "court",
+        "verdict",
+        "gavel"
+      ]
+    },
+    "sfx_map_route_sweep.mp3": {
+      "path": "audio_library/sfx/sfx_map_route_sweep.mp3",
+      "category": "map_gis",
+      "motion_primitive": "gis_camera_flight_arc",
+      "description": "Cartographic map route sweep & 3D GIS flight arc",
+      "keywords": [
+        "이동",
+        "경로",
+        "노선",
+        "전역",
+        "투입",
+        "파견",
+        "지도",
+        "route",
+        "map",
+        "flight"
+      ]
+    },
+    "sfx_radar_ping_sonar.mp3": {
+      "path": "audio_library/sfx/sfx_radar_ping_sonar.mp3",
+      "category": "map_gis",
+      "motion_primitive": "map_pin_pulse_ring",
+      "description": "Tactical radar / sonar location pulse ring on satellite map",
+      "keywords": [
+        "위성",
+        "좌표",
+        "위치",
+        "반경",
+        "추적",
+        "거점",
+        "포착",
+        "지점",
+        "radar",
+        "satellite",
+        "pin"
+      ]
+    },
+    "sfx_satellite_lock_beep.mp3": {
+      "path": "audio_library/sfx/sfx_satellite_lock_beep.mp3",
+      "category": "map_gis",
+      "motion_primitive": "coordinate_target_lock",
+      "description": "Optical autofocus & telemetry target lock confirmation on satellite coordinate",
+      "keywords": [
+        "관할",
+        "구역",
+        "거리",
+        "현장",
+        "지도",
+        "포착",
+        "타깃",
+        "zone",
+        "target"
+      ]
+    },
+    "sfx_compass_bearing_lock.mp3": {
+      "path": "audio_library/sfx/sfx_compass_bearing_lock.mp3",
+      "category": "map_gis",
+      "motion_primitive": "compass_bearing_lock",
+      "description": "Mechanical brass bezel & compass bearing detent click lock",
+      "keywords": [
+        "방위",
+        "방향",
+        "지형",
+        "해안",
+        "내륙",
+        "산악",
+        "compass",
+        "bearing"
+      ]
+    },
+    "sfx_telemetry_tick.mp3": {
+      "path": "audio_library/sfx/sfx_telemetry_tick.mp3",
+      "category": "chronology_metric",
+      "motion_primitive": "numeric_counter_roll",
+      "description": "Crisp mechanical counter tick for forensic metric roll",
+      "keywords": [
+        "수치",
+        "통계",
+        "건수",
+        "비율",
+        "데이터",
+        "카운트",
+        "명단",
+        "count",
+        "metric"
       ]
     },
     "sfx_clock_tick_tense.mp3": {
       "path": "audio_library/sfx/sfx_clock_tick_tense.mp3",
-      "category": "chronology",
-      "description": "Measured analog clock ticking for timeline progression",
+      "category": "chronology_metric",
+      "motion_primitive": "timeline_relay_step",
+      "description": "Measured mechanical watch tick for chronological timeline step",
       "keywords": [
         "년",
         "월",
         "일",
         "시간",
-        "흐르",
         "세월",
         "연도",
-        "20년",
-        "기간",
-        "당시",
+        "22년",
+        "타임라인",
         "timeline",
         "year",
         "clock"
       ]
     },
-    "sfx_somber_chime.mp3": {
-      "path": "audio_library/sfx/sfx_somber_chime.mp3",
-      "category": "emotional",
-      "description": "Warm somber resonant chime for tragic / reflective beats",
+    "sfx_typing_log.mp3": {
+      "path": "audio_library/sfx/sfx_typing_log.mp3",
+      "category": "chronology_metric",
+      "motion_primitive": "typewriter_text_reveal",
+      "description": "Mechanical typewriter key strike for dossier text reveal",
       "keywords": [
-        "피해자",
-        "고문",
-        "비극",
-        "고통",
-        "눈물",
-        "소녀",
-        "치아",
-        "상처",
-        "분노",
-        "충격",
-        "victim",
-        "tragedy"
-      ]
-    },
-    "sfx_soft_whoosh.mp3": {
-      "path": "audio_library/sfx/sfx_soft_whoosh.mp3",
-      "category": "transition",
-      "description": "Gentle warm air whoosh for card entrance",
-      "keywords": [
-        "전환",
-        "장면",
-        "이어",
-        "한편",
-        "그리고",
-        "transition"
-      ]
-    },
-    "sfx_transition_whoosh.mp3": {
-      "path": "audio_library/sfx/sfx_transition_whoosh.mp3",
-      "category": "transition",
-      "description": "Smooth editorial slide transition",
-      "keywords": [
-        "배경",
-        "과정",
-        "전말",
-        "실체",
-        "slide"
-      ]
-    },
-    "sfx_soft_impact.mp3": {
-      "path": "audio_library/sfx/sfx_soft_impact.mp3",
-      "category": "emphasis",
-      "description": "Warm cushioned low-end impact for key revelation",
-      "keywords": [
-        "반전",
-        "실상",
-        "진실",
-        "충격적",
-        "전대미문",
-        "미스터리",
-        "impact",
-        "reveal"
+        "작성",
+        "보고서",
+        "입력",
+        "타자",
+        "기록",
+        "타이핑",
+        "log",
+        "report"
       ]
     },
     "sfx_chapter_hit.mp3": {
       "path": "audio_library/sfx/sfx_chapter_hit.mp3",
-      "category": "emphasis",
-      "description": "Deep documentary chapter transition hit",
+      "category": "chapter_transition",
+      "motion_primitive": "chapter_card_enter",
+      "description": "Deep acoustic low drum hit for documentary Act/Chapter card transition",
       "keywords": [
         "장",
         "챕터",
@@ -469,96 +509,233 @@
         "결말",
         "chapter"
       ]
-    },
-    "sfx_deep_impact.mp3": {
-      "path": "audio_library/sfx/sfx_deep_impact.mp3",
-      "category": "emphasis",
-      "description": "Deep cinematic sub-bass accent",
-      "keywords": [
-        "암흑",
-        "권력",
-        "제국",
-        "붕괴",
-        "몰락",
-        "empire",
-        "collapse"
-      ]
     }
   },
   "bgm": {
-    "bgm_emerging_mysteries.mp3": {
-      "path": "audio_library/bgm/bgm_emerging_mysteries.mp3",
-      "mood": "mystery_hook",
-      "description": "Suspenseful investigative opening & paradoxical mystery hook",
-      "keywords": [
-        "미스터리",
-        "의문",
-        "왜",
-        "과연",
-        "사형수",
-        "부활",
-        "시작"
-      ]
-    },
-    "bgm_gathering_darkness.mp3": {
-      "path": "audio_library/bgm/bgm_gathering_darkness.mp3",
-      "mood": "dark_crime",
-      "description": "Somber, tense undertone for brutal crimes, victims & fear",
-      "keywords": [
-        "폭행",
-        "고문",
-        "피해자",
-        "범행",
-        "공포",
-        "야간",
-        "나이트클럽",
-        "만행"
-      ]
-    },
-    "bgm_investigative_bed.mp3": {
-      "path": "audio_library/bgm/bgm_investigative_bed.mp3",
-      "mood": "institutional_corruption",
-      "description": "Measured journalistic investigation bed for bribery, paper trails & collusion",
-      "keywords": [
-        "부모",
-        "권력",
-        "뇌물",
-        "감형",
-        "특허",
-        "가짜",
-        "서류",
-        "조작",
-        "보호막"
-      ]
-    },
-    "bgm_forensic_pulse.mp3": {
-      "path": "audio_library/bgm/bgm_forensic_pulse.mp3",
-      "mood": "forensic_pursuit",
-      "description": "Focused analytical pulse for fingerprint match, central taskforce & arrest",
-      "keywords": [
-        "지문",
-        "대조",
-        "독도조",
-        "베이징",
-        "수사",
-        "체포",
-        "추적",
-        "포위"
-      ]
-    },
     "bgm_dark_ambient_drone.mp3": {
       "path": "audio_library/bgm/bgm_dark_ambient_drone.mp3",
-      "mood": "solemn_reckoning",
-      "description": "Solemn atmospheric drone for supreme court retrial, execution & historical reflection",
+      "mood_folder_path": "audio_library/bgm/01_mystery_hook/bgm_dark_ambient_drone.mp3",
+      "mood": "01_mystery_hook",
+      "mood_label": "Mưa đêm / Bí ẩn mở màn & Nghịch lý",
+      "description": "Dark Ambient Drone — Nocturnal rain infiltration & cold-case mystery hook",
       "keywords": [
-        "재심",
-        "사형 선고",
-        "집행",
-        "처형",
-        "역사",
+        "비",
+        "새벽",
+        "침입",
+        "미스터리",
+        "시작",
+        "보석상",
+        "의문",
+        "발생",
+        "사건"
+      ]
+    },
+    "bgm_kaili_v3_corridor_suspense.mp3": {
+      "path": "audio_library/bgm/bgm_kaili_v3_corridor_suspense.mp3",
+      "mood_folder_path": "audio_library/bgm/01_mystery_hook/bgm_kaili_v3_corridor_suspense.mp3",
+      "mood": "01_mystery_hook",
+      "mood_label": "Mưa đêm / Bí ẩn mở màn & Nghịch lý",
+      "description": "Corridor Suspense — Subterranean forensic corridor & crime scene discovery",
+      "keywords": [
+        "복도",
+        "발견",
+        "소음기",
+        "밧줄",
+        "현장",
+        "정적",
+        "미스터리",
+        "의문",
+        "발생",
+        "사건",
+        "시작",
+        "비"
+      ]
+    },
+    "bgm_kaili_cold_case_archive.mp3": {
+      "path": "audio_library/bgm/bgm_kaili_cold_case_archive.mp3",
+      "mood_folder_path": "audio_library/bgm/03_cold_case_dossier/bgm_kaili_cold_case_archive.mp3",
+      "mood": "03_cold_case_dossier",
+      "mood_label": "Hồ sơ Phủ bụi / Bế tắc Nhiều năm & Lưu trữ",
+      "description": "Cold Case Archive — Deep institutional archive & decades-long investigation bed",
+      "keywords": [
+        "미제",
+        "22년",
+        "기록",
+        "파일",
+        "보관소",
+        "세월",
+        "서류",
+        "보관"
+      ]
+    },
+    "bgm_cendence_analysis.mp3": {
+      "path": "audio_library/bgm/bgm_cendence_analysis.mp3",
+      "mood_folder_path": "audio_library/bgm/04_forensic_dna_lab/bgm_cendence_analysis.mp3",
+      "mood": "04_forensic_dna_lab",
+      "mood_label": "Phòng Thí nghiệm / Giám định Vân tay, Đạn đạo & AI Sinh trắc",
+      "description": "Cendence Analysis — Deep sub-bass forensic pulse & physical tool-mark analysis",
+      "keywords": [
+        "금고",
+        "감식",
+        "탄도",
+        "소음기",
+        "분석",
+        "물리",
+        "DNA",
+        "지문",
+        "장문",
+        "융선",
+        "과학수사"
+      ]
+    },
+    "bgm_dark_dyne_telemetry.mp3": {
+      "path": "audio_library/bgm/bgm_dark_dyne_telemetry.mp3",
+      "mood_folder_path": "audio_library/bgm/04_forensic_dna_lab/bgm_dark_dyne_telemetry.mp3",
+      "mood": "04_forensic_dna_lab",
+      "mood_label": "Phòng Thí nghiệm / Giám định Vân tay, Đạn đạo & AI Sinh trắc",
+      "description": "Dark Dyne Telemetry — Deep resonant forensic lab & DNA/palmprint preservation",
+      "keywords": [
+        "DNA",
+        "절반 지문",
+        "장문",
+        "보존",
+        "실험실",
+        "시료",
+        "지문",
+        "융선",
+        "감식",
+        "과학수사"
+      ]
+    },
+    "bgm_biometric_airport_scan.mp3": {
+      "path": "audio_library/bgm/bgm_biometric_airport_scan.mp3",
+      "mood_folder_path": "audio_library/bgm/04_forensic_dna_lab/bgm_biometric_airport_scan.mp3",
+      "mood": "04_forensic_dna_lab",
+      "mood_label": "Phòng Thí nghiệm / Giám định Vân tay, Đạn đạo & AI Sinh trắc",
+      "description": "Biometric Scan — 2017 AI/AFIS algorithm upgrade & 17-minutiae biometric lock",
+      "keywords": [
+        "AI",
+        "알고리즘",
+        "융선",
+        "17개",
+        "데이터베이스",
+        "일치",
+        "DNA",
+        "지문",
+        "장문",
+        "감식",
+        "과학수사"
+      ]
+    },
+    "bgm_dystopia_facade.mp3": {
+      "path": "audio_library/bgm/bgm_dystopia_facade.mp3",
+      "mood_folder_path": "audio_library/bgm/05_double_life_dread/bgm_dystopia_facade.mp3",
+      "mood": "05_double_life_dread",
+      "mood_label": "Vỏ bọc Hai mặt / Sự Rợn ngợp Kẻ ẩn mình 22 Năm",
+      "description": "Dystopia Facade — Eerie dark minor ambient pad for 22-year double life",
+      "keywords": [
+        "이중생활",
+        "주지시",
+        "가면",
+        "남편",
+        "이웃",
+        "은신",
+        "평온",
+        "당구장"
+      ]
+    },
+    "bgm_dark_basement_shadow.mp3": {
+      "path": "audio_library/bgm/bgm_dark_basement_shadow.mp3",
+      "mood_folder_path": "audio_library/bgm/05_double_life_dread/bgm_dark_basement_shadow.mp3",
+      "mood": "05_double_life_dread",
+      "mood_label": "Vỏ bọc Hai mặt / Sự Rợn ngợp Kẻ ẩn mình 22 Năm",
+      "description": "Dark Basement Shadow — Low subterranean shadow tension & black-market trail",
+      "keywords": [
+        "암시장",
+        "국경",
+        "권총",
+        "완서우",
+        "털모자",
+        "위장",
+        "이중생활",
+        "주지시",
+        "가면",
+        "평온",
+        "은신",
+        "당구장"
+      ]
+    },
+    "bgm_bad_impact_sentence.mp3": {
+      "path": "audio_library/bgm/bgm_bad_impact_sentence.mp3",
+      "mood_folder_path": "audio_library/bgm/06_interrogation_manhunt/bgm_bad_impact_sentence.mp3",
+      "mood": "06_interrogation_manhunt",
+      "mood_label": "Truy kích Vây bắt / Đấu súng & Đột kích Phòng Mạt chược",
+      "description": "Bad Impact — High-tension sub-bass industrial drone for rooftop gunfight & escalation",
+      "keywords": [
+        "총격",
+        "샤오싱",
+        "타이저우",
+        "비상계단",
+        "도주",
+        "추격",
+        "체포",
+        "포위",
+        "마작방",
+        "린하이"
+      ]
+    },
+    "bgm_kaili_afis_fingerprint_04.mp3": {
+      "path": "audio_library/bgm/bgm_kaili_afis_fingerprint_04.mp3",
+      "mood_folder_path": "audio_library/bgm/06_interrogation_manhunt/bgm_kaili_afis_fingerprint_04.mp3",
+      "mood": "06_interrogation_manhunt",
+      "mood_label": "Truy kích Vây bắt / Đấu súng & Đột kích Phòng Mạt chược",
+      "description": "Tactical Surveillance Lock — Crystalline tension pad for plainclothes mahjong raid",
+      "keywords": [
+        "린하이",
+        "마작방",
+        "사복",
+        "포위",
+        "3초",
+        "제압",
+        "체포",
+        "총격",
+        "샤오싱"
+      ]
+    },
+    "bgm_edge_of_the_sky.mp3": {
+      "path": "audio_library/bgm/bgm_edge_of_the_sky.mp3",
+      "mood_folder_path": "audio_library/bgm/07_solemn_verdict/bgm_edge_of_the_sky.mp3",
+      "mood": "07_solemn_verdict",
+      "mood_label": "Thẩm vấn Tâm lý & Tuyên án Tòa án Nhân dân Trung cấp",
+      "description": "Edge of the Sky — Solemn deep psychological interrogation & confession pad",
+      "keywords": [
+        "심문실",
+        "침묵",
+        "닝보",
+        "자백",
+        "무너진",
+        "심문",
+        "법원",
+        "재판",
+        "판결",
+        "선고"
+      ]
+    },
+    "bgm_floodlight_closure.mp3": {
+      "path": "audio_library/bgm/bgm_floodlight_closure.mp3",
+      "mood_folder_path": "audio_library/bgm/08_memorial_epilogue/bgm_floodlight_closure.mp3",
+      "mood": "08_memorial_epilogue",
+      "mood_label": "Khép lại Kỳ án 22 Năm & Dư âm Công lý",
+      "description": "Floodlight Closure — Deep solemn courtroom verdict & 22-year epilogue closure drone",
+      "keywords": [
+        "샤오싱",
+        "중급인민법원",
+        "사형",
+        "마침표",
+        "22년",
         "정의",
-        "심판",
-        "최후"
+        "선고",
+        "진실"
       ]
     }
   }

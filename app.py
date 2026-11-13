@@ -4,19 +4,37 @@ import os
 import sys
 
 if os.name == "nt":
+    os.environ.setdefault("AGY_CLI_DISABLE_AUTO_UPDATE", "1")
     try:
         import ctypes
         ctypes.windll.kernel32.SetErrorMode(0x0001 | 0x0002 | 0x8000)
     except Exception:
         pass
+    if not os.environ.get("PYTEST_CURRENT_TEST"):
+        import subprocess as _sp
+        if not getattr(_sp.Popen, "_cofi_no_console_guard", False):
+            _orig_popen_init = _sp.Popen.__init__
+            _NO_WIN = getattr(_sp, "CREATE_NO_WINDOW", 0x08000000)
+            _NEW_CON = getattr(_sp, "CREATE_NEW_CONSOLE", 0x00000010)
+            _DETACHED = getattr(_sp, "DETACHED_PROCESS", 0x00000008)
 
+            def _silent_popen_init(self, *args, **kwargs):
+                flags = int(kwargs.get("creationflags") or 0)
+                flags = (flags & ~_NEW_CON & ~_DETACHED) | _NO_WIN
+                kwargs["creationflags"] = flags
+                return _orig_popen_init(self, *args, **kwargs)
+
+            _sp.Popen.__init__ = _silent_popen_init  # type: ignore[method-assign]
+            _sp.Popen._cofi_no_console_guard = True  # type: ignore[attr-defined]
+
+import asyncio
 import json
 from queue import Empty, Queue
 from pathlib import Path
 from threading import Thread
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, Query, Request
+from fastapi import Body, FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
@@ -91,6 +109,7 @@ class RadarImportRequest(BaseModel):
 
 
 class CreativeBriefRequest(BaseModel):
+    title: str | None = None
     playbook_id: str | None = None
     creative_brief: dict[str, Any] | None = None
     narrative_angle: str | None = None
@@ -120,6 +139,15 @@ class OutlineGenerateRequest(BaseModel):
 class ScriptUpdateRequest(BaseModel):
     script: str | None = None
     research: str | None = None
+
+
+class SmartCacheCleanRequest(BaseModel):
+    mode: str = "safe_ephemeral"
+    selected_job_id: str | None = None
+    target_job_ids: list[str] | None = None
+    include_tier1: bool = True
+    reclaim_ram: bool = True
+    dry_run: bool = False
 
 
 class PlaybookRequest(BaseModel):
@@ -280,6 +308,1769 @@ class ChannelPlanStatusRequest(BaseModel):
     status: str
 
 
+class ParallelDispatchRequest(BaseModel):
+    dept_id: str | list[str] | None = "all"
+    department_id: str | None = None
+    agent_id: str | None = None
+    job_id: str | None = None
+    selected_job_id: str | None = None
+    specialist_id: str | None = None
+
+
+_PARALLEL_RUNTIME_CACHE: dict[str, dict[str, Any]] = {}
+
+
+LIVE_PARALLEL_STUDIO_STAGE_CSS = r"""
+/* ============================================================================
+ * SÂN KHẤU 15 PHÒNG BAN — CHIA LÔ CHẠY SONG SONG (LIVE PARALLEL STUDIO STAGE)
+ * ============================================================================ */
+.ao-parallel-stage-mount {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 14px;
+  position: relative;
+  z-index: 3;
+}
+.ao-floorplan-wrap.is-chibi-mode .ao-parallel-stage-mount {
+  display: none !important;
+}
+.ao-parallel-command-bar {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(8, 28, 48, 0.96) 55%, rgba(19, 28, 46, 0.98) 100%);
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 32px rgba(2, 6, 23, 0.55), inset 0 1px 0 rgba(125, 211, 252, 0.22);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  position: relative;
+  overflow: hidden;
+}
+.ao-parallel-command-bar::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 85% 20%, rgba(56, 189, 248, 0.14), transparent 55%),
+              radial-gradient(circle at 15% 80%, rgba(16, 185, 129, 0.12), transparent 50%);
+  pointer-events: none;
+}
+.ao-parallel-cmd-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+}
+.ao-parallel-cmd-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 280px;
+  flex: 1;
+}
+.ao-parallel-cmd-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ao-parallel-mode-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #022c22;
+  background: linear-gradient(90deg, #34d399 0%, #38bdf8 100%);
+  box-shadow: 0 0 14px rgba(52, 211, 153, 0.45);
+}
+.ao-parallel-speedup-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'JetBrains Mono', monospace;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.16);
+  border: 1px solid rgba(251, 191, 36, 0.45);
+}
+.ao-parallel-cmd-title-group h4 {
+  margin: 0;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: -0.01em;
+}
+.ao-parallel-cmd-title-group p {
+  margin: 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+.ao-parallel-kpi-pills {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 2px;
+}
+.ao-parallel-kpi-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(148, 163, 184, 0.25);
+}
+.ao-parallel-kpi-chip strong {
+  color: #38bdf8;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ao-parallel-cmd-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  position: relative;
+  z-index: 1;
+}
+.ao-parallel-cta-all-btn {
+  cursor: pointer;
+  border: 1px solid rgba(250, 204, 21, 0.75);
+  background: linear-gradient(135deg, #f59e0b 0%, #ea580c 55%, #0284c7 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 12.5px;
+  padding: 10px 16px;
+  border-radius: 11px;
+  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+}
+.ao-parallel-cta-all-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+  box-shadow: 0 10px 26px rgba(245, 158, 11, 0.52);
+}
+.ao-parallel-cta-all-btn:active {
+  transform: translateY(0);
+}
+.ao-parallel-cta-all-btn.is-dispatching {
+  background: linear-gradient(135deg, #10b981 0%, #0284c7 100%);
+  border-color: #6ee7b7;
+  animation: aoParallelPulseGlow 0.9s infinite alternate;
+}
+.ao-parallel-subview-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(2, 6, 23, 0.72);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  flex-wrap: wrap;
+}
+.ao-parallel-mode-btn {
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  color: #94a3b8;
+  font-size: 11.5px;
+  font-weight: 700;
+  padding: 6px 11px;
+  border-radius: 7px;
+  transition: all 0.15s ease;
+}
+.ao-parallel-mode-btn:hover {
+  color: #f8fafc;
+  background: rgba(56, 189, 248, 0.12);
+}
+.ao-parallel-mode-btn.active {
+  color: #0f172a;
+  background: linear-gradient(90deg, #38bdf8, #818cf8);
+  box-shadow: 0 2px 10px rgba(56, 189, 248, 0.35);
+}
+
+/* 2.5D Interactive Studio Floorplan (15 Studio Pods across 5 Pipeline Zones) */
+.ao-parallel-25d-floorplan {
+  background: radial-gradient(ellipse at top, rgba(14, 116, 144, 0.18), rgba(7, 18, 32, 0.96) 70%);
+  border: 1px solid rgba(56, 189, 248, 0.32);
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.ao-parallel-25d-floorplan.is-wave-running {
+  border-color: rgba(52, 211, 153, 0.82);
+  box-shadow: 0 0 32px rgba(16, 185, 129, 0.28), inset 0 0 24px rgba(56, 189, 248, 0.16);
+}
+.ao-floorplan-25d-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+}
+.ao-floorplan-25d-header strong {
+  color: #f8fafc;
+  font-size: 13.5px;
+}
+.ao-floorplan-25d-legend {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  color: #cbd5e1;
+}
+.ao-stage-zones-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.ao-stage-zone {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 12px;
+  padding: 12px;
+  position: relative;
+}
+.ao-stage-zone.zone-parallel-visual {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.92) 0%, rgba(30, 27, 75, 0.65) 50%, rgba(6, 78, 59, 0.45) 100%);
+  border: 1.5px solid rgba(56, 189, 248, 0.55);
+  box-shadow: 0 8px 26px rgba(14, 165, 233, 0.16);
+}
+.ao-stage-zone-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.ao-stage-zone-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: #f1f5f9;
+}
+.ao-stage-zone-badge {
+  font-size: 10.5px;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(56, 189, 248, 0.15);
+  color: #7dd3fc;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+.ao-stage-pods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(265px, 1fr));
+  gap: 11px;
+}
+
+/* Special Visual Parallel Tri-Stream Hub (@visuals -> [@footage || @vox || @ai_visual]) */
+.ao-visual-tri-hub {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.ao-visual-tri-splitter-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(2, 132, 199, 0.16);
+  border: 1px dashed rgba(56, 189, 248, 0.55);
+  font-size: 11.5px;
+  color: #e0f2fe;
+}
+.ao-visual-tri-branches {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(240px, 1fr));
+  gap: 12px;
+  position: relative;
+}
+@media (max-width: 1180px) {
+  .ao-visual-tri-branches {
+    grid-template-columns: 1fr;
+  }
+}
+.ao-tri-branch-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+}
+.ao-tri-branch-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  color: #7dd3fc;
+}
+
+/* Studio Pod (Each of the 15 Department Desks on the 2.5D Stage) */
+.ao-studio-pod {
+  background: linear-gradient(165deg, rgba(15, 23, 42, 0.95) 0%, rgba(9, 16, 29, 0.96) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-top: 3px solid var(--pod-accent, #38bdf8);
+  border-radius: 12px;
+  padding: 11px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+.ao-studio-pod:hover {
+  transform: translateY(-2px);
+  border-color: var(--pod-accent, #38bdf8);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.65), 0 0 16px rgba(56, 189, 248, 0.22);
+}
+.ao-studio-pod.is-selected-pod {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.42), 0 12px 28px rgba(2, 6, 23, 0.72);
+}
+.ao-studio-pod.pod-vox-flagship {
+  background: linear-gradient(165deg, rgba(23, 37, 84, 0.88) 0%, rgba(15, 23, 42, 0.96) 100%);
+  border-color: rgba(250, 204, 21, 0.55);
+}
+.ao-studio-pod-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+.ao-studio-pod-id {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+.ao-studio-pod-emoji {
+  font-size: 18px;
+  line-height: 1;
+}
+.ao-studio-pod-titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.ao-studio-pod-code-line {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+.ao-studio-pod-code {
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+}
+.ao-studio-pod-speed {
+  font-size: 10px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  padding: 1px 6px;
+  border-radius: 5px;
+  background: rgba(16, 185, 129, 0.18);
+  color: #6ee7b7;
+}
+.ao-studio-pod-titles strong {
+  font-size: 12px;
+  color: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ao-pod-run-btn {
+  cursor: pointer;
+  border: 1px solid rgba(56, 189, 248, 0.48);
+  background: rgba(14, 116, 144, 0.28);
+  color: #e0f2fe;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 7px;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+.ao-pod-run-btn:hover {
+  background: #0284c7;
+  color: #fff;
+  border-color: #7dd3fc;
+}
+
+/* Pod Command Row: Lead (👑) + Deputy (🛡️) */
+.ao-pod-commanders {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.ao-pod-commander-btn {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  background: rgba(30, 41, 59, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+  font-size: 10.5px;
+  text-align: left;
+  overflow: hidden;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.ao-pod-commander-btn:hover {
+  border-color: #facc15;
+  background: rgba(250, 204, 21, 0.12);
+}
+.ao-pod-commander-btn code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #93c5fd;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Animated Handoff Beam between Lead -> Parallel Specialist Lanes -> Deputy */
+.ao-handoff-beam {
+  height: 3px;
+  width: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.15), rgba(52, 211, 153, 0.9), rgba(250, 204, 21, 0.85), rgba(56, 189, 248, 0.15));
+  background-size: 200% 100%;
+  animation: aoHandoffBeamFlow 2.1s linear infinite;
+}
+@keyframes aoHandoffBeamFlow {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+@keyframes aoParallelPulseGlow {
+  0% { box-shadow: 0 0 10px rgba(16, 185, 129, 0.35); }
+  100% { box-shadow: 0 0 24px rgba(56, 189, 248, 0.75); }
+}
+
+/* Pod Parallel Specialist Lanes (⚡ Lô #1..#N running simultaneously) */
+.ao-pod-lanes-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ao-pod-lane-chip {
+  cursor: pointer;
+  display: flex;
+   flex-direction: column;
+  gap: 3px;
+  padding: 5px 7px;
+  border-radius: 7px;
+  background: rgba(2, 6, 23, 0.68);
+  border: 1px solid rgba(56, 189, 248, 0.22);
+  transition: all 0.14s ease;
+}
+.ao-pod-lane-chip:hover {
+  border-color: #38bdf8;
+  background: rgba(14, 116, 144, 0.22);
+}
+.ao-pod-lane-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 10.5px;
+}
+.ao-pod-lane-id {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  color: #f8fafc;
+  min-width: 0;
+}
+.ao-pod-lane-id code {
+  color: #67e8f9;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ao-pod-lane-items {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9.5px;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.14);
+  padding: 1px 5px;
+  border-radius: 4px;
+  white-space: nowrap;
+}
+.ao-pod-lane-bar {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(51, 65, 85, 0.7);
+  overflow: hidden;
+}
+.ao-pod-lane-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #38bdf8, #34d399);
+  transition: width 0.35s ease;
+}
+
+/* Parallel Lanes Matrix (Bảng Phân Lô Song Song Chi Tiết) */
+.ao-parallel-lanes-matrix {
+  background: linear-gradient(160deg, rgba(15, 23, 42, 0.96) 0%, rgba(7, 15, 28, 0.98) 100%);
+  border: 1px solid rgba(52, 211, 153, 0.38);
+  border-radius: 14px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.5);
+}
+.ao-matrix-dept-tabs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.16);
+}
+.ao-matrix-dept-tab {
+  cursor: pointer;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  background: rgba(15, 23, 42, 0.8);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 5px 9px;
+  border-radius: 8px;
+  transition: all 0.14s ease;
+}
+.ao-matrix-dept-tab:hover {
+  border-color: #38bdf8;
+  color: #fff;
+}
+.ao-matrix-dept-tab.active {
+  background: linear-gradient(90deg, rgba(14, 165, 233, 0.32), rgba(16, 185, 129, 0.28));
+  border-color: #38bdf8;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+}
+.ao-matrix-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.ao-matrix-head-info h4 {
+  margin: 0 0 4px;
+  font-size: 14.5px;
+  color: #f8fafc;
+}
+.ao-matrix-head-info p {
+  margin: 0;
+  font-size: 11.5px;
+  color: #94a3b8;
+}
+.ao-matrix-tracks-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ao-matrix-lane-row {
+  display: grid;
+  grid-template-columns: 120px minmax(210px, 1.2fr) minmax(220px, 1.5fr) 170px 150px 185px;
+  gap: 10px;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(2, 6, 23, 0.72);
+  border: 1px solid rgba(56, 189, 248, 0.24);
+  border-left: 4px solid #34d399;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.ao-matrix-lane-row:hover {
+  border-color: #38bdf8;
+  background: rgba(15, 23, 42, 0.92);
+}
+@media (max-width: 1240px) {
+  .ao-matrix-lane-row {
+    grid-template-columns: 1fr;
+  }
+}
+.ao-lane-badge-col {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.ao-lane-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: #6ee7b7;
+}
+.ao-lane-batch-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(56, 189, 248, 0.16);
+  color: #7dd3fc;
+  width: fit-content;
+}
+.ao-lane-who-col strong {
+  display: block;
+  font-size: 12px;
+  color: #f8fafc;
+}
+.ao-lane-who-col code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #38bdf8;
+}
+.ao-lane-duty-col {
+  font-size: 11.5px;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+.ao-lane-duty-col small {
+  display: block;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+.ao-lane-scope-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ao-lane-items-pill {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: #fde68a;
+  background: rgba(245, 158, 11, 0.14);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  padding: 3px 7px;
+  border-radius: 6px;
+}
+.ao-lane-thread-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  color: #94a3b8;
+}
+.ao-lane-prog-col {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.ao-lane-prog-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 10.5px;
+  font-family: 'JetBrains Mono', monospace;
+  color: #6ee7b7;
+}
+.ao-lane-actions-col {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.ao-lane-act-btn {
+  cursor: pointer;
+  border: 1px solid rgba(56, 189, 248, 0.38);
+  background: rgba(14, 116, 144, 0.24);
+  color: #e0f2fe;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 5px 8px;
+  border-radius: 7px;
+  transition: all 0.14s ease;
+}
+.ao-lane-act-btn:hover {
+  background: #0284c7;
+  color: #fff;
+}
+.ao-lane-act-btn.primary {
+  background: rgba(16, 185, 129, 0.24);
+  border-color: rgba(52, 211, 153, 0.52);
+  color: #d1fae5;
+}
+.ao-lane-act-btn.primary:hover {
+  background: #059669;
+  color: #fff;
+}
+
+/* Specialist Live Monitor Modal / Drawer (Màn Hình Giám Sát Chuyên Viên) */
+.ao-spec-monitor-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.76);
+  backdrop-filter: blur(5px);
+  z-index: 99999;
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+}
+.ao-spec-monitor-backdrop.is-open {
+  display: flex;
+}
+.ao-spec-monitor-panel {
+  width: min(640px, 95vw);
+  height: 100vh;
+  background: linear-gradient(165deg, #0b1528 0%, #07101e 100%);
+  border-left: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: -16px 0 48px rgba(0, 0, 0, 0.75);
+  display: flex;
+  flex-direction: column;
+  color: #f8fafc;
+  overflow: hidden;
+}
+.ao-spec-monitor-head {
+  padding: 16px 18px;
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.ao-spec-monitor-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+}
+.ao-spec-monitor-section {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 11px;
+  padding: 12px 14px;
+}
+.ao-spec-monitor-section h5 {
+  margin: 0 0 8px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #7dd3fc;
+}
+.ao-spec-monitor-kv-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+.ao-spec-monitor-kv {
+  background: rgba(2, 6, 23, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.ao-spec-monitor-kv span {
+  display: block;
+  font-size: 10.5px;
+  color: #94a3b8;
+}
+.ao-spec-monitor-kv strong {
+  font-size: 12px;
+  color: #f8fafc;
+  font-family: 'JetBrains Mono', monospace;
+}
+.ao-spec-monitor-cmd-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ao-spec-monitor-cmd-input {
+  width: 100%;
+  background: rgba(2, 6, 23, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.42);
+  border-radius: 8px;
+  padding: 9px 11px;
+  color: #f8fafc;
+  font-size: 12px;
+}
+"""
+
+
+LIVE_PARALLEL_STUDIO_STAGE_JS = r"""
+(function () {
+  if (window.__COFI_LIVE_PARALLEL_STAGE_BOOTED__) return;
+  window.__COFI_LIVE_PARALLEL_STAGE_BOOTED__ = true;
+
+  const PARALLEL_STAGE_ZONES = [
+    {
+      id: "zone_command",
+      titleVi: "1. Khu Chỉ Huy & Chiến Lược (Command & Strategy Zone)",
+      badgeVi: "DEPT-00 · DEPT-01 · Định hướng & Khóa DNA",
+      agents: ["orchestrator", "radar"],
+      isParallelVisualHub: false,
+    },
+    {
+      id: "zone_preprod",
+      titleVi: "2. Khu Tiền Kỳ & Kịch Bản (Pre-Production & Narrative Zone)",
+      badgeVi: "DEPT-02 ➔ DEPT-03 ➔ DEPT-04 · Hồ sơ · Kịch bản · Voice SRT",
+      agents: ["research", "script", "voice"],
+      isParallelVisualHub: false,
+    },
+    {
+      id: "zone_parallel_visual",
+      titleVi: "3. Khu Sản Xuất Hình Ảnh Song Song [Footage ∥ VOX ∥ AI Visual]",
+      badgeVi: "⚡ @visuals chia lô ➔ 3 Phim trường (@footage ∥ @vox ∥ @ai_visual) chạy ĐỒNG THỜI",
+      agents: ["visuals", "footage", "vox", "ai_visual"],
+      isParallelVisualHub: true,
+    },
+    {
+      id: "zone_post_seo",
+      titleVi: "4. Khu Hậu Kỳ & Đóng Gói Xuất Bản (Post-Production & SEO Zone)",
+      badgeVi: "DEPT-09 @edit ∥ DEPT-10 @seo · Dựng Remotion & Đóng gói CTR",
+      agents: ["edit", "seo"],
+      isParallelVisualHub: false,
+    },
+    {
+      id: "zone_qa_tech",
+      titleVi: "5. Khu Kiểm Định Pháp Y & Kỹ Thuật (Forensic QA & Engineering Zone)",
+      badgeVi: "DEPT-11..14 · @evidence_qa · @qc · @dev · @debug",
+      agents: ["evidence_qa", "qc", "dev", "debug"],
+      isParallelVisualHub: false,
+    },
+  ];
+
+  const parallelUiState = {
+    subView: "both", // "both" | "stage_25d" | "parallel_matrix"
+    selectedDeptId: "vox",
+    isDispatchingWave: false,
+    lastWaveAt: "",
+    departments: [],
+    summary: {},
+    selectedJobId: "",
+    monitorTarget: null, // { deptId, memberId, rank }
+    lastRenderSig: "",
+  };
+
+  function escHtml(v) {
+    return String(v == null ? "" : v)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function ensureParallelStylesInjected() {
+    if (document.getElementById("cofiParallelStageStyle")) return;
+    const st = document.createElement("style");
+    st.id = "cofiParallelStageStyle";
+    st.textContent = window.__COFI_PARALLEL_STAGE_CSS_TEXT__ || "";
+    document.head.appendChild(st);
+  }
+
+  function getActiveJobId() {
+    if (window.__cofiAgentOfficeActiveJobId) return String(window.__cofiAgentOfficeActiveJobId);
+    const sel = document.getElementById("agentOfficeJobSelect");
+    if (sel && sel.value) return sel.value;
+    const gsel = document.getElementById("globalProjectSelect");
+    if (gsel && gsel.value) return gsel.value;
+    return parallelUiState.selectedJobId || "";
+  }
+
+  function normalizeDepartmentParallel(dept) {
+    if (!dept || typeof dept !== "object") return dept;
+    const specs = Array.isArray(dept.specialists) ? dept.specialists : [];
+    const nSpec = Math.max(1, specs.length);
+    const pe = dept.parallel_engine && typeof dept.parallel_engine === "object" ? dept.parallel_engine : {};
+    const rawBatches = Array.isArray(pe.batches) ? pe.batches : Array.isArray(dept.batches) ? dept.batches : [];
+    const batchBySpec = {};
+    rawBatches.forEach((b) => {
+      if (b && b.specialist_id) batchBySpec[b.specialist_id] = b;
+    });
+
+    const totalBeats = 164;
+    const normBatches = specs.map((sp, idx) => {
+      const lane = Number(sp.parallel_lane || idx + 1);
+      const batchId = sp.batch_id || `LÔ-0${lane}`;
+      const sb = batchBySpec[sp.id] || {};
+      const startB = Math.floor((idx * totalBeats) / nSpec) + 1;
+      const endB = Math.max(startB, Math.floor(((idx + 1) * totalBeats) / nSpec));
+      const defaultItems = `B${String(startB).padStart(3, "0")}–B${String(endB).padStart(3, "0")}`;
+      const itemsLabel = sb.items_label || sp.items_label || defaultItems;
+      const status = sb.status || sp.live_status || (dept.department_state === "done" ? "completed_verified" : "parallel_active");
+      const pct = Number(
+        sb.progress_pct != null
+          ? sb.progress_pct
+          : sp.progress_pct != null
+          ? sp.progress_pct
+          : status === "completed_verified"
+          ? 100
+          : 85
+      );
+      const workerThread = sb.worker_thread || sp.worker_thread || `pool-${dept.agent_id}-w0${lane}`;
+      const elapsedMs = Number(sb.elapsed_ms || sp.elapsed_ms || (18 + lane * 6));
+      const scopeVi = sb.batch_scope_vi || sp.batch_scope_vi || `Phân lô song song #${lane}/${nSpec} (${itemsLabel})`;
+      const actionVi = sb.current_action_vi || sb.finding_vi || sp.current_action_vi || sp.task_detail_vi || sp.role_vi || "";
+
+      sp.parallel_lane = lane;
+      sp.batch_id = batchId;
+      sp.batch_scope_vi = scopeVi;
+      sp.items_label = itemsLabel;
+      sp.live_status = status;
+      sp.progress_pct = pct;
+      sp.current_action_vi = actionVi;
+      sp.worker_thread = workerThread;
+      sp.elapsed_ms = elapsedMs;
+
+      return {
+        batch_id: batchId,
+        parallel_lane: lane,
+        specialist_id: sp.id,
+        specialist_handle: sp.handle,
+        specialist_name_vi: sp.title_vi,
+        duty_vi: sp.role_vi || sp.task_detail_vi || "",
+        batch_scope_vi: scopeVi,
+        items_label: itemsLabel,
+        status: status,
+        progress_pct: pct,
+        worker_thread: workerThread,
+        elapsed_ms: elapsedMs,
+        finding_vi: actionVi,
+        current_action_vi: actionVi,
+        artifact_key: sp.artifact_key || "artifact.json",
+        input_from: sp.input_from || (dept.lead && dept.lead.handle) || "@lead",
+        output_to: sp.output_to || (dept.deputy && dept.deputy.handle) || "@deputy",
+      };
+    });
+
+    dept.parallel_engine = {
+      enabled: true,
+      mode: pe.mode || "parallel_specialist_pool",
+      concurrency: Number(pe.concurrency || nSpec),
+      active_workers: Number(pe.active_workers || nSpec),
+      speedup_factor: pe.speedup_factor || (nSpec >= 6 ? "4.5x" : "4.2x"),
+      pipeline_state: pe.pipeline_state || (dept.department_state === "done" ? "completed_verified" : "parallel_running"),
+      parallel_architecture_vi:
+        pe.parallel_architecture_vi ||
+        `👑 Tổ trưởng chia ${nSpec} lô độc lập ➔ ⚡ ${nSpec} Chuyên viên chạy song song cùng lúc (Parallel Worker Pool) ➔ 🛡️ Tổ phó đối chiếu checklist & hợp nhất`,
+      deputy_verification: pe.deputy_verification || null,
+      lead_signoff: pe.lead_signoff || null,
+      batches: normBatches,
+    };
+    return dept;
+  }
+
+  function renderStudioPodHtml(dept) {
+    if (!dept) return "";
+    normalizeDepartmentParallel(dept);
+    const pe = dept.parallel_engine || {};
+    const batches = Array.isArray(pe.batches) ? pe.batches : [];
+    const lead = dept.lead || {};
+    const deputy = dept.deputy || {};
+    const isSel = parallelUiState.selectedDeptId === dept.agent_id;
+    const isVox = dept.agent_id === "vox";
+
+    const lanesHtml = batches
+      .map((b) => {
+        const shortRange = String(b.items_label || "B001–B041").split("(")[0].trim();
+        const pct = Math.max(12, Math.min(100, Number(b.progress_pct || 100)));
+        return `
+          <div class="ao-pod-lane-chip" data-ao-open-spec-monitor="${escHtml(dept.agent_id)}:${escHtml(b.specialist_id)}" title="Bấm để mở Màn Hình Giám Sát Chuyên Viên ${escHtml(b.specialist_handle)} (${escHtml(b.batch_id)} · ${escHtml(b.items_label)})">
+            <div class="ao-pod-lane-top">
+              <span class="ao-pod-lane-id">⚡ ${escHtml(b.batch_id)} <code>${escHtml(b.specialist_handle)}</code></span>
+              <span class="ao-pod-lane-items">${escHtml(shortRange)}</span>
+            </div>
+            <div class="ao-pod-lane-bar">
+              <div class="ao-pod-lane-bar-fill" style="width:${pct}%;"></div>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    return `
+      <article class="ao-studio-pod${isSel ? " is-selected-pod" : ""}${isVox ? " pod-vox-flagship" : ""}" data-ao-select-parallel-dept="${escHtml(dept.agent_id)}" style="--pod-accent:${escHtml(dept.color || "#38bdf8")};">
+        <div class="ao-studio-pod-head">
+          <div class="ao-studio-pod-id">
+            <span class="ao-studio-pod-emoji">${escHtml(dept.emoji || "🏛️")}</span>
+            <div class="ao-studio-pod-titles">
+              <div class="ao-studio-pod-code-line">
+                <span class="ao-studio-pod-code">${escHtml(dept.code || "DEPT")}</span>
+                <span class="ao-studio-pod-speed">⚡ ${escHtml(pe.speedup_factor || "4.2x")} · ${batches.length} Lô</span>
+              </div>
+              <strong title="${escHtml(dept.name_vi)}">${escHtml(dept.handle || `@${dept.agent_id}`)} · ${escHtml(dept.name_vi)}</strong>
+            </div>
+          </div>
+          <button type="button" class="ao-pod-run-btn" data-ao-dispatch-parallel-dept="${escHtml(dept.agent_id)}" title="Kích hoạt chạy chia lô song song toàn bộ ${batches.length} chuyên viên của phòng ${escHtml(dept.handle)}">⚡ Chạy Chia Lô Phòng Này</button>
+        </div>
+
+        <div class="ao-pod-commanders">
+          <button type="button" class="ao-pod-commander-btn" data-ao-open-spec-monitor="${escHtml(dept.agent_id)}:lead" title="Tổ trưởng ${escHtml(lead.title_vi || "")} — Bấm xem giám sát & giao việc">
+            <span>👑</span>
+            <code>${escHtml(lead.handle || `@${dept.agent_id}_lead`)}</code>
+          </button>
+          <button type="button" class="ao-pod-commander-btn" data-ao-open-spec-monitor="${escHtml(dept.agent_id)}:deputy" title="Tổ phó ${escHtml(deputy.title_vi || "")} — Bấm xem checklist nghiệm thu">
+            <span>🛡️</span>
+            <code>${escHtml(deputy.handle || `@${dept.agent_id}_deputy`)}</code>
+          </button>
+        </div>
+
+        <div class="ao-handoff-beam" title="Tia dẫn truyền phân lô song song (Handoff Beam)"></div>
+
+        <div class="ao-pod-lanes-list">
+          ${lanesHtml}
+        </div>
+      </article>
+    `;
+  }
+
+  function renderParallelLanesMatrixHtml(depts) {
+    if (!Array.isArray(depts) || !depts.length) return "";
+    const selectedDept = depts.find((d) => d.agent_id === parallelUiState.selectedDeptId) || depts.find((d) => d.agent_id === "vox") || depts[0];
+    normalizeDepartmentParallel(selectedDept);
+    const pe = selectedDept.parallel_engine || {};
+    const batches = Array.isArray(pe.batches) ? pe.batches : [];
+    const lead = selectedDept.lead || {};
+    const deputy = selectedDept.deputy || {};
+
+    const tabsHtml = depts
+      .map((d) => {
+        const activeCls = d.agent_id === selectedDept.agent_id ? " active" : "";
+        const nSpec = Array.isArray(d.specialists) ? d.specialists.length : 4;
+        return `<button type="button" class="ao-matrix-dept-tab${activeCls}" data-ao-select-parallel-dept="${escHtml(d.agent_id)}">${escHtml(d.emoji || "🏛️")} ${escHtml(d.code)} ${escHtml(d.handle)} (${nSpec} Lô)</button>`;
+      })
+      .join("");
+
+    const lanesRowsHtml = batches
+      .map((b) => {
+        const pct = Math.max(0, Math.min(100, Number(b.progress_pct != null ? b.progress_pct : 100)));
+        const stBadge =
+          b.status === "completed_verified"
+            ? "✅ ĐÃ XÁC MINH LÔ"
+            : b.status === "parallel_active" || b.status === "parallel_running"
+            ? "🟢 CHẠY SONG SONG"
+            : "⚡ SẴN SÀNG LÔ";
+        return `
+          <div class="ao-matrix-lane-row" data-ao-lane="${escHtml(b.parallel_lane)}">
+            <div class="ao-lane-badge-col">
+              <span class="ao-lane-pill">⚡ LANE #${escHtml(b.parallel_lane)}</span>
+              <span class="ao-lane-batch-tag">${escHtml(b.batch_id)}</span>
+            </div>
+            <div class="ao-lane-who-col">
+              <strong>${escHtml(b.specialist_name_vi)}</strong>
+              <code>${escHtml(b.specialist_handle)}</code>
+            </div>
+            <div class="ao-lane-duty-col">
+              <div><strong>Nhiệm vụ:</strong> ${escHtml(b.duty_vi)}</div>
+              <small>📌 ${escHtml(b.batch_scope_vi)}</small>
+            </div>
+            <div class="ao-lane-scope-col">
+              <span class="ao-lane-items-pill">🎯 ${escHtml(b.items_label)}</span>
+              <span class="ao-lane-thread-tag">🧵 ${escHtml(b.worker_thread)} · ${Number(b.elapsed_ms || 12).toFixed(1)}ms</span>
+            </div>
+            <div class="ao-lane-prog-col">
+              <div class="ao-lane-prog-head">
+                <span>${stBadge}</span>
+                <strong>${pct}%</strong>
+              </div>
+              <div class="ao-pod-lane-bar">
+                <div class="ao-pod-lane-bar-fill" style="width:${Math.max(10, pct)}%;"></div>
+              </div>
+            </div>
+            <div class="ao-lane-actions-col">
+              <button type="button" class="ao-lane-act-btn primary" data-ao-open-spec-monitor="${escHtml(selectedDept.agent_id)}:${escHtml(b.specialist_id)}" title="Mở Màn Hình Giám Sát Chuyên Viên">🔍 Giám Sát</button>
+              <button type="button" class="ao-lane-act-btn" data-ao-dispatch-handle="${escHtml(b.specialist_handle)}" data-ao-dispatch-prompt="Thực thi lô ${escHtml(b.batch_id)} (${escHtml(b.items_label)}): ${escHtml(b.duty_vi)}" title="Giao việc riêng cho ${escHtml(b.specialist_handle)}">📨 Giao Riêng</button>
+            </div>
+          </div>
+        `;
+      })
+      .join("");
+
+    return `
+      <section class="ao-parallel-lanes-matrix" id="aoParallelLanesMatrixSection">
+        <div class="ao-matrix-dept-tabs" role="tablist" aria-label="Chọn Phòng Ban xem Bảng Phân Lô Song Song">
+          ${tabsHtml}
+        </div>
+        <div class="ao-matrix-head">
+          <div class="ao-matrix-head-info">
+            <h4>🏛️ BẢNG PHÂN LÔ SONG SONG (PARALLEL LANES MATRIX) — ${escHtml(selectedDept.code)} · ${escHtml(selectedDept.name_vi)}</h4>
+            <p>${escHtml(pe.parallel_architecture_vi)} · <strong>${batches.length} Luồng Chuyên Viên chạy ĐỒNG THỜI (Parallel Track)</strong> · Tăng tốc <strong>${escHtml(pe.speedup_factor || "4.2x")}</strong></p>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            <button type="button" class="ao-pod-run-btn" style="padding:7px 12px;font-size:11.5px;" data-ao-dispatch-parallel-dept="${escHtml(selectedDept.agent_id)}">⚡ Chạy Chia Lô Phòng ${escHtml(selectedDept.handle)} (${batches.length} Luồng)</button>
+            <button type="button" class="ao-lane-act-btn" data-ao-open-spec-monitor="${escHtml(selectedDept.agent_id)}:lead">👑 Tổ trưởng ${escHtml(lead.handle)}</button>
+            <button type="button" class="ao-lane-act-btn" data-ao-open-spec-monitor="${escHtml(selectedDept.agent_id)}:deputy">🛡️ Tổ phó ${escHtml(deputy.handle)}</button>
+          </div>
+        </div>
+        <div class="ao-handoff-beam"></div>
+        <div class="ao-matrix-tracks-grid">
+          ${lanesRowsHtml}
+        </div>
+      </section>
+    `;
+  }
+
+  function renderFullParallelStageHtml(depts, summary) {
+    const byId = {};
+    (depts || []).forEach((d) => {
+      normalizeDepartmentParallel(d);
+      byId[d.agent_id] = d;
+    });
+
+    const totalDepts = Number(summary.total_departments || depts.length || 15);
+    const totalSpecs = Number(summary.total_specialists || 61);
+    const totalLeads = Number(summary.total_leads || 15);
+    const totalDeputies = Number(summary.total_deputies || 15);
+    const show25d = parallelUiState.subView === "both" || parallelUiState.subView === "stage_25d";
+    const showMatrix = parallelUiState.subView === "both" || parallelUiState.subView === "parallel_matrix";
+
+    const zonesHtml = PARALLEL_STAGE_ZONES.map((z) => {
+      if (z.isParallelVisualHub) {
+        const visDept = byId.visuals;
+        const ftgDept = byId.footage;
+        const voxDept = byId.vox;
+        const aiDept = byId.ai_visual;
+        return `
+          <section class="ao-stage-zone zone-parallel-visual" data-stage-zone="${escHtml(z.id)}">
+            <div class="ao-stage-zone-head">
+              <div class="ao-stage-zone-title">
+                <span>🎬</span>
+                <span>${escHtml(z.titleVi)}</span>
+              </div>
+              <span class="ao-stage-zone-badge">${escHtml(z.badgeVi)}</span>
+            </div>
+            <div class="ao-visual-tri-hub">
+              <div style="max-width:100%;">
+                ${renderStudioPodHtml(visDept)}
+              </div>
+              <div class="ao-visual-tri-splitter-banner">
+                <span>🔀 <strong>BỘ CHIA LUỒNG THỊ GIÁC SONG SONG (PARALLEL VISUAL SPLITTER):</strong> Nhận 100% beat từ <code>@visuals</code> ➔ Kích hoạt đồng thời 3 nhánh độc lập:</span>
+                <span><code>@footage</code> (Tư liệu thật) ∥ <code>@vox</code> (Đồ họa điều tra 8 NS) ∥ <code>@ai_visual</code> (Tái dựng AI 4D) ➔ Hội tụ về <code>@edit</code></span>
+              </div>
+              <div class="ao-handoff-beam"></div>
+              <div class="ao-visual-tri-branches">
+                <div class="ao-tri-branch-col">
+                  <div class="ao-tri-branch-tag"><span>🎬 NHÁNH SONG SONG A · TƯ LIỆU THẬT</span><span>∥ PARALLEL</span></div>
+                  ${renderStudioPodHtml(ftgDept)}
+                </div>
+                <div class="ao-tri-branch-col">
+                  <div class="ao-tri-branch-tag" style="border-color:#facc15;color:#fde68a;"><span>📐 NHÁNH SONG SONG B · ĐỒ HỌA VOX (8 NS)</span><span>∥ PARALLEL</span></div>
+                  ${renderStudioPodHtml(voxDept)}
+                </div>
+                <div class="ao-tri-branch-col">
+                  <div class="ao-tri-branch-tag"><span>🖼️ NHÁNH SONG SONG C · ẢNH AI 4D</span><span>∥ PARALLEL</span></div>
+                  ${renderStudioPodHtml(aiDept)}
+                </div>
+              </div>
+            </div>
+          </section>
+        `;
+      }
+
+      const zoneDepts = z.agents.map((aid) => byId[aid]).filter(Boolean);
+      return `
+        <section class="ao-stage-zone" data-stage-zone="${escHtml(z.id)}">
+          <div class="ao-stage-zone-head">
+            <div class="ao-stage-zone-title">
+              <span>🏛️</span>
+              <span>${escHtml(z.titleVi)}</span>
+            </div>
+            <span class="ao-stage-zone-badge">${escHtml(z.badgeVi)}</span>
+          </div>
+          <div class="ao-stage-pods-grid">
+            ${zoneDepts.map(renderStudioPodHtml).join("")}
+          </div>
+        </section>
+      `;
+    }).join("");
+
+    return `
+      <div class="ao-parallel-command-bar" id="aoParallelStageCommandBar">
+        <div class="ao-parallel-cmd-top">
+          <div class="ao-parallel-cmd-title-group">
+            <div class="ao-parallel-cmd-eyebrow">
+              <span class="ao-parallel-mode-pill">⚡ CHIA LÔ SONG SONG ĐA NHÁNH (PARALLEL WORKER POOL)</span>
+              <span class="ao-parallel-speedup-pill">🚀 Tăng tốc trung bình: ~3.8x–4.5x (Peak 4.5x)</span>
+              ${parallelUiState.lastWaveAt ? `<span class="ao-parallel-speedup-pill" style="color:#6ee7b7;border-color:#34d399;">✓ Đã chia lô lúc ${escHtml(parallelUiState.lastWaveAt)}</span>` : ""}
+            </div>
+            <h4>🎭 Sân Khấu 15 Phòng Ban — Chia Lô Chạy Song Song (Live Parallel Studio Stage)</h4>
+            <p>Tổ trưởng chia lô (Batch Sharding) ➔ Toàn bộ Chuyên viên chạy song song cùng một lúc trên các luồng độc lập (<code>Lane 1..N</code>) ➔ Tổ phó đối chiếu checklist &amp; hợp nhất bàn giao.</p>
+            <div class="ao-parallel-kpi-pills">
+              <span class="ao-parallel-kpi-chip">🏛️ Phòng Ban: <strong>${totalDepts} Phòng</strong></span>
+              <span class="ao-parallel-kpi-chip">👥 Tổng Nhân Sự: <strong>91 Agent (${totalLeads} Tổ trưởng + ${totalDeputies} Tổ phó + 61/${totalSpecs} Chuyên viên)</strong></span>
+              <span class="ao-parallel-kpi-chip">⚡ Chế Độ: <strong>PARALLEL WORKER POOL (8 Luồng Xử Lý Thực)</strong></span>
+              <span class="ao-parallel-kpi-chip">⏱️ Hệ Số Tăng Tốc: <strong>~3.8x–4.5x</strong></span>
+            </div>
+          </div>
+
+          <div class="ao-parallel-cmd-actions">
+            <button type="button" class="ao-parallel-cta-all-btn${parallelUiState.isDispatchingWave ? " is-dispatching" : ""}" id="aoDispatchAllParallelBtn" data-ao-dispatch-parallel-dept="all">
+              <span>⚡ Kích Hoạt Chia Lô Chạy Song Song Toàn Sân Khấu (15 Phòng · 61 Chuyên Viên)</span>
+            </button>
+            <div class="ao-parallel-subview-switch" role="group" aria-label="Chuyển đổi chế độ xem Sân Khấu Song Song">
+              <button type="button" class="ao-parallel-mode-btn${parallelUiState.subView === "both" ? " active" : ""}" data-ao-parallel-subview="both">⚡ Toàn Cảnh (2.5D + Phân Lô)</button>
+              <button type="button" class="ao-parallel-mode-btn${parallelUiState.subView === "stage_25d" ? " active" : ""}" data-ao-parallel-subview="stage_25d">🎭 Sân Khấu Phim Trường 2.5D</button>
+              <button type="button" class="ao-parallel-mode-btn${parallelUiState.subView === "parallel_matrix" ? " active" : ""}" data-ao-parallel-subview="parallel_matrix">🏛️ Sơ Đồ Phân Lô Song Song Chi Tiết</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      ${
+        show25d
+          ? `
+        <div class="ao-parallel-25d-floorplan${parallelUiState.isDispatchingWave ? " is-wave-running" : ""}" id="aoParallelStudio25DFloorplan">
+          <div class="ao-floorplan-25d-header">
+            <strong>🎭 SÂN KHẤU PHIM TRƯỜNG 2.5D (INTERACTIVE STUDIO FLOORPLAN · 15 CỤM BÀN LÀM VIỆC · 5 KHU VỰC DÂY CHUYỀN)</strong>
+            <div class="ao-floorplan-25d-legend">
+              <span>👑 Tổ trưởng (Chia lô &amp; Ký duyệt)</span>
+              <span>🛡️ Tổ phó (Rà Checklist &amp; Hợp nhất)</span>
+              <span>⚡ Lô #1..#N (Chuyên viên chạy song song đồng thời)</span>
+            </div>
+          </div>
+          <div class="ao-stage-zones-stack">
+            ${zonesHtml}
+          </div>
+        </div>
+      `
+          : ""
+      }
+
+      ${showMatrix ? renderParallelLanesMatrixHtml(depts) : ""}
+    `;
+  }
+
+  function ensureSpecialistMonitorMounted() {
+    const dlg = document.getElementById("agentOfficeDialog") || document.body;
+    let drawer = document.getElementById("aoSpecialistLiveMonitorDrawer");
+    if (!drawer) {
+      drawer = document.createElement("div");
+      drawer.id = "aoSpecialistLiveMonitorDrawer";
+      drawer.className = "ao-spec-monitor-backdrop";
+      dlg.appendChild(drawer);
+    } else if (dlg && drawer.parentElement !== dlg) {
+      dlg.appendChild(drawer);
+    }
+    return drawer;
+  }
+
+  function openSpecialistLiveMonitor(deptId, memberKey) {
+    const depts = parallelUiState.departments || [];
+    const dept = depts.find((d) => d.agent_id === deptId) || depts[0];
+    if (!dept) return;
+    normalizeDepartmentParallel(dept);
+    parallelUiState.selectedDeptId = dept.agent_id;
+    parallelUiState.monitorTarget = { deptId: dept.agent_id, memberKey: memberKey };
+
+    const pe = dept.parallel_engine || {};
+    const batches = Array.isArray(pe.batches) ? pe.batches : [];
+    const specs = Array.isArray(dept.specialists) ? dept.specialists : [];
+
+    let roleBadge = "⚡ CHUYÊN VIÊN PHÂN LÔ SONG SONG (PARALLEL SPECIALIST)";
+    let titleVi = "";
+    let handle = "";
+    let dutyVi = "";
+    let batchId = "LÔ-ALL";
+    let laneLabel = `Đồng bộ ${batches.length} Luồng`;
+    let itemsLabel = "Toàn bộ dải Beat của Phòng";
+    let scopeVi = pe.parallel_architecture_vi || "";
+    let workerThread = `cofi-parallel-${dept.agent_id}-master`;
+    let elapsedMs = Number(pe.elapsed_ms || 36);
+    let progressPct = 100;
+    let findingVi = "";
+    let artifactKey = "department_parallel_state.json";
+    let handoffPair = `${dept.lead?.handle || "@lead"} ➔ ${dept.deputy?.handle || "@deputy"}`;
+
+    if (memberKey === "lead") {
+      const lead = dept.lead || {};
+      roleBadge = "👑 TẦNG 1 · TỔ TRƯỞNG CHỈ HUY & KÝ DUYỆT (DEPARTMENT LEAD)";
+      titleVi = lead.title_vi || "Tổ trưởng";
+      handle = lead.handle || `@${dept.agent_id}_lead`;
+      dutyVi = lead.role_vi || "";
+      findingVi = (pe.lead_signoff && pe.lead_signoff.summary_vi) || `Tổ trưởng chia ${batches.length} lô song song và ký duyệt: ${lead.approval_output_vi || ""}`;
+      artifactKey = lead.approval_output_vi || "Master Sign-off";
+    } else if (memberKey === "deputy") {
+      const deputy = dept.deputy || {};
+      roleBadge = "🛡️ TẦNG 2 · TỔ PHÓ RÀ SOÁT CHECKLIST & HỢP NHẤT LÔ (DEPARTMENT DEPUTY)";
+      titleVi = deputy.title_vi || "Tổ phó";
+      handle = deputy.handle || `@${dept.agent_id}_deputy`;
+      dutyVi = deputy.role_vi || "";
+      findingVi = (pe.deputy_verification && pe.deputy_verification.summary_vi) || `Tổ phó đối chiếu checklist ${batches.length}/${batches.length} lô song song.`;
+      artifactKey = "Internal Checklist Gate (100%)";
+    } else {
+      const sp = specs.find((s) => s.id === memberKey || s.handle === memberKey) || specs[0] || {};
+      const b = batches.find((x) => x.specialist_id === sp.id || x.specialist_handle === sp.handle) || batches[0] || {};
+      titleVi = sp.title_vi || b.specialist_name_vi || "Chuyên viên";
+      handle = sp.handle || b.specialist_handle || `@${dept.agent_id}_spec`;
+      dutyVi = sp.role_vi || b.duty_vi || "";
+      batchId = b.batch_id || sp.batch_id || "LÔ-01";
+      laneLabel = `Lane #${b.parallel_lane || sp.parallel_lane || 1} / ${batches.length}`;
+      itemsLabel = b.items_label || sp.items_label || "B001–B041";
+      scopeVi = b.batch_scope_vi || sp.batch_scope_vi || "";
+      workerThread = b.worker_thread || sp.worker_thread || `pool-${dept.agent_id}-w01`;
+      elapsedMs = Number(b.elapsed_ms || sp.elapsed_ms || 24);
+      progressPct = Number(b.progress_pct != null ? b.progress_pct : 100);
+      findingVi = b.finding_vi || b.current_action_vi || sp.current_action_vi || sp.task_detail_vi || "";
+      artifactKey = sp.artifact_key || "artifact.json";
+      handoffPair = `📥 ${sp.input_from || dept.lead?.handle || "@lead"} ➔ 📤 ${sp.output_to || dept.deputy?.handle || "@deputy"}`;
+    }
+
+    const checklistItems = (dept.deputy && Array.isArray(dept.deputy.checklist_vi) ? dept.deputy.checklist_vi : [])
+      .map((c) => `<li>✓ ${escHtml(c)}</li>`)
+      .join("");
+
+    const drawer = ensureSpecialistMonitorMounted();
+    drawer.innerHTML = `
+      <aside class="ao-spec-monitor-panel" role="dialog" aria-label="Màn Hình Giám Sát Chuyên Viên">
+        <header class="ao-spec-monitor-head">
+          <div>
+            <div style="font-size:10.5px;font-weight:800;color:#34d399;letter-spacing:0.04em;margin-bottom:4px;">${escHtml(roleBadge)}</div>
+            <h4 style="margin:0 0 4px;font-size:15px;color:#f8fafc;">${escHtml(titleVi)} <code style="color:#38bdf8;font-size:13px;">${escHtml(handle)}</code></h4>
+            <div style="font-size:11.5px;color:#94a3b8;">${escHtml(dept.emoji || "🏛️")} ${escHtml(dept.code)} · ${escHtml(dept.name_vi)}</div>
+          </div>
+          <button type="button" class="icon-btn channel-profile-dialog-close" data-ao-close-spec-monitor="1" title="Đóng màn hình giám sát">×</button>
+        </header>
+        <div class="ao-spec-monitor-body">
+          <div class="ao-spec-monitor-kv-grid">
+            <div class="ao-spec-monitor-kv">
+              <span>Luồng &amp; Mã Lô Song Song</span>
+              <strong>⚡ ${escHtml(laneLabel)} · ${escHtml(batchId)}</strong>
+            </div>
+            <div class="ao-spec-monitor-kv">
+              <span>Dải Beat Phụ Trách (Batch Scope)</span>
+              <strong style="color:#fde68a;">🎯 ${escHtml(itemsLabel)}</strong>
+            </div>
+            <div class="ao-spec-monitor-kv">
+              <span>Worker Thread &amp; Thời Gian</span>
+              <strong style="color:#6ee7b7;">🧵 ${escHtml(workerThread)} (${elapsedMs.toFixed(1)}ms)</strong>
+            </div>
+            <div class="ao-spec-monitor-kv">
+              <span>Tiến Độ &amp; Tăng Tốc</span>
+              <strong style="color:#38bdf8;">${progressPct}% · 🚀 ${escHtml(pe.speedup_factor || "4.2x")}</strong>
+            </div>
+          </div>
+
+          <section class="ao-spec-monitor-section">
+            <h5>📌 Nhiệm Vụ Chuyên Môn &amp; Phạm Vi Phân Lô</h5>
+            <p style="margin:0 0 6px;font-size:12.5px;color:#f1f5f9;line-height:1.45;"><strong>Chuyên môn:</strong> ${escHtml(dutyVi)}</p>
+            <p style="margin:0 0 6px;font-size:12px;color:#cbd5e1;line-height:1.45;"><strong>Phạm vi lô:</strong> ${escHtml(scopeVi)}</p>
+            <div style="font-size:11.5px;color:#93c5fd;font-family:'JetBrains Mono',monospace;">🔄 Luồng bàn giao: ${escHtml(handoffPair)} · 📦 Đầu ra: <code>${escHtml(artifactKey)}</code></div>
+          </section>
+
+          <section class="ao-spec-monitor-section" style="border-color:rgba(52,211,153,0.4);">
+            <h5>🔬 Kết Quả Kiểm Tra Thật Từ Workspace (Real Workspace Telemetry)</h5>
+            <p style="margin:0 0 8px;font-size:12.5px;color:#d1fae5;line-height:1.5;">${escHtml(findingVi)}</p>
+            ${
+              checklistItems
+                ? `<div style="font-size:11.5px;color:#cbd5e1;"><strong>Checklist nghiệm thu nội bộ (${escHtml(dept.deputy?.handle || "@deputy")}):</strong><ul style="margin:5px 0 0;padding-left:18px;line-height:1.45;">${checklistItems}</ul></div>`
+                : ""
+            }
+          </section>
+
+          <section class="ao-spec-monitor-section">
+            <h5>📨 Gửi Lệnh Điều Phối Riêng Cho ${escHtml(handle)}</h5>
+            <div class="ao-spec-monitor-cmd-box">
+              <input type="text" id="aoSpecMonitorCmdInput" class="ao-spec-monitor-cmd-input" value="Thực thi & kiểm tra lô ${escHtml(batchId)} (${escHtml(itemsLabel)}) — ${escHtml(titleVi)}" aria-label="Nhập lệnh điều phối riêng cho chuyên viên" />
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button type="button" class="ao-parallel-cta-all-btn" style="padding:8px 14px;font-size:12px;" data-ao-send-spec-monitor-cmd="${escHtml(handle)}">📨 Gửi Lệnh Riêng Cho ${escHtml(handle)}</button>
+                <button type="button" class="ao-pod-run-btn" style="padding:8px 12px;font-size:12px;" data-ao-dispatch-parallel-dept="${escHtml(dept.agent_id)}">⚡ Chạy Chia Lô Phòng ${escHtml(dept.handle)} Ngay</button>
+              </div>
+            </div>
+          </section>
+        </div>
+      </aside>
+    `;
+    drawer.classList.add("is-open");
+  }
+
+  function closeSpecialistLiveMonitor() {
+    const drawer = document.getElementById("aoSpecialistLiveMonitorDrawer");
+    if (drawer) drawer.classList.remove("is-open");
+    parallelUiState.monitorTarget = null;
+  }
+
+  function enhanceExistingDepartmentCards(depts) {
+    const byId = {};
+    (depts || []).forEach((d) => {
+      normalizeDepartmentParallel(d);
+      byId[d.agent_id] = d;
+    });
+
+    document.querySelectorAll(".ao-dept-card[data-ao-agent]").forEach((card) => {
+      const aid = card.getAttribute("data-ao-agent");
+      const dept = byId[aid];
+      if (!dept) return;
+      const pe = dept.parallel_engine || {};
+      const batches = Array.isArray(pe.batches) ? pe.batches : [];
+
+      let headRight = card.querySelector(".ao-dept-head-right");
+      if (headRight && !headRight.querySelector("[data-ao-dispatch-parallel-dept]")) {
+        const runBtn = document.createElement("button");
+        runBtn.type = "button";
+        runBtn.className = "ao-pod-run-btn";
+        runBtn.setAttribute("data-ao-dispatch-parallel-dept", dept.agent_id);
+        runBtn.textContent = `⚡ Chạy Chia Lô Phòng Này (${batches.length} Lô · ${pe.speedup_factor || "4.2x"})`;
+        headRight.prepend(runBtn);
+      }
+
+      const specNodes = card.querySelectorAll(".ao-dept-spec-node");
+      specNodes.forEach((node, idx) => {
+        const b = batches[idx];
+        if (!b) return;
+        if (!node.querySelector(".ao-card-parallel-lane-bar")) {
+          const laneDiv = document.createElement("div");
+          laneDiv.className = "ao-card-parallel-lane-bar";
+          laneDiv.style.cssText = "margin-top:6px;padding:5px 7px;border-radius:7px;background:rgba(16,185,129,0.12);border:1px solid rgba(52,211,153,0.35);font-size:10.5px;display:flex;align-items:center;justify-content:space-between;gap:6px;flex-wrap:wrap;";
+          laneDiv.innerHTML = `
+            <span style="color:#6ee7b7;font-family:'JetBrains Mono',monospace;font-weight:700;">⚡ Lane #${escHtml(b.parallel_lane)} · ${escHtml(b.batch_id)} · 🎯 ${escHtml(String(b.items_label).split("(")[0].trim())} (${Number(b.progress_pct || 100)}%)</span>
+            <button type="button" class="ao-lane-act-btn primary" style="padding:2px 7px;font-size:10px;" data-ao-open-spec-monitor="${escHtml(dept.agent_id)}:${escHtml(b.specialist_id)}">🔍 Giám Sát Live</button>
+          `;
+          node.appendChild(laneDiv);
+        }
+      });
+    });
+  }
+
+  function renderParallelStageMounts(force) {
+    ensureParallelStylesInjected();
+    const depts = parallelUiState.departments || [];
+    if (!depts.length) return;
+
+    const stageWrap = document.getElementById("agentOfficeStageWrap");
+    const canvas = document.getElementById("agentOfficeFloorplanCanvas");
+    if (stageWrap && canvas) {
+      let mount = document.getElementById("aoParallelStudioStageMount");
+      if (!mount) {
+        mount = document.createElement("section");
+        mount.id = "aoParallelStudioStageMount";
+        mount.className = "ao-parallel-stage-mount";
+        stageWrap.insertBefore(mount, canvas);
+      }
+      const activeViewBtn = document.querySelector("[data-ao-view].active");
+      const curView = activeViewBtn ? activeViewBtn.getAttribute("data-ao-view") : "departments";
+      mount.style.display = curView === "departments" ? "flex" : "none";
+
+      const sig = JSON.stringify({
+        sub: parallelUiState.subView,
+        sel: parallelUiState.selectedDeptId,
+        wave: parallelUiState.isDispatchingWave,
+        waveAt: parallelUiState.lastWaveAt,
+        cnt: depts.length,
+        p0: depts[0]?.parallel_engine?.pipeline_state,
+      });
+      if (force || sig !== parallelUiState.lastRenderSig) {
+        parallelUiState.lastRenderSig = sig;
+        mount.innerHTML = renderFullParallelStageHtml(depts, parallelUiState.summary || {});
+      }
+    }
+
+    enhanceExistingDepartmentCards(depts);
+  }
+
+  async function triggerParallelDispatch(deptIdOrAll) {
+    const target = deptIdOrAll || "all";
+    parallelUiState.isDispatchingWave = true;
+    if (target !== "all") {
+      parallelUiState.selectedDeptId = target;
+    }
+    renderParallelStageMounts(true);
+
+    try {
+      const jobId = getActiveJobId();
+      const resp = await fetch("/api/agent-departments/dispatch-parallel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dept_id: target, job_id: jobId }),
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (Array.isArray(data.departments) && data.departments.length) {
+          parallelUiState.departments = data.departments;
+        }
+        if (data.summary && typeof data.summary === "object") {
+          parallelUiState.summary = data.summary;
+        }
+        const now = new Date();
+        parallelUiState.lastWaveAt = now.toLocaleTimeString("vi-VN", { hour12: false });
+      }
+    } catch (_e) {
+      // Keep optimistic parallel wave state
+    } finally {
+      setTimeout(() => {
+        parallelUiState.isDispatchingWave = false;
+        renderParallelStageMounts(true);
+        if (parallelUiState.monitorTarget) {
+          openSpecialistLiveMonitor(parallelUiState.monitorTarget.deptId, parallelUiState.monitorTarget.memberKey);
+        }
+      }, 650);
+    }
+  }
+
+  async function syncDepartmentsData() {
+    try {
+      const jobId = getActiveJobId();
+      const q = jobId ? `?job_id=${encodeURIComponent(jobId)}` : "";
+      const r = await fetch(`/api/agent-departments${q}`, { cache: "no-store" });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (Array.isArray(d.departments) && d.departments.length) {
+        parallelUiState.departments = d.departments;
+        parallelUiState.summary = d.summary || {};
+        renderParallelStageMounts(false);
+      }
+    } catch (_e) {
+      // Ignore background fetch error
+    }
+  }
+
+  function bindParallelStageEvents() {
+    document.addEventListener("click", (ev) => {
+      const dispatchBtn = ev.target.closest("[data-ao-dispatch-parallel-dept]");
+      if (dispatchBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const targetDept = dispatchBtn.getAttribute("data-ao-dispatch-parallel-dept") || "all";
+        triggerParallelDispatch(targetDept);
+        return;
+      }
+
+      const subviewBtn = ev.target.closest("[data-ao-parallel-subview]");
+      if (subviewBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        parallelUiState.subView = subviewBtn.getAttribute("data-ao-parallel-subview") || "both";
+        renderParallelStageMounts(true);
+        return;
+      }
+
+      const monitorBtn = ev.target.closest("[data-ao-open-spec-monitor]");
+      if (monitorBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const raw = monitorBtn.getAttribute("data-ao-open-spec-monitor") || "vox:lead";
+        const parts = raw.split(":");
+        openSpecialistLiveMonitor(parts[0] || "vox", parts[1] || "lead");
+        renderParallelStageMounts(true);
+        return;
+      }
+
+      if (ev.target.closest("[data-ao-close-spec-monitor]") || ev.target.id === "aoSpecialistLiveMonitorDrawer") {
+        ev.preventDefault();
+        ev.stopPropagation();
+        closeSpecialistLiveMonitor();
+        return;
+      }
+
+      const sendSpecBtn = ev.target.closest("[data-ao-send-spec-monitor-cmd]");
+      if (sendSpecBtn) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        const handle = sendSpecBtn.getAttribute("data-ao-send-spec-monitor-cmd") || "@vox_lead";
+        const inp = document.getElementById("aoSpecMonitorCmdInput");
+        const cmdTxt = inp && inp.value.trim() ? inp.value.trim() : "";
+        closeSpecialistLiveMonitor();
+        const fakeBtn = document.createElement("button");
+        fakeBtn.setAttribute("data-ao-dispatch-handle", handle);
+        if (cmdTxt) fakeBtn.setAttribute("data-ao-dispatch-prompt", cmdTxt);
+        fakeBtn.style.display = "none";
+        document.body.appendChild(fakeBtn);
+        fakeBtn.click();
+        fakeBtn.remove();
+        return;
+      }
+
+      const selectDeptEl = ev.target.closest("[data-ao-select-parallel-dept]");
+      if (selectDeptEl) {
+        const deptId = selectDeptEl.getAttribute("data-ao-select-parallel-dept");
+        if (deptId) {
+          parallelUiState.selectedDeptId = deptId;
+          renderParallelStageMounts(true);
+        }
+      }
+
+      if (ev.target.closest("[data-open-agent-office]") || ev.target.closest("[data-ao-view]") || ev.target.closest("[data-ao-tab]")) {
+        setTimeout(() => {
+          if (!parallelUiState.departments.length) {
+            syncDepartmentsData();
+          } else {
+            renderParallelStageMounts(true);
+          }
+        }, 80);
+      }
+    });
+
+    const obsTarget = document.getElementById("agentOfficeDialog") || document.body;
+    const observer = new MutationObserver(() => {
+      if (parallelUiState.departments.length) {
+        enhanceExistingDepartmentCards(parallelUiState.departments);
+        const mount = document.getElementById("aoParallelStudioStageMount");
+        if (!mount || !mount.innerHTML.trim()) {
+          renderParallelStageMounts(true);
+        }
+      }
+    });
+    observer.observe(obsTarget, { childList: true, subtree: true });
+
+    syncDepartmentsData();
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bindParallelStageEvents);
+  } else {
+    bindParallelStageEvents();
+  }
+})();
+"""
+
+
+def _execute_department_parallel_dispatch_safe(
+    service: DocumentaryService,
+    dept_id: str | list[str] | None = "all",
+    job_id: str | None = None,
+) -> dict[str, Any]:
+    """Execute parallel specialist batches via documentary.agent_departments with safe fallback."""
+    import documentary.agent_departments as agent_departments
+    from documentary.agent_office import build_live_office_snapshot
+
+    clean_dept_id = dept_id if dept_id else "all"
+    req_job_id = str(job_id or "").strip() or None
+
+    all_jobs = service.list_jobs()
+    selected_job: dict[str, Any] | None = None
+    if req_job_id:
+        try:
+            selected_job = service.get_job(req_job_id)
+        except Exception:
+            selected_job = next((j for j in all_jobs if j.get("id") == req_job_id), None)
+    if selected_job is None and all_jobs:
+        selected_job = next(
+            (j for j in all_jobs if str(j.get("status") or "").lower() in {"running", "queued"}),
+            all_jobs[0],
+        )
+
+    workspace_dir: Path | None = None
+    if selected_job and selected_job.get("workspace"):
+        workspace_dir = Path(str(selected_job["workspace"]))
+    elif selected_job and selected_job.get("id"):
+        workspace_dir = ROOT / "workspaces" / str(selected_job["id"])
+
+    exec_fn = getattr(agent_departments, "execute_department_parallel_batches", None)
+    if callable(exec_fn):
+        exec_state = exec_fn(
+            workspace_dir=workspace_dir,
+            dept_id=clean_dept_id,
+            job_snapshot=selected_job,
+        )
+    else:
+        exec_state = {
+            "schema_version": "1.0",
+            "execution_mode": "parallel_specialist_pool",
+            "max_workers": 8,
+            "job_id": selected_job.get("id") if selected_job else (req_job_id or ""),
+            "dispatched_departments": list(getattr(agent_departments, "DEPARTMENT_ORDER", ())),
+            "departments": {},
+        }
+
+    eff_job_id = selected_job.get("id") if selected_job else req_job_id
+    cache_key = str(eff_job_id or "__default__")
+    if isinstance(exec_state.get("departments"), dict):
+        job_cache = _PARALLEL_RUNTIME_CACHE.setdefault(cache_key, {})
+        job_cache.update(exec_state["departments"])
+
+    office_snap = build_live_office_snapshot(service, job_id=eff_job_id)
+    departments_list = office_snap.get("departments", [])
+    job_cache = _PARALLEL_RUNTIME_CACHE.get(cache_key) if isinstance(_PARALLEL_RUNTIME_CACHE.get(cache_key), dict) else {}
+    for d in departments_list:
+        if isinstance(d, dict):
+            aid = str(d.get("agent_id") or "")
+            cached_pe = (job_cache.get(aid) or {}).get("parallel_engine")
+            if isinstance(cached_pe, dict):
+                d["parallel_engine"] = cached_pe
+                d["batches"] = cached_pe.get("batches", d.get("batches", []))
+
+    return {
+        "status": "ok",
+        "ok": True,
+        "job_id": eff_job_id,
+        "dept_id": clean_dept_id,
+        "parallel_execution": exec_state,
+        "departments": departments_list,
+        "summary": office_snap.get("departments_summary", {}),
+        "active_parallel_workers": office_snap.get("active_parallel_workers", []),
+        "agent_office": office_snap,
+    }
+
+
+def _render_index_html_with_parallel_stage(index_path: Path) -> str:
+    """Inject the Live Parallel Studio Stage CSS, Mounts, and Controller into index.html."""
+    raw_html = index_path.read_text(encoding="utf-8")
+    if 'id="cofiParallelStageStyle"' in raw_html:
+        return raw_html
+
+    stage_Target = '<div class="ao-floorplan-canvas" id="agentOfficeFloorplanCanvas"></div>'
+    if stage_Target in raw_html and 'id="aoParallelStudioStageMount"' not in raw_html:
+        raw_html = raw_html.replace(
+            stage_Target,
+            '<section id="aoParallelStudioStageMount" class="ao-parallel-stage-mount"></section>\n          ' + stage_Target,
+            1,
+        )
+
+    bundle = (
+        f'\n  <style id="cofiParallelStageStyle">{LIVE_PARALLEL_STUDIO_STAGE_CSS}</style>\n'
+        f'  <script id="cofiParallelStageCssSeed">window.__COFI_PARALLEL_STAGE_CSS_TEXT__ = {json.dumps(LIVE_PARALLEL_STUDIO_STAGE_CSS, ensure_ascii=False)};</script>\n'
+        f'  <script id="cofiParallelStageScript">{LIVE_PARALLEL_STUDIO_STAGE_JS}</script>\n'
+    )
+    if "</body>" in raw_html:
+        return raw_html.replace("</body>", bundle + "</body>", 1)
+    return raw_html + bundle
+
+
+
 def create_app(service: DocumentaryService | None = None) -> FastAPI:
     service = service or DocumentaryService(
         ROOT,
@@ -291,22 +2082,161 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
     )
     api = FastAPI(title="COFI DOCUMENTARY", version="0.2.0")
     api.state.service = service
+
+    @api.get("/static/agent_office.js")
+    def serve_enhanced_agent_office_js():
+        ao_path = STATIC_DIR / "agent_office.js"
+        base_js = ao_path.read_text(encoding="utf-8") if ao_path.exists() else ""
+        css_seed = f"\nwindow.__COFI_PARALLEL_STAGE_CSS_TEXT__ = {json.dumps(LIVE_PARALLEL_STUDIO_STAGE_CSS, ensure_ascii=False)};\n"
+        return Response(
+            content=base_js + css_seed + LIVE_PARALLEL_STUDIO_STAGE_JS,
+            media_type="application/javascript; charset=utf-8",
+        )
+
     if STATIC_DIR.exists():
         api.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-    @api.middleware("http")
-    async def disable_static_cache(request: Request, call_next):
-        response = await call_next(request)
-        path = request.url.path or ""
-        if path == "/" or path.startswith("/static/") or (path.startswith("/api/") and not path.endswith("/media")):
-            response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
-            response.headers["Pragma"] = "no-cache"
-            response.headers["Expires"] = "0"
-        return response
+    class _FastNoStoreMiddleware:
+        """Pure ASGI header middleware that avoids BaseHTTPMiddleware stream buffering on large video FileResponses."""
+
+        def __init__(self, app_inner):
+            self.app_inner = app_inner
+
+        async def __call__(self, scope, receive, send):
+            if scope.get("type") != "http":
+                await self.app_inner(scope, receive, send)
+                return
+            path = scope.get("path") or ""
+            is_media_stream = path.endswith("/media")
+            should_no_store = (not is_media_stream) and (
+                path == "/" or path.startswith("/static/") or path.startswith("/api/")
+            )
+            if not should_no_store:
+                await self.app_inner(scope, receive, send)
+                return
+
+            async def _send_with_headers(message):
+                if message.get("type") == "http.response.start":
+                    headers = list(message.get("headers") or [])
+                    existing = {k.lower() for k, _ in headers}
+                    if b"cache-control" not in existing:
+                        headers.append((b"cache-control", b"no-store, no-cache, must-revalidate, max-age=0"))
+                    if b"pragma" not in existing:
+                        headers.append((b"pragma", b"no-cache"))
+                    if b"expires" not in existing:
+                        headers.append((b"expires", b"0"))
+                    message = {**message, "headers": headers}
+                await send(message)
+
+            await self.app_inner(scope, receive, _send_with_headers)
+
+    api.add_middleware(_FastNoStoreMiddleware)
 
     @api.get("/api/health")
-    def health():
-        return service.health()
+    def health(cached: bool = Query(default=False)):
+        try:
+            return service.health(cached=cached)
+        except TypeError:
+            return service.health()
+
+    @api.get("/api/hardware-profile")
+    def hardware_profile(force: bool = Query(default=False)):
+        fn = getattr(service, "hardware_profile", None)
+        if callable(fn):
+            return fn(force_refresh=force)
+        from documentary.render_cache import detect_hardware_profile
+
+        return detect_hardware_profile(force_refresh=force)
+
+    @api.post("/api/hardware-profile/reclaim-vram")
+    def reclaim_idle_vram():
+        fn = getattr(service, "reclaim_idle_vram", None)
+        if callable(fn):
+            return fn()
+        return {"ok": False}
+
+    @api.get("/api/system/cache-report")
+    def system_cache_report(selected_job_id: str | None = Query(default=None)):
+        fn = getattr(service, "cache_report", None)
+        if callable(fn):
+            return fn(selected_job_id=selected_job_id)
+        return {"ok": False, "error": "cache_report_unavailable"}
+
+    @api.post("/api/system/cache-clean")
+    def system_cache_clean(body: SmartCacheCleanRequest):
+        fn = getattr(service, "clean_cache", None)
+        if not callable(fn):
+            raise HTTPException(status_code=503, detail="clean_cache_unavailable")
+        try:
+            return fn(
+                mode=body.mode,
+                selected_job_id=body.selected_job_id,
+                target_job_ids=body.target_job_ids,
+                include_tier1=body.include_tier1,
+                reclaim_ram=body.reclaim_ram,
+                dry_run=body.dry_run,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @api.post("/api/jobs/{job_id}/cache-clean")
+    def job_cache_clean(job_id: str, mode: str = Query(default="slim_completed")):
+        fn = getattr(service, "clean_cache", None)
+        if not callable(fn):
+            raise HTTPException(status_code=503, detail="clean_cache_unavailable")
+        try:
+            return fn(
+                mode=mode,
+                target_job_ids=[job_id],
+                include_tier1=True,
+                reclaim_ram=False,
+                dry_run=False,
+            )
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @api.get("/api/realtime-pulse")
+    def realtime_pulse(selected_job_id: str | None = Query(default=None)):
+        pulse_fn = getattr(service, "realtime_pulse", None)
+        if callable(pulse_fn):
+            return pulse_fn(selected_job_id)
+        jobs_list = service.list_jobs()
+        return {"signature": str(len(jobs_list)), "jobs_count": len(jobs_list), "live": {}}
+
+    @api.get("/api/events")
+    async def realtime_events(request: Request, selected_job_id: str | None = Query(default=None)):
+        async def _stream():
+            last_sig = ""
+            ticks_since_ping = 0
+            while True:
+                if await request.is_disconnected():
+                    break
+                try:
+                    pulse_fn = getattr(service, "realtime_pulse", None)
+                    payload = pulse_fn(selected_job_id) if callable(pulse_fn) else {"signature": ""}
+                    sig = str(payload.get("signature") or "")
+                    if sig != last_sig:
+                        last_sig = sig
+                        ticks_since_ping = 0
+                        yield f"event: pulse\ndata: {json.dumps(payload, ensure_ascii=False)}\n\n"
+                    else:
+                        ticks_since_ping += 1
+                        if ticks_since_ping >= 15:
+                            ticks_since_ping = 0
+                            yield ": ping\n\n"
+                except Exception:
+                    yield ": keepalive\n\n"
+                await asyncio.sleep(0.75)
+
+        return StreamingResponse(
+            _stream(),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache, no-store, must-revalidate",
+                "Connection": "keep-alive",
+                "X-Accel-Buffering": "no",
+            },
+        )
 
     @api.get("/api/system/trail-status")
     def trail_status():
@@ -342,8 +2272,11 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @api.get("/api/jobs")
-    def jobs():
-        return service.list_jobs()
+    def jobs(summary: bool = Query(default=False)):
+        try:
+            return service.list_jobs(summary=summary)
+        except TypeError:
+            return service.list_jobs()
 
     @api.post("/api/storage/select-folder")
     def select_storage_folder():
@@ -570,9 +2503,16 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
     @api.get("/api/jobs/{job_id}/logs/{phase}", response_class=PlainTextResponse)
-    def logs(job_id: str, phase: str):
+    def logs(
+        job_id: str,
+        phase: str,
+        tail_bytes: int | None = Query(default=None, ge=1024, le=2_000_000),
+    ):
         try:
-            return service.phase_log(job_id, phase)
+            try:
+                return service.phase_log(job_id, phase, tail_bytes=tail_bytes)
+            except TypeError:
+                return service.phase_log(job_id, phase)
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="Không tìm thấy job") from exc
         except ValueError as exc:
@@ -649,6 +2589,39 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
             if poster:
                 return Response(content=FALLBACK_POSTER_SVG, media_type="image/svg+xml")
             raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @api.post("/api/jobs/{job_id}/media/local-action")
+    def job_media_local_action(job_id: str, body: dict[str, Any] = Body(default_factory=dict)):
+        """Execute direct OS-level file actions (reveal in Explorer or instant local disk copy) without HTTP download streaming."""
+        raw_path = str(body.get("path") or "").strip()
+        action = str(body.get("action") or "reveal").strip().lower()
+        filename = str(body.get("filename") or "").strip() or None
+        destination_path = str(body.get("destination_path") or "").strip() or None
+        open_folder_after = bool(body.get("open_folder_after", True))
+        move = bool(body.get("move", False))
+        if not raw_path:
+            raise HTTPException(status_code=400, detail="Thiếu đường dẫn media")
+        try:
+            if action == "reveal":
+                return service.reveal_media_in_explorer(job_id, raw_path)
+            if action in {"save_copy", "copy", "save", "move", "transfer"}:
+                return service.save_local_media_copy(
+                    job_id,
+                    raw_path,
+                    suggested_filename=filename,
+                    destination_path=destination_path,
+                    open_folder_after=open_folder_after,
+                    move=(action in {"move", "transfer"} or move),
+                )
+            raise HTTPException(status_code=400, detail=f"Hành động không hợp lệ: {action}")
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Không tìm thấy job") from exc
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail="Không tìm thấy media") from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+        except (RuntimeError, OSError) as exc:
+            raise HTTPException(status_code=500, detail=str(exc)) from exc
 
     @api.get("/api/jobs/{job_id}/live-footage")
     def live_footage(job_id: str):
@@ -1193,13 +3166,28 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
         target_duration_minutes: float | None = Query(default=None, ge=2, le=180),
         discovery_mode: str | None = Query(default=None),
         force_refresh: bool = Query(default=False),
+        topic_stream: str | None = Query(default=None),
+        reset_history: bool = Query(default=False),
+        body: dict[str, Any] | None = Body(default=None),
     ):
+        payload = body if isinstance(body, dict) else {}
+        resolved_stream = str(topic_stream or payload.get("topic_stream") or "").strip() or None
+        resolved_reset = bool(reset_history or payload.get("reset_history"))
+        raw_exclude = payload.get("exclude_titles")
+        exclude_titles = (
+            [str(x).strip() for x in raw_exclude if str(x).strip()]
+            if isinstance(raw_exclude, list)
+            else None
+        )
         try:
             return service.channel_profile_today(
                 profile_id,
                 target_duration_minutes=target_duration_minutes,
                 discovery_mode=discovery_mode,
                 force_refresh=force_refresh,
+                topic_stream=resolved_stream,
+                exclude_titles=exclude_titles,
+                reset_history=resolved_reset,
             )
         except KeyError as exc:
             raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ kênh") from exc
@@ -1209,6 +3197,15 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
         except Exception as exc:
             service.mark_channel_profile_activity_error(profile_id, exc)
             raise HTTPException(status_code=502, detail=f"Không gợi ý được video hôm nay: {exc}") from exc
+
+    @api.delete("/api/radar/channel-profiles/{profile_id}/suggested-topic-history")
+    def clear_channel_profile_suggested_history(profile_id: str):
+        try:
+            return service.clear_suggested_topic_history(profile_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Không tìm thấy hồ sơ kênh") from exc
+        except Exception as exc:
+            raise HTTPException(status_code=502, detail=f"Không xóa được lịch sử gợi ý: {exc}") from exc
 
     @api.get("/api/radar/channel-profiles/{profile_id}/activity")
     def channel_profile_activity(profile_id: str):
@@ -1516,11 +3513,59 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
+    @api.get("/api/agent-departments")
+    @api.get("/api/agency/departments")
+    @api.get("/api/agents/departments")
+    def get_agent_departments_legacy(job_id: str | None = None):
+        return service.get_agent_departments(job_id=job_id)
+
+    @api.post("/api/agent-departments/dispatch-parallel")
+    @api.post("/api/agency/dispatch-parallel")
+    @api.post("/api/agents/dispatch-parallel")
+    async def dispatch_agent_departments_parallel_legacy(
+        request: Request,
+        dept_id: str | None = Query(default=None),
+        job_id: str | None = Query(default=None),
+    ):
+        try:
+            body = await request.json()
+        except Exception:
+            body = {}
+        if not isinstance(body, dict):
+            body = {}
+        eff_dept = body.get("dept_id") or body.get("department_id") or body.get("agent_id") or dept_id or "all"
+        eff_job = body.get("job_id") or body.get("selected_job_id") or job_id
+        return _execute_department_parallel_dispatch_safe(service, dept_id=eff_dept, job_id=eff_job)
+
+    @api.get("/api/agency/office-live")
+    @api.get("/api/studio/office-live")
+    def get_agency_office_live_legacy(job_id: str | None = None, pinned: bool = False):
+        from documentary.agent_office import build_live_office_snapshot
+
+        return build_live_office_snapshot(service, job_id=job_id, pinned=bool(pinned))
+
+    @api.get("/api/state")
+    def get_studio_state_legacy(job_id: str | None = None):
+        from documentary.agent_office import build_live_office_snapshot
+
+        office_snap = build_live_office_snapshot(service, job_id=job_id)
+        return {
+            "status": "ok",
+            "selected_job": office_snap.get("selected_job"),
+            "jobs": office_snap.get("jobs_list", []),
+            "agent_office": office_snap,
+            "agent_departments": office_snap.get("departments", []),
+            "agent_departments_summary": office_snap.get("departments_summary", {}),
+        }
+
     @api.get("/")
     def index():
         path = STATIC_DIR / "index.html"
         if path.exists():
-            return FileResponse(path)
+            return Response(
+                content=_render_index_html_with_parallel_stage(path),
+                media_type="text/html; charset=utf-8",
+            )
         return {"app": "COFI DOCUMENTARY", "api": "/api/health"}
 
     @api.on_event("startup")

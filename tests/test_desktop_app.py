@@ -159,3 +159,24 @@ def test_ensure_chosen_file_extension_restores_deleted_extension() -> None:
     assert desktop_app.ensure_chosen_file_extension(r"C:\thumb_1", "jpg") == r"C:\thumb_1.jpg"
     assert desktop_app.ensure_chosen_file_extension(r"C:\already_named.mp4", "mp4") == r"C:\already_named.mp4"
 
+
+def test_resolve_local_media_source_from_uri_finds_local_workspace_video(tmp_path: Path) -> None:
+    ws = tmp_path / "workspaces" / "job_fast_123" / "release"
+    ws.mkdir(parents=True)
+    video_file = ws / "video.mp4"
+    video_file.write_bytes(b"fake-mp4-data")
+
+    resolved = desktop_app.resolve_local_media_source_from_uri(
+        "http://127.0.0.1:8878/api/jobs/job_fast_123/media?path=release/video.mp4&download=1&filename=video_job_fast_123.mp4",
+        root_dir=tmp_path,
+    )
+    assert resolved == video_file.resolve()
+
+    # Path traversal outside workspace must be rejected
+    outside = desktop_app.resolve_local_media_source_from_uri(
+        "http://127.0.0.1:8878/api/jobs/job_fast_123/media?path=../../secret.txt",
+        root_dir=tmp_path,
+    )
+    assert outside is None
+
+

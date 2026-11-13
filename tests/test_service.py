@@ -1728,7 +1728,7 @@ def test_export_progress_uses_real_render_and_combine_state(tmp_path: Path):
 
     rendering = service.export_progress(job["id"])
     assert rendering["stage"] == "rendering"
-    assert rendering["percent"] == 40
+    assert rendering["percent"] == 45
 
     (workspace / "render_cache_manifest.json").write_text(json.dumps({
         "status": "ready",
@@ -1742,7 +1742,7 @@ def test_export_progress_uses_real_render_and_combine_state(tmp_path: Path):
     combining = service.export_progress(job["id"])
     assert combining["stage"] == "combining"
     assert combining["combine_percent"] == 50.0
-    assert combining["percent"] == 85
+    assert combining["percent"] == 92
 
     (workspace / "render_manifest.json").write_text(json.dumps({"video_path": "release/video.mp4"}), encoding="utf-8")
     validating = service.export_progress(job["id"])
@@ -1760,6 +1760,8 @@ def test_export_progress_uses_real_render_and_combine_state(tmp_path: Path):
 
 
 def test_qc_phase_exports_locally_without_calling_codex_director(tmp_path: Path, monkeypatch):
+    # Legacy blocking post-render screening is opt-in (post_render_qc_gate=true).
+    monkeypatch.setenv("COFI_POST_RENDER_QC_GATE", "1")
     gateway = FakeGateway()
     service = DocumentaryService(
         root=tmp_path,
@@ -2241,3 +2243,42 @@ def test_edit_chat_single_beat_and_qc_rerun_preserves_selective_cache_invalidati
     remotion_calls = [c for c in runner.calls if "remotion" in c]
     assert len(remotion_calls) == 4
     assert "--frames=900-1799" in remotion_calls[-1]
+
+
+def test_qc_phase_default_post_render_gate_off_is_non_blocking(tmp_path: Path, monkeypatch):
+    monkeypatch.delenv("COFI_POST_RENDER_QC_GATE", raising=False)
+    gateway = FakeGateway()
+    service = DocumentaryService(
+        root=tmp_path,
+        store=JobStore(tmp_path / "jobs"),
+        gateway=gateway,
+        voice_engine=FakeVoice(),
+        footage_coordinator=FakeFootage(),
+        render_cache=FakeExportRenderCache(),
+        remotion_dir=tmp_path / "CofiRemotion",
+    )
+    job = service.create_job({"title": "Gate off export", "production_recipe": {"target_duration_sec": 120}})
+    workspace = Path(job["workspace"])
+    (workspace / "visual_manifest.json").write_text(json.dumps({
+        "beats": [{"beat_id": "B001", "target_duration_sec": 120}],
+    }), encoding="utf-8")
+    (workspace / "render_cache_manifest.json").write_text(json.dumps({"status": "ready"}), encoding="utf-8")
+    # Wrong resolution + no audio would have blocked the legacy gate; now only warnings.
+    monkeypatch.setattr(service, "_probe_export_video", lambda path: {
+        "duration_seconds": 120.0, "fps": 30.0, "width": 1280, "height": 720,
+        "video_frames": 3600, "audio_duration_seconds": 0.0, "has_audio": False,
+    }, raising=False)
+
+    def _must_not_run(*_a, **_k):
+        raise AssertionError("post-render screening must not run when the gate is off")
+
+    monkeypatch.setattr(service, "_scan_export_content", _must_not_run, raising=False)
+
+    result = service._run_phase(job, "qc", workspace)
+    assert result.returncode == 0
+    service._validate_artifacts("qc", workspace, job)
+    final_manifest = json.loads((workspace / "final_manifest.json").read_text(encoding="utf-8"))
+    assert final_manifest["export_validation_mode"] == "non_blocking_minimal"
+    assert final_manifest["post_render_qc_gate"] is False
+    assert final_manifest["final_qc_status"] == "TECHNICAL_ACCEPT"
+    assert any("audio" in w for w in final_manifest["qc_warnings"])

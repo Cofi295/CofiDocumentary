@@ -3,7 +3,7 @@
  */
 (function () {
   if (typeof window !== "undefined") {
-    window.COFI_THUMB_STUDIO_VERSION = "20261027-smart-save-v2";
+    window.COFI_THUMB_STUDIO_VERSION = "20261103-pip-pro-v9";
   }
   const CW = 1280;
   const CH = 720;
@@ -18,62 +18,130 @@
     }
     st.textContent = `
       /* ==========================================================================
-         UNIFIED YOUTUBE PACKAGING STUDIO (THUMBNAIL + SEO TOGETHER)
+         FIGMA / LINEAR CANVAS-FIRST PACKAGING STUDIO (CLEAN SAAS WORKBENCH)
          ========================================================================== */
-      .thumb-studio-card { padding: 14px 16px !important; margin-bottom: 12px !important; background: linear-gradient(180deg, rgba(13, 18, 30, 0.98) 0%, rgba(9, 13, 22, 0.98) 100%) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 14px !important; }
-      
-      /* Master Header */
-      .thumb-master-header { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 12px !important; flex-wrap: wrap !important; padding: 12px 16px !important; background: linear-gradient(135deg, rgba(15, 23, 42, 0.96) 0%, rgba(9, 14, 26, 0.98) 100%) !important; border: 1px solid rgba(255, 255, 255, 0.09) !important; border-radius: 12px !important; margin-bottom: 10px !important; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25) !important; }
-      .header-kicker { font-size: 10px !important; font-weight: 800 !important; letter-spacing: 0.1em !important; color: #38bdf8 !important; text-transform: uppercase !important; margin-bottom: 3px !important; }
-      .header-title { margin: 0 0 5px 0 !important; font-size: 17px !important; font-weight: 800 !important; color: #f8fafc !important; letter-spacing: -0.2px !important; }
-      .header-status-line { display: flex !important; align-items: center !important; gap: 8px !important; flex-wrap: wrap !important; }
-      .status-pill { font-size: 11px !important; font-weight: 700 !important; padding: 2px 9px !important; border-radius: 6px !important; line-height: 1.4 !important; }
-      .status-pill.winner { background: rgba(250, 204, 21, 0.15) !important; border: 1px solid rgba(250, 204, 21, 0.45) !important; color: #fde047 !important; }
-      .status-pill.safe { background: rgba(34, 197, 94, 0.15) !important; border: 1px solid rgba(34, 197, 94, 0.4) !important; color: #4ade80 !important; }
-      .status-pill.dna { background: rgba(148, 163, 184, 0.12) !important; border: 1px solid rgba(148, 163, 184, 0.25) !important; color: #cbd5e1 !important; }
-      .header-right { display: flex !important; align-items: center !important; gap: 6px !important; flex-wrap: wrap !important; }
-      .header-right button { min-height: 28px !important; height: 28px !important; font-size: 11px !important; padding: 0 10px !important; }
+      #cofiThumbnailStudioHost {
+        container-type: inline-size;
+        container-name: thumb-host;
+        display: block;
+        width: 100%;
+      }
+      .thumb-studio-card {
+        padding: 0 !important;
+        margin-bottom: 10px !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 12px !important;
+      }
 
       /* Hide redundant legacy subnav bar when unified studio is mounted */
       .seo-subnav-bar { display: none !important; }
 
-      /* Unified Navigation Tabs (Step 1 -> 4 Workflow) */
-      .thumb-unified-nav { display: flex !important; gap: 8px !important; margin-bottom: 12px !important; background: rgba(10, 14, 24, 0.9) !important; padding: 6px !important; border-radius: 12px !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; flex-wrap: wrap !important; }
-      .thumb-nav-tab { flex: 1 1 180px !important; display: flex !important; align-items: center !important; gap: 10px !important; padding: 8px 12px !important; background: rgba(15, 23, 42, 0.65) !important; border: 1px solid rgba(255, 255, 255, 0.06) !important; border-radius: 8px !important; color: #94a3b8 !important; cursor: pointer !important; text-align: left !important; transition: all 0.18s ease !important; min-height: 48px !important; position: relative !important; }
-      .thumb-nav-tab:hover { background: rgba(30, 41, 59, 0.85) !important; color: #f1f5f9 !important; border-color: rgba(255, 255, 255, 0.16) !important; }
-      .thumb-nav-tab.active { background: linear-gradient(135deg, rgba(14, 165, 233, 0.22) 0%, rgba(15, 23, 42, 0.98) 100%) !important; border-color: rgba(56, 189, 248, 0.55) !important; color: #ffffff !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(56, 189, 248, 0.3) !important; }
-      .tab-badge-num { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 22px !important; height: 22px !important; border-radius: 50% !important; background: rgba(148, 163, 184, 0.15) !important; border: 1px solid rgba(148, 163, 184, 0.3) !important; font-size: 11px !important; font-weight: 800 !important; color: #94a3b8 !important; flex-shrink: 0 !important; }
-      .thumb-nav-tab.active .tab-badge-num { background: #38bdf8 !important; border-color: #38bdf8 !important; color: #020617 !important; font-weight: 900 !important; }
-      .thumb-nav-tab .tab-icon { font-size: 18px !important; line-height: 1 !important; flex-shrink: 0 !important; }
-      .thumb-nav-tab .tab-labels { display: flex !important; flex-direction: column !important; gap: 2px !important; min-width: 0 !important; }
-      .thumb-nav-tab .tab-title { font-size: 12.5px !important; font-weight: 800 !important; letter-spacing: -0.1px !important; color: inherit !important; }
-      .thumb-nav-tab.active .tab-title { color: #38bdf8 !important; }
-      .thumb-nav-tab .tab-sub { font-size: 10.5px !important; color: #64748b !important; white-space: nowrap !important; overflow: hidden !important; text-overflow: ellipsis !important; }
-      .thumb-nav-tab.active .tab-sub { color: #93c5fd !important; }
+      /* Compact Single-Row SaaS Command Bar (Replaces stacked Master Header + 2-line Nav Cards) */
+      .thumb-saas-command-bar {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 10px !important;
+        flex-wrap: wrap !important;
+        padding: 6px 10px !important;
+        margin-bottom: 8px !important;
+        background: rgba(9, 17, 30, 0.92) !important;
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
+        border-radius: 10px !important;
+      }
+      .thumb-unified-nav {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        margin: 0 !important;
+        padding: 3px !important;
+        background: rgba(4, 10, 20, 0.78) !important;
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
+        border-radius: 8px !important;
+        flex-wrap: wrap !important;
+      }
+      .thumb-nav-tab {
+        flex: 0 0 auto !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 5px 11px !important;
+        min-height: 30px !important;
+        height: 30px !important;
+        background: transparent !important;
+        border: 1px solid transparent !important;
+        border-radius: 6px !important;
+        color: #94a3b8 !important;
+        cursor: pointer !important;
+        font-size: 12px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        transition: all 0.15s ease !important;
+      }
+      .thumb-nav-tab:hover {
+        background: rgba(30, 41, 59, 0.7) !important;
+        color: #f1f5f9 !important;
+      }
+      .thumb-nav-tab.active {
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.24), rgba(15, 28, 48, 0.95)) !important;
+        border-color: rgba(56, 189, 248, 0.48) !important;
+        color: #f8fafc !important;
+        box-shadow: 0 1px 6px rgba(0, 0, 0, 0.28) !important;
+      }
+      .thumb-nav-tab .tab-icon { font-size: 13px !important; line-height: 1 !important; }
+      .thumb-nav-tab .tab-title { font-size: 12px !important; font-weight: 700 !important; color: inherit !important; }
+      .thumb-nav-tab.active .tab-title { color: #7dd3fc !important; }
+      .thumb-nav-tab .tab-sub,
+      .thumb-nav-tab .tab-badge-num { display: none !important; }
+
+      .thumb-master-actions {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex-wrap: wrap !important;
+      }
+      .thumb-master-actions .status-pill.winner {
+        font-size: 11px !important;
+        font-weight: 800 !important;
+        padding: 3px 9px !important;
+        border-radius: 6px !important;
+        background: rgba(250, 204, 21, 0.13) !important;
+        border: 1px solid rgba(250, 204, 21, 0.38) !important;
+        color: #fde047 !important;
+        white-space: nowrap !important;
+      }
+      .thumb-master-actions button {
+        min-height: 28px !important;
+        height: 28px !important;
+        font-size: 11px !important;
+        padding: 0 9px !important;
+        white-space: nowrap !important;
+      }
 
       /* ==========================================================================
-         UNIFIED STUDIO EDITOR (TAB 2) — SINGLE COHESIVE CONSOLE (NO FRAGMENTATION)
+         UNIFIED STUDIO EDITOR — SINGLE CLEAN CONSOLE (ZERO NESTED BOX OVERLOAD)
          ========================================================================== */
       .unified-studio-frame {
         display: flex !important;
         flex-direction: column !important;
-        background: rgba(10, 15, 26, 0.98) !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background: rgba(8, 15, 27, 0.96) !important;
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
         border-radius: 12px !important;
         overflow: hidden !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45) !important;
-        margin-bottom: 12px !important;
+        box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35) !important;
+        margin-bottom: 8px !important;
       }
 
-      /* Integrated Studio Topbar (Variant Segments + Master Actions) */
+      /* Integrated Studio Variant + Paired Title Bar (1 Slim Row) */
       .studio-topbar {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
-        gap: 12px !important;
-        padding: 8px 12px !important;
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.98) 0%, rgba(10, 15, 26, 0.98) 100%) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+        gap: 10px !important;
+        padding: 6px 10px !important;
+        background: rgba(11, 20, 35, 0.95) !important;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12) !important;
         flex-wrap: wrap !important;
       }
       .studio-topbar-left {
@@ -81,230 +149,539 @@
         align-items: center !important;
         gap: 8px !important;
         flex-wrap: wrap !important;
+        min-width: 0 !important;
       }
       .studio-topbar-label {
         font-size: 10px !important;
         font-weight: 800 !important;
         color: #64748b !important;
-        letter-spacing: 0.08em !important;
+        letter-spacing: 0.06em !important;
         text-transform: uppercase !important;
       }
       .studio-variant-segments {
         display: inline-flex !important;
-        background: rgba(2, 6, 23, 0.7) !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 8px !important;
-        padding: 3px !important;
-        gap: 4px !important;
+        background: rgba(4, 10, 20, 0.78) !important;
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
+        border-radius: 7px !important;
+        padding: 2px !important;
+        gap: 3px !important;
         flex-wrap: wrap !important;
       }
       .studio-variant-seg {
         display: inline-flex !important;
         align-items: center !important;
-        gap: 6px !important;
-        padding: 4px 10px !important;
+        gap: 5px !important;
+        padding: 3px 9px !important;
         background: transparent !important;
         border: 1px solid transparent !important;
-        border-radius: 6px !important;
+        border-radius: 5px !important;
         color: #94a3b8 !important;
         font-size: 11px !important;
         font-weight: 700 !important;
         cursor: pointer !important;
-        transition: all 0.16s ease !important;
-        min-height: 26px !important;
+        transition: all 0.15s ease !important;
+        min-height: 25px !important;
+        white-space: nowrap !important;
       }
       .studio-variant-seg:hover {
-        background: rgba(255, 255, 255, 0.06) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
         color: #f1f5f9 !important;
       }
       .studio-variant-seg.active {
-        background: linear-gradient(135deg, rgba(14, 165, 233, 0.25) 0%, rgba(30, 41, 59, 0.95) 100%) !important;
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.24) 0%, rgba(22, 36, 58, 0.96) 100%) !important;
         border-color: rgba(56, 189, 248, 0.5) !important;
         color: #ffffff !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
       }
       .studio-variant-seg.is-winner {
-        border-color: rgba(250, 204, 21, 0.4) !important;
+        border-color: rgba(250, 204, 21, 0.35) !important;
       }
       .studio-variant-seg.is-winner.active {
         border-color: #fbbf24 !important;
-        box-shadow: 0 0 0 1px #fbbf24, 0 2px 8px rgba(251, 191, 36, 0.25) !important;
       }
       .studio-variant-seg .seg-tag {
         font-size: 10.5px !important;
-        font-weight: 900 !important;
+        font-weight: 800 !important;
         color: #38bdf8 !important;
       }
-      .studio-variant-seg.active .seg-tag {
-        color: #7dd3fc !important;
-      }
-      .studio-variant-seg.is-winner .seg-tag {
-        color: #fde047 !important;
-      }
-      .studio-variant-seg .seg-name {
-        color: inherit !important;
-        font-weight: 600 !important;
-      }
+      .studio-variant-seg.is-winner .seg-tag { color: #fde047 !important; }
+      .studio-variant-seg .seg-name { display: none !important; }
       .studio-variant-seg .seg-ctr {
         font-size: 9.5px !important;
         font-weight: 800 !important;
-        padding: 1px 5px !important;
+        padding: 1px 4px !important;
         border-radius: 4px !important;
       }
-      .studio-variant-seg .seg-ctr.ok {
-        background: rgba(34, 197, 94, 0.18) !important;
-        color: #4ade80 !important;
+      .studio-variant-seg .seg-ctr.ok { background: rgba(34, 197, 94, 0.16) !important; color: #4ade80 !important; }
+      .studio-variant-seg .seg-ctr.warn { background: rgba(251, 191, 36, 0.16) !important; color: #fbbf24 !important; }
+      .studio-variant-seg .seg-win { color: #fbbf24 !important; font-size: 11px !important; }
+
+      .studio-inline-paired-title {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        flex: 1 1 220px !important;
+        min-width: 0 !important;
+        padding: 3px 9px !important;
+        border-radius: 6px !important;
+        background: rgba(5, 11, 21, 0.65) !important;
+        border: 1px solid rgba(148, 163, 184, 0.12) !important;
+        font-size: 11.5px !important;
       }
-      .studio-variant-seg .seg-ctr.warn {
-        background: rgba(251, 191, 36, 0.18) !important;
-        color: #fbbf24 !important;
+      .studio-inline-paired-title .paired-ko-text {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        color: #e2e8f0 !important;
+        font-weight: 700 !important;
       }
-      .studio-variant-seg .seg-win {
-        color: #fbbf24 !important;
-        font-size: 11px !important;
+      .studio-inline-paired-title button {
+        min-height: 22px !important;
+        height: 22px !important;
+        padding: 0 7px !important;
+        font-size: 10.5px !important;
+        flex-shrink: 0 !important;
       }
 
       .studio-topbar-right {
         display: flex !important;
         align-items: center !important;
-        gap: 6px !important;
+        gap: 5px !important;
         flex-shrink: 0 !important;
       }
       .studio-topbar-right button {
-        min-height: 27px !important;
-        height: 27px !important;
+        min-height: 26px !important;
+        height: 26px !important;
         font-size: 11px !important;
-        padding: 0 9px !important;
+        padding: 0 8px !important;
+        white-space: nowrap !important;
       }
       .studio-win-badge {
         display: inline-flex !important;
         align-items: center !important;
         padding: 2px 8px !important;
         border-radius: 5px !important;
-        background: rgba(34, 197, 94, 0.18) !important;
-        border: 1px solid rgba(34, 197, 94, 0.45) !important;
+        background: rgba(34, 197, 94, 0.15) !important;
+        border: 1px solid rgba(34, 197, 94, 0.4) !important;
         color: #4ade80 !important;
         font-size: 10.5px !important;
         font-weight: 800 !important;
+        white-space: nowrap !important;
       }
 
-      /* Integrated Paired Title Sub-Bar */
-      .studio-paired-bar {
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 10px !important;
-        padding: 6px 12px !important;
-        background: rgba(13, 18, 30, 0.92) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06) !important;
-        flex-wrap: wrap !important;
-      }
-      .paired-bar-tag {
-        font-size: 10px !important;
-        font-weight: 800 !important;
-        color: #38bdf8 !important;
-        letter-spacing: 0.05em !important;
-        flex-shrink: 0 !important;
-      }
-      .paired-bar-content {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        flex: 1 1 360px !important;
-        min-width: 0 !important;
-        font-size: 12px !important;
-      }
-      .paired-bar-ko {
-        font-weight: 800 !important;
-        color: #ffffff !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-      }
-      .paired-bar-vi {
-        color: #4ade80 !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-      }
-      .paired-bar-syn {
-        font-size: 11px !important;
-        color: #94a3b8 !important;
-        flex-shrink: 0 !important;
-      }
-      .paired-bar-actions {
-        display: flex !important;
-        align-items: center !important;
-        gap: 6px !important;
-        flex-shrink: 0 !important;
-      }
-      .paired-bar-actions button {
-        min-height: 24px !important;
-        height: 24px !important;
-        font-size: 10.5px !important;
-        padding: 0 7px !important;
-      }
-
-      /* Canva 3-Col Workbench in Studio Frame */
+      /* Figma / CapCut 3-Column Canvas Workbench */
       .canva-workbench-3col {
         display: grid !important;
-        grid-template-columns: 260px minmax(0, 1fr) 300px !important;
-        grid-template-areas: none !important;
+        grid-template-columns: 230px minmax(0, 1fr) 268px !important;
+        grid-template-areas: "left stage right" !important;
         gap: 10px !important;
-        align-items: stretch !important;
+        align-items: start !important;
         padding: 10px !important;
-        background: rgba(6, 10, 19, 0.96) !important;
+        background: #060c17 !important;
         box-sizing: border-box !important;
       }
+      #cofiThumbLeftDock { grid-area: left !important; }
+      #cofiThumbCenterStage { grid-area: stage !important; }
+      #cofiThumbRightInspector { grid-area: right !important; }
+
+      @container thumb-host (max-width: 1060px) {
+        .canva-workbench-3col {
+          grid-template-columns: 196px minmax(0, 1fr) 232px !important;
+          gap: 8px !important;
+          padding: 8px !important;
+        }
+      }
+      @container thumb-host (max-width: 780px) {
+        .canva-workbench-3col {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+          grid-template-areas:
+            "stage stage"
+            "left right" !important;
+        }
+      }
+
       .canva-left-dock, .canva-right-inspector {
-        grid-area: auto !important;
-        background: rgba(15, 23, 42, 0.95) !important;
-        border: 1px solid rgba(148, 163, 184, 0.22) !important;
+        background: rgba(11, 20, 35, 0.92) !important;
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
         border-radius: 10px !important;
         display: flex !important;
         flex-direction: column !important;
-        max-height: 640px !important;
-        overflow: hidden !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
-      }
-      .canva-dock-tabs { display: flex !important; background: rgba(10, 14, 24, 0.9) !important; border-bottom: 1px solid rgba(148, 163, 184, 0.2) !important; }
-      .canva-dock-tab { flex: 1 1 0 !important; padding: 6px 2px !important; display: flex !important; flex-direction: column !important; align-items: center !important; gap: 2px !important; background: transparent !important; border: none !important; color: #94a3b8 !important; cursor: pointer !important; font-size: 10px !important; }
-      .canva-dock-tab:hover { background: rgba(255, 255, 255, 0.04) !important; color: #f1f5f9 !important; }
-      .canva-dock-tab.active { background: rgba(14, 165, 233, 0.18) !important; color: #38bdf8 !important; font-weight: 700 !important; box-shadow: inset 0 -2px 0 #38bdf8 !important; }
-      .canva-dock-body, .canva-inspector-scroll { padding: 8px !important; overflow-y: auto !important; display: flex !important; flex-direction: column !important; gap: 8px !important; flex: 1 1 auto !important; }
-      .canva-dock-body button, .canva-inspector-scroll button { min-height: 27px !important; padding: 3px 8px !important; font-size: 11px !important; }
-
-      .canva-center-stage {
-        grid-area: auto !important;
+        height: 542px !important;
+        max-height: 542px !important;
         min-width: 0 !important;
+        overflow: hidden !important;
+      }
+      .canva-dock-tabs {
+        display: grid !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        background: rgba(6, 12, 23, 0.92) !important;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.14) !important;
+        flex-shrink: 0 !important;
+      }
+      .canva-dock-tab {
+        padding: 7px 2px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
+        gap: 2px !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        color: #94a3b8 !important;
+        cursor: pointer !important;
+        font-size: 10px !important;
+        min-height: 40px !important;
+      }
+      .canva-dock-tab:hover { background: rgba(255, 255, 255, 0.04) !important; color: #f1f5f9 !important; }
+      .canva-dock-tab.active {
+        background: rgba(14, 165, 233, 0.14) !important;
+        color: #38bdf8 !important;
+        font-weight: 700 !important;
+        box-shadow: inset 0 -2px 0 #38bdf8 !important;
+      }
+      .canva-dock-body, .canva-inspector-scroll {
+        padding: 9px !important;
+        overflow-y: auto !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 8px !important;
+        flex: 1 1 auto !important;
+        min-height: 0 !important;
+      }
+      .canva-dock-body button, .canva-inspector-scroll button {
+        min-height: 27px !important;
+        padding: 3px 8px !important;
+        font-size: 11px !important;
+      }
+
+      /* Compact 1-Line Preset Rows in Left Dock (Eliminates 4-Line Text Walls) */
+      .canva-preset-stack {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 4px !important;
+      }
+      .canva-preset-card {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 7px !important;
+        width: 100% !important;
+        padding: 6px 9px !important;
+        min-height: 32px !important;
+        border-radius: 7px !important;
+        background: rgba(6, 13, 25, 0.78) !important;
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
+        color: #e2e8f0 !important;
+        text-align: left !important;
+        cursor: pointer !important;
+        transition: all 0.14s ease !important;
+      }
+      .canva-preset-card:hover {
+        border-color: rgba(56, 189, 248, 0.4) !important;
+        background: rgba(15, 28, 48, 0.85) !important;
+      }
+      .canva-preset-card.active {
+        border-color: rgba(56, 189, 248, 0.65) !important;
+        background: linear-gradient(135deg, rgba(14, 165, 233, 0.2), rgba(12, 25, 44, 0.95)) !important;
+      }
+      .canva-preset-card-main {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+      }
+      .canva-preset-card-main strong {
+        font-size: 11.5px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+      .canva-preset-swatches {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 2px !important;
+        flex-shrink: 0 !important;
+      }
+      .canva-preset-swatches i {
+        width: 7px !important;
+        height: 7px !important;
+        border-radius: 50% !important;
+        display: inline-block !important;
+        border: 1px solid rgba(255,255,255,0.25) !important;
+      }
+      .canva-active-dot {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        color: #4ade80 !important;
+        flex-shrink: 0 !important;
+      }
+      .canva-left-dock .thumb-archetype-grid,
+      .canva-left-dock .thumb-color-combos-grid {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        gap: 4px !important;
+      }
+      .canva-left-dock .thumb-archetype-btn,
+      .canva-left-dock .thumb-combo-pill {
+        width: 100% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: flex-start !important;
+        gap: 6px !important;
+        text-align: left !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+
+      /* Vertical Figma Layer Tree in Left Dock */
+      .canva-layer-list {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+      }
+      .canva-layer-row {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 3px 7px !important;
+        min-height: 29px !important;
+        border-radius: 6px !important;
+        background: rgba(6, 13, 25, 0.72) !important;
+        border: 1px solid rgba(148, 163, 184, 0.11) !important;
+      }
+      .canva-layer-row.is-selected {
+        background: rgba(14, 165, 233, 0.18) !important;
+        border-color: rgba(56, 189, 248, 0.55) !important;
+      }
+      .canva-layer-row .canva-layer-select-btn {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        min-height: 22px !important;
+        padding: 0 2px !important;
+        border: none !important;
+        background: transparent !important;
+        color: #e2e8f0 !important;
+        font-size: 11.3px !important;
+        font-weight: 600 !important;
+        text-align: left !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        cursor: pointer !important;
+      }
+
+      /* Right Contextual Inspector Header + 1-Line Layer Dropdown (Replaces 10-Button Wall) */
+      .canva-inspector-header {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        padding: 8px 10px !important;
+        background: rgba(6, 12, 23, 0.92) !important;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12) !important;
+        flex-shrink: 0 !important;
+      }
+      .canva-inspector-header > div:first-child {
+        min-width: 0 !important;
+        flex: 1 1 auto !important;
+      }
+      .canva-inspector-header button {
+        flex-shrink: 0 !important;
+        white-space: nowrap !important;
+      }
+      .canva-inspector-kicker {
+        display: block !important;
+        font-size: 9.5px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.06em !important;
+        color: #38bdf8 !important;
+      }
+      .canva-inspector-header h4 {
+        margin: 1px 0 0 !important;
+        font-size: 12.2px !important;
+        font-weight: 800 !important;
+        color: #f8fafc !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        max-width: 100% !important;
+      }
+      .canva-inspector-layer-bar {
+        display: flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        padding: 6px 10px !important;
+        background: rgba(8, 16, 29, 0.88) !important;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.12) !important;
+        flex-shrink: 0 !important;
+      }
+      .canva-inspector-layer-bar .insp-layer-lbl {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        color: #7dd3fc !important;
+        white-space: nowrap !important;
+      }
+      .canva-inspector-layer-bar .insp-layer-select {
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        padding: 0 8px !important;
+        border-radius: 6px !important;
+        background: rgba(15, 25, 42, 0.95) !important;
+        border: 1px solid rgba(56, 189, 248, 0.28) !important;
+        color: #f1f5f9 !important;
+        font-size: 11.5px !important;
+        font-weight: 700 !important;
+      }
+      .canva-context-card {
+        padding: 8px 9px !important;
+        border-radius: 8px !important;
+        background: rgba(6, 13, 25, 0.72) !important;
+        border: 1px solid rgba(148, 163, 184, 0.12) !important;
+      }
+      .canva-side-title {
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.05em !important;
+        color: #7dd3fc !important;
+        margin-bottom: 6px !important;
+      }
+
+      /* Clean Figma Center Stage + Single 36px Action Bar */
+      main.canva-center-stage,
+      .canva-center-stage {
+        min-width: 0 !important;
+        width: 100% !important;
+        max-width: none !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: transparent !important;
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: stretch !important;
         justify-content: flex-start !important;
         gap: 6px !important;
       }
-
-      /* Stage Toolbar */
-      .thumb-stage-toolbar { width: 100% !important; box-sizing: border-box !important; display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 8px !important; padding: 5px 8px !important; background: rgba(15, 23, 42, 0.92) !important; border: 1px solid rgba(255, 255, 255, 0.08) !important; border-radius: 8px !important; flex-wrap: wrap !important; margin-bottom: 2px !important; }
-      .stage-tools-left { display: flex !important; align-items: center !important; gap: 6px !important; flex: 1 1 auto !important; }
-      .stage-tools-right { display: flex !important; align-items: center !important; gap: 5px !important; flex-shrink: 0 !important; }
-      .stage-tools-right button { min-height: 25px !important; height: 25px !important; padding: 0 7px !important; font-size: 11px !important; }
-      .thumb-quick-layers-bar { display: flex !important; gap: 4px !important; overflow-x: auto !important; padding: 0 !important; margin: 0 !important; }
-      .thumb-quick-layer-pill { min-height: 24px !important; height: 24px !important; padding: 0 7px !important; font-size: 10.5px !important; border-radius: 5px !important; }
-      
-      .thumb-canvas-stage-viewport {
+      .thumb-stage-toolbar {
         width: 100% !important;
         box-sizing: border-box !important;
         display: flex !important;
-        justify-content: center !important;
         align-items: center !important;
-        background: radial-gradient(#1e293b 1px, transparent 1px) #0b0f19 !important;
-        background-size: 16px 16px !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        justify-content: space-between !important;
+        gap: 8px !important;
+        padding: 5px 9px !important;
+        min-height: 36px !important;
+        background: rgba(11, 20, 35, 0.92) !important;
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
         border-radius: 8px !important;
-        padding: 8px !important;
+        flex-wrap: wrap !important;
+        margin: 0 !important;
       }
-      .thumb-stage-vi-bar { width: 100% !important; box-sizing: border-box !important; margin-top: 4px !important; padding: 6px 10px !important; background: rgba(15, 23, 42, 0.92) !important; border: 1px solid rgba(34, 197, 94, 0.38) !important; border-radius: 8px !important; font-size: 11.5px !important; line-height: 1.4 !important; color: #f1f5f9 !important; }
+      .stage-tools-left {
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
+        overflow-x: auto !important;
+      }
+      .thumb-quick-layers-bar {
+        display: flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        flex-wrap: nowrap !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      .stage-active-target-pill {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        height: 25px !important;
+        padding: 0 9px !important;
+        border-radius: 6px !important;
+        background: rgba(14, 165, 233, 0.14) !important;
+        border: 1px solid rgba(56, 189, 248, 0.34) !important;
+        color: #bae6fd !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        white-space: nowrap !important;
+        max-width: 210px !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        cursor: pointer !important;
+      }
+      .stage-insert-divider {
+        width: 1px !important;
+        height: 16px !important;
+        background: rgba(148, 163, 184, 0.2) !important;
+        margin: 0 2px !important;
+        flex-shrink: 0 !important;
+      }
+      .stage-insert-btn {
+        min-height: 25px !important;
+        height: 25px !important;
+        padding: 0 8px !important;
+        font-size: 11px !important;
+        font-weight: 700 !important;
+        border-radius: 6px !important;
+        white-space: nowrap !important;
+      }
+      .stage-tools-right {
+        display: flex !important;
+        align-items: center !important;
+        gap: 4px !important;
+        flex-shrink: 0 !important;
+      }
+      .stage-tools-right button {
+        min-height: 25px !important;
+        height: 25px !important;
+        padding: 0 7px !important;
+        font-size: 11px !important;
+      }
+
+      .thumb-canvas-stage-viewport {
+        width: 100% !important;
+        flex: 0 0 auto !important;
+        box-sizing: border-box !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: flex-start !important;
+        background: radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px) #050a14 !important;
+        background-size: 18px 18px !important;
+        border: 1px solid rgba(148, 163, 184, 0.14) !important;
+        border-radius: 9px !important;
+        padding: 8px !important;
+        min-height: 0 !important;
+        max-height: 492px !important;
+        overflow: auto !important;
+      }
+      .thumb-canvas-stage-inner[style*="width:100%"] {
+        max-width: min(100%, 820px) !important;
+      }
+      .thumb-stage-vi-bar {
+        width: 100% !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        padding: 5px 10px !important;
+        background: rgba(9, 18, 32, 0.88) !important;
+        border: 1px solid rgba(52, 211, 153, 0.28) !important;
+        border-radius: 7px !important;
+        font-size: 11.2px !important;
+        line-height: 1.35 !important;
+        color: #e2e8f0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
 
       /* Comparison Suite (Compare View) */
       .thumb-compare-suite { display: flex !important; flex-direction: column !important; gap: 10px !important; }
@@ -516,11 +893,37 @@
     { id: "forensic_cyan_yellow", label: "Cyan + Vàng Hồ Sơ", badgeFill: "#00f0ff", badgeBg: "transparent", line1Fill: "#00f0ff", line2Fill: "#ffe600", highlightFill: "#ff2424", stroke: "#000000" },
     { id: "neon_green_white", label: "Vàng + Xanh Lá Đài", badgeFill: "#ffe600", badgeBg: "#dc2626", line1Fill: "#ffffff", line2Fill: "#39ff14", highlightFill: "#ffe600", stroke: "#000000" },
     { id: "shock_pink_yellow", label: "Trắng + Hồng Sốc", badgeFill: "#ffffff", badgeBg: "#9333ea", line1Fill: "#ffffff", line2Fill: "#ff2a85", highlightFill: "#ffe600", stroke: "#000000" },
+    { id: "teukgeup_green_yellow", label: "Neon + Trắng/Vàng", badgeFill: "#39ff14", badgeBg: "transparent", line1Fill: "#ffffff", line2Fill: "#ffe600", highlightFill: "#ff2424", stroke: "#000000" },
+    { id: "wanted_crimson_gold", label: "Truy Nã Đỏ + Vàng", badgeFill: "#ffe600", badgeBg: "#991b1b", line1Fill: "#ffe600", line2Fill: "#ffffff", highlightFill: "#ff1f1f", stroke: "#000000" },
+    { id: "amber_noir_dossier", label: "Hổ Phách + Đỏ Đậm", badgeFill: "#fbbf24", badgeBg: "#1e293b", line1Fill: "#ffffff", line2Fill: "#fbbf24", highlightFill: "#ef4444", stroke: "#000000" },
+    { id: "nvg_emerald_alert", label: "Xanh NVG + Vàng", badgeFill: "#39ff14", badgeBg: "#052e16", line1Fill: "#39ff14", line2Fill: "#ffe600", highlightFill: "#ffffff", stroke: "#000000" },
+    { id: "ice_cyan_crimson", label: "Trắng Băng + Đỏ", badgeFill: "#00f0ff", badgeBg: "#0f172a", line1Fill: "#e2e8f0", line2Fill: "#ff1f1f", highlightFill: "#00f0ff", stroke: "#000000" },
+    { id: "hazard_orange_white", label: "Cam Khẩn + Trắng", badgeFill: "#ffffff", badgeBg: "#ea580c", line1Fill: "#ffffff", line2Fill: "#ff6b00", highlightFill: "#ffe600", stroke: "#000000" },
   ];
 
-  // BỘ PHONG CÁCH CHỦ ĐỀ LINH HOẠT (TOPIC STYLE PRESETS — KHÔNG KHÓA CỨNG)
-  // Áp dụng riêng cho chủ đề/dự án hiện tại; chỉ khi người dùng bấm "Chốt Lưu Làm DNA Kênh" mới ghi vào DNA cho lần sau.
+  // BỘ PHONG CÁCH CHỦ ĐỀ LINH HOẠT (16 TOPIC STYLE PRESETS — KHÔNG KHÓA CỨNG)
   const TOPIC_STYLE_PRESETS = [
+    {
+      id: "teukgeup_archival_polaroid",
+      label: "🚨 Truy Nã Cấp A · Tư Liệu Kép (특급수배록 Winner DNA)",
+      shortLabel: "🚨 Truy nã Cấp A (특급)",
+      desc: "Tag Xanh lá neon #39FF14 + 2 Khung tư liệu thật bên trái (Khung CCTV/Phong tỏa + Ảnh xé báo) + Chữ đáy Paperlogy ExtraBold",
+      archetype: "dual_pip_evidence_board",
+      fontId: "paperlogy_extrabold",
+      badgeFill: "#39ff14",
+      badgeBg: "transparent",
+      line1Fill: "#ffffff",
+      line2Fill: "#ffe600",
+      highlightFill: "#ff2424",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.95,
+      pipFrameStyle: "cctv_hud",
+      pipBorderColor: "#ef4444",
+      pip2FrameStyle: "torn_newspaper",
+      showArrow: true,
+      showCircle: false,
+      showInset: true,
+    },
     {
       id: "sbs_criminal_profiling",
       label: "🕵️ Hình sự Điều tra SBS (그것이 알고싶다)",
@@ -535,6 +938,7 @@
       highlightFill: "#ff2424",
       vignetteStyle: "left_heavy",
       vignetteOpacity: 0.86,
+      pipFrameStyle: "caution_tape",
       showArrow: true,
       showCircle: false,
       showInset: false,
@@ -543,7 +947,7 @@
       id: "forensic_evidence_dossier",
       label: "🔬 Hồ sơ Pháp y & Vật chứng (Khoanh vùng + PiP)",
       shortLabel: "🔬 Pháp y & Vật chứng",
-      desc: "Chữ đặt thấp dưới đáy + Khung ảnh đối chứng góc phải trên + Vòng tròn nét đứt & Mũi tên chỉ điểm vật chứng",
+      desc: "Chữ đặt thấp dưới đáy + Khung túi vật chứng pháp y + Vòng tròn nét đứt & Mũi tên chỉ điểm vật chứng",
       archetype: "split_duality",
       fontId: "gmarket_bold",
       badgeFill: "#ffffff",
@@ -552,7 +956,9 @@
       line2Fill: "#ff2424",
       highlightFill: "#ffe600",
       vignetteStyle: "bottom_heavy",
-      vignetteOpacity: 0.88,
+      vignetteOpacity: 0.90,
+      pipFrameStyle: "evidence_bag_tag",
+      pipBorderColor: "#facc15",
       showArrow: true,
       showCircle: true,
       showInset: true,
@@ -570,10 +976,201 @@
       line2Fill: "#ff2424",
       highlightFill: "#ffffff",
       vignetteStyle: "bottom_heavy",
-      vignetteOpacity: 0.88,
+      vignetteOpacity: 0.90,
+      pipFrameStyle: "pinned_cork_tape",
       showArrow: true,
       showCircle: false,
       showInset: false,
+    },
+    {
+      id: "wanted_bounty_manhunt",
+      label: "🎯 Lệnh Truy Nã Đỏ & Đại Vây Ráp (WANTED · A급)",
+      shortLabel: "🎯 Lệnh Truy Nã Đỏ",
+      desc: "Khung Lệnh Truy Nã Cấp A (wanted_poster_a) + Tâm ngắm bắn tỉa + Chữ Vàng/Đỏ khẩn cấp",
+      archetype: "wanted_dossier_header",
+      fontId: "paperlogy_black",
+      badgeFill: "#ffe600",
+      badgeBg: "#b91c1c",
+      line1Fill: "#ffffff",
+      line2Fill: "#ff1f1f",
+      highlightFill: "#ffe600",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.94,
+      pipFrameStyle: "wanted_poster_a",
+      pipBorderColor: "#ff1f1f",
+      circleStyle: "crosshair_sniper",
+      showArrow: true,
+      showCircle: true,
+      showInset: true,
+    },
+    {
+      id: "cctv_night_pursuit",
+      label: "📹 Camera Thiên Võng & Truy Bắt Đêm (CCTV / NVG)",
+      shortLabel: "📹 Camera Thiên Võng",
+      desc: "Khung Ống nhòm đêm NVG / Camera giám sát + Khung khóa mục tiêu CCTV + Chữ Xanh lá / Vàng",
+      archetype: "cctv_surveillance_grid",
+      fontId: "scoredream_black",
+      badgeFill: "#39ff14",
+      badgeBg: "#052e16",
+      line1Fill: "#ffffff",
+      line2Fill: "#39ff14",
+      highlightFill: "#ffe600",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.92,
+      pipFrameStyle: "night_vision_thermal",
+      pipBorderColor: "#39ff14",
+      circleStyle: "cctv_brackets",
+      showArrow: true,
+      showCircle: true,
+      showInset: true,
+    },
+    {
+      id: "undercover_double_identity",
+      label: "🪪 Vỏ Bọc Giả Danh & Hai Thân Phận (Mugshot vs Đời Thường)",
+      shortLabel: "🪪 Hai Thân Phận",
+      desc: "Đối chiếu thước đo ảnh thẻ trại giam (mugshot_height_chart) và ảnh xé báo, vạch trần kẻ trốn nã",
+      archetype: "dual_pip_evidence_board",
+      fontId: "paperlogy_extrabold",
+      badgeFill: "#00f0ff",
+      badgeBg: "transparent",
+      line1Fill: "#ffffff",
+      line2Fill: "#ffe600",
+      highlightFill: "#00f0ff",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.94,
+      pipFrameStyle: "mugshot_height_chart",
+      pipBorderColor: "#ffffff",
+      pip2FrameStyle: "pinned_cork_tape",
+      showArrow: true,
+      showCircle: false,
+      showInset: true,
+    },
+    {
+      id: "cold_case_red_string",
+      label: "🧶 Kỳ Án Treo 20 Năm & Bảng Ghim Chỉ Đỏ",
+      shortLabel: "🧶 Kỳ Án Treo & Ghim",
+      desc: "Khung ảnh ghim bảng điều tra & băng dính (pinned_cork_tape) + Khoanh bút dạ đỏ + Phim âm bản 35mm",
+      archetype: "dual_pip_evidence_board",
+      fontId: "pretendard_extrabold",
+      badgeFill: "#fbbf24",
+      badgeBg: "#7f1d1d",
+      line1Fill: "#f8fafc",
+      line2Fill: "#fbbf24",
+      highlightFill: "#ff2424",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.92,
+      pipFrameStyle: "pinned_cork_tape",
+      pipBorderColor: "#f5eedc",
+      pip2FrameStyle: "film_strip_35mm",
+      circleStyle: "hand_drawn_double",
+      showArrow: true,
+      showCircle: true,
+      showInset: true,
+    },
+    {
+      id: "forensic_autopsy_blueprint",
+      label: "🧬 Giải Phẫu Pháp Y & Khóa Sinh Trắc DNA",
+      shortLabel: "🧬 Khóa Sinh Trắc DNA",
+      desc: "Khung Khóa sinh trắc DNA vát góc (biometric_face_lock) + Khung bát giác AI + Tone Cyan Pháp y",
+      archetype: "dual_pip_evidence_board",
+      fontId: "suite_heavy",
+      badgeFill: "#00f0ff",
+      badgeBg: "#082f49",
+      line1Fill: "#ffffff",
+      line2Fill: "#00f0ff",
+      highlightFill: "#ffe600",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.93,
+      pipFrameStyle: "biometric_face_lock",
+      pipBorderColor: "#00f0ff",
+      circleStyle: "octagon_biometric",
+      showArrow: true,
+      showCircle: true,
+      showInset: true,
+    },
+    {
+      id: "courtroom_verdict_shock",
+      label: "⚖️ Phán Quyết Tòa Án & Khung Thép Còng Số 8",
+      shortLabel: "⚖️ Tòa Án & Còng Thép",
+      desc: "Khung Thép Còng Số 8 (steel_handcuff_plate) + Kính nứt chấn động + Chữ SB Aggro giật tít",
+      archetype: "dual_pip_evidence_board",
+      fontId: "sb_aggro",
+      badgeFill: "#ffffff",
+      badgeBg: "#dc2626",
+      line1Fill: "#ffe600",
+      line2Fill: "#ffffff",
+      highlightFill: "#ff1f1f",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.94,
+      pipFrameStyle: "steel_handcuff_plate",
+      pipBorderColor: "#cbd5e1",
+      pip2FrameStyle: "shattered_glass_shock",
+      showArrow: true,
+      showCircle: false,
+      showInset: true,
+    },
+    {
+      id: "archival_newspaper_chronicle",
+      label: "📰 Hồ Sơ Báo Cũ & Giấy Cháy Xém Thập Niên 90",
+      shortLabel: "📰 Báo Cũ & Cháy Xém",
+      desc: "Khung Giấy hồ sơ cháy xém (burnt_archival_edge) + Ảnh xé báo cổ điển + Tone Vàng Hổ Phách",
+      archetype: "dual_pip_evidence_board",
+      fontId: "scoredream_black",
+      badgeFill: "#fde047",
+      badgeBg: "#451a03",
+      line1Fill: "#fef3c7",
+      line2Fill: "#fbbf24",
+      highlightFill: "#ef4444",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.94,
+      pipFrameStyle: "burnt_archival_edge",
+      pipBorderColor: "#d97706",
+      pip2FrameStyle: "torn_newspaper",
+      showArrow: true,
+      showCircle: false,
+      showInset: true,
+    },
+    {
+      id: "interrogation_room_confession",
+      label: "🎙️ Bản Tin Khẩn Cấp & Lời Khai Phòng Thẩm Vấn",
+      shortLabel: "🎙️ Bản Tin & Thẩm Vấn",
+      desc: "Khung Bản tin truyền hình LIVE (breaking_news_tv) + Hồ sơ tuyệt mật + Chữ Trắng/Đỏ",
+      archetype: "dual_pip_evidence_board",
+      fontId: "kbo_dia",
+      badgeFill: "#ffffff",
+      badgeBg: "#dc2626",
+      line1Fill: "#ffffff",
+      line2Fill: "#ff2424",
+      highlightFill: "#ffe600",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.94,
+      pipFrameStyle: "breaking_news_tv",
+      pipBorderColor: "#ef4444",
+      pip2FrameStyle: "classified_top_secret",
+      showArrow: true,
+      showCircle: false,
+      showInset: true,
+    },
+    {
+      id: "dark_web_heist_conspiracy",
+      label: "🔐 Hồ Sơ Tuyệt Mật & Phi Vụ Chấn Động (TOP SECRET)",
+      shortLabel: "🔐 Hồ Sơ Tuyệt Mật",
+      desc: "Khung Hồ sơ tuyệt mật sọc đỏ trắng (classified_top_secret) + Kính nứt chấn động",
+      archetype: "dual_pip_evidence_board",
+      fontId: "gong_gothic",
+      badgeFill: "#ff2a85",
+      badgeBg: "#1e1b4b",
+      line1Fill: "#ffffff",
+      line2Fill: "#ffe600",
+      highlightFill: "#ff2a85",
+      vignetteStyle: "bottom_heavy",
+      vignetteOpacity: 0.93,
+      pipFrameStyle: "classified_top_secret",
+      pipBorderColor: "#dc2626",
+      pip2FrameStyle: "shattered_glass_shock",
+      showArrow: true,
+      showCircle: true,
+      showInset: true,
     },
     {
       id: "infrastructure_megaproject_crisis",
@@ -589,6 +1186,7 @@
       highlightFill: "#ffffff",
       vignetteStyle: "bottom_heavy",
       vignetteOpacity: 0.85,
+      pipFrameStyle: "caution_tape",
       showArrow: true,
       showCircle: true,
       showInset: false,
@@ -607,27 +1205,402 @@
       highlightFill: "#00f0ff",
       vignetteStyle: "left_heavy",
       vignetteOpacity: 0.86,
+      pipFrameStyle: "financial_audit_hud",
       showArrow: true,
       showCircle: true,
       showInset: false,
     },
     {
       id: "cyber_financial_forensic_duality",
-      label: "💳 Tội phạm CNC & Lừa đảo Tài chính (중국 사기 실화 · 4D Vô diện + PiP)",
+      label: "💳 Tội phạm CNC & Lừa đảo Tài chính (중국 첨단사기 실화 사건 · Chân Dung Trái Cyan + Màn Hình Kiểm Toán Phải)",
       shortLabel: "💳 Tội phạm CNC & Tài chính",
-      desc: "Kế thừa khung xương CTR True Crime nhưng thiết kế riêng cho Tài chính/CNC: Chủ thể 4D Vô diện bên phải + Khung bằng chứng Sổ tiết kiệm/0원 bên trái + Tag xanh lá [중국 사기 실화] + Mũi tên đỏ + Chữ 2 dòng Vàng/Trắng & Đỏ cực đại",
+      desc: "DNA 중국 첨단사기 실화 사건: Nền Navy Kiểm Toán (#040C18) + Chân dung chủ mưu bên TRÁI 1/3 có viền sáng lạnh Cyan (#38BDF8) + Màn hình kiểm toán thẳng góc 0° bên phải (financial_audit_hud)",
       archetype: "split_duality",
-      fontId: "gmarket_bold",
-      badgeFill: "#39ff14",
-      badgeBg: "#06121e",
+      fontId: "paperlogy_extrabold",
+      badgeFill: "#ffe600",
+      badgeBg: "#061a2e",
       line1Fill: "#ffffff",
-      line2Fill: "#ff2424",
-      highlightFill: "#ffe600",
+      line2Fill: "#ffe600",
+      highlightFill: "#38bdf8",
       vignetteStyle: "bottom_heavy",
-      vignetteOpacity: 0.88,
+      vignetteOpacity: 0.84,
+      pipFrameStyle: "financial_audit_hud",
+      pipBorderColor: "#38bdf8",
       showArrow: true,
-      showCircle: true,
+      showCircle: false,
       showInset: true,
+    },
+  ];
+
+  const PIP_FRAME_CATEGORIES = [
+    { id: "all", label: "Tất cả (38)" },
+    { id: "frameless", label: "🫧 Không Khung & Viền (10)" },
+    { id: "cutout", label: "⭕ Cắt Hình & Lúp (6)" },
+    { id: "forensic", label: "📌 Hồ Sơ & Bằng Chứng (12)" },
+    { id: "broadcast", label: "📹 CCTV & Truyền Hình (10)" },
+  ];
+
+  const PIP_CAPTION_PRESETS = [
+    { text: "실제 체포 현장", vi: "Hiện trường bắt giữ thật", bg: "#dc2626", color: "#ffffff" },
+    { text: "당시 CCTV 포착", vi: "CCTV ghi lại lúc đó", bg: "#090d16", color: "#00f0ff" },
+    { text: "결정적 증거물", vi: "Vật chứng quyết định", bg: "#facc15", color: "#090d16" },
+    { text: "공안부 A급 수배", vi: "Truy nã cấp A Bộ Công an", bg: "#b91c1c", color: "#fef08a" },
+    { text: "8년 위장 신분", vi: "Nhân thân ngụy trang 8 năm", bg: "#0f172a", color: "#fde047" },
+  ];
+
+  // BỘ THƯ VIỆN 38 MẪU KHUNG, VIỀN SÁNG, CẮT HÌNH & HÒA TRỘN ẢNH PHỤ PIP (PIP FRAME LIBRARY)
+  const PIP_FRAME_LIBRARY = [
+    // --- NHÓM 1: KHÔNG KHUNG, VIỀN SÁNG & HÒA TRỘN NỀN (frameless — 10 mẫu) ---
+    {
+      id: "frameless_soft_feather",
+      group: "frameless",
+      label: "🫧 Hòa Trộn Mờ Viền (Không Khung)",
+      shortLabel: "Hòa Trộn Mờ",
+      defaultColor: "#ffffff",
+      defaultBw: 0,
+      defaultFeather: 28,
+      desc: "Tắt hoàn toàn khung viền — làm mờ mềm 4 cạnh để ảnh phụ hòa quyện tự nhiên vào nền chính",
+    },
+    {
+      id: "frameless_edge_dissolve",
+      group: "frameless",
+      label: "🌫 Tan Viền Điện Ảnh (Cinematic)",
+      shortLabel: "Tan Viền Đáy",
+      defaultColor: "#00f0ff",
+      defaultBw: 0,
+      defaultFeather: 36,
+      desc: "Không đóng khung — tan mờ sâu cạnh dưới và cạnh bên như poster phim tài liệu Netflix",
+    },
+    {
+      id: "frameless_shadow_float",
+      group: "frameless",
+      label: "🌑 Nổi 3D Không Viền (Shadow)",
+      shortLabel: "Không Viền 3D",
+      defaultColor: "#000000",
+      defaultBw: 0,
+      desc: "Ảnh cắt phẳng hoàn toàn không viền, tách khỏi nền bằng lớp bóng đổ sâu 3D",
+    },
+    {
+      id: "frameless_white_cutout",
+      group: "frameless",
+      label: "✂️ Viền Trắng Sticker Cắt Dán",
+      shortLabel: "Sticker Trắng",
+      defaultColor: "#ffffff",
+      defaultBw: 8,
+      desc: "Viền trắng dày bo tròn kiểu ảnh cắt dán tạp chí (Die-Cut Sticker) kèm bóng đổ",
+    },
+    {
+      id: "frameless_glow_rim",
+      group: "frameless",
+      label: "🌟 Hào Quang Phát Sáng (Aura)",
+      shortLabel: "Viền Hào Quang",
+      defaultColor: "#00f0ff",
+      defaultBw: 3,
+      defaultGlow: 28,
+      desc: "Viền mảnh phát sáng hào quang Neon/Aura rực rỡ quanh ảnh phụ trên nền tối",
+    },
+    {
+      id: "neon_gradient_stroke",
+      group: "frameless",
+      label: "🔥 Viền Chuyển Sắc Vàng-Đỏ",
+      shortLabel: "Viền Gradient",
+      defaultColor: "#ff1f1f",
+      defaultBw: 7,
+      desc: "Viền kép chuyển sắc Gradient Vàng rực sang Đỏ cảnh báo cực bắt mắt trên YouTube",
+    },
+    {
+      id: "double_dashed_forensic",
+      group: "frameless",
+      label: "⛶ Viền Nét Đứt Pháp Y",
+      shortLabel: "Viền Nét Đứt",
+      defaultColor: "#ffe600",
+      defaultBw: 5,
+      desc: "Viền nét đứt khoanh vùng bằng chứng kèm 4 dấu cộng ngắm ở 4 góc",
+    },
+    {
+      id: "minimal_corner_ticks",
+      group: "frameless",
+      label: "⌜⌟ 4 Góc Ngắm Tối Giản",
+      shortLabel: "4 Góc Ngắm",
+      defaultColor: "#38bdf8",
+      defaultBw: 6,
+      desc: "Không đóng khung 4 cạnh — chỉ đặt 4 ngoặc chữ L khóa góc thanh lịch",
+    },
+    {
+      id: "amber_glow_double",
+      group: "frameless",
+      label: "✨ Viền Kép Vàng Sáng",
+      shortLabel: "Viền Kép Sáng",
+      defaultColor: "#fbbf24",
+      defaultBw: 7,
+      desc: "Viền kép phát sáng rực rỡ tạo độ nổi khối 3D trên nền tối",
+    },
+    {
+      id: "classic_rounded",
+      group: "frameless",
+      label: "🖼 Bo Góc Cơ Bản",
+      shortLabel: "Bo Góc Chuẩn",
+      defaultColor: "#ffffff",
+      defaultBw: 6,
+      desc: "Khung bo góc thanh lịch với viền sáng tương phản cao",
+    },
+
+    // --- NHÓM 2: CẮT HÌNH ĐẶC BIỆT & THẤU KÍNH (cutout — 6 mẫu) ---
+    {
+      id: "circle_portrait_ring",
+      group: "cutout",
+      label: "⭕ Cắt Tròn Chân Dung Viền Kép",
+      shortLabel: "Cắt Tròn Kép",
+      defaultColor: "#ffe600",
+      defaultBw: 7,
+      desc: "Cắt ảnh phụ thành hình tròn hoàn hảo với viền kép phát sáng để khoanh chân dung nghi phạm",
+    },
+    {
+      id: "magnifying_lens_pip",
+      group: "cutout",
+      label: "🔍 Thấu Kính Lúp Phóng Đại",
+      shortLabel: "Kính Lúp PiP",
+      defaultColor: "#38bdf8",
+      defaultBw: 8,
+      desc: "Ảnh bằng chứng nằm gọn trong thấu kính lúp tròn có ánh kính phản quang và tay cầm",
+    },
+    {
+      id: "sniper_scope_reticle",
+      group: "cutout",
+      label: "🎯 Ống Ngắm Khóa Mục Tiêu",
+      shortLabel: "Ống Ngắm Tròn",
+      defaultColor: "#ff1f1f",
+      defaultBw: 6,
+      desc: "Cắt tròn kèm thước ngắm chữ thập tâm đỏ khóa chặt nghi phạm",
+    },
+    {
+      id: "slanted_comic_slash",
+      group: "cutout",
+      label: "⚡ Khung Vát Chéo Đối Đầu",
+      shortLabel: "Vát Chéo Slash",
+      defaultColor: "#ffe600",
+      defaultBw: 7,
+      desc: "Khung hình bình hành vát chéo sắc lẹm tạo nhịp điệu hành động / truy bắt căng thẳng",
+    },
+    {
+      id: "hexagon_network_node",
+      group: "cutout",
+      label: "⬢ Lục Giác Mạng Lưới Tội Phạm",
+      shortLabel: "Cắt Lục Giác",
+      defaultColor: "#00f0ff",
+      defaultBw: 6,
+      desc: "Cắt 6 cạnh lục giác công nghệ cao kiểu sơ đồ mắt xích điều tra",
+    },
+    {
+      id: "biometric_face_lock",
+      group: "cutout",
+      label: "🧬 Khóa Sinh Trắc 8 Cạnh DNA",
+      shortLabel: "Sinh Trắc DNA",
+      defaultColor: "#00f0ff",
+      defaultBw: 6,
+      desc: "Khung vát góc 8 cạnh AI kèm cột sóng quang phổ DNA hai bên",
+    },
+
+    // --- NHÓM 3: HỒ SƠ HÌNH SỰ & BẰNG CHỨNG (forensic — 12 mẫu) ---
+    {
+      id: "wanted_poster_a",
+      group: "forensic",
+      label: "🚨 Lệnh Truy Nã Cấp A",
+      shortLabel: "Truy Nã A급",
+      defaultColor: "#ff1f1f",
+      defaultBw: 7,
+      desc: "Khung Lệnh truy nã đỏ WANTED · A급 kèm dải mã vạch hồ sơ bên dưới",
+    },
+    {
+      id: "pinned_cork_tape",
+      group: "forensic",
+      label: "📌 Ghim Đỏ & Băng Dính",
+      shortLabel: "Ghim & Tape",
+      defaultColor: "#f5eedc",
+      defaultBw: 13,
+      desc: "Ảnh tư liệu dán băng dính 2 góc kèm đinh ghim đỏ 3D trên bảng điều tra",
+    },
+    {
+      id: "red_string_polaroid",
+      group: "forensic",
+      label: "🧶 Polaroid Chỉ Đỏ Truy Vết",
+      shortLabel: "Chỉ Đỏ Điều Tra",
+      defaultColor: "#f4ebd9",
+      defaultBw: 13,
+      desc: "Ảnh hồ sơ Polaroid ghim đinh đỏ kèm sợi chỉ đỏ căng ngang và vạch bút dạ đỏ",
+    },
+    {
+      id: "paperclip_archival_card",
+      group: "forensic",
+      label: "📎 Kẹp Giấy & Dấu Mộc Mật",
+      shortLabel: "Kẹp Giấy Hồ Sơ",
+      defaultColor: "#efe6d5",
+      defaultBw: 13,
+      desc: "Ảnh kẹp ghim kim loại góc trên kèm dấu mộc đỏ 기밀 (Cơ mật) đóng chéo góc dưới",
+    },
+    {
+      id: "id_card_resident",
+      group: "forensic",
+      label: "🪪 Thẻ Căn Cước / Nhân Thân Giả",
+      shortLabel: "Thẻ Căn Cước",
+      defaultColor: "#38bdf8",
+      defaultBw: 6,
+      desc: "Khung thẻ căn cước / hộ khẩu giả có chip đồng, mã số định danh và thanh tiêu đề ID",
+    },
+    {
+      id: "evidence_bag_tag",
+      group: "forensic",
+      label: "🏷 Túi Vật Chứng Pháp Y",
+      shortLabel: "Túi Vật Chứng",
+      defaultColor: "#facc15",
+      defaultBw: 6,
+      desc: "Khung túi niêm phong tang vật EVIDENCE #01 kèm vạch đỏ niêm phong",
+    },
+    {
+      id: "mugshot_height_chart",
+      group: "forensic",
+      label: "📏 Thước Đo Trại Giam",
+      shortLabel: "Thước Mugshot",
+      defaultColor: "#ffffff",
+      defaultBw: 6,
+      desc: "Khung ảnh thẻ trại giam có vạch thước đo chiều cao 2 bên và mã số phạm nhân",
+    },
+    {
+      id: "classified_top_secret",
+      group: "forensic",
+      label: "㊙ Hồ Sơ Tuyệt Mật",
+      shortLabel: "Tuyệt Mật",
+      defaultColor: "#dc2626",
+      defaultBw: 6,
+      desc: "Khung tài liệu mật viền sọc chéo Đỏ - Trắng cảnh báo cấp độ tối mật",
+    },
+    {
+      id: "dossier_tab",
+      group: "forensic",
+      label: "📁 Hồ Sơ Pháp Y",
+      shortLabel: "Hồ Sơ Pháp Y",
+      defaultColor: "#ef4444",
+      defaultBw: 6,
+      desc: "Khung bìa kẹp hồ sơ hình sự có thanh tab phân loại góc trên",
+    },
+    {
+      id: "torn_newspaper",
+      group: "forensic",
+      label: "📰 Ảnh Xé Báo Răng Cưa",
+      shortLabel: "Ảnh Xé Báo",
+      defaultColor: "#f3ead8",
+      defaultBw: 15,
+      desc: "Mảnh giấy báo xé tay răng cưa tự nhiên kèm dòng chữ in báo mờ",
+    },
+    {
+      id: "burnt_archival_edge",
+      group: "forensic",
+      label: "🔥 Giấy Hồ Sơ Cháy Xém",
+      shortLabel: "Giấy Cháy Xém",
+      defaultColor: "#d97706",
+      defaultBw: 14,
+      desc: "Mảnh giấy hồ sơ cổ bị cháy sém viền than đen và tàn lửa đỏ cam",
+    },
+    {
+      id: "vintage_paper",
+      group: "forensic",
+      label: "📜 Giấy Ảnh Xưa Polaroid",
+      shortLabel: "Giấy Ảnh Xưa",
+      defaultColor: "#f4ebd9",
+      defaultBw: 14,
+      desc: "Khung ảnh Polaroid / giấy ảnh rửa kiểu thập niên 1990-2000",
+    },
+
+    // --- NHÓM 4: CCTV, HIỆN TRƯỜNG & TRUYỀN HÌNH (broadcast — 10 mẫu) ---
+    {
+      id: "cctv_hud",
+      group: "broadcast",
+      label: "📹 Khung Camera CCTV",
+      shortLabel: "Khung CCTV",
+      defaultColor: "#00f0ff",
+      defaultBw: 6,
+      desc: "Màn hình camera giám sát ● REC kèm 4 ngoặc vuông khóa mục tiêu",
+    },
+    {
+      id: "interrogation_rec_timer",
+      group: "broadcast",
+      label: "🎙 Băng Ghi Hình Thẩm Vấn",
+      shortLabel: "Băng Thẩm Vấn",
+      defaultColor: "#ef4444",
+      defaultBw: 6,
+      desc: "Màn hình phòng thẩm vấn có ● REC, mã thời gian TC 23:14:08:19 và dải sóng âm giọng nói",
+    },
+    {
+      id: "night_vision_thermal",
+      group: "broadcast",
+      label: "🟢 Ống Nhòm Đêm NVG",
+      shortLabel: "Ống Nhòm Đêm",
+      defaultColor: "#39ff14",
+      defaultBw: 6,
+      desc: "Khung kính nhìn đêm hồng ngoại NVG · IR xanh lục kèm tâm ngắm",
+    },
+    {
+      id: "xray_medical_scan",
+      group: "broadcast",
+      label: "🦴 Phim Chụp Pháp Y X-Ray",
+      shortLabel: "Phim X-Ray",
+      defaultColor: "#38bdf8",
+      defaultBw: 6,
+      desc: "Khung phim chụp X-quang / giám định pháp y xanh băng giá có thước đo milimet",
+    },
+    {
+      id: "caution_tape",
+      group: "broadcast",
+      label: "🚧 Dải Phong Tỏa Hiện Trường",
+      shortLabel: "Dải Phong Tỏa",
+      defaultColor: "#ff2424",
+      defaultBw: 6,
+      desc: "Khung hiện trường kèm dải băng vàng-đen phong tỏa của cảnh sát",
+    },
+    {
+      id: "breaking_news_tv",
+      group: "broadcast",
+      label: "📺 Bản Tin Khẩn Cấp LIVE",
+      shortLabel: "Bản Tin LIVE",
+      defaultColor: "#ef4444",
+      defaultBw: 6,
+      desc: "Màn hình truyền hình trực tiếp ● LIVE kèm thanh chạy chữ Breaking News",
+    },
+    {
+      id: "financial_audit_hud",
+      group: "broadcast",
+      label: "📊 Màn Hình Kiểm Toán HUD",
+      shortLabel: "Kiểm Toán HUD",
+      defaultColor: "#38bdf8",
+      defaultBw: 6,
+      desc: "Khung màn hình phân tích dữ liệu tài chính & kiểm toán công nghệ cao",
+    },
+    {
+      id: "steel_handcuff_plate",
+      group: "broadcast",
+      label: "⛓ Khung Thép Còng Số 8",
+      shortLabel: "Khung Thép",
+      defaultColor: "#94a3b8",
+      defaultBw: 11,
+      desc: "Khung bản thép lạnh dập 4 đinh tán góc kiểu cửa buồng giam đặc biệt",
+    },
+    {
+      id: "film_strip_35mm",
+      group: "broadcast",
+      label: "🎞 Phim Âm Bản 35mm",
+      shortLabel: "Phim 35mm",
+      defaultColor: "#fbbf24",
+      defaultBw: 6,
+      desc: "Khung cuộn phim nhựa 35mm có dải lỗ răng cưa điện ảnh trên dưới",
+    },
+    {
+      id: "shattered_glass_shock",
+      group: "broadcast",
+      label: "💥 Kính Nứt Chấn Động",
+      shortLabel: "Kính Nứt",
+      defaultColor: "#e2e8f0",
+      defaultBw: 6,
+      desc: "Khung viền băng giá kèm vết kính nứt toác ở góc tạo cảm giác chấn động",
     },
   ];
 
@@ -795,6 +1768,86 @@
       defaultOuter: "#000000",
       desc: "Kính lúp điều tra có vạch phản quang mặt kính và cán cầm góc dưới",
     },
+    {
+      id: "square_target_box",
+      name: "Khung Vuông Khóa Mục Tiêu",
+      shortLabel: "Khung Vuông",
+      defaultStroke: "#ff1f1f",
+      defaultOuter: "#000000",
+      desc: "Khung chữ nhật/vuông bo góc kèm 4 vạch ngắm giữa cạnh",
+    },
+    {
+      id: "dashed_square_box",
+      name: "Khung Vuông Nét Đứt Pháp Y",
+      shortLabel: "Vuông Nét Đứt",
+      defaultStroke: "#ffe600",
+      defaultOuter: "#000000",
+      desc: "Khung vuông nét đứt chuyên khoanh biển số xe, chứng minh thư, cửa phòng",
+    },
+    {
+      id: "octagon_biometric",
+      name: "Khung Bát Giác Sinh Trắc AI",
+      shortLabel: "Khung Bát Giác",
+      defaultStroke: "#00f0ff",
+      defaultOuter: "#000000",
+      desc: "Khung 8 cạnh vát góc quét nhận diện khuôn mặt & sinh trắc học",
+    },
+    {
+      id: "diamond_rhombus",
+      name: "Khung Hình Thoi Cảnh Báo",
+      shortLabel: "Khung Thoi",
+      defaultStroke: "#ff6b00",
+      defaultOuter: "#000000",
+      desc: "Khung hình thoi kép khóa tâm điểm vật chứng cực kỳ bắt mắt",
+    },
+    {
+      id: "radar_sweep_arc",
+      name: "Khung Quét Radar 360°",
+      shortLabel: "Quét Radar",
+      defaultStroke: "#39ff14",
+      defaultOuter: "#000000",
+      desc: "Vòng radar 2 lớp kèm trục tọa độ và quạt quét sóng 60 độ",
+    },
+    {
+      id: "red_x_eliminated",
+      name: "Vòng Dấu X Gạch Chéo Đỏ",
+      shortLabel: "Dấu X Đỏ",
+      defaultStroke: "#ff1f1f",
+      defaultOuter: "#000000",
+      desc: "Vòng tròn kèm dấu gạch chéo X cỡ lớn (Bác bỏ chứng cứ / Thân phận giả)",
+    },
+    {
+      id: "triangle_warning_lock",
+      name: "Khung Tam Giác Nguy Hiểm",
+      shortLabel: "Tam Giác Khẩn",
+      defaultStroke: "#ffe600",
+      defaultOuter: "#000000",
+      desc: "Khung tam giác cảnh báo nguy hiểm cấp độ A bao quanh mục tiêu",
+    },
+    {
+      id: "corner_double_laser",
+      name: "Khung 4 Góc Kép Tia Laser",
+      shortLabel: "4 Góc Kép",
+      defaultStroke: "#00f0ff",
+      defaultOuter: "#000000",
+      desc: "Hai lớp ngoặc vuông 4 góc lồng nhau khóa chặt chi tiết đắt giá",
+    },
+    {
+      id: "compass_degree_ring",
+      name: "Vòng Thước Độ La Bàn Pháp Y",
+      shortLabel: "Vòng Thước Độ",
+      defaultStroke: "#fbbf24",
+      defaultOuter: "#000000",
+      desc: "Vòng tròn chia 24 vạch thước đo góc độ pháp y chuẩn xác",
+    },
+    {
+      id: "pulse_shockwave",
+      name: "Vòng Sóng Xung Kích 3 Lớp",
+      shortLabel: "Sóng 3 Lớp",
+      defaultStroke: "#ff2a85",
+      defaultOuter: "#000000",
+      desc: "3 vòng sóng đồng tâm lan tỏa thu hút ánh nhìn ngay lập tức",
+    },
   ];
 
   function normalizeHexColor(raw, fallback = "#ffffff") {
@@ -872,7 +1925,8 @@
     data: null,
     selectedLayerId: "line_2",
     leftDockTab: "style", // "style" | "text" | "graphics" | "media" | "layers"
-    activeTab: localStorage.getItem("cofi-thumb-active-tab-v3") || (localStorage.getItem("cofi-seo-subtab") === "copy" ? "seo" : "compare"), // "compare" | "editor" | "seo" | "preview"
+    pipFrameCategory: "all", // "all" | "frameless" | "cutout" | "forensic" | "broadcast"
+    activeTab: localStorage.getItem("cofi-thumb-active-tab-v3") || (localStorage.getItem("cofi-seo-subtab") === "copy" ? "seo" : "editor"), // "editor" | "compare" | "seo" | "preview"
     editorOpen: true, // Open editor by default so user can see and edit immediately
     editorZoomed: false, // Fullscreen / Zoomed Editor mode
     canvasZoom: 1.0, // 0.5 to 2.5 (50% to 250%)
@@ -1289,15 +2343,115 @@
   }
 
 
-  function drawCoverImage(ctx, img, x, y, w, h) {
+  function drawCoverImage(ctx, img, x, y, w, h, opts = null) {
+    if (!img) {
+      const pGrad = ctx.createLinearGradient(x, y, x + w, y + h);
+      pGrad.addColorStop(0, "#1e293b");
+      pGrad.addColorStop(0.5, "#0f172a");
+      pGrad.addColorStop(1, "#334155");
+      ctx.fillStyle = pGrad;
+      ctx.fillRect(x, y, w, h);
+      // Silhouette subject in mini preview
+      ctx.save();
+      ctx.fillStyle = "rgba(148, 163, 184, 0.35)";
+      const cx = x + w / 2;
+      const cy = y + h * 0.42;
+      const r = Math.min(w, h) * 0.18;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.ellipse(cx, y + h * 0.88, r * 1.9, r * 1.25, 0, Math.PI, 0, false);
+      ctx.fill();
+      ctx.restore();
+      return;
+    }
     const iw = img.naturalWidth || img.width || CW;
     const ih = img.naturalHeight || img.height || CH;
-    const scale = Math.max(w / iw, h / ih);
+    const zoom = Math.max(1.0, Math.min(3.0, Number(opts?.cropZoom || 100) / 100));
+    const panX = Math.max(-100, Math.min(100, Number(opts?.cropOffsetX || 0))) / 100;
+    const panY = Math.max(-100, Math.min(100, Number(opts?.cropOffsetY || 0))) / 100;
+    const scale = Math.max(w / iw, h / ih) * zoom;
     const sw = w / scale;
     const sh = h / scale;
-    const sx = (iw - sw) / 2;
-    const sy = (ih - sh) / 2;
+    const maxDx = Math.max(0, (iw - sw) / 2);
+    const maxDy = Math.max(0, (ih - sh) / 2);
+    const sx = Math.max(0, Math.min(iw - sw, (iw - sw) / 2 + panX * maxDx));
+    const sy = Math.max(0, Math.min(ih - sh, (ih - sh) / 2 + panY * maxDy));
+
+    const bright = Number(opts?.pipBrightness ?? 100);
+    const contrast = Number(opts?.pipContrast ?? 100);
+    const filterMode = String(opts?.pipFilter || "none").toLowerCase();
+    const filterParts = [];
+    if (Math.abs(bright - 100) > 1) filterParts.push(`brightness(${bright}%)`);
+    if (Math.abs(contrast - 100) > 1) filterParts.push(`contrast(${contrast}%)`);
+    if (filterMode === "grayscale") filterParts.push("grayscale(100%) contrast(115%)");
+    else if (filterMode === "sepia") filterParts.push("sepia(82%) contrast(108%)");
+    else if (filterMode === "high_contrast") filterParts.push("contrast(142%) saturate(118%)");
+    else if (filterMode === "cctv_green") filterParts.push("grayscale(70%) contrast(120%)");
+    else if (filterMode === "cold_blue") filterParts.push("saturate(75%) contrast(112%)");
+
+    ctx.save();
+    if (filterParts.length) {
+      ctx.filter = filterParts.join(" ");
+    }
     ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+    ctx.filter = "none";
+    if (filterMode === "cctv_green") {
+      ctx.fillStyle = "rgba(16, 185, 129, 0.22)";
+      ctx.fillRect(x, y, w, h);
+    } else if (filterMode === "cold_blue") {
+      ctx.fillStyle = "rgba(14, 165, 233, 0.20)";
+      ctx.fillRect(x, y, w, h);
+    }
+    ctx.restore();
+  }
+
+  let _pipFeatherScratchCanvas = null;
+  function drawFeatheredPipImage(ctx, img, x, y, w, h, layer, featherPx = 28, edgeDissolve = false) {
+    const rw = Math.max(16, Math.round(w));
+    const rh = Math.max(16, Math.round(h));
+    if (typeof document === "undefined") {
+      drawCoverImage(ctx, img, x, y, w, h, layer);
+      return;
+    }
+    if (!_pipFeatherScratchCanvas) {
+      _pipFeatherScratchCanvas = document.createElement("canvas");
+    }
+    const sc = _pipFeatherScratchCanvas;
+    if (sc.width !== rw || sc.height !== rh) {
+      sc.width = rw;
+      sc.height = rh;
+    }
+    const sctx = sc.getContext("2d");
+    sctx.clearRect(0, 0, rw, rh);
+    drawCoverImage(sctx, img, 0, 0, rw, rh, layer);
+
+    const fX = Math.max(4, Math.min(rw * 0.46, featherPx * (rw / 320)));
+    const fY = Math.max(4, Math.min(rh * 0.46, featherPx * (rh / 240)));
+    sctx.save();
+    sctx.globalCompositeOperation = "destination-in";
+
+    // Horizontal alpha feather
+    const hGrad = sctx.createLinearGradient(0, 0, rw, 0);
+    hGrad.addColorStop(0, "rgba(0,0,0,0)");
+    hGrad.addColorStop(Math.min(0.45, fX / rw), "rgba(0,0,0,1)");
+    hGrad.addColorStop(Math.max(0.55, 1 - fX / rw), "rgba(0,0,0,1)");
+    hGrad.addColorStop(1, "rgba(0,0,0,0)");
+    sctx.fillStyle = hGrad;
+    sctx.fillRect(0, 0, rw, rh);
+
+    // Vertical alpha feather
+    const vGrad = sctx.createLinearGradient(0, 0, 0, rh);
+    vGrad.addColorStop(0, "rgba(0,0,0,0)");
+    vGrad.addColorStop(Math.min(0.42, (edgeDissolve ? fY * 0.55 : fY) / rh), "rgba(0,0,0,1)");
+    vGrad.addColorStop(Math.max(0.48, 1 - (edgeDissolve ? fY * 1.55 : fY) / rh), "rgba(0,0,0,1)");
+    vGrad.addColorStop(1, "rgba(0,0,0,0)");
+    sctx.fillStyle = vGrad;
+    sctx.fillRect(0, 0, rw, rh);
+    sctx.restore();
+
+    ctx.drawImage(sc, x, y, w, h);
   }
 
   function drawVignette(ctx, layer) {
@@ -1320,12 +2474,13 @@
       ctx.fillStyle = grad;
       ctx.fillRect(0, 0, CW, CH);
     } else if (style === "bottom_heavy") {
-      const grad = ctx.createLinearGradient(0, CH, 0, CH * 0.66);
-      grad.addColorStop(0, `rgba(4, 7, 14, ${Math.min(0.95, opacity * 1.05)})`);
-      grad.addColorStop(0.55, `rgba(4, 7, 14, ${opacity * 0.62})`);
-      grad.addColorStop(1, "rgba(4, 7, 14, 0)");
+      const grad = ctx.createLinearGradient(0, CH, 0, CH * 0.48);
+      grad.addColorStop(0, `rgba(3, 5, 10, ${Math.min(0.97, opacity * 1.05)})`);
+      grad.addColorStop(0.38, `rgba(3, 5, 10, ${Math.min(0.90, opacity * 0.92)})`);
+      grad.addColorStop(0.68, `rgba(3, 5, 10, ${opacity * 0.56})`);
+      grad.addColorStop(1, "rgba(3, 5, 10, 0)");
       ctx.fillStyle = grad;
-      ctx.fillRect(0, CH * 0.64, CW, CH * 0.36);
+      ctx.fillRect(0, CH * 0.48, CW, CH * 0.52);
     } else if (style === "split_dark") {
       const grad = ctx.createLinearGradient(0, 0, CW, CH);
       grad.addColorStop(0, `rgba(4, 7, 14, ${opacity * 0.95})`);
@@ -1515,6 +2670,153 @@
         ctx.moveTo(cx + rx * 0.7, cy + ry * 0.7);
         ctx.lineTo(cx + rx * 1.18, cy + ry * 1.18);
       }, sw * 1.85);
+    } else if (style === "square_target_box") {
+      const radSq = Math.max(6, Math.min(width, height) * 0.08);
+      strokeDual(() => {
+        roundRectPath(ctx, left, top, width, height, radSq);
+      }, sw);
+      const tk = Math.max(10, Math.min(width, height) * 0.14);
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.moveTo(cx, top - tk * 0.35); ctx.lineTo(cx, top + tk * 0.65);
+        ctx.moveTo(cx, top + height - tk * 0.65); ctx.lineTo(cx, top + height + tk * 0.35);
+        ctx.moveTo(left - tk * 0.35, cy); ctx.lineTo(left + tk * 0.65, cy);
+        ctx.moveTo(left + width - tk * 0.65, cy); ctx.lineTo(left + width + tk * 0.35, cy);
+      }, Math.max(2, Math.round(sw * 0.8)));
+    } else if (style === "dashed_square_box") {
+      strokeDual(() => {
+        roundRectPath(ctx, left, top, width, height, 6);
+      }, sw, [Math.max(12, sw * 2.1), Math.max(8, sw * 1.25)]);
+    } else if (style === "octagon_biometric") {
+      const cutO = Math.min(width, height) * 0.28;
+      const traceOct = () => {
+        ctx.beginPath();
+        ctx.moveTo(left + cutO, top);
+        ctx.lineTo(left + width - cutO, top);
+        ctx.lineTo(left + width, top + cutO);
+        ctx.lineTo(left + width, top + height - cutO);
+        ctx.lineTo(left + width - cutO, top + height);
+        ctx.lineTo(left + cutO, top + height);
+        ctx.lineTo(left, top + height - cutO);
+        ctx.lineTo(left, top + cutO);
+        ctx.closePath();
+      };
+      strokeDual(traceOct, sw);
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx * 0.7, ry * 0.7, 0, 0, Math.PI * 2);
+      }, Math.max(2, Math.round(sw * 0.45)), [8, 6]);
+    } else if (style === "diamond_rhombus") {
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.moveTo(cx, top);
+        ctx.lineTo(left + width, cy);
+        ctx.lineTo(cx, top + height);
+        ctx.lineTo(left, cy);
+        ctx.closePath();
+      }, sw);
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.moveTo(cx, top + ry * 0.22);
+        ctx.lineTo(left + width - rx * 0.22, cy);
+        ctx.lineTo(cx, top + height - ry * 0.22);
+        ctx.lineTo(left + rx * 0.22, cy);
+        ctx.closePath();
+      }, Math.max(2, Math.round(sw * 0.45)));
+    } else if (style === "radar_sweep_arc") {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, Math.min(rx, ry), -1.15, -0.15);
+      ctx.closePath();
+      ctx.fillStyle = strokeCol;
+      ctx.globalAlpha = 0.28;
+      ctx.fill();
+      ctx.restore();
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      }, sw);
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx * 0.55, ry * 0.55, 0, 0, Math.PI * 2);
+      }, Math.max(2, Math.round(sw * 0.42)));
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.moveTo(cx, top); ctx.lineTo(cx, top + height);
+        ctx.moveTo(left, cy); ctx.lineTo(left + width, cy);
+      }, Math.max(1.5, sw * 0.32));
+    } else if (style === "red_x_eliminated") {
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      }, sw);
+      const ox = width * 0.18;
+      const oy = height * 0.18;
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.moveTo(left + ox, top + oy); ctx.lineTo(left + width - ox, top + height - oy);
+        ctx.moveTo(left + width - ox, top + oy); ctx.lineTo(left + ox, top + height - oy);
+      }, sw);
+    } else if (style === "triangle_warning_lock") {
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.moveTo(cx, top);
+        ctx.lineTo(left + width, top + height);
+        ctx.lineTo(left, top + height);
+        ctx.closePath();
+      }, sw);
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy + ry * 0.2, rx * 0.45, ry * 0.45, 0, 0, Math.PI * 2);
+      }, Math.max(2, Math.round(sw * 0.45)), [6, 5]);
+    } else if (style === "corner_double_laser") {
+      const bx = Math.max(16, width * 0.28);
+      const by = Math.max(16, height * 0.28);
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.moveTo(left, top + by); ctx.lineTo(left, top); ctx.lineTo(left + bx, top);
+        ctx.moveTo(left + width - bx, top); ctx.lineTo(left + width, top); ctx.lineTo(left + width, top + by);
+        ctx.moveTo(left + width, top + height - by); ctx.lineTo(left + width, top + height); ctx.lineTo(left + width - bx, top + height);
+        ctx.moveTo(left + bx, top + height); ctx.lineTo(left, top + height); ctx.lineTo(left, top + height - by);
+      }, sw);
+      const inM = Math.min(width, height) * 0.11;
+      const bx2 = bx * 0.72;
+      const by2 = by * 0.72;
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.moveTo(left + inM, top + inM + by2); ctx.lineTo(left + inM, top + inM); ctx.lineTo(left + inM + bx2, top + inM);
+        ctx.moveTo(left + width - inM - bx2, top + inM); ctx.lineTo(left + width - inM, top + inM); ctx.lineTo(left + width - inM, top + inM + by2);
+        ctx.moveTo(left + width - inM, top + height - inM - by2); ctx.lineTo(left + width - inM, top + height - inM); ctx.lineTo(left + width - inM - bx2, top + height - inM);
+        ctx.moveTo(left + inM + bx2, top + height - inM); ctx.lineTo(left + inM, top + height - inM); ctx.lineTo(left + inM, top + height - inM - by2);
+      }, Math.max(2, Math.round(sw * 0.5)));
+    } else if (style === "compass_degree_ring") {
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      }, sw);
+      strokeDual(() => {
+        ctx.beginPath();
+        for (let i = 0; i < 24; i++) {
+          const ang = (i * Math.PI * 2) / 24;
+          const inF = i % 2 === 0 ? 0.74 : 0.84;
+          ctx.moveTo(cx + rx * inF * Math.cos(ang), cy + ry * inF * Math.sin(ang));
+          ctx.lineTo(cx + rx * 0.98 * Math.cos(ang), cy + ry * 0.98 * Math.sin(ang));
+        }
+      }, Math.max(2, Math.round(sw * 0.45)));
+    } else if (style === "pulse_shockwave") {
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx * 0.72, ry * 0.72, 0, 0, Math.PI * 2);
+      }, sw);
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx * 0.87, ry * 0.87, 0, 0, Math.PI * 2);
+      }, Math.max(2, Math.round(sw * 0.62)), [10, 7]);
+      strokeDual(() => {
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      }, Math.max(1.5, Math.round(sw * 0.35)));
     } else {
       strokeDual(() => {
         ctx.beginPath();
@@ -1676,44 +2978,23 @@
     ctx.restore();
   }
 
-  function drawLayer(ctx, layer) {
-    if (!layer || layer.visible === false) return;
-    const type = layer.type;
-    if (type === "vignette") {
-      drawVignette(ctx, layer);
-      return;
-    }
-
-    const left = Number(layer.left || 0);
-    const top = Number(layer.top || 0);
-    const width = Number(layer.width || 200);
-    const height = Number(layer.height || 80);
-    const angle = Number(layer.angle || 0);
-    const flipX = layer.flipX ? -1 : 1;
-    const flipY = layer.flipY ? -1 : 1;
-    const opacity = Math.max(0, Math.min(1, Number(layer.opacity ?? 1)));
-
-    ctx.save();
-    ctx.globalAlpha = opacity;
-    const cx = left + width / 2;
-    const cy = top + height / 2;
-    if (angle || flipX !== 1 || flipY !== 1) {
-      ctx.translate(cx, cy);
-      if (angle) ctx.rotate((angle * Math.PI) / 180);
-      if (flipX !== 1 || flipY !== 1) ctx.scale(flipX, flipY);
-      ctx.translate(-cx, -cy);
-    }
-
-    if (type === "inset_image") {
-      let src = String(layer.src || studioState.data?.design?.inset_image_url || "").trim();
-      if (isExportedCompositeThumb(src)) {
-        src = src.replace(/thumbnail_v([1-4])/gi, "thumb_bg_v$1");
-      }
-      const img = loadCachedImage(src);
+  function drawPipFrameShape(ctx, layer, left, top, width, height, img) {
       const frameStyle = String(layer.frameStyle || "").trim().toLowerCase();
       const borderHex = String(layer.borderColor || "#ef4444").trim().toLowerCase();
-      const bw = Math.max(3, Number(layer.borderWidth || 6));
+      const rawBw = layer.borderWidth !== undefined && layer.borderWidth !== null ? Number(layer.borderWidth) : 6;
+      const bw = Math.max(0, rawBw);
       const bColor = layer.borderColor || "#fbbf24";
+      const customRad = layer.cornerRadius !== undefined && layer.cornerRadius !== null ? Number(layer.cornerRadius) : null;
+      const customFeather = Number(layer.featherPx || 0);
+      const customGlow = Number(layer.glowBlur || 0);
+      const borderDash = String(layer.borderDash || "solid").toLowerCase();
+      const drawPipImg = (c, im, x, y, w, h) => {
+        if (customFeather > 0 && frameStyle !== "frameless_soft_feather" && frameStyle !== "frameless_edge_dissolve") {
+          drawFeatheredPipImage(c, im, x, y, w, h, layer, customFeather, false);
+        } else {
+          drawCoverImage(c, im, x, y, w, h, layer);
+        }
+      };
       const isTornNewspaper = frameStyle === "torn_newspaper" || frameStyle === "torn_paper";
       const isVintagePaper =
         frameStyle === "vintage_paper" ||
@@ -1822,12 +3103,7 @@
         ctx.beginPath();
         ctx.rect(ix, iy, iw, ih);
         ctx.clip();
-        if (img) {
-          drawCoverImage(ctx, img, ix, iy, iw, ih);
-        } else {
-          ctx.fillStyle = "#1e293b";
-          ctx.fillRect(ix, iy, iw, ih);
-        }
+        drawPipImg(ctx, img, ix, iy, iw, ih);
         ctx.restore();
 
         ctx.lineWidth = 2;
@@ -1863,12 +3139,7 @@
         ctx.beginPath();
         ctx.rect(ix, iy, iw, ih);
         ctx.clip();
-        if (img) {
-          drawCoverImage(ctx, img, ix, iy, iw, ih);
-        } else {
-          ctx.fillStyle = "#1e293b";
-          ctx.fillRect(ix, iy, iw, ih);
-        }
+        drawPipImg(ctx, img, ix, iy, iw, ih);
         ctx.restore();
 
         ctx.lineWidth = 2;
@@ -1884,12 +3155,7 @@
         ctx.fillStyle = "#0f172a";
         ctx.fill();
         ctx.clip();
-        if (img) {
-          drawCoverImage(ctx, img, left, top, width, height);
-        } else {
-          ctx.fillStyle = "#1e293b";
-          ctx.fillRect(left, top, width, height);
-        }
+        drawPipImg(ctx, img, left, top, width, height);
         const tapeH = Math.max(20, Math.min(30, Math.round(height * 0.105)));
         const ty0 = top + height - tapeH;
         ctx.fillStyle = "#facc15";
@@ -1937,12 +3203,7 @@
         ctx.fillStyle = "#0f172a";
         ctx.fill();
         ctx.clip();
-        if (img) {
-          drawCoverImage(ctx, img, left, top, width, height);
-        } else {
-          ctx.fillStyle = "#1e293b";
-          ctx.fillRect(left, top, width, height);
-        }
+        drawPipImg(ctx, img, left, top, width, height);
         ctx.restore();
 
         ctx.save();
@@ -1975,12 +3236,7 @@
         ctx.fillStyle = "#090d16";
         ctx.fill();
         ctx.clip();
-        if (img) {
-          drawCoverImage(ctx, img, left, top, width, height);
-        } else {
-          ctx.fillStyle = "#1e293b";
-          ctx.fillRect(left, top, width, height);
-        }
+        drawPipImg(ctx, img, left, top, width, height);
         ctx.fillStyle = "rgba(6, 10, 18, 0.58)";
         ctx.fillRect(left, top, width, 34);
         roundRectPath(ctx, left + 12, top + 8, 84, 22, 6);
@@ -2028,6 +3284,83 @@
         drawCorners("rgba(0,0,0,0.92)", cW + 4);
         drawCorners(bColor, cW);
         ctx.restore();
+      } else if (frameStyle === "financial_audit_hud") {
+        const rad = 6;
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#040c18";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        const barH = 26;
+        ctx.fillStyle = "rgba(4, 12, 24, 0.92)";
+        ctx.fillRect(left, top, width, barH);
+        ctx.fillStyle = bColor;
+        ctx.fillRect(left, top, 14, barH);
+        ctx.beginPath();
+        ctx.arc(left + 29, top + 13, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#22c55e";
+        ctx.fill();
+        [0, 1, 2, 3].forEach((tIdx) => {
+          ctx.globalAlpha = Math.max(0.35, 0.9 - tIdx * 0.16);
+          ctx.fillStyle = bColor;
+          ctx.fillRect(left + 44 + tIdx * 14, top + 10, 9, 6);
+        });
+        ctx.globalAlpha = 1.0;
+        if (width >= 180) {
+          [0, 1, 2].forEach((rIdx) => {
+            ctx.fillStyle = rIdx === 0 ? "rgba(250, 204, 21, 0.92)" : "rgba(250, 204, 21, 0.55)";
+            ctx.fillRect(left + width - 54 + rIdx * 14, top + 9, 8, 8);
+          });
+        }
+        ctx.strokeStyle = bColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(left, top + barH);
+        ctx.lineTo(left + width, top + barH);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        const useBw = Math.max(5, bw);
+        ctx.lineWidth = useBw + 4;
+        ctx.strokeStyle = "#040a14";
+        roundRectPath(ctx, left - 1, top - 1, width + 2, height + 2, rad + 2);
+        ctx.stroke();
+        ctx.lineWidth = useBw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "rgba(255,255,255,0.75)";
+        roundRectPath(ctx, left + useBw * 0.65, top + useBw * 0.65, width - useBw * 1.3, height - useBw * 1.3, Math.max(2, rad - 2));
+        ctx.stroke();
+
+        const cLen = Math.max(20, Math.round(Math.min(width, height) * 0.16));
+        const cW = Math.max(4, useBw);
+        const x0 = left - 3;
+        const y0 = top - 3;
+        const x1 = left + width + 3;
+        const y1 = top + height + 3;
+        const cornerAccent = String(bColor).toLowerCase() === "#facc15" ? "#38bdf8" : "#facc15";
+        const drawAuditCorners = (col, wPx) => {
+          ctx.beginPath();
+          ctx.moveTo(x0, y0 + cLen); ctx.lineTo(x0, y0); ctx.lineTo(x0 + cLen, y0);
+          ctx.moveTo(x1 - cLen, y0); ctx.lineTo(x1, y0); ctx.lineTo(x1, y0 + cLen);
+          ctx.moveTo(x1, y1 - cLen); ctx.lineTo(x1, y1); ctx.lineTo(x1 - cLen, y1);
+          ctx.moveTo(x0 + cLen, y1); ctx.lineTo(x0, y1); ctx.lineTo(x0, y1 - cLen);
+          ctx.strokeStyle = col;
+          ctx.lineWidth = wPx;
+          ctx.lineJoin = "miter";
+          ctx.lineCap = "square";
+          ctx.stroke();
+        };
+        drawAuditCorners("rgba(4,10,20,0.95)", cW + 4);
+        drawAuditCorners(cornerAccent, cW);
+        ctx.restore();
       } else if (frameStyle === "dossier_tab") {
         const rad = 12;
         ctx.save();
@@ -2038,12 +3371,7 @@
         ctx.fillStyle = "#0f172a";
         ctx.fill();
         ctx.clip();
-        if (img) {
-          drawCoverImage(ctx, img, left, top, width, height);
-        } else {
-          ctx.fillStyle = "#1e293b";
-          ctx.fillRect(left, top, width, height);
-        }
+        drawPipImg(ctx, img, left, top, width, height);
         const barH = 26;
         ctx.fillStyle = "rgba(15, 23, 42, 0.95)";
         ctx.fillRect(left, top, width, barH);
@@ -2073,6 +3401,646 @@
         roundRectPath(ctx, left, top, width, height, rad);
         ctx.stroke();
         ctx.restore();
+      } else if (frameStyle === "wanted_poster_a") {
+        const rad = 8;
+        const topH = Math.max(22, Math.min(34, Math.round(height * 0.13)));
+        const botH = Math.max(16, Math.min(26, Math.round(height * 0.095)));
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 9;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        ctx.fillStyle = "rgba(185, 28, 28, 0.96)";
+        ctx.fillRect(left, top, width, topH);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.82)";
+        for (let sxP = Math.round(width * 0.52); sxP < width + topH; sxP += 18) {
+          ctx.beginPath();
+          ctx.moveTo(left + sxP, top + topH);
+          ctx.lineTo(left + sxP + 9, top + topH);
+          ctx.lineTo(left + sxP + 9 + topH * 0.6, top);
+          ctx.lineTo(left + sxP + topH * 0.6, top);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.arc(left + 15, top + topH / 2, 5, 0, Math.PI * 2);
+        ctx.fillStyle = "#fef08a";
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = `900 ${Math.max(10, topH - 13)}px 'Pretendard ExtraBold', sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText("WANTED · A급", left + 25, top + topH / 2 + 1);
+        ctx.strokeStyle = "#fef08a";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(left, top + topH);
+        ctx.lineTo(left + width, top + topH);
+        ctx.stroke();
+
+        const by0 = top + height - botH;
+        ctx.fillStyle = "rgba(10, 14, 23, 0.94)";
+        ctx.fillRect(left, by0, width, botH);
+        ctx.strokeStyle = bColor;
+        ctx.beginPath();
+        ctx.moveTo(left, by0);
+        ctx.lineTo(left + width, by0);
+        ctx.stroke();
+        for (let bxI = 12; bxI < width - 14; bxI += 10) {
+          const bwBar = Math.floor(bxI / 10) % 2 === 0 ? 5 : 2.5;
+          ctx.fillStyle = Math.floor(bxI / 10) % 3 === 0 ? "#fef08a" : "rgba(255,255,255,0.8)";
+          ctx.fillRect(left + bxI, by0 + 5, bwBar, Math.max(4, botH - 10));
+        }
+        ctx.restore();
+
+        ctx.save();
+        const useBw = Math.max(5, bw);
+        ctx.lineWidth = useBw + 4;
+        ctx.strokeStyle = "rgba(5, 8, 15, 0.94)";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = useBw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#fef08a";
+        roundRectPath(ctx, left + useBw * 0.7, top + useBw * 0.7, width - useBw * 1.4, height - useBw * 1.4, Math.max(3, rad - 2));
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "film_strip_35mm") {
+        const rad = 6;
+        const railH = Math.max(18, Math.min(28, Math.round(height * 0.115)));
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 9;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#080b12";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        ctx.fillStyle = "rgba(8, 11, 18, 0.96)";
+        ctx.fillRect(left, top, width, railH);
+        ctx.fillRect(left, top + height - railH, width, railH);
+        ctx.strokeStyle = bColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(left, top + railH); ctx.lineTo(left + width, top + railH);
+        ctx.moveTo(left, top + height - railH); ctx.lineTo(left + width, top + height - railH);
+        ctx.stroke();
+        const holeH = Math.max(7, railH - 9);
+        ctx.fillStyle = "rgba(248, 250, 252, 0.92)";
+        for (let hx = 10; hx < width - 12; hx += 22) {
+          roundRectPath(ctx, left + hx, top + 4.5, 11, holeH, 2);
+          ctx.fill();
+          roundRectPath(ctx, left + hx, top + height - railH + 4.5, 11, holeH, 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        ctx.save();
+        ctx.lineWidth = bw + 3;
+        ctx.strokeStyle = "#05080f";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = Math.max(4, bw);
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "pinned_cork_tape") {
+        const padSide = Math.max(10, Math.round(Number(layer.borderWidth || 12)));
+        const padBot = Math.max(padSide + 5, Math.round(padSide * 1.35));
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetX = 4;
+        ctx.shadowOffsetY = 10;
+        roundRectPath(ctx, left, top, width, height, 4);
+        ctx.fillStyle = "#f5eedc";
+        ctx.fill();
+        ctx.restore();
+
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#a8967a";
+        roundRectPath(ctx, left, top, width, height, 4);
+        ctx.stroke();
+
+        const ix = left + padSide;
+        const iy = top + padSide;
+        const iw = Math.max(28, width - padSide * 2);
+        const ih = Math.max(28, height - padSide - padBot);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(ix, iy, iw, ih);
+        ctx.clip();
+        drawPipImg(ctx, img, ix, iy, iw, ih);
+        ctx.restore();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#2d2620";
+        ctx.strokeRect(ix, iy, iw, ih);
+
+        // Diagonal masking tape strips on top-left & bottom-right corners
+        ctx.save();
+        ctx.fillStyle = "rgba(253, 230, 138, 0.76)";
+        ctx.strokeStyle = "rgba(217, 179, 84, 0.88)";
+        ctx.lineWidth = 1.2;
+        const drawTape = (pts) => {
+          ctx.beginPath();
+          pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+          ctx.closePath();
+          ctx.fill();
+          ctx.stroke();
+        };
+        drawTape([[left - 8, top + 20], [left + 32, top - 8], [left + 44, top + 6], [left + 4, top + 34]]);
+        drawTape([[left + width - 44, top + height - 6], [left + width - 4, top + height - 34], [left + width + 8, top + height - 20], [left + width - 32, top + height + 8]]);
+
+        // 3D Red Push-Pin at top-center
+        const pinCx = left + width / 2;
+        const pinCy = top + 6;
+        ctx.beginPath();
+        ctx.arc(pinCx + 2, pinCy + 4, 10, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0,0,0,0.55)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(pinCx, pinCy, 10, 0, Math.PI * 2);
+        ctx.fillStyle = "#b91c1c";
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ffffff";
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(pinCx - 1.5, pinCy - 1.5, 5.5, 0, Math.PI * 2);
+        ctx.fillStyle = "#ef4444";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(pinCx - 3, pinCy - 3, 2.2, 0, Math.PI * 2);
+        ctx.fillStyle = "#fecaca";
+        ctx.fill();
+        ctx.restore();
+      } else if (frameStyle === "evidence_bag_tag") {
+        const rad = 10;
+        const sealH = Math.max(24, Math.min(34, Math.round(height * 0.13)));
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        ctx.fillStyle = "rgba(15, 23, 42, 0.92)";
+        ctx.fillRect(left, top, width, sealH);
+        const tagW = Math.min(width - 20, Math.max(96, Math.round(width * 0.48)));
+        ctx.fillStyle = "#facc15";
+        ctx.fillRect(left, top, tagW, sealH);
+        ctx.fillStyle = "#0a0e17";
+        ctx.font = `900 ${Math.max(10, sealH - 14)}px 'Pretendard ExtraBold', sans-serif`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText("EVIDENCE #01", left + 8, top + sealH / 2 + 1);
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        for (let bxI = tagW + 10; bxI < width - 10; bxI += 8) {
+          ctx.fillRect(left + bxI, top + 6, Math.floor(bxI / 8) % 2 === 0 ? 4 : 2, Math.max(6, sealH - 12));
+        }
+        ctx.strokeStyle = "#ef4444";
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 6]);
+        ctx.beginPath();
+        ctx.moveTo(left, top + sealH);
+        ctx.lineTo(left + width, top + sealH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
+
+        ctx.save();
+        const useBw = Math.max(5, bw);
+        ctx.lineWidth = useBw + 4;
+        ctx.strokeStyle = "#05080f";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = useBw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "mugshot_height_chart") {
+        const rad = 8;
+        const rulerW = Math.max(18, Math.min(28, Math.round(width * 0.085)));
+        const botH = Math.max(18, Math.min(28, Math.round(height * 0.105)));
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#090d16";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        ctx.fillStyle = "rgba(9, 13, 22, 0.78)";
+        ctx.fillRect(left, top, rulerW, height);
+        ctx.fillRect(left + width - rulerW, top, rulerW, height);
+        for (let ryI = 10; ryI < height - botH - 4; ryI += 9) {
+          const isMaj = Math.floor(ryI / 9) % 3 === 0;
+          const tLen = rulerW * (isMaj ? 0.72 : 0.42);
+          ctx.strokeStyle = isMaj ? "rgba(255,255,255,0.92)" : "rgba(255,255,255,0.55)";
+          ctx.lineWidth = isMaj ? 2 : 1;
+          ctx.beginPath();
+          ctx.moveTo(left, top + ryI); ctx.lineTo(left + tLen, top + ryI);
+          ctx.moveTo(left + width - tLen, top + ryI); ctx.lineTo(left + width, top + ryI);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(9, 13, 22, 0.94)";
+        ctx.fillRect(left, top + height - botH, width, botH);
+        ctx.strokeStyle = bColor;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(left, top + height - botH);
+        ctx.lineTo(left + width, top + height - botH);
+        ctx.stroke();
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        for (let bxI = Math.round(width * 0.22); bxI < Math.round(width * 0.78); bxI += 12) {
+          ctx.fillRect(left + bxI, top + height - botH + 5, 7, Math.max(5, botH - 10));
+        }
+        ctx.restore();
+
+        ctx.save();
+        const useBw = Math.max(5, bw);
+        ctx.lineWidth = useBw + 4;
+        ctx.strokeStyle = "#05080f";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = useBw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "night_vision_thermal") {
+        const rad = 10;
+        const nvCol = "#39ff14";
+        ctx.save();
+        ctx.shadowColor = nvCol;
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 6;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#04180e";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        ctx.fillStyle = "rgba(16, 185, 129, 0.12)";
+        ctx.fillRect(left, top, width, height);
+        ctx.strokeStyle = "rgba(6, 78, 59, 0.32)";
+        ctx.lineWidth = 1;
+        for (let syI = 0; syI < height; syI += 6) {
+          ctx.beginPath();
+          ctx.moveTo(left, top + syI);
+          ctx.lineTo(left + width, top + syI);
+          ctx.stroke();
+        }
+        roundRectPath(ctx, left + 10, top + 8, 82, 20, 5);
+        ctx.fillStyle = "rgba(4, 24, 14, 0.88)";
+        ctx.fill();
+        ctx.strokeStyle = nvCol;
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(left + 21, top + 18, 4.5, 0, Math.PI * 2);
+        ctx.fillStyle = nvCol;
+        ctx.fill();
+        ctx.fillStyle = nvCol;
+        ctx.font = "900 11.5px 'Pretendard ExtraBold', sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText("NVG · IR", left + 30, top + 19);
+        const mx = left + width / 2;
+        const my = top + height / 2;
+        ctx.strokeStyle = "rgba(57, 255, 20, 0.65)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(mx, my, 20, 0, Math.PI * 2);
+        ctx.moveTo(mx - 32, my); ctx.lineTo(mx - 12, my);
+        ctx.moveTo(mx + 12, my); ctx.lineTo(mx + 32, my);
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.save();
+        ctx.lineWidth = Math.max(4, bw);
+        ctx.strokeStyle = bColor || nvCol;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        const cLen = Math.max(22, Math.round(Math.min(width, height) * 0.2));
+        const x0 = left - 2, y0 = top - 2, x1 = left + width + 2, y1 = top + height + 2;
+        ctx.beginPath();
+        ctx.moveTo(x0, y0 + cLen); ctx.lineTo(x0, y0); ctx.lineTo(x0 + cLen, y0);
+        ctx.moveTo(x1 - cLen, y0); ctx.lineTo(x1, y0); ctx.lineTo(x1, y0 + cLen);
+        ctx.moveTo(x1, y1 - cLen); ctx.lineTo(x1, y1); ctx.lineTo(x1 - cLen, y1);
+        ctx.moveTo(x0 + cLen, y1); ctx.lineTo(x0, y1); ctx.lineTo(x0, y1 - cLen);
+        ctx.strokeStyle = nvCol;
+        ctx.lineWidth = Math.max(5, bw + 1);
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "classified_top_secret") {
+        const rad = 8;
+        const bandH = Math.max(14, Math.min(24, Math.round(height * 0.09)));
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        [top, top + height - bandH].forEach((byPos, bIdx) => {
+          ctx.fillStyle = "#f8fafc";
+          ctx.fillRect(left, byPos, width, bandH);
+          ctx.fillStyle = "#dc2626";
+          for (let sxP = -bandH; sxP < width + bandH; sxP += 22) {
+            ctx.beginPath();
+            ctx.moveTo(left + sxP, byPos + bandH);
+            ctx.lineTo(left + sxP + 11, byPos + bandH);
+            ctx.lineTo(left + sxP + 11 + bandH * 0.7, byPos);
+            ctx.lineTo(left + sxP + bandH * 0.7, byPos);
+            ctx.closePath();
+            ctx.fill();
+          }
+          ctx.strokeStyle = "#0f172a";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          const lineY = bIdx === 0 ? byPos + bandH : byPos;
+          ctx.moveTo(left, lineY);
+          ctx.lineTo(left + width, lineY);
+          ctx.stroke();
+        });
+        ctx.restore();
+
+        ctx.save();
+        const useBw = Math.max(5, bw);
+        ctx.lineWidth = useBw + 4;
+        ctx.strokeStyle = "#05080f";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = useBw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "shattered_glass_shock") {
+        const rad = 10;
+        ctx.save();
+        ctx.shadowColor = "rgba(226,232,240,0.45)";
+        ctx.shadowBlur = 22;
+        ctx.shadowOffsetY = 7;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#0f172a";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        const cracks = [
+          [[left + width, top], [left + width * 0.78, top + height * 0.18], [left + width * 0.62, top + height * 0.14], [left + width * 0.48, top + height * 0.28]],
+          [[left + width, top], [left + width * 0.86, top + height * 0.34], [left + width * 0.74, top + height * 0.48]],
+          [[left, top + height], [left + width * 0.20, top + height * 0.81], [left + width * 0.36, top + height * 0.85], [left + width * 0.48, top + height * 0.70]],
+          [[left, top + height], [left + width * 0.15, top + height * 0.64], [left + width * 0.08, top + height * 0.48]],
+        ];
+        cracks.forEach((pts) => {
+          ctx.beginPath();
+          pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+          ctx.strokeStyle = "rgba(15, 23, 42, 0.85)";
+          ctx.lineWidth = 4;
+          ctx.stroke();
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.95)";
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        });
+        ctx.restore();
+
+        ctx.save();
+        const useBw = Math.max(5, bw);
+        ctx.lineWidth = useBw + 4;
+        ctx.strokeStyle = "#05080f";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = useBw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#ffffff";
+        roundRectPath(ctx, left + 2, top + 2, width - 4, height - 4, Math.max(4, rad - 2));
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "breaking_news_tv") {
+        const rad = 10;
+        const botH = Math.max(22, Math.min(34, Math.round(height * 0.135)));
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 8;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.fillStyle = "#0a0f1d";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        roundRectPath(ctx, left + 10, top + 8, 74, 20, 5);
+        ctx.fillStyle = "rgba(220, 38, 38, 0.96)";
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(left + 21, top + 18, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "#ffffff";
+        ctx.fill();
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "900 11.5px 'Pretendard ExtraBold', sans-serif";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "middle";
+        ctx.fillText("LIVE", left + 30, top + 19);
+
+        const by0 = top + height - botH;
+        ctx.fillStyle = "rgba(10, 15, 29, 0.95)";
+        ctx.fillRect(left, by0, width, botH);
+        const redW = Math.min(Math.round(width * 0.34), 100);
+        ctx.fillStyle = "#dc2626";
+        ctx.fillRect(left, by0, redW, botH);
+        ctx.strokeStyle = "#facc15";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(left, by0);
+        ctx.lineTo(left + width, by0);
+        ctx.stroke();
+        ctx.fillStyle = "#facc15";
+        ctx.fillRect(left + redW + 10, by0 + 6, Math.max(20, width * 0.42), 5);
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.fillRect(left + redW + 10, by0 + 14, Math.max(26, width * 0.52), 4.5);
+        ctx.restore();
+
+        ctx.save();
+        const useBw = Math.max(5, bw);
+        ctx.lineWidth = useBw + 4;
+        ctx.strokeStyle = "#05080f";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.lineWidth = useBw;
+        ctx.strokeStyle = bColor;
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "biometric_face_lock") {
+        const cut = Math.max(12, Math.round(Math.min(width, height) * 0.09));
+        const traceOct = () => {
+          ctx.beginPath();
+          ctx.moveTo(left + cut, top);
+          ctx.lineTo(left + width - cut, top);
+          ctx.lineTo(left + width, top + cut);
+          ctx.lineTo(left + width, top + height - cut);
+          ctx.lineTo(left + width - cut, top + height);
+          ctx.lineTo(left + cut, top + height);
+          ctx.lineTo(left, top + height - cut);
+          ctx.lineTo(left, top + cut);
+          ctx.closePath();
+        };
+        ctx.save();
+        ctx.shadowColor = bColor;
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 6;
+        traceOct();
+        ctx.fillStyle = "#040c18";
+        ctx.fill();
+        ctx.clip();
+        drawPipImg(ctx, img, left, top, width, height);
+        for (let syI = cut + 6; syI < height - cut - 6; syI += 9) {
+          const wTick = Math.floor(syI / 9) % 2 === 0 ? 13 : 7;
+          ctx.fillStyle = Math.floor(syI / 9) % 3 !== 0 ? "rgba(56, 189, 248, 0.88)" : "rgba(250, 204, 21, 0.92)";
+          ctx.fillRect(left + 5, top + syI, wTick, 3.5);
+          ctx.fillRect(left + width - 5 - wTick, top + syI, wTick, 3.5);
+        }
+        ctx.restore();
+
+        ctx.save();
+        traceOct();
+        ctx.lineWidth = bw + 4;
+        ctx.strokeStyle = "#040a14";
+        ctx.stroke();
+        traceOct();
+        ctx.lineWidth = Math.max(5, bw);
+        ctx.strokeStyle = bColor;
+        ctx.stroke();
+        ctx.restore();
+      } else if (frameStyle === "burnt_archival_edge") {
+        const seedB = (((Math.round(left) * 11 + Math.round(top) * 5) % 89) * 0.1);
+        const buildBurntPts = (x0, y0, wP, hP, amp, sOff, bias) => {
+          const pts = [];
+          const step = 5;
+          for (let sx = 0; sx <= wP; sx += step) {
+            const d = (Math.sin(sx * 0.041 + sOff) * 0.6 + Math.cos(sx * 0.13 + sOff) * 0.4) * amp + bias;
+            pts.push([x0 + sx, y0 + d - bias]);
+          }
+          for (let sy = step; sy <= hP; sy += step) {
+            const d = (Math.sin(sy * 0.047 + sOff + 1.5) * 0.6 + Math.cos(sy * 0.11 + sOff) * 0.4) * amp + bias;
+            pts.push([x0 + wP + d + bias, y0 + sy]);
+          }
+          for (let sx = wP - step; sx >= 0; sx -= step) {
+            const d = (Math.sin(sx * 0.039 + sOff + 3.1) * 0.6 + Math.cos(sx * 0.14 + sOff) * 0.4) * amp + bias;
+            pts.push([x0 + Math.max(0, sx), y0 + hP + d + bias]);
+          }
+          for (let sy = hP - step; sy > 0; sy -= step) {
+            const d = (Math.sin(sy * 0.043 + sOff + 4.7) * 0.6 + Math.cos(sy * 0.12 + sOff) * 0.4) * amp + bias;
+            pts.push([x0 + d - bias, y0 + Math.max(0, sy)]);
+          }
+          return pts;
+        };
+        const traceB = (pts) => {
+          ctx.beginPath();
+          pts.forEach(([px, py], i) => (i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py)));
+          ctx.closePath();
+        };
+        const outerB = buildBurntPts(left, top, width, height, 5.0, seedB, 3.2);
+        const innerB = buildBurntPts(left, top, width, height, 4.2, seedB + 0.25, 0.0);
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetX = 5;
+        ctx.shadowOffsetY = 10;
+        traceB(outerB);
+        ctx.fillStyle = "#1c1008";
+        ctx.fill();
+        ctx.restore();
+
+        ctx.save();
+        traceB(outerB);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#d97706";
+        ctx.stroke();
+        traceB(innerB);
+        ctx.fillStyle = "#e8d6b8";
+        ctx.fill();
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = "#92400e";
+        ctx.stroke();
+        ctx.restore();
+
+        const padS = Math.max(11, Math.round(Number(layer.borderWidth || 14)));
+        const ix = left + padS, iy = top + padS;
+        const iw = Math.max(24, width - padS * 2), ih = Math.max(24, height - padS * 2);
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(ix, iy, iw, ih);
+        ctx.clip();
+        drawPipImg(ctx, img, ix, iy, iw, ih);
+        ctx.restore();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#29180c";
+        ctx.strokeRect(ix, iy, iw, ih);
+      } else if (frameStyle === "steel_handcuff_plate") {
+        const rad = 12;
+        const metalPad = Math.max(9, Math.round(Number(layer.borderWidth || 11)));
+        ctx.save();
+        ctx.shadowColor = "rgba(0,0,0,0.92)";
+        ctx.shadowBlur = 24;
+        ctx.shadowOffsetY = 9;
+        roundRectPath(ctx, left, top, width, height, rad);
+        const steelGrad = ctx.createLinearGradient(left, top, left + width, top + height);
+        steelGrad.addColorStop(0, "#475569");
+        steelGrad.addColorStop(0.5, "#334155");
+        steelGrad.addColorStop(1, "#1e293b");
+        ctx.fillStyle = steelGrad;
+        ctx.fill();
+        ctx.restore();
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#cbd5e1";
+        roundRectPath(ctx, left, top, width, height, rad);
+        ctx.stroke();
+
+        const ix = left + metalPad, iy = top + metalPad;
+        const iw = Math.max(24, width - metalPad * 2), ih = Math.max(24, height - metalPad * 2);
+        ctx.save();
+        roundRectPath(ctx, ix, iy, iw, ih, Math.max(4, rad - 5));
+        ctx.clip();
+        drawPipImg(ctx, img, ix, iy, iw, ih);
+        ctx.restore();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = "#e2e8f0";
+        roundRectPath(ctx, ix, iy, iw, ih, Math.max(4, rad - 5));
+        ctx.stroke();
+
+        [
+          [left + 9, top + 9],
+          [left + width - 9, top + 9],
+          [left + width - 9, top + height - 9],
+          [left + 9, top + height - 9],
+        ].forEach(([rxC, ryC]) => {
+          ctx.beginPath();
+          ctx.arc(rxC, ryC, 4.5, 0, Math.PI * 2);
+          ctx.fillStyle = "#e2e8f0";
+          ctx.fill();
+          ctx.lineWidth = 1.8;
+          ctx.strokeStyle = "#0f172a";
+          ctx.stroke();
+        });
       } else {
         ctx.save();
         ctx.shadowColor = "rgba(0,0,0,0.85)";
@@ -2082,18 +4050,50 @@
         ctx.fillStyle = "#0f172a";
         ctx.fill();
         ctx.clip();
-        if (img) {
-          drawCoverImage(ctx, img, left, top, width, height);
-        } else {
-          ctx.fillStyle = "#1e293b";
-          ctx.fillRect(left, top, width, height);
-        }
+        drawPipImg(ctx, img, left, top, width, height);
         ctx.restore();
         ctx.lineWidth = bw;
         ctx.strokeStyle = bColor;
         roundRectPath(ctx, left, top, width, height, 14);
         ctx.stroke();
       }
+  }
+
+  function drawLayer(ctx, layer) {
+    if (!layer || layer.visible === false) return;
+    const type = layer.type;
+    if (type === "vignette") {
+      drawVignette(ctx, layer);
+      return;
+    }
+
+    const left = Number(layer.left || 0);
+    const top = Number(layer.top || 0);
+    const width = Number(layer.width || 200);
+    const height = Number(layer.height || 80);
+    const angle = Number(layer.angle || 0);
+    const flipX = layer.flipX ? -1 : 1;
+    const flipY = layer.flipY ? -1 : 1;
+    const opacity = Math.max(0, Math.min(1, Number(layer.opacity ?? 1)));
+
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    const cx = left + width / 2;
+    const cy = top + height / 2;
+    if (angle || flipX !== 1 || flipY !== 1) {
+      ctx.translate(cx, cy);
+      if (angle) ctx.rotate((angle * Math.PI) / 180);
+      if (flipX !== 1 || flipY !== 1) ctx.scale(flipX, flipY);
+      ctx.translate(-cx, -cy);
+    }
+
+    if (type === "inset_image") {
+      let src = String(layer.src || studioState.data?.design?.inset_image_url || "").trim();
+      if (isExportedCompositeThumb(src)) {
+        src = src.replace(/thumbnail_v([1-4])/gi, "thumb_bg_v$1");
+      }
+      const img = loadCachedImage(src);
+      drawPipFrameShape(ctx, layer, left, top, width, height, img);
     } else if (type === "circle") {
       drawCircleShape(ctx, layer, left, top, width, height);
     } else if (type === "arrow") {
@@ -2428,7 +4428,30 @@
     if (bgUrl) {
       const bgImg = loadCachedImage(bgUrl);
       if (bgImg) {
-        drawCoverImage(ctx, bgImg, 0, 0, CW, CH);
+        const bgBright = Number(variant.bgBrightness ?? 100);
+        const bgContr = Number(variant.bgContrast ?? 100);
+        const bgBlur = Number(variant.bgBlur ?? 0);
+        const bgFilt = String(variant.bgFilter || "none").toLowerCase();
+        const fArr = [];
+        if (Math.abs(bgBright - 100) > 1) fArr.push(`brightness(${bgBright}%)`);
+        if (Math.abs(bgContr - 100) > 1) fArr.push(`contrast(${bgContr}%)`);
+        if (bgBlur > 0.2) fArr.push(`blur(${bgBlur}px)`);
+        if (bgFilt === "grayscale") fArr.push("grayscale(100%) contrast(115%)");
+        else if (bgFilt === "cold_noir") fArr.push("saturate(68%) contrast(118%)");
+        else if (bgFilt === "high_drama") fArr.push("contrast(135%) saturate(118%)");
+        else if (bgFilt === "sepia") fArr.push("sepia(75%) contrast(110%)");
+        ctx.save();
+        if (fArr.length) ctx.filter = fArr.join(" ");
+        drawCoverImage(ctx, bgImg, 0, 0, CW, CH, { cropZoom: variant.bgZoom || 100 });
+        ctx.filter = "none";
+        if (bgFilt === "cold_noir") {
+          ctx.fillStyle = "rgba(8, 28, 56, 0.22)";
+          ctx.fillRect(0, 0, CW, CH);
+        } else if (bgFilt === "cctv_tint") {
+          ctx.fillStyle = "rgba(16, 185, 129, 0.16)";
+          ctx.fillRect(0, 0, CW, CH);
+        }
+        ctx.restore();
       }
     }
 
@@ -2718,6 +4741,42 @@
         size
       );
     });
+
+    const curSel = getLayer(studioState.selectedLayerId, activeVariant);
+    const activePip = (curSel && curSel.type === "inset_image" ? curSel : null) ||
+      (activeVariant?.layers || []).find((l) => l && l.type === "inset_image" && l.visible !== false) ||
+      getLayer("inset_photo", activeVariant) || {};
+    const samplePipSrc = String(activePip.src || activeVariant?.inset_image_url || studioState.data?.design?.inset_image_url || "").trim();
+    const samplePipImg = samplePipSrc ? loadCachedImage(samplePipSrc) : null;
+
+    document.querySelectorAll("[data-pip-lib-canvas]").forEach((cv) => {
+      const styleId = cv.dataset.pipLibCanvas;
+      const libObj = PIP_FRAME_LIBRARY.find((p) => p.id === styleId) || PIP_FRAME_LIBRARY[0];
+      const ctx = cv.getContext("2d");
+      const w = cv.width || 110;
+      const h = cv.height || 56;
+      ctx.clearRect(0, 0, w, h);
+      ctx.save();
+      const vw = 240;
+      const vh = 132;
+      ctx.scale(w / vw, h / vh);
+      drawPipFrameShape(
+        ctx,
+        {
+          frameStyle: styleId,
+          borderColor: libObj.defaultColor || "#fbbf24",
+          borderWidth: libObj.defaultBw !== undefined ? libObj.defaultBw : 6,
+          featherPx: libObj.defaultFeather || 0,
+          glowBlur: libObj.defaultGlow || 0,
+        },
+        18,
+        10,
+        vw - 36,
+        vh - 20,
+        samplePipImg
+      );
+      ctx.restore();
+    });
   }
 
   function renderAllCanvases() {
@@ -2804,7 +4863,8 @@
           blob = dataUrlToBlob(dataUrl);
         } else {
           const resp = await fetch(dataUrl);
-          if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+          if (studioState.jobId !== jobId) return;
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
           blob = await resp.blob();
         }
         if (blob) {
@@ -3141,17 +5201,80 @@
         if (vL1) { vL1.left = 64; vL1.top = 448; vL1.textAlign = "left"; }
         if (vL2) { vL2.left = 64; vL2.top = 556; vL2.textAlign = "left"; }
       } else if (archId === "split_duality") {
-        if (vBadge) { vBadge.left = 64; vBadge.top = 240; }
-        if (vL1) { vL1.left = 64; vL1.top = 330; vL1.textAlign = "left"; }
-        if (vL2) { vL2.left = 64; vL2.top = 452; vL2.textAlign = "left"; }
+        if (preset.id === "cyber_financial_forensic_duality") {
+          if (vBadge) {
+            vBadge.left = 556;
+            vBadge.top = 18;
+            vBadge.fontSize = 33;
+            vBadge.bgColor = "#061a2e";
+            vBadge.borderColor = "#38bdf8";
+            vBadge.borderWidth = 4;
+            vBadge.borderRadius = 8;
+            vBadge.fill = "#ffe600";
+            vBadge.text = vBadge.text && !vBadge.text.includes("특급수배") && vBadge.text !== "중국 사기 실화" ? vBadge.text : "중국 첨단사기 실화 사건";
+          }
+          if (vInset) {
+            vInset.left = 556;
+            vInset.top = 94;
+            vInset.width = 684;
+            vInset.height = 342;
+            vInset.angle = 0;
+            vInset.frameStyle = "financial_audit_hud";
+            vInset.borderColor = "#38bdf8";
+            vInset.borderWidth = 6;
+          }
+          if (vArrow) {
+            vArrow.left = 432;
+            vArrow.top = 318;
+            vArrow.width = 122;
+            vArrow.height = 54;
+            vArrow.angle = 0;
+            vArrow.arrowStyle = "double_chevron";
+            vArrow.fill = "#facc15";
+            vArrow.stroke = "#040c18";
+          }
+          if (vL1) { vL1.left = 38; vL1.top = 468; vL1.width = 1020; vL1.fontSize = 72; vL1.textAlign = "left"; }
+          if (vL2) { vL2.left = 38; vL2.top = 574; vL2.width = 1010; vL2.fontSize = 82; vL2.textAlign = "left"; }
+        } else if (vInset && Number(vInset.left || 0) < 400) {
+          if (vBadge) { vBadge.left = 38; vBadge.top = 12; }
+          if (vL1) { vL1.left = 28; vL1.top = 492; vL1.textAlign = "left"; }
+          if (vL2) { vL2.left = 28; vL2.top = 592; vL2.textAlign = "left"; }
+        } else {
+          if (vBadge) { vBadge.left = 64; vBadge.top = 240; }
+          if (vL1) { vL1.left = 64; vL1.top = 330; vL1.textAlign = "left"; }
+          if (vL2) { vL2.left = 64; vL2.top = 452; vL2.textAlign = "left"; }
+        }
+      } else if (archId === "dual_pip_evidence_board" || archId === "wanted_dossier_header" || archId === "cctv_surveillance_grid") {
+        if (vBadge) { vBadge.left = 38; vBadge.top = 12; }
+        if (vL1) { vL1.left = 28; vL1.top = 492; vL1.textAlign = "left"; }
+        if (vL2) { vL2.left = 28; vL2.top = 592; vL2.textAlign = "left"; }
+      } else if (archId === "center_symmetrical_impact") {
+        if (vBadge) { vBadge.left = 420; vBadge.top = 28; }
+        if (vL1) { vL1.left = 120; vL1.top = 468; vL1.width = 1040; vL1.textAlign = "center"; }
+        if (vL2) { vL2.left = 120; vL2.top = 576; vL2.width = 1040; vL2.textAlign = "center"; }
+      } else if (archId === "top_headline_banner") {
+        if (vBadge) { vBadge.left = 54; vBadge.top = 24; }
+        if (vL1) { vL1.left = 54; vL1.top = 108; vL1.textAlign = "left"; }
+        if (vL2) { vL2.left = 54; vL2.top = 212; vL2.textAlign = "left"; }
       } else if (archId === "evidence_spotlight") {
         if (vBadge) { vBadge.left = 64; vBadge.top = 42; }
         if (vL1) { vL1.left = 64; vL1.top = 430; vL1.textAlign = "left"; }
         if (vL2) { vL2.left = 64; vL2.top = 545; vL2.textAlign = "left"; }
       }
+      if (preset.pipFrameStyle && vInset) {
+        vInset.frameStyle = preset.pipFrameStyle;
+        if (preset.pipBorderColor) vInset.borderColor = preset.pipBorderColor;
+      }
+      const vInset2 = getLayer("inset_photo_2", v);
+      if (preset.pip2FrameStyle && vInset2) {
+        vInset2.frameStyle = preset.pip2FrameStyle;
+      }
+      if (preset.circleStyle && vCircle) {
+        vCircle.circleStyle = preset.circleStyle;
+      }
       if (vArrow) vArrow.visible = Boolean(preset.showArrow);
-      if (vCircle) vCircle.visible = Boolean(preset.showCircle || archId === "evidence_spotlight");
-      if (vInset) vInset.visible = Boolean(preset.showInset || archId === "split_duality");
+      if (vCircle) vCircle.visible = Boolean(preset.showCircle || archId === "evidence_spotlight" || archId === "cctv_surveillance_grid");
+      if (vInset) vInset.visible = Boolean(preset.showInset || archId === "split_duality" || archId === "dual_pip_evidence_board" || archId === "wanted_dossier_header" || archId === "cctv_surveillance_grid");
     });
 
     renderStudioDom();
@@ -3547,31 +5670,18 @@
   }
 
   function buildQuickLayersBarInnerHtml(activeVariant) {
-    const allLayerDefs = getAllQuickLayerDefs(activeVariant);
-    const bgSelected = !studioState.selectedLayerId;
-    const pills = allLayerDefs
-      .map((item) => {
-        const l = getLayer(item.id, activeVariant);
-        const isVis = Boolean(l && l.visible !== false);
-        const isSel = isVis && studioState.selectedLayerId === item.id;
-        return `<button type="button" class="thumb-quick-layer-pill ${isSel ? "is-selected" : ""} ${!isVis ? "is-hidden-layer" : ""}" data-quick-select-layer="${esc(item.id)}" title="${isVis ? "Ấn để chọn & mở bảng chỉnh sửa bên phải" : "Đang ẩn — ấn để bật lên ảnh và chỉnh sửa"}">
-          <span>${item.icon} ${esc(item.label)}</span>
-          <small>${isVis ? "Đang bật" : "+ Bật"}</small>
-        </button>`;
-      })
-      .join("");
+    const selected = getLayer(studioState.selectedLayerId, activeVariant);
+    const hasSel = Boolean(selected && selected.visible !== false && selected.type !== "vignette");
+    const activeLabel = hasSel
+      ? `🎯 ${selected.name || selected.id}`
+      : "🖼 Ảnh nền & Ánh sáng";
     return `
-      <span class="thumb-canva-lbl">Ấn chọn để sửa ngay:</span>
-      <button type="button" class="thumb-quick-layer-pill ${bgSelected ? "is-selected" : ""}" data-quick-select-bg="1" title="Ấn để chỉnh Ảnh nền & Độ tối Vignette ở cột phải">
-        <span>🖼 Ảnh nền &amp; Ánh sáng</span>
-      </button>
-      ${pills}
-      <span style="margin-left:auto;display:inline-flex;gap:4px;flex-wrap:wrap;">
-        <button type="button" class="ghost compact" id="quickBarAddPipBtn" style="font-size:11px;padding:3px 8px;border-color:rgba(74,222,128,0.45);color:#86efac;">+ 🖼 Khung PiP</button>
-        <button type="button" class="ghost compact" id="quickBarAddTextBtn" style="font-size:11px;padding:3px 8px;border-color:rgba(56,189,248,0.45);color:#7dd3fc;">+ 🔤 Chữ</button>
-        <button type="button" class="ghost compact" id="quickBarAddArrowBtn" style="font-size:11px;padding:3px 8px;border-color:rgba(239,68,68,0.45);color:#fca5a5;">+ ↗ Mũi tên</button>
-        <button type="button" class="ghost compact" id="quickBarAddCircleBtn" style="font-size:11px;padding:3px 8px;border-color:rgba(250,204,21,0.45);color:#fde047;">+ ⭕ Vòng tròn</button>
-      </span>
+      <button type="button" class="stage-active-target-pill" id="thumbSelectedLayerLabel" data-quick-select-bg="1" title="Nhấn trực tiếp vào vật thể trên Canvas để chọn, hoặc nhấn vào đây để chỉnh Nền & Ánh sáng">${esc(activeLabel)}</button>
+      <span class="stage-insert-divider"></span>
+      <button type="button" class="ghost compact stage-insert-btn" id="quickBarAddTextBtn" style="border-color:rgba(56,189,248,0.42);color:#7dd3fc;">+ 🔤 Chữ</button>
+      <button type="button" class="ghost compact stage-insert-btn" id="quickBarAddPipBtn" style="border-color:rgba(74,222,128,0.42);color:#86efac;">+ 🖼 Ảnh PiP</button>
+      <button type="button" class="ghost compact stage-insert-btn" id="quickBarAddArrowBtn" style="border-color:rgba(239,68,68,0.42);color:#fca5a5;">+ ↗ Mũi tên</button>
+      <button type="button" class="ghost compact stage-insert-btn" id="quickBarAddCircleBtn" style="border-color:rgba(250,204,21,0.42);color:#fde047;">+ ⭕ Khoanh</button>
     `;
   }
 
@@ -3595,28 +5705,35 @@
     if (tab === "style") {
       bodyHtml = `
         <div class="canva-side-section">
-          <div class="canva-side-title">🎨 PHONG CÁCH CHỦ ĐỀ (LINH HOẠT)</div>
+          <div class="canva-side-title">🎨 MẪU CHỦ ĐỀ (1-CLICK PRESET)</div>
           <div class="canva-preset-stack">
             ${TOPIC_STYLE_PRESETS.map((p) => {
               const isAct = curStylePreset === p.id;
+              const sw1 = (!p.badgeBg || p.badgeBg === "transparent") ? (p.badgeFill || "#ffffff") : p.badgeBg;
+              const sw2 = p.line1Fill || "#ffffff";
+              const sw3 = p.line2Fill || "#ffe600";
               return `<button type="button" class="canva-preset-card ${isAct ? "active" : ""}" data-apply-topic-preset="${esc(p.id)}" title="${esc(p.desc)}">
-                <div class="canva-preset-card-top">
+                <span class="canva-preset-card-main">
+                  <span class="canva-preset-swatches">
+                    <i style="background:${esc(sw1)}"></i>
+                    <i style="background:${esc(sw2)}"></i>
+                    <i style="background:${esc(sw3)}"></i>
+                  </span>
                   <strong>${esc(p.shortLabel)}</strong>
-                  ${isAct ? `<span class="canva-active-dot">Đang dùng</span>` : ""}
-                </div>
-                <small>${esc(p.desc)}</small>
+                </span>
+                ${isAct ? `<span class="canva-active-dot">✓</span>` : ""}
               </button>`;
             }).join("")}
           </div>
-          <button type="button" class="ghost compact" id="applyTopicPresetAllBtn" style="width:100%;margin-top:6px;border-color:rgba(56,189,248,0.45);color:#7dd3fc;">⚡ Áp dụng Phong cách này cho cả 4 Bản</button>
+          <button type="button" class="ghost compact" id="applyTopicPresetAllBtn" style="width:100%;margin-top:6px;border-color:rgba(56,189,248,0.45);color:#7dd3fc;">⚡ Đồng bộ cả 4 Bản</button>
         </div>
 
         <div class="canva-side-section">
-          <div class="canva-side-title">📐 BỐ CỤC NHANH (ARCHETYPE 1-CLICK)</div>
-          <div class="thumb-archetype-grid" style="grid-template-columns:1fr;">
+          <div class="canva-side-title">📐 BỐ CỤC NHANH (ARCHETYPE)</div>
+          <div class="thumb-archetype-grid" style="display:grid;grid-template-columns:1fr;gap:4px;">
             ${archetypes
               .map(
-                (arch) => `<button type="button" class="thumb-archetype-btn ${activeVariant.archetype === arch.id ? "active" : ""}" data-select-archetype="${esc(arch.id)}" title="${esc(arch.description)}">
+                (arch) => `<button type="button" class="thumb-archetype-btn ghost compact ${activeVariant.archetype === arch.id ? "primary" : ""}" data-select-archetype="${esc(arch.id)}" title="${esc(arch.description)}" style="text-align:left;justify-content:flex-start;">
                   ${esc(arch.name.split("—")[0].trim())}
                 </button>`
               )
@@ -3625,8 +5742,8 @@
         </div>
 
         <div class="canva-side-section">
-          <div class="canva-side-title">🌈 BỘ PHỐI MÀU CHỮ 1-CLICK</div>
-          <div class="thumb-color-combos-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="canva-side-title">🌈 PHỐI MÀU CHỮ NHANH</div>
+          <div class="thumb-color-combos-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
             ${TEXT_COLOR_COMBOS.map(
               (cb) => `<button type="button" class="ghost compact thumb-combo-pill" data-apply-text-combo="${esc(cb.id)}" title="Áp dụng bộ màu ${esc(cb.label)}">
                 <span class="thumb-combo-dots">
@@ -3659,7 +5776,6 @@
 
         <div class="canva-side-section">
           <div class="canva-side-title">✎ SỬA NHANH 3 DÒNG CHỮ CHÍNH</div>
-          <small style="color:#94a3b8;display:block;margin-bottom:6px;">Ấn vào từng dòng bên dưới để mở bảng chỉnh màu &amp; cỡ chữ chi tiết ở cột phải. Bọc <code>*từ khóa*</code> để tô màu nổi bật.</small>
           <label class="canva-mini-field">
             <span>🏷 Tag góc trên:</span>
             <input type="text" data-sync-layer-text="badge" value="${esc(lBadge.text ?? activeVariant.badge_text ?? "")}" placeholder="Tag góc trên..." />
@@ -3675,42 +5791,73 @@
         </div>
       `;
     } else if (tab === "graphics") {
+      const curSelLayer = getLayer(studioState.selectedLayerId, activeVariant);
+      const activePipLayer = (curSelLayer && curSelLayer.type === "inset_image" ? curSelLayer : null) ||
+        (activeVariant.layers || []).find((l) => l && l.type === "inset_image" && l.visible !== false) ||
+        getLayer("inset_photo", activeVariant) || {};
+      const activePipFrameStyle = String(activePipLayer.frameStyle || "caution_tape").toLowerCase();
+      const curCat = studioState.pipFrameCategory || "all";
+      const filteredPipLib = curCat === "all"
+        ? PIP_FRAME_LIBRARY
+        : PIP_FRAME_LIBRARY.filter((it) => it.group === curCat);
       bodyHtml = `
         <div class="canva-side-section">
-          <div style="display:flex;gap:6px;margin-bottom:8px;">
-            <button type="button" class="ghost compact" id="addNewArrowLayerBtn" style="flex:1;border-color:rgba(239,68,68,0.5);color:#fca5a5;">+ ↗ Thêm Mũi Tên</button>
-            <button type="button" class="ghost compact" id="addNewCircleLayerBtn" style="flex:1;border-color:rgba(250,204,21,0.5);color:#fde047;">+ ⭕ Thêm Vòng Tròn</button>
+          <div style="display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap;">
+            <button type="button" class="ghost compact" id="quickBarAddPipBtn" style="flex:1;border-color:rgba(74,222,128,0.5);color:#86efac;">+ 🖼 Khung PiP</button>
+            <button type="button" class="ghost compact" id="addNewCircleLayerBtn" style="flex:1;border-color:rgba(250,204,21,0.5);color:#fde047;">+ ⭕ Khung Ngắm</button>
+            <button type="button" class="ghost compact" id="addNewArrowLayerBtn" style="flex:1;border-color:rgba(239,68,68,0.5);color:#fca5a5;">+ ↗ Mũi Tên</button>
           </div>
-          <div class="canva-side-title">↗ 10 KIỂU MŨI TÊN ĐIỀU TRA</div>
-          <div class="thumb-lib-grid" style="grid-template-columns:1fr 1fr;">
-            ${ARROW_LIBRARY.map((item) => {
-              const isAct = item.id === activeArrowStyle && activeArrowLayer.visible !== false;
-              return `<button type="button" class="thumb-lib-item ${isAct ? "active" : ""}" data-pick-arrow-style="${esc(item.id)}" title="${esc(item.desc)} — Ấn để dùng & mở bảng chỉnh màu bên phải">
-                <canvas data-arrow-lib-canvas="${esc(item.id)}" width="110" height="46"></canvas>
-                <span>${esc(item.label)}</span>
+          <div class="canva-side-title">🖼 ${PIP_FRAME_LIBRARY.length} MẪU KHUNG, VIỀN &amp; HÒA TRỘN PIP</div>
+          <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:7px;">
+            ${PIP_FRAME_CATEGORIES.map((cat) => `<button type="button" class="ghost compact ${curCat === cat.id ? "primary" : ""}" data-pip-cat-filter="${esc(cat.id)}" style="font-size:10px;padding:2px 6px;">${esc(cat.label)}</button>`).join("")}
+          </div>
+          <div class="thumb-lib-grid" style="grid-template-columns:1fr 1fr;max-height:330px;overflow-y:auto;padding-right:2px;">
+            ${filteredPipLib.map((item) => {
+              const isAct = item.id === activePipFrameStyle && activePipLayer.visible !== false;
+              return `<button type="button" class="thumb-lib-item ${isAct ? "active" : ""}" data-pick-pip-frame-style="${esc(item.id)}" data-default-pip-color="${esc(item.defaultColor)}" data-default-pip-bw="${esc(item.defaultBw !== undefined ? item.defaultBw : 6)}" data-default-pip-feather="${esc(item.defaultFeather || 0)}" data-default-pip-glow="${esc(item.defaultGlow || 0)}" title="${esc(item.desc)} — Ấn để đổi mẫu khung PiP">
+                <canvas data-pip-lib-canvas="${esc(item.id)}" width="110" height="54"></canvas>
+                <span>${esc(item.shortLabel || item.label)}</span>
               </button>`;
             }).join("")}
           </div>
         </div>
 
         <div class="canva-side-section">
-          <div class="canva-side-title">⭕ 10 KIỂU VÒNG TRÒN &amp; KHUNG NGẮM</div>
+          <div class="canva-side-title">⭕ ${CIRCLE_LIBRARY.length} MẪU VÒNG TRÒN &amp; KHUNG NGẮM</div>
           <div class="thumb-lib-grid" style="grid-template-columns:1fr 1fr;">
             ${CIRCLE_LIBRARY.map((item) => {
               const isAct = item.id === activeCircleStyle && activeCircleLayer.visible !== false;
               return `<button type="button" class="thumb-lib-item ${isAct ? "active" : ""}" data-pick-circle-style="${esc(item.id)}" title="${esc(item.desc)} — Ấn để dùng & mở bảng chỉnh màu bên phải">
                 <canvas data-circle-lib-canvas="${esc(item.id)}" width="110" height="46"></canvas>
-                <span>${esc(item.label)}</span>
+                <span>${esc(item.shortLabel || item.name)}</span>
+              </button>`;
+            }).join("")}
+          </div>
+        </div>
+
+        <div class="canva-side-section">
+          <div class="canva-side-title">↗ ${ARROW_LIBRARY.length} KIỂU MŨI TÊN ĐIỀU TRA</div>
+          <div class="thumb-lib-grid" style="grid-template-columns:1fr 1fr;">
+            ${ARROW_LIBRARY.map((item) => {
+              const isAct = item.id === activeArrowStyle && activeArrowLayer.visible !== false;
+              return `<button type="button" class="thumb-lib-item ${isAct ? "active" : ""}" data-pick-arrow-style="${esc(item.id)}" title="${esc(item.desc)} — Ấn để dùng & mở bảng chỉnh màu bên phải">
+                <canvas data-arrow-lib-canvas="${esc(item.id)}" width="110" height="46"></canvas>
+                <span>${esc(item.shortLabel || item.name)}</span>
               </button>`;
             }).join("")}
           </div>
         </div>
       `;
     } else {
+      const bgSelected = !studioState.selectedLayerId;
       bodyHtml = `
         <div class="canva-side-section">
-          <div class="canva-side-title">🗂 QUẢN LÝ LỚP TRÊN ẢNH (LAYERS)</div>
+          <div class="canva-side-title">🗂 CÂY LỚP FIGMA (${allLayerDefs.length + 1} LỚP)</div>
           <div class="canva-layer-list">
+            <div class="canva-layer-row ${bgSelected ? "is-selected" : ""}">
+              <span style="font-size:11px;opacity:0.75;">🔒</span>
+              <button type="button" class="canva-layer-select-btn" data-quick-select-bg="1">🖼 Ảnh nền &amp; Ánh sáng</button>
+            </div>
             ${allLayerDefs
               .map((item) => {
                 const l = getLayer(item.id, activeVariant);
@@ -3730,7 +5877,7 @@
         </div>
 
         <div class="canva-side-section">
-          <div class="canva-side-title">🖼 KHO ẢNH TƯ LIỆU &amp; NỀN (${candidates.length} ẢNH)</div>
+          <div class="canva-side-title">🖼 KHO ẢNH TƯ LIỆU &amp; NỀN (${candidates.length})</div>
           <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
             <button type="button" class="ghost compact" id="thumbGenSingleFlowBtn" style="flex:1;font-size:11px;" ${studioState.busyVariants.has(activeVariant.id) ? "disabled" : ""}>${studioState.busyVariants.has(activeVariant.id) ? "⏳ Đang vẽ…" : "🎨 Vẽ nền Flow"}</button>
             <label class="ghost compact thumb-upload-btn" style="flex:1;font-size:11px;text-align:center;">
@@ -3763,16 +5910,16 @@
     return `
       <div class="canva-dock-tabs">
         <button type="button" class="canva-dock-tab ${tab === "style" ? "active" : ""}" data-left-dock-tab="style">
-          <span>🎨</span><small>Phong cách</small>
+          <span>🎨</span><small>Mẫu</small>
+        </button>
+        <button type="button" class="canva-dock-tab ${tab === "media" ? "active" : ""}" data-left-dock-tab="media">
+          <span>🗂</span><small>Lớp (${allLayerDefs.length})</small>
         </button>
         <button type="button" class="canva-dock-tab ${tab === "text" ? "active" : ""}" data-left-dock-tab="text">
-          <span>🔤</span><small>Chữ &amp; Font</small>
+          <span>🔤</span><small>Chữ</small>
         </button>
         <button type="button" class="canva-dock-tab ${tab === "graphics" ? "active" : ""}" data-left-dock-tab="graphics">
           <span>↗</span><small>Đồ họa</small>
-        </button>
-        <button type="button" class="canva-dock-tab ${tab === "media" ? "active" : ""}" data-left-dock-tab="media">
-          <span>🖼</span><small>Ảnh &amp; Lớp</small>
         </button>
       </div>
       <div class="canva-dock-body">
@@ -3794,19 +5941,22 @@
     const selType = hasSel ? String(selected.type || "") : "background";
     const selAngle = hasSel ? Math.round(Number(selected.angle || 0)) : 0;
 
-    // Quick layer switcher chips at top of Right Inspector so user always knows what is selected
+    // Compact 1-line Layer Dropdown at top of Right Inspector (replaces 10-button wall)
     const allLayerDefs = getAllQuickLayerDefs(activeVariant);
     const switcherHtml = `
-      <div class="canva-inspector-switcher">
-        <button type="button" class="canva-insp-chip ${!hasSel ? "active" : ""}" data-quick-select-bg="1" title="Chỉnh ảnh nền & ánh sáng">🖼 Nền</button>
-        ${allLayerDefs
-          .map((item) => {
-            const l = getLayer(item.id, activeVariant);
-            const isVis = Boolean(l && l.visible !== false);
-            const isSel = isVis && studioState.selectedLayerId === item.id;
-            return `<button type="button" class="canva-insp-chip ${isSel ? "active" : ""} ${!isVis ? "is-off" : ""}" data-quick-select-layer="${esc(item.id)}" title="${esc(item.label)}">${item.icon} ${esc(item.label.replace("Dòng chữ ", "D").replace("Tag góc trên", "Tag"))}</button>`;
-          })
-          .join("")}
+      <div class="canva-inspector-layer-bar">
+        <span class="insp-layer-lbl">LỚP:</span>
+        <select id="inspectorQuickLayerSelect" class="insp-layer-select" title="Chọn nhanh lớp trên Thumbnail để chỉnh sửa">
+          <option value="__bg__" ${!hasSel ? "selected" : ""}>🖼 Ảnh nền &amp; Ánh sáng</option>
+          ${allLayerDefs
+            .map((item) => {
+              const l = getLayer(item.id, activeVariant);
+              const isVis = Boolean(l && l.visible !== false);
+              const isSel = isVis && studioState.selectedLayerId === item.id;
+              return `<option value="${esc(item.id)}" ${isSel ? "selected" : ""}>${item.icon} ${esc(item.label)}${isVis ? "" : " (Đang ẩn — chọn để bật)"}</option>`;
+            })
+            .join("")}
+        </select>
       </div>
     `;
 
@@ -3924,22 +6074,6 @@
           </div>
 
           ${commonTransformHtml}
-
-          <div class="canva-context-card">
-            <div class="canva-side-title">4. SỬA NHANH CẢ 3 DÒNG TRÊN THUMBNAIL</div>
-            <label class="canva-mini-field">
-              <span>🏷 Tag (${esc(activeVi.badgeVi || "Nhãn góc trên")}):</span>
-              <input type="text" data-sync-layer-text="badge" value="${esc(lBadge.text ?? activeVariant.badge_text ?? "")}" />
-            </label>
-            <label class="canva-mini-field">
-              <span>🔤 Dòng 1 (${esc(activeVi.line1Vi || "Bối cảnh")}):</span>
-              <input type="text" data-sync-layer-text="line_1" value="${esc(lLine1.text ?? activeVariant.line_1 ?? "")}" />
-            </label>
-            <label class="canva-mini-field">
-              <span>🔥 Dòng 2 (${esc(activeVi.line2Vi || "Điểm nổ CTR")}):</span>
-              <input type="text" data-sync-layer-text="line_2" value="${esc(lLine2.text ?? activeVariant.line_2 ?? "")}" />
-            </label>
-          </div>
         </div>
       `;
     }
@@ -4017,13 +6151,13 @@
         ${switcherHtml}
         <div class="canva-inspector-scroll">
           <div class="canva-context-card">
-            <div class="canva-side-title">1. CHỌN KIỂU VÒNG TRÒN (10 KIỂU)</div>
-            <div class="thumb-lib-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="canva-side-title">1. CHỌN MẪU VÒNG TRÒN &amp; KHUNG NGẮM (${CIRCLE_LIBRARY.length} MẪU)</div>
+            <div class="thumb-lib-grid" style="grid-template-columns:1fr 1fr;max-height:260px;overflow-y:auto;padding-right:2px;">
               ${CIRCLE_LIBRARY.map((item) => {
                 const isAct = item.id === cStyle;
                 return `<button type="button" class="thumb-lib-item ${isAct ? "active" : ""}" data-pick-circle-style="${esc(item.id)}" title="${esc(item.desc)}">
                   <canvas data-circle-lib-canvas="${esc(item.id)}" width="110" height="44"></canvas>
-                  <span>${esc(item.label)}</span>
+                  <span>${esc(item.shortLabel || item.name)}</span>
                 </button>`;
               }).join("")}
             </div>
@@ -4064,41 +6198,79 @@
     if (hasSel && selType === "inset_image") {
       const bCol = normalizeHexColor(selected.borderColor, "#fbbf24");
       const bW = Math.round(Number(selected.borderWidth ?? 6));
+      const cRad = Math.round(Number(selected.cornerRadius ?? 14));
+      const fPx = Math.round(Number(selected.featherPx ?? 0));
+      const gBlur = Math.round(Number(selected.glowBlur ?? 0));
+      const bDash = String(selected.borderDash || "solid").toLowerCase();
       const iW = Math.round(Number(selected.width || 320));
       const iH = Math.round(Number(selected.height || 240));
+      const cropZoom = Math.round(Number(selected.cropZoom ?? 100));
+      const cropOx = Math.round(Number(selected.cropOffsetX ?? 0));
+      const cropOy = Math.round(Number(selected.cropOffsetY ?? 0));
+      const pipBright = Math.round(Number(selected.pipBrightness ?? 100));
+      const pipContr = Math.round(Number(selected.pipContrast ?? 100));
+      const pipFilt = String(selected.pipFilter || "none").toLowerCase();
+      const capText = String(selected.captionText || "");
+      const capPos = String(selected.captionPos || "bottom").toLowerCase();
+      const capBg = normalizeHexColor(selected.captionBg, "#dc2626");
+      const capCol = normalizeHexColor(selected.captionColor, "#ffffff");
       const curFrameStyle = String(selected.frameStyle || "caution_tape").toLowerCase();
-      const pipFrameOptions = [
-        { id: "torn_newspaper", label: "📰 Ảnh Xé Báo", defaultColor: "#f3ead8" },
-        { id: "caution_tape", label: "🚧 Dải Phong Tỏa", defaultColor: "#ff2424" },
-        { id: "amber_glow_double", label: "✨ Viền Kép Sáng", defaultColor: "#fbbf24" },
-        { id: "cctv_hud", label: "📹 Khung CCTV", defaultColor: "#00f0ff" },
-        { id: "dossier_tab", label: "📁 Hồ Sơ Pháp Y", defaultColor: "#ef4444" },
-        { id: "vintage_paper", label: "📜 Giấy Ảnh Xưa", defaultColor: "#f4ebd9" },
-        { id: "classic_rounded", label: "🖼 Bo Góc Cơ Bản", defaultColor: "#ffffff" },
-      ];
+      const curCat = studioState.pipFrameCategory || "all";
+      const filteredPipLib = curCat === "all"
+        ? PIP_FRAME_LIBRARY
+        : PIP_FRAME_LIBRARY.filter((it) => it.group === curCat);
       const candidates = getCleanCandidates();
       return `
         <div class="canva-inspector-header">
           <div>
-            <span class="canva-inspector-kicker">BẢNG CHỈNH SỬA ẢNH PHỤ (PIP)</span>
+            <span class="canva-inspector-kicker">BẢNG THIẾT KẾ ẢNH PHỤ (PIP STUDIO PRO)</span>
             <h4>🖼 ${esc(selected.name || "Ảnh bằng chứng PiP")}</h4>
           </div>
+          <button type="button" class="ghost compact" id="ctxAddSecondPipBtn" title="Thêm khung ảnh phụ PiP mới">+ 🖼 Thêm PiP</button>
         </div>
         ${switcherHtml}
         <div class="canva-inspector-scroll">
           <div class="canva-context-card">
-            <div class="canva-side-title">1. KIỂU THIẾT KẾ KHUNG PIP &amp; VIỀN</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:8px;">
-              ${pipFrameOptions
+            <div class="canva-side-title">⚡ CHẾ ĐỘ NHANH: KHÔNG KHUNG · VIỀN · CẮT HÌNH</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px;">
+              <button type="button" class="ghost compact ${curFrameStyle === "frameless_shadow_float" && bW === 0 ? "primary" : ""}" data-pip-quick-mode="frameless_none" title="Tắt hoàn toàn khung viền, chỉ giữ bóng đổ 3D">🚫 Tắt Khung</button>
+              <button type="button" class="ghost compact ${curFrameStyle === "frameless_soft_feather" ? "primary" : ""}" data-pip-quick-mode="feather_blend" title="Làm mờ mềm 4 cạnh để hòa trộn ảnh phụ vào nền">🫧 Hòa Trộn Mờ</button>
+              <button type="button" class="ghost compact ${curFrameStyle === "frameless_edge_dissolve" ? "primary" : ""}" data-pip-quick-mode="edge_dissolve" title="Tan viền đáy kiểu poster phim Netflix">🌫 Tan Viền Đáy</button>
+              <button type="button" class="ghost compact ${curFrameStyle === "frameless_white_cutout" ? "primary" : ""}" data-pip-quick-mode="white_sticker" title="Viền trắng dày kiểu ảnh cắt dán tạp chí">✂️ Sticker Trắng</button>
+              <button type="button" class="ghost compact ${curFrameStyle === "frameless_glow_rim" ? "primary" : ""}" data-pip-quick-mode="glow_aura" title="Viền mảnh phát sáng hào quang Neon/Aura">🌟 Viền Hào Quang</button>
+              <button type="button" class="ghost compact ${curFrameStyle === "circle_portrait_ring" ? "primary" : ""}" data-pip-quick-mode="circle_cutout" title="Cắt tròn chân dung nghi phạm với viền kép">⭕ Cắt Tròn</button>
+            </div>
+
+            <div class="canva-side-title">1. THƯ VIỆN ${PIP_FRAME_LIBRARY.length} MẪU KHUNG &amp; VIỀN PIP</div>
+            <div style="display:flex;gap:3px;flex-wrap:wrap;margin-bottom:6px;">
+              ${PIP_FRAME_CATEGORIES.map((cat) => `<button type="button" class="ghost compact ${curCat === cat.id ? "primary" : ""}" data-pip-cat-filter="${esc(cat.id)}" style="font-size:10px;padding:2px 6px;">${esc(cat.label)}</button>`).join("")}
+            </div>
+            <div class="thumb-lib-grid" style="grid-template-columns:1fr 1fr;max-height:260px;overflow-y:auto;margin-bottom:8px;padding-right:2px;">
+              ${filteredPipLib
                 .map(
-                  (fo) => `<button type="button" class="ghost compact ${curFrameStyle === fo.id ? "primary" : ""}" data-pick-pip-frame-style="${esc(fo.id)}" data-default-pip-color="${esc(fo.defaultColor)}">${esc(fo.label)}</button>`
+                  (fo) => `<button type="button" class="thumb-lib-item ${curFrameStyle === fo.id ? "active" : ""}" data-pick-pip-frame-style="${esc(fo.id)}" data-default-pip-color="${esc(fo.defaultColor)}" data-default-pip-bw="${esc(fo.defaultBw !== undefined ? fo.defaultBw : 6)}" data-default-pip-feather="${esc(fo.defaultFeather || 0)}" data-default-pip-glow="${esc(fo.defaultGlow || 0)}" title="${esc(fo.desc)}">
+                    <canvas data-pip-lib-canvas="${esc(fo.id)}" width="110" height="52"></canvas>
+                    <span>${esc(fo.label)}</span>
+                  </button>`
                 )
                 .join("")}
             </div>
+            <button type="button" class="ghost compact" id="applyPipFrameAllVariantsBtn" style="width:100%;margin-bottom:4px;border-color:rgba(56,189,248,0.45);color:#7dd3fc;">🖼 Đồng bộ kiểu khung &amp; viền PiP này cho cả 4 Bản</button>
+          </div>
+
+          <div class="canva-context-card">
+            <div class="canva-side-title">2. TÙY CHỈNH VIỀN, BO GÓC, ĐỘ MỜ CẠNH &amp; BÓNG ĐỔ</div>
             <div class="thumb-manual-color-row">
-              <span class="thumb-mini-color-lbl">🎨 Màu khung viền:</span>
+              <span class="thumb-mini-color-lbl">🎨 Màu viền/hào quang:</span>
               <input type="color" id="ctxPipBorderColor" value="${esc(bCol)}" />
               <input type="text" class="thumb-hex-input" id="ctxPipBorderHex" value="${esc(bCol.toUpperCase())}" maxlength="7" />
+              <select id="ctxPipBorderDashSelect" style="margin-left:auto;font-size:11px;padding:2px 6px;border-radius:6px;background:#0f172a;color:#e2e8f0;border:1px solid rgba(148,163,184,0.3);">
+                <option value="solid" ${bDash === "solid" ? "selected" : ""}>━━ Nét liền</option>
+                <option value="dashed" ${bDash === "dashed" ? "selected" : ""}>╌╌ Nét đứt</option>
+                <option value="dotted" ${bDash === "dotted" ? "selected" : ""}>┈┈ Nét chấm</option>
+                <option value="double" ${bDash === "double" ? "selected" : ""}>══ Viền kép</option>
+                <option value="none" ${bDash === "none" ? "selected" : ""}>🚫 Ẩn viền</option>
+              </select>
             </div>
             <div class="thumb-color-swatch-row" style="margin-top:6px;">
               <span class="thumb-mini-color-lbl">Màu nhanh:</span>
@@ -4106,24 +6278,100 @@
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
               <label class="thumb-compact-slider">
-                <span>Độ dày viền: <b id="ctxPipBorderWLbl">${bW}px</b></span>
-                <input type="range" id="ctxPipBorderWSlider" min="0" max="20" value="${bW}" />
+                <span>Độ dày viền (0=Tắt): <b id="ctxPipBorderWLbl">${bW}px</b></span>
+                <input type="range" id="ctxPipBorderWSlider" min="0" max="28" value="${bW}" />
               </label>
               <label class="thumb-compact-slider">
-                <span>Chiều rộng: <b id="ctxLayerWidthLbl">${iW}px</b></span>
-                <input type="range" id="ctxLayerWidthSlider" min="100" max="700" value="${iW}" />
+                <span>Bo tròn góc: <b id="ctxPipCornerRadLbl">${cRad}px</b></span>
+                <input type="range" id="ctxPipCornerRadSlider" min="0" max="160" value="${cRad}" />
+              </label>
+              <label class="thumb-compact-slider">
+                <span>Độ mờ cạnh (Feather): <b id="ctxPipFeatherLbl">${fPx}px</b></span>
+                <input type="range" id="ctxPipFeatherSlider" min="0" max="60" value="${fPx}" />
+              </label>
+              <label class="thumb-compact-slider">
+                <span>Hào quang / Bóng: <b id="ctxPipGlowLbl">${gBlur}px</b></span>
+                <input type="range" id="ctxPipGlowSlider" min="0" max="50" value="${gBlur}" />
+              </label>
+              <label class="thumb-compact-slider">
+                <span>Chiều rộng khung: <b id="ctxLayerWidthLbl">${iW}px</b></span>
+                <input type="range" id="ctxLayerWidthSlider" min="90" max="760" value="${iW}" />
+              </label>
+              <label class="thumb-compact-slider">
+                <span>Chiều cao khung: <b id="ctxLayerHeightLbl">${iH}px</b></span>
+                <input type="range" id="ctxLayerHeightSlider" min="80" max="640" value="${iH}" />
               </label>
             </div>
-            <label class="thumb-compact-slider" style="margin-top:6px;">
-              <span>Chiều cao: <b id="ctxLayerHeightLbl">${iH}px</b></span>
-              <input type="range" id="ctxLayerHeightSlider" min="80" max="550" value="${iH}" />
-            </label>
+            <div style="margin-top:8px;">
+              <div style="font-size:10.5px;color:#94a3b8;margin-bottom:4px;font-weight:700;">📐 BỐ CỤC ĐẶT NHANH KHUNG PIP TRÊN THUMBNAIL:</div>
+              <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;">
+                <button type="button" class="ghost compact" data-pip-layout-snap="top_right">↗ Góc Phải Trên</button>
+                <button type="button" class="ghost compact" data-pip-layout-snap="top_left">↖ Góc Trái Trên</button>
+                <button type="button" class="ghost compact" data-pip-layout-snap="mid_left">↙ Trái Giữa</button>
+                <button type="button" class="ghost compact" data-pip-layout-snap="split_right">◨ Nửa Phải 50/50</button>
+                <button type="button" class="ghost compact" data-pip-layout-snap="split_left">◧ Nửa Trái 50/50</button>
+                <button type="button" class="ghost compact" data-pip-layout-snap="dual_stack">🎴 Xếp Chéo 2 Ảnh</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="canva-context-card">
+            <div class="canva-side-title">3. CẮT ZOOM TRONG KHUNG &amp; CHỈNH MÀU ẢNH PHỤ</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+              <label class="thumb-compact-slider">
+                <span>Phóng to: <b id="ctxPipCropZoomLbl">${cropZoom}%</b></span>
+                <input type="range" id="ctxPipCropZoomSlider" min="100" max="280" value="${cropZoom}" />
+              </label>
+              <label class="thumb-compact-slider">
+                <span>Dịch ngang: <b id="ctxPipCropOxLbl">${cropOx}</b></span>
+                <input type="range" id="ctxPipCropOxSlider" min="-100" max="100" value="${cropOx}" />
+              </label>
+              <label class="thumb-compact-slider">
+                <span>Dịch dọc: <b id="ctxPipCropOyLbl">${cropOy}</b></span>
+                <input type="range" id="ctxPipCropOySlider" min="-100" max="100" value="${cropOy}" />
+              </label>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+              <label class="thumb-compact-slider">
+                <span>Độ sáng ảnh: <b id="ctxPipBrightLbl">${pipBright}%</b></span>
+                <input type="range" id="ctxPipBrightSlider" min="50" max="160" value="${pipBright}" />
+              </label>
+              <label class="thumb-compact-slider">
+                <span>Tương phản: <b id="ctxPipContrLbl">${pipContr}%</b></span>
+                <input type="range" id="ctxPipContrSlider" min="50" max="180" value="${pipContr}" />
+              </label>
+            </div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+              <button type="button" class="ghost compact ${pipFilt === "none" ? "primary" : ""}" data-pip-filter-mode="none" style="font-size:10.5px;">Màu Gốc</button>
+              <button type="button" class="ghost compact ${pipFilt === "high_contrast" ? "primary" : ""}" data-pip-filter-mode="high_contrast" style="font-size:10.5px;">⚡ Rõ Nét</button>
+              <button type="button" class="ghost compact ${pipFilt === "grayscale" ? "primary" : ""}" data-pip-filter-mode="grayscale" style="font-size:10.5px;">⚫ Đen Trắng</button>
+              <button type="button" class="ghost compact ${pipFilt === "cctv_green" ? "primary" : ""}" data-pip-filter-mode="cctv_green" style="font-size:10.5px;">🟢 Xanh CCTV</button>
+              <button type="button" class="ghost compact ${pipFilt === "sepia" ? "primary" : ""}" data-pip-filter-mode="sepia" style="font-size:10.5px;">📜 Cổ Điển</button>
+              <button type="button" class="ghost compact ${pipFilt === "cold_blue" ? "primary" : ""}" data-pip-filter-mode="cold_blue" style="font-size:10.5px;">❄️ Lạnh Pháp Y</button>
+            </div>
+          </div>
+
+          <div class="canva-context-card">
+            <div class="canva-side-title">4. NHÃN CHÚ THÍCH ĐÍNH KÈM TRÊN KHUNG PIP</div>
+            <div style="display:flex;gap:5px;margin-bottom:6px;">
+              <input type="text" id="ctxPipCaptionInput" value="${esc(capText)}" placeholder="Nhập nhãn đính kèm (VD: 실제 체포 현장)..." style="flex:1;font-size:12px;padding:5px 8px;border-radius:6px;background:#090d16;color:#f8fafc;border:1px solid rgba(148,163,184,0.3);" />
+              <select id="ctxPipCaptionPosSelect" style="font-size:11px;padding:4px 6px;border-radius:6px;background:#0f172a;color:#e2e8f0;border:1px solid rgba(148,163,184,0.3);">
+                <option value="bottom" ${capPos === "bottom" ? "selected" : ""}>⬇ Đáy khung</option>
+                <option value="top" ${capPos === "top" ? "selected" : ""}>⬆ Đỉnh khung</option>
+              </select>
+              <input type="color" id="ctxPipCaptionBgColor" value="${esc(capBg)}" title="Màu nền nhãn PiP" />
+              <input type="color" id="ctxPipCaptionTextColor" value="${esc(capCol)}" title="Màu chữ nhãn PiP" />
+            </div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;">
+              ${PIP_CAPTION_PRESETS.map((cp) => `<button type="button" class="ghost compact" data-pip-caption-preset="${esc(cp.text)}" data-cap-bg="${esc(cp.bg)}" data-cap-col="${esc(cp.color)}" title="🇻🇳 ${esc(cp.vi)}" style="font-size:10px;padding:2px 6px;">🏷 ${esc(cp.text)}</button>`).join("")}
+              <button type="button" class="ghost compact" data-pip-caption-preset="" style="font-size:10px;padding:2px 6px;color:#fca5a5;">✕ Xóa nhãn</button>
+            </div>
           </div>
 
           ${commonTransformHtml}
 
           <div class="canva-context-card">
-            <div class="canva-side-title">2. KHO ẢNH TƯ LIỆU THẬT &amp; HIỆN TRƯỜNG CHO [${esc(selected.name || selected.id)}] (${candidates.length} ẢNH)</div>
+            <div class="canva-side-title">5. KHO ẢNH TƯ LIỆU THẬT &amp; HIỆN TRƯỜNG CHO [${esc(selected.name || selected.id)}] (${candidates.length} ẢNH)</div>
             <div style="display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap;">
               <label class="ghost compact thumb-upload-btn" style="display:inline-flex;align-items:center;justify-content:center;gap:5px;flex:1;padding:6px 10px;font-size:11.5px;cursor:pointer;border-color:rgba(56,189,248,0.45);color:#7dd3fc;background:rgba(56,189,248,0.08);">
                 📁 Tải ảnh từ máy
@@ -4154,6 +6402,10 @@
     // CASE 5: BACKGROUND / NOTHING SELECTED
     const vigPct = Math.round(Number(lVig.opacity ?? 0.82) * 100);
     const vigStyle = String(lVig.style || "left_heavy");
+    const bgBright = Math.round(Number(activeVariant.bgBrightness ?? 100));
+    const bgContr = Math.round(Number(activeVariant.bgContrast ?? 100));
+    const bgBlur = Math.round(Number(activeVariant.bgBlur ?? 0));
+    const bgFilt = String(activeVariant.bgFilter || "none").toLowerCase();
     const candidates = getCleanCandidates();
     return `
       <div class="canva-inspector-header">
@@ -4165,16 +6417,37 @@
       ${switcherHtml}
       <div class="canva-inspector-scroll">
         <div class="canva-context-card">
-          <div class="canva-side-title">1. ÁNH SÁNG &amp; ĐỘ TỐI NỀN (VIGNETTE)</div>
+          <div class="canva-side-title">1. ÁNH SÁNG, ĐỘ MỜ &amp; MÀU NỀN (BACKGROUND GRADING)</div>
           <label class="thumb-compact-slider">
-            <span>Độ tối nền bảo vệ chữ: <b id="quickVigLabel">${vigPct}%</b></span>
+            <span>Độ tối Vignette bảo vệ chữ: <b id="quickVigLabel">${vigPct}%</b></span>
             <input type="range" id="quickVigOpacity" min="0" max="98" value="${vigPct}" />
           </label>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px;margin-bottom:8px;">
             <button type="button" class="ghost compact ${vigStyle === "left_heavy" ? "primary" : ""}" data-set-vig-style="left_heavy">🌑 Tối bên Trái</button>
             <button type="button" class="ghost compact ${vigStyle === "bottom_heavy" ? "primary" : ""}" data-set-vig-style="bottom_heavy">🌑 Tối bên Dưới</button>
             <button type="button" class="ghost compact ${vigStyle === "right_heavy" ? "primary" : ""}" data-set-vig-style="right_heavy">🌑 Tối bên Phải</button>
             <button type="button" class="ghost compact ${vigStyle === "radial_spotlight" ? "primary" : ""}" data-set-vig-style="radial_spotlight">🔦 Spotlight Giữa</button>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+            <label class="thumb-compact-slider">
+              <span>Độ sáng nền: <b id="ctxBgBrightLbl">${bgBright}%</b></span>
+              <input type="range" id="ctxBgBrightSlider" min="40" max="150" value="${bgBright}" />
+            </label>
+            <label class="thumb-compact-slider">
+              <span>Tương phản: <b id="ctxBgContrLbl">${bgContr}%</b></span>
+              <input type="range" id="ctxBgContrSlider" min="50" max="180" value="${bgContr}" />
+            </label>
+            <label class="thumb-compact-slider">
+              <span>Làm mờ nền: <b id="ctxBgBlurLbl">${bgBlur}px</b></span>
+              <input type="range" id="ctxBgBlurSlider" min="0" max="16" value="${bgBlur}" />
+            </label>
+          </div>
+          <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:6px;">
+            <button type="button" class="ghost compact ${bgFilt === "none" ? "primary" : ""}" data-bg-filter-mode="none" style="font-size:10.5px;">Màu Gốc</button>
+            <button type="button" class="ghost compact ${bgFilt === "high_drama" ? "primary" : ""}" data-bg-filter-mode="high_drama" style="font-size:10.5px;">🔥 Tương Phản Kịch Tính</button>
+            <button type="button" class="ghost compact ${bgFilt === "cold_noir" ? "primary" : ""}" data-bg-filter-mode="cold_noir" style="font-size:10.5px;">❄️ Đêm Lạnh Hình Sự</button>
+            <button type="button" class="ghost compact ${bgFilt === "grayscale" ? "primary" : ""}" data-bg-filter-mode="grayscale" style="font-size:10.5px;">⚫ Đen Trắng Hồ Sơ</button>
+            <button type="button" class="ghost compact ${bgFilt === "cctv_tint" ? "primary" : ""}" data-bg-filter-mode="cctv_tint" style="font-size:10.5px;">🟢 Ám Xanh CCTV</button>
           </div>
         </div>
 
@@ -4256,8 +6529,8 @@
 
     if (pill) {
       pill.textContent = hasSel
-        ? `🎯 Đang sửa: ${selected.name || selected.id}`
-        : "🖼 Đang sửa: Ảnh nền & Ánh sáng (Ấn vào chữ/mũi tên trên ảnh để sửa)";
+        ? `🎯 ${selected.name || selected.id}`
+        : "🖼 Ảnh nền & Ánh sáng";
     }
     if (delBtn) delBtn.disabled = !hasSel;
     if (angleSlider) {
@@ -4467,6 +6740,114 @@
     }
   }
 
+  function isVariantHookPlaceholderVi(str) {
+    const s = String(str || "").trim();
+    if (!s) return true;
+    return /^Variant\s+[A-D]\b/i.test(s) || /^(?:Nghịch lý|Hai mặt|Nhân vật\s*&\s*Vật chứng|Tiêu điểm Pháp y)\s*\(/i.test(s);
+  }
+
+  function splitSeoBilingualTitle(rawTitle, explicitVi = "") {
+    let raw = String(rawTitle || "").trim();
+    let vi = String(explicitVi || "").trim();
+    raw = raw.replace(/^(?:🇰🇷\s*)?(?:KR\s+)+/i, "").trim();
+    const viRegex = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i;
+    const parenMatch = raw.match(/^(.*?)\s*\(([^()]+)\)\s*$/);
+    if (parenMatch && viRegex.test(parenMatch[2])) {
+      raw = parenMatch[1].trim();
+      if (!vi) {
+        vi = parenMatch[2].replace(/^(?:🇻🇳\s*)?(?:VN|VI|Tiếng Việt|Nghĩa(?:\s+Tiếng\s+Việt)?)\s*[:\-–—]?\s*/i, "").trim();
+      }
+    }
+    const splitLines = raw.split(/\n+|\s+\/\/\s+/);
+    if (splitLines.length >= 2 && viRegex.test(splitLines[splitLines.length - 1]) && !/[가-힣]/.test(splitLines[splitLines.length - 1])) {
+      if (!vi) {
+        vi = splitLines[splitLines.length - 1].replace(/^(?:🇻🇳\s*)?(?:VN|VI|Tiếng Việt|Nghĩa(?:\s+Tiếng\s+Việt)?)\s*[:\-–—]?\s*/i, "").trim();
+      }
+      raw = splitLines.slice(0, -1).join(" ").trim();
+    }
+    return { ko: raw, vi };
+  }
+
+  function extractSeoTitleOptionsList(pack) {
+    if (!pack || typeof pack !== "object") return [];
+    const rawOpts = Array.isArray(pack.title_options) ? pack.title_options : [];
+    const details = Array.isArray(pack.title_options_details) ? pack.title_options_details : [];
+    const optsVi = Array.isArray(pack.title_options_vi) ? pack.title_options_vi : [];
+    const titlesVi = Array.isArray(pack.titles_vi) ? pack.titles_vi : [];
+    const titleVars = Array.isArray(pack.title_variants) ? pack.title_variants : [];
+    const abVars = Array.isArray(pack.ab_variants) ? pack.ab_variants : [];
+    const pairs = Array.isArray(pack.title_thumbnail_pairs) ? pack.title_thumbnail_pairs : [];
+    const overlayVars = Array.isArray(pack.text_overlay_variants) ? pack.text_overlay_variants : [];
+    const overlayOpts = Array.isArray(pack.thumbnail?.overlay_text_options) ? pack.thumbnail.overlay_text_options : [];
+
+    const viByKo = new Map();
+    const registerVi = (k, v) => {
+      const ck = String(k || "").replace(/^(?:🇰🇷\s*)?(?:KR\s+)+/i, "").trim();
+      const cv = String(v || "").trim();
+      if (ck && cv && !viByKo.has(ck)) viByKo.set(ck, cv);
+    };
+    details.forEach((d) => d && registerVi(d.title_ko || d.kr || d.title, d.title_vi || d.vi));
+    titleVars.forEach((d) => d && registerVi(d.title_ko || d.kr || d.title, d.title_vi || d.vi));
+    abVars.forEach((d) => d && registerVi(d.title_ko || d.kr || d.title, d.title_vi || d.vi));
+    pairs.forEach((d) => d && registerVi(d.title || d.paired_title, d.title_vi || d.paired_title_vi));
+    overlayVars.forEach((d) => d && registerVi(d.paired_title || d.title, d.paired_title_vi || d.title_vi));
+    overlayOpts.forEach((d) => d && registerVi(d.paired_title || d.title, d.paired_title_vi || d.title_vi));
+    if (pack.recommended_title && (pack.recommended_title_vi || pack.title_vi)) {
+      registerVi(pack.recommended_title, pack.recommended_title_vi || pack.title_vi);
+    }
+
+    const baseList = rawOpts.length ? [...rawOpts] : (titleVars.length ? [...titleVars] : [...details]);
+    if (baseList.length < 8) {
+      const seenKo = new Set(
+        baseList.map((item) => {
+          const s = typeof item === "object" && item !== null ? String(item.title_ko || item.kr || item.title || "") : String(item || "");
+          return splitSeoBilingualTitle(s).ko;
+        }).filter(Boolean)
+      );
+      const extraSources = [...titleVars, ...abVars, ...details, ...pairs, ...overlayVars];
+      for (const ex of extraSources) {
+        if (baseList.length >= 8) break;
+        if (!ex || typeof ex !== "object") continue;
+        const exKo = splitSeoBilingualTitle(ex.title_ko || ex.kr || ex.title || ex.paired_title || "").ko;
+        if (exKo && !seenKo.has(exKo)) {
+          seenKo.add(exKo);
+          baseList.push(ex);
+        }
+      }
+    }
+
+    return baseList.map((opt, idx) => {
+      const d = (typeof opt === "object" && opt !== null) ? opt : (details[idx] || titleVars[idx] || abVars[idx] || {});
+      const rawKo = typeof opt === "object" && opt !== null
+        ? String(opt.title_ko || opt.kr || opt.title || opt.paired_title || "").trim()
+        : String(opt || "").trim();
+      const explicitVi = String(
+        d.title_vi
+        || d.vi
+        || d.paired_title_vi
+        || optsVi[idx]
+        || titlesVi[idx]
+        || titleVars[idx]?.title_vi
+        || titleVars[idx]?.vi
+        || abVars[idx]?.title_vi
+        || abVars[idx]?.vi
+        || viByKo.get(rawKo.replace(/^(?:🇰🇷\s*)?(?:KR\s+)+/i, "").trim())
+        || pairs[idx]?.title_vi
+        || pairs[idx]?.paired_title_vi
+        || overlayOpts[idx]?.paired_title_vi
+        || ""
+      ).trim();
+      const { ko, vi } = splitSeoBilingualTitle(rawKo, explicitVi);
+      const defaultVar = idx % 4 === 0 ? "v1" : idx % 4 === 1 ? "v2" : idx % 4 === 2 ? "v3" : "v4";
+      const pairedRaw = String(d.paired_variant || defaultVar).trim();
+      const paired = /^v[1-4]$/i.test(pairedRaw) ? pairedRaw.toLowerCase() : defaultVar;
+      const pairedLabel = paired === "v1" ? "BẢN A" : paired === "v2" ? "BẢN B" : paired === "v3" ? "BẢN C" : "BẢN D";
+      const kw = String(d.keyword_anchor || d.keyword_anchor_vi || "").trim();
+      const syn = String(d.synergy_vi || "").trim();
+      return { idx, ko, vi, paired, pairedLabel, kw, syn };
+    });
+  }
+
   function parseVariantVietnamese(variant, idx = 0) {
     if (!variant || typeof variant !== "object") {
       return { badgeVi: "", line1Vi: "", line2Vi: "", fullVi: "", hookVi: "", pairedTitleKo: "", pairedTitleVi: "", synergyVi: "", keywordAnchorVi: "" };
@@ -4475,44 +6856,88 @@
     const packVariants = Array.isArray(seoPack.thumbnail_variants) ? seoPack.thumbnail_variants : [];
     const packDetails = Array.isArray(seoPack.title_options_details) ? seoPack.title_options_details : [];
     const packTitlesKo = Array.isArray(seoPack.title_options) ? seoPack.title_options : [];
-    const packTitlesVi = Array.isArray(seoPack.title_options_vi) ? seoPack.title_options_vi : [];
+    const packTitlesVi = Array.isArray(seoPack.title_options_vi) ? seoPack.title_options_vi : (Array.isArray(seoPack.titles_vi) ? seoPack.titles_vi : []);
     const packOverlayOpts = Array.isArray(seoPack.thumbnail?.overlay_text_options) ? seoPack.thumbnail.overlay_text_options : [];
+    const packTextOverlayVars = Array.isArray(seoPack.text_overlay_variants) ? seoPack.text_overlay_variants : [];
+    const packThumbTextVi = Array.isArray(seoPack.thumbnail_text_vi) ? seoPack.thumbnail_text_vi : [];
+    const packPairs = Array.isArray(seoPack.title_thumbnail_pairs) ? seoPack.title_thumbnail_pairs : [];
     const pv = packVariants.find((item) => item && item.id === variant.id) || packVariants[idx] || {};
     const pd = packDetails[idx] || {};
     const po = packOverlayOpts[idx] || {};
+    const ptov = packTextOverlayVars[idx] || {};
+    const pttv = packThumbTextVi[idx] || {};
+    const ppair = packPairs[idx] || {};
 
-    const raw = String(variant.meaning_vi || pv.meaning_vi || po.meaning_vi || "").trim();
-    let badgeVi = String(variant.badge_vi || pv.badge_vi || "").trim();
-    let line1Vi = String(variant.line_1_vi || pv.line_1_vi || "").trim();
-    let line2Vi = String(variant.line_2_vi || pv.line_2_vi || "").trim();
+    const layers = Array.isArray(variant.layers) ? variant.layers : [];
+    const layerBadgeVi = String(layers.find((l) => l && l.id === "badge")?.text_vi || "").trim();
+    const layerLine1Vi = String(layers.find((l) => l && l.id === "line_1")?.text_vi || "").trim();
+    const layerLine2Vi = String(layers.find((l) => l && l.id === "line_2")?.text_vi || "").trim();
 
-    if (raw) {
+    const pickCleanVi = (...candidates) => {
+      for (const c of candidates) {
+        const s = String(c || "").trim();
+        if (s && !isVariantHookPlaceholderVi(s)) return s;
+      }
+      return "";
+    };
+
+    const raw = pickCleanVi(variant.meaning_vi, pv.meaning_vi, po.meaning_vi);
+    let badgeVi = pickCleanVi(variant.badge_vi, layerBadgeVi, pv.badge_vi, po.badge_vi, ptov.badge_vi, pttv.badge_vi, ppair.badge_vi);
+    let line1Vi = pickCleanVi(variant.line_1_vi, layerLine1Vi, pv.line_1_vi, po.line_1_vi, ptov.line_1_vi, pttv.line_1_vi, ppair.line_1_vi);
+    let line2Vi = pickCleanVi(variant.line_2_vi, layerLine2Vi, pv.line_2_vi, po.line_2_vi, ptov.line_2_vi, pttv.line_2_vi, ppair.line_2_vi);
+
+    if (raw && !isVariantHookPlaceholderVi(raw)) {
       const mBadge = raw.match(/(?:\[)?(?:Tag[^:\]|]*|Badge[^:\]|]*):\s*([^\]|]+)/i);
       const mLine1 = raw.match(/(?:\[)?(?:Dòng\s*1|Line\s*1)[^:\]|]*:\s*([^\]|]+)/i);
       const mLine2 = raw.match(/(?:\[)?(?:Dòng\s*2|Line\s*2)[^:\]|]*:\s*([^\]|]+)/i);
-      if (mBadge) badgeVi = mBadge[1].trim();
-      if (mLine1) line1Vi = mLine1[1].trim();
-      if (mLine2) line2Vi = mLine2[1].trim();
+      if (mBadge && !badgeVi) badgeVi = mBadge[1].trim();
+      if (mLine1 && !line1Vi) line1Vi = mLine1[1].trim();
+      if (mLine2 && !line2Vi) line2Vi = mLine2[1].trim();
+
+      if (!line1Vi && !line2Vi) {
+        let rest = raw;
+        const leadBracket = rest.match(/^\[([^\]]+)\]\s*(.+)$/);
+        if (leadBracket) {
+          if (!badgeVi) badgeVi = leadBracket[1].replace(/^(?:Tag|Badge)\s*:\s*/i, "").trim();
+          rest = leadBracket[2].trim();
+        }
+        if (!isVariantHookPlaceholderVi(rest)) {
+          const slashParts = rest.split(/\s*\/\s*|\s*\|\s*|\n+/).map((s) => s.trim()).filter(Boolean);
+          if (slashParts.length >= 2) {
+            line1Vi = slashParts[0];
+            line2Vi = slashParts.slice(1).join(" / ");
+          } else {
+            const quoteDotParts = rest.match(/^([“"'][^”"']+[”"'])\s*[·—–-]\s*(.+)$/);
+            if (quoteDotParts) {
+              line1Vi = quoteDotParts[1].trim();
+              line2Vi = quoteDotParts[2].trim();
+            } else if (rest) {
+              line1Vi = rest;
+            }
+          }
+        }
+      }
     }
     const hookVi = String(variant.psychological_hook || pv.psychological_hook || "").trim();
     const rawKoOpt = packTitlesKo[idx];
     const koFromOpt = typeof rawKoOpt === "object" && rawKoOpt !== null ? String(rawKoOpt.title_ko || rawKoOpt.title || "").trim() : String(rawKoOpt || "").trim();
-    const pairedTitleKo = String(
+    const rawPairedKo = String(
       variant.paired_title || pd.title_ko || pd.title || po.paired_title || pv.paired_title || koFromOpt || seoPack.recommended_title || studioState.data?.recommended_title || ""
     ).trim();
-    const pairedTitleVi = String(
-      variant.paired_title_vi || pd.title_vi || po.paired_title_vi || pv.paired_title_vi || packTitlesVi[idx] || seoPack.recommended_title_vi || studioState.data?.recommended_title_vi || ""
+    const rawPairedVi = String(
+      po.paired_title_vi || pd.title_vi || packTitlesVi[idx] || variant.paired_title_vi || pv.paired_title_vi || ppair.title_vi || ptov.paired_title_vi || seoPack.recommended_title_vi || seoPack.title_vi || studioState.data?.recommended_title_vi || ""
     ).trim();
-    const synergyVi = String(variant.synergy_vi || pd.synergy_vi || pv.synergy_vi || "").trim();
-    const keywordAnchorVi = String(variant.keyword_anchor_vi || pd.keyword_anchor || pv.keyword_anchor_vi || "").trim();
+    const splitPaired = splitSeoBilingualTitle(rawPairedKo, rawPairedVi);
+    const synergyVi = String(variant.synergy_vi || pd.synergy_vi || pv.synergy_vi || po.synergy_vi || "").trim();
+    const keywordAnchorVi = String(variant.keyword_anchor_vi || pd.keyword_anchor || pv.keyword_anchor_vi || po.keyword_anchor_vi || "").trim();
     return {
       badgeVi,
       line1Vi,
       line2Vi,
-      fullVi: raw,
+      fullVi: raw || [line1Vi, line2Vi].filter(Boolean).join(" / "),
       hookVi,
-      pairedTitleKo,
-      pairedTitleVi,
+      pairedTitleKo: splitPaired.ko,
+      pairedTitleVi: splitPaired.vi,
       synergyVi,
       keywordAnchorVi,
     };
@@ -4520,31 +6945,27 @@
 
   function buildBilingualTitlesBannerHtml() {
     const seoPack = studioState.seoPack || studioState.data?.seo_package || {};
-    const recKo = String(seoPack.recommended_title || studioState.data?.recommended_title || "").trim();
-    const recVi = String(seoPack.recommended_title_vi || studioState.data?.recommended_title_vi || "").trim();
-    const rawPrimaryKw = seoPack.primary_keywords_summary;
-    const kwSummary = rawPrimaryKw && typeof rawPrimaryKw === "object"
-      ? Object.values(rawPrimaryKw).map((v) => String(v || "").trim()).filter(Boolean).join(" · ")
-      : String(rawPrimaryKw || "").trim();
-    const synergySummary = String(seoPack.title_thumb_synergy_vi || "").trim();
-    const rawOpts = Array.isArray(seoPack.title_options) ? seoPack.title_options : [];
-    const details = Array.isArray(seoPack.title_options_details) ? seoPack.title_options_details : [];
-    const optsVi = Array.isArray(seoPack.title_options_vi) ? seoPack.title_options_vi : [];
+    const rawRecKo = String(seoPack.recommended_title || studioState.data?.recommended_title || "").trim();
+    const rawRecVi = String(
+      seoPack.recommended_title_vi
+      || seoPack.title_vi
+      || studioState.data?.recommended_title_vi
+      || (Array.isArray(seoPack.title_options_vi) ? seoPack.title_options_vi[0] : "")
+      || (Array.isArray(seoPack.titles_vi) ? seoPack.titles_vi[0] : "")
+      || ""
+    ).trim();
+    const { ko: recKo, vi: recVi } = splitSeoBilingualTitle(rawRecKo, rawRecVi);
+    const optionsList = extractSeoTitleOptionsList(seoPack);
 
-    if (!recKo && !rawOpts.length) return "";
+    if (!recKo && !optionsList.length) return "";
 
-    const rowsHtml = rawOpts.map((opt, idx) => {
-      const d = (typeof opt === "object" && opt !== null) ? opt : (details[idx] || {});
-      const ko = typeof opt === "object" && opt !== null ? String(opt.title_ko || opt.title || "").trim() : String(opt || "").trim();
-      const vi = String(d.title_vi || optsVi[idx] || "").trim();
-      const paired = String(d.paired_variant || `Phương án ${idx + 1}`).trim();
-      const kw = String(d.keyword_anchor || "").trim();
-      const syn = String(d.synergy_vi || "").trim();
+    const rowsHtml = optionsList.map((item) => {
+      const { idx, ko, vi, pairedLabel, kw, syn } = item;
       return `<div style="padding:10px 12px;background:rgba(15,23,42,0.88);border:1px solid rgba(56,189,248,0.28);border-radius:8px;display:flex;flex-direction:column;gap:5px;">
         <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
           <div style="font-size:13.5px;line-height:1.45;color:#f8fafc;font-weight:800;">
             <span style="color:#38bdf8;margin-right:6px;">#${idx + 1}.</span>
-            <span style="display:inline-block;padding:1px 7px;margin-right:6px;border-radius:4px;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.45);color:#fde047;font-size:11px;font-weight:800;">${esc(paired)}</span>
+            <span style="display:inline-block;padding:1px 7px;margin-right:6px;border-radius:4px;background:rgba(251,191,36,0.18);border:1px solid rgba(251,191,36,0.45);color:#fde047;font-size:11px;font-weight:800;">${esc(pairedLabel)}</span>
             <span>🇰🇷 ${esc(ko)}</span>
           </div>
           <button type="button" class="ghost compact" data-copy-raw-title="${esc(ko)}" style="flex-shrink:0;font-size:11px;padding:3px 9px;">📋 Sao chép</button>
@@ -4559,16 +6980,16 @@
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:6px;">
         <div>
           <span style="font-size:10.5px;font-weight:800;letter-spacing:0.06em;color:#4ade80;display:block;">🎬 HỆ THỐNG TIÊU ĐỀ YOUTUBE SONG NGỮ (TIẾNG HÀN + BẢN DỊCH NGHĨA TIẾNG VIỆT)</span>
-          <strong style="font-size:13.5px;color:#f8fafc;">Tiêu đề Đề xuất Chính &amp; 6 Phương án Tiêu đề đi cặp Thumbnail A / B / C / D</strong>
+          <strong style="font-size:13.5px;color:#f8fafc;">Tiêu đề Đề xuất Chính &amp; ${optionsList.length || 8} Phương án Tiêu đề đi cặp Thumbnail A / B / C / D</strong>
         </div>
         ${recKo ? `<button type="button" class="primary compact" data-copy-raw-title="${esc(recKo)}" style="min-height:27px;height:27px;font-size:11px;padding:0 10px;">📋 Sao chép Tiêu đề Chính (Hàn)</button>` : ""}
       </div>
-      ${recKo ? `<div style="padding:7px 10px;background:rgba(30,41,59,0.92);border:1px solid rgba(250,204,21,0.45);border-radius:8px;margin-bottom:6px;display:flex;flex-direction:column;gap:3px;">
-        <div style="font-size:13.5px;font-weight:800;color:#ffffff;line-height:1.35;">🇰🇷 ${esc(recKo)}</div>
-        ${recVi ? `<div style="font-size:12.5px;font-weight:700;color:#f8fafc;background:rgba(34,197,94,0.16);border-left:4px solid #22c55e;padding:3px 8px;border-radius:4px;"><span style="color:#4ade80;font-weight:800;">🇻🇳 Dịch nghĩa Tiếng Việt:</span> ${esc(recVi)}</div>` : ""}
+      ${recKo ? `<div style="padding:7px 10px;background:rgba(30,41,59,0.92);border:1px solid rgba(250,204,21,0.45);border-radius:8px;margin-bottom:6px;display:flex;flex-direction:column;gap:4px;">
+        <div style="font-size:13.5px;font-weight:800;color:#ffffff;line-height:1.35;"><span style="display:inline-block;padding:1px 6px;margin-right:6px;border-radius:4px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-size:11px;font-weight:800;">KR</span> 🇰🇷 ${esc(recKo)}</div>
+        ${recVi ? `<div style="font-size:12.5px;font-weight:700;color:#f8fafc;background:rgba(34,197,94,0.16);border-left:4px solid #22c55e;padding:4px 8px;border-radius:4px;"><span style="display:inline-block;padding:1px 6px;margin-right:6px;border-radius:4px;background:rgba(34,197,94,0.25);color:#4ade80;font-size:11px;font-weight:800;">VN</span> <span style="color:#4ade80;font-weight:800;">🇻🇳 Nghĩa Tiếng Việt:</span> ${esc(recVi)}</div>` : ""}
       </div>` : ""}
       ${rowsHtml ? `<details style="margin-top:2px;">
-        <summary style="cursor:pointer;font-size:11.5px;font-weight:800;color:#38bdf8;user-select:none;">▼ Bấm để mở rộng ${rawOpts.length} Phương án Tiêu đề YouTube (Song ngữ Hàn - Việt)</summary>
+        <summary style="cursor:pointer;font-size:11.5px;font-weight:800;color:#38bdf8;user-select:none;">▼ Bấm để mở rộng ${optionsList.length} Phương án Tiêu đề YouTube (Song ngữ Hàn - Việt)</summary>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;margin-top:6px;">${rowsHtml}</div>
       </details>` : ""}
     </div>`;
@@ -4598,7 +7019,33 @@
       });
     });
 
-    // 2. Quick select layer / background pills (in-place contextual switch without scroll jump)
+    // 2. Quick select layer / background pills & Inspector Layer Dropdown
+    const quickSelectEl = host.querySelector("#inspectorQuickLayerSelect");
+    if (quickSelectEl && quickSelectEl.dataset.bound !== "1") {
+      quickSelectEl.dataset.bound = "1";
+      quickSelectEl.addEventListener("change", (e) => {
+        e.stopPropagation();
+        const val = String(quickSelectEl.value || "");
+        if (!val || val === "__bg__") {
+          studioState.selectedLayerId = null;
+          renderAllCanvases();
+          refreshContextualPanels();
+          return;
+        }
+        const layer = getLayer(val, activeVariant);
+        if (!layer) return;
+        pushUndoSnapshot();
+        if (layer.visible === false) {
+          layer.visible = true;
+          showToast(`Đã bật «${layer.name || layer.id}» lên ảnh!`);
+        }
+        studioState.selectedLayerId = val;
+        renderAllCanvases();
+        refreshContextualPanels();
+        scheduleSaveDesign();
+      });
+    }
+
     host.querySelectorAll("[data-quick-select-bg]").forEach((btn) => {
       if (btn.dataset.bound === "1") return;
       btn.dataset.bound = "1";
@@ -4732,7 +7179,41 @@
           if (lBadge) { lBadge.left = 820; lBadge.top = 170; lBadge.visible = true; }
           if (lLine1) { lLine1.left = 450; lLine1.top = 265; lLine1.textAlign = "right"; lLine1.visible = true; }
           if (lLine2) { lLine2.left = 420; lLine2.top = 388; lLine2.textAlign = "right"; lLine2.visible = true; }
+        } else if (archId === "dual_pip_evidence_board") {
+          if (lVig) lVig.style = "left_heavy";
+          if (lBadge) { lBadge.left = 60; lBadge.top = 56; lBadge.visible = true; }
+          if (lLine1) { lLine1.left = 60; lLine1.top = 420; lLine1.textAlign = "left"; lLine1.visible = true; }
+          if (lLine2) { lLine2.left = 60; lLine2.top = 540; lLine2.textAlign = "left"; lLine2.visible = true; }
+          if (lInset) { lInset.left = 830; lInset.top = 38; lInset.width = 390; lInset.height = 290; lInset.frameStyle = "pinned_cork_tape"; lInset.borderColor = "#fde047"; lInset.borderWidth = 12; lInset.angle = 2; lInset.visible = true; }
+          if (lArrow) { lArrow.left = 640; lArrow.top = 180; lArrow.angle = -8; lArrow.visible = true; }
+        } else if (archId === "wanted_dossier_header") {
+          if (lVig) lVig.style = "left_heavy";
+          if (lBadge) { lBadge.left = 64; lBadge.top = 160; lBadge.bgColor = "#dc2626"; lBadge.fill = "#ffffff"; lBadge.visible = true; }
+          if (lLine1) { lLine1.left = 64; lLine1.top = 255; lLine1.textAlign = "left"; lLine1.visible = true; }
+          if (lLine2) { lLine2.left = 64; lLine2.top = 380; lLine2.textAlign = "left"; lLine2.visible = true; }
+          if (lInset) { lInset.left = 835; lInset.top = 42; lInset.width = 380; lInset.height = 350; lInset.frameStyle = "wanted_poster_a"; lInset.borderColor = "#dc2626"; lInset.borderWidth = 8; lInset.angle = -2; lInset.visible = true; }
+          if (lArrow) { lArrow.left = 655; lArrow.top = 210; lArrow.angle = -6; lArrow.visible = true; }
+        } else if (archId === "cctv_surveillance_grid") {
+          if (lVig) lVig.style = "radial_spotlight";
+          if (lBadge) { lBadge.left = 64; lBadge.top = 48; lBadge.bgColor = "#15803d"; lBadge.fill = "#4ade80"; lBadge.visible = true; }
+          if (lLine1) { lLine1.left = 64; lLine1.top = 435; lLine1.textAlign = "left"; lLine1.visible = true; }
+          if (lLine2) { lLine2.left = 64; lLine2.top = 548; lLine2.textAlign = "left"; lLine2.visible = true; }
+          if (lInset) { lInset.left = 825; lInset.top = 44; lInset.width = 395; lInset.height = 300; lInset.frameStyle = "cctv_rec_hud"; lInset.borderColor = "#4ade80"; lInset.borderWidth = 5; lInset.angle = 0; lInset.visible = true; }
+          if (lCircle) { lCircle.left = 840; lCircle.top = 360; lCircle.width = 210; lCircle.height = 210; lCircle.circleStyle = "square_target_box"; lCircle.stroke = "#4ade80"; lCircle.visible = true; }
+        } else if (archId === "center_symmetrical_impact") {
+          if (lVig) lVig.style = "bottom_heavy";
+          if (lBadge) { lBadge.left = 480; lBadge.top = 390; lBadge.visible = true; }
+          if (lLine1) { lLine1.left = 140; lLine1.top = 468; lLine1.width = 1000; lLine1.textAlign = "center"; lLine1.visible = true; }
+          if (lLine2) { lLine2.left = 140; lLine2.top = 568; lLine2.width = 1000; lLine2.textAlign = "center"; lLine2.visible = true; }
+          if (lInset) { lInset.visible = false; }
+        } else if (archId === "top_headline_banner") {
+          if (lVig) lVig.style = "left_heavy";
+          if (lBadge) { lBadge.left = 60; lBadge.top = 36; lBadge.visible = true; }
+          if (lLine1) { lLine1.left = 60; lLine1.top = 112; lLine1.textAlign = "left"; lLine1.visible = true; }
+          if (lLine2) { lLine2.left = 60; lLine2.top = 218; lLine2.textAlign = "left"; lLine2.visible = true; }
+          if (lInset) { lInset.left = 835; lInset.top = 340; lInset.width = 385; lInset.height = 310; lInset.frameStyle = "breaking_news_tv"; lInset.borderColor = "#ef4444"; lInset.borderWidth = 6; lInset.angle = 0; lInset.visible = true; }
         }
+        showToast(`📐 Đã áp dụng bố cục «${btn.textContent.trim()}»!`);
         renderAllCanvases();
         refreshContextualPanels();
         scheduleSaveDesign();
@@ -5130,24 +7611,118 @@
       if (btn.dataset.bound === "1") return;
       btn.dataset.bound = "1";
       btn.addEventListener("click", () => {
-        const sel = getLayer(studioState.selectedLayerId, activeVariant);
-        if (!sel || sel.type !== "inset_image") return;
-        pushUndoSnapshot();
         const st = String(btn.dataset.pickPipFrameStyle || "caution_tape");
+        let sel = getLayer(studioState.selectedLayerId, activeVariant);
+        if (!sel || sel.type !== "inset_image") {
+          sel = (activeVariant.layers || []).find((l) => l && l.type === "inset_image" && l.visible !== false) ||
+                getLayer("inset_photo", activeVariant) ||
+                (activeVariant.layers || []).find((l) => l && l.type === "inset_image");
+          if (!sel) {
+            addNewPipLayer(st);
+            return;
+          }
+          sel.visible = true;
+          studioState.selectedLayerId = sel.id;
+        }
+        pushUndoSnapshot();
         sel.frameStyle = st;
         if (btn.dataset.defaultPipColor) {
           sel.borderColor = normalizeHexColor(btn.dataset.defaultPipColor, "#fbbf24");
         }
-        if (st === "vintage_paper" && Number(sel.borderWidth || 6) < 11) {
+        if (btn.dataset.defaultPipBw !== undefined && btn.dataset.defaultPipBw !== "") {
+          sel.borderWidth = Number(btn.dataset.defaultPipBw);
+        } else if (["vintage_paper", "torn_newspaper", "pinned_cork_tape", "burnt_archival_edge", "steel_handcuff_plate", "red_string_polaroid", "paperclip_archival_card"].includes(st)) {
           sel.borderWidth = 13;
-        } else if (st !== "vintage_paper" && Number(sel.borderWidth || 6) > 10) {
+        } else {
           sel.borderWidth = 6;
+        }
+        sel.featherPx = Number(btn.dataset.defaultPipFeather || 0);
+        sel.glowBlur = Number(btn.dataset.defaultPipGlow || 0);
+        sel.borderDash = "solid";
+        renderAllCanvases();
+        refreshContextualPanels();
+        scheduleSaveDesign();
+        showToast(`🖼 Đã đổi mẫu khung PiP sang «${btn.textContent.trim()}»!`);
+      });
+    });
+
+    // Category filter tabs for PiP frame library
+    host.querySelectorAll("[data-pip-cat-filter]").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        studioState.pipFrameCategory = String(btn.dataset.pipCatFilter || "all");
+        refreshContextualPanels();
+      });
+    });
+
+    // Quick 1-click Frameless / Border / Cutout mode buttons
+    host.querySelectorAll("[data-pip-quick-mode]").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        const sel = getLayer(studioState.selectedLayerId, activeVariant);
+        if (!sel || sel.type !== "inset_image") return;
+        pushUndoSnapshot();
+        const mode = btn.dataset.pipQuickMode;
+        if (mode === "frameless_none") {
+          sel.frameStyle = "frameless_shadow_float";
+          sel.borderWidth = 0;
+          sel.featherPx = 0;
+          sel.glowBlur = 0;
+        } else if (mode === "feather_blend") {
+          sel.frameStyle = "frameless_soft_feather";
+          sel.borderWidth = 0;
+          sel.featherPx = 28;
+        } else if (mode === "edge_dissolve") {
+          sel.frameStyle = "frameless_edge_dissolve";
+          sel.borderWidth = 0;
+          sel.featherPx = 38;
+        } else if (mode === "white_sticker") {
+          sel.frameStyle = "frameless_white_cutout";
+          sel.borderColor = "#ffffff";
+          sel.borderWidth = 9;
+          sel.cornerRadius = 20;
+          sel.featherPx = 0;
+        } else if (mode === "glow_aura") {
+          sel.frameStyle = "frameless_glow_rim";
+          sel.borderColor = "#00f0ff";
+          sel.borderWidth = 3;
+          sel.glowBlur = 32;
+          sel.featherPx = 0;
+        } else if (mode === "circle_cutout") {
+          sel.frameStyle = "circle_portrait_ring";
+          sel.borderColor = "#ffe600";
+          sel.borderWidth = 7;
+          const sz = Math.round((Number(sel.width || 300) + Number(sel.height || 300)) / 2);
+          sel.width = sz;
+          sel.height = sz;
         }
         renderAllCanvases();
         refreshContextualPanels();
         scheduleSaveDesign();
-        showToast(`🖼 Đã đổi kiểu khung PiP sang «${btn.textContent.trim()}»!`);
+        showToast(`✨ Đã bật chế độ «${btn.textContent.trim()}» cho ảnh PiP!`);
       });
+    });
+    host.querySelector("#applyPipFrameAllVariantsBtn")?.addEventListener("click", () => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel || sel.type !== "inset_image") return;
+      pushUndoSnapshot();
+      const targetId = sel.id;
+      getVariants().forEach((v) => {
+        (v.layers || []).forEach((l) => {
+          if (l && l.type === "inset_image" && (l.id === targetId || targetId === "inset_photo")) {
+            if (l.id === targetId) {
+              l.frameStyle = sel.frameStyle || "caution_tape";
+              l.borderColor = sel.borderColor || "#fbbf24";
+              l.borderWidth = sel.borderWidth ?? 6;
+            }
+          }
+        });
+      });
+      renderAllCanvases();
+      scheduleSaveDesign();
+      showToast(`🖼 Đã đồng bộ mẫu khung «${sel.frameStyle}» cho cả 4 Bản!`);
     });
     host.querySelector("#ctxPipBorderColor")?.addEventListener("input", (e) => {
       const sel = getLayer(studioState.selectedLayerId, activeVariant);
@@ -5171,12 +7746,167 @@
     host.querySelector("#ctxPipBorderWSlider")?.addEventListener("input", (e) => {
       const sel = getLayer(studioState.selectedLayerId, activeVariant);
       if (!sel) return;
-      const val = Math.round(Number(e.target.value || 6));
+      const val = Math.round(Number(e.target.value ?? 6));
       sel.borderWidth = val;
       const lbl = host.querySelector("#ctxPipBorderWLbl");
       if (lbl) lbl.textContent = `${val}px`;
       renderAllCanvases();
       scheduleSaveDesign();
+    });
+    host.querySelector("#ctxPipBorderHex")?.addEventListener("change", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      sel.borderColor = normalizeHexColor(e.target.value, "#fbbf24");
+      renderAllCanvases();
+      refreshContextualPanels();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxPipBorderDashSelect")?.addEventListener("change", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      sel.borderDash = e.target.value;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxPipCornerRadSlider")?.addEventListener("input", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      const val = Math.round(Number(e.target.value ?? 14));
+      sel.cornerRadius = val;
+      const lbl = host.querySelector("#ctxPipCornerRadLbl");
+      if (lbl) lbl.textContent = `${val}px`;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxPipFeatherSlider")?.addEventListener("input", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      const val = Math.round(Number(e.target.value ?? 0));
+      sel.featherPx = val;
+      const lbl = host.querySelector("#ctxPipFeatherLbl");
+      if (lbl) lbl.textContent = `${val}px`;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxPipGlowSlider")?.addEventListener("input", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      const val = Math.round(Number(e.target.value ?? 0));
+      sel.glowBlur = val;
+      const lbl = host.querySelector("#ctxPipGlowLbl");
+      if (lbl) lbl.textContent = `${val}px`;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    // Inner Crop Zoom / Pan & Color Grading for PiP
+    const bindPipNumericSlider = (sliderId, lblId, prop, suffix = "") => {
+      host.querySelector(sliderId)?.addEventListener("input", (e) => {
+        const sel = getLayer(studioState.selectedLayerId, activeVariant);
+        if (!sel) return;
+        const val = Math.round(Number(e.target.value || 0));
+        sel[prop] = val;
+        const lbl = host.querySelector(lblId);
+        if (lbl) lbl.textContent = `${val}${suffix}`;
+        renderAllCanvases();
+        scheduleSaveDesign();
+      });
+    };
+    bindPipNumericSlider("#ctxPipCropZoomSlider", "#ctxPipCropZoomLbl", "cropZoom", "%");
+    bindPipNumericSlider("#ctxPipCropOxSlider", "#ctxPipCropOxLbl", "cropOffsetX", "");
+    bindPipNumericSlider("#ctxPipCropOySlider", "#ctxPipCropOyLbl", "cropOffsetY", "");
+    bindPipNumericSlider("#ctxPipBrightSlider", "#ctxPipBrightLbl", "pipBrightness", "%");
+    bindPipNumericSlider("#ctxPipContrSlider", "#ctxPipContrLbl", "pipContrast", "%");
+
+    host.querySelectorAll("[data-pip-filter-mode]").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        const sel = getLayer(studioState.selectedLayerId, activeVariant);
+        if (!sel) return;
+        pushUndoSnapshot();
+        sel.pipFilter = btn.dataset.pipFilterMode;
+        renderAllCanvases();
+        refreshContextualPanels();
+        scheduleSaveDesign();
+      });
+    });
+
+    // PiP Attached Caption Bar
+    host.querySelector("#ctxPipCaptionInput")?.addEventListener("input", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      sel.captionText = e.target.value;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxPipCaptionPosSelect")?.addEventListener("change", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      sel.captionPos = e.target.value;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxPipCaptionBgColor")?.addEventListener("input", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      sel.captionBg = normalizeHexColor(e.target.value, "#dc2626");
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxPipCaptionTextColor")?.addEventListener("input", (e) => {
+      const sel = getLayer(studioState.selectedLayerId, activeVariant);
+      if (!sel) return;
+      sel.captionColor = normalizeHexColor(e.target.value, "#ffffff");
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelectorAll("[data-pip-caption-preset]").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        const sel = getLayer(studioState.selectedLayerId, activeVariant);
+        if (!sel) return;
+        pushUndoSnapshot();
+        sel.captionText = btn.dataset.pipCaptionPreset || "";
+        if (btn.dataset.capBg) sel.captionBg = btn.dataset.capBg;
+        if (btn.dataset.capCol) sel.captionColor = btn.dataset.capCol;
+        renderAllCanvases();
+        refreshContextualPanels();
+        scheduleSaveDesign();
+      });
+    });
+
+    // 1-Click PiP Layout Snap Presets
+    host.querySelectorAll("[data-pip-layout-snap]").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        const sel = getLayer(studioState.selectedLayerId, activeVariant);
+        if (!sel || sel.type !== "inset_image") return;
+        pushUndoSnapshot();
+        const mode = btn.dataset.pipLayoutSnap;
+        if (mode === "top_right") {
+          sel.left = 836; sel.top = 42; sel.width = 388; sel.height = 310; sel.angle = -2;
+        } else if (mode === "top_left") {
+          sel.left = 48; sel.top = 42; sel.width = 388; sel.height = 310; sel.angle = -2.5;
+        } else if (mode === "mid_left") {
+          sel.left = 48; sel.top = 112; sel.width = 360; sel.height = 250; sel.angle = -2.8;
+        } else if (mode === "split_right") {
+          sel.left = 650; sel.top = 0; sel.width = 630; sel.height = 720; sel.angle = 0;
+          sel.frameStyle = "frameless_edge_dissolve"; sel.borderWidth = 0; sel.featherPx = 42;
+        } else if (mode === "split_left") {
+          sel.left = 0; sel.top = 0; sel.width = 630; sel.height = 720; sel.angle = 0;
+          sel.frameStyle = "frameless_edge_dissolve"; sel.borderWidth = 0; sel.featherPx = 42;
+        } else if (mode === "dual_stack") {
+          sel.left = 44; sel.top = 104; sel.width = 340; sel.height = 236; sel.angle = -3.5;
+          addNewPipLayer("torn_newspaper");
+          return;
+        }
+        renderAllCanvases();
+        refreshContextualPanels();
+        scheduleSaveDesign();
+        showToast(`📐 Đã đặt khung PiP vào vị trí «${btn.textContent.trim()}»!`);
+      });
     });
 
     // 11. Common Contextual Transform Controls
@@ -5225,6 +7955,42 @@
         pushUndoSnapshot();
         lVig.style = btn.dataset.setVigStyle;
         lVig.visible = true;
+        renderAllCanvases();
+        refreshContextualPanels();
+        scheduleSaveDesign();
+      });
+    });
+
+    host.querySelector("#ctxBgBrightSlider")?.addEventListener("input", (e) => {
+      const val = Math.round(Number(e.target.value || 100));
+      activeVariant.bgBrightness = val;
+      const lbl = host.querySelector("#ctxBgBrightLbl");
+      if (lbl) lbl.textContent = `${val}%`;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxBgContrSlider")?.addEventListener("input", (e) => {
+      const val = Math.round(Number(e.target.value || 100));
+      activeVariant.bgContrast = val;
+      const lbl = host.querySelector("#ctxBgContrLbl");
+      if (lbl) lbl.textContent = `${val}%`;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelector("#ctxBgBlurSlider")?.addEventListener("input", (e) => {
+      const val = Math.round(Number(e.target.value || 0));
+      activeVariant.bgBlur = val;
+      const lbl = host.querySelector("#ctxBgBlurLbl");
+      if (lbl) lbl.textContent = `${val}px`;
+      renderAllCanvases();
+      scheduleSaveDesign();
+    });
+    host.querySelectorAll("[data-bg-filter-mode]").forEach((btn) => {
+      if (btn.dataset.bound === "1") return;
+      btn.dataset.bound = "1";
+      btn.addEventListener("click", () => {
+        pushUndoSnapshot();
+        activeVariant.bgFilter = btn.dataset.bgFilterMode;
         renderAllCanvases();
         refreshContextualPanels();
         scheduleSaveDesign();
@@ -5456,67 +8222,38 @@
     }
   }
 
-  function buildMasterHeaderHtml(winnerVariant, channelDnaSig, variants) {
+  function buildMasterHeaderHtml(winnerVariant, channelDnaSig, variants, activeTab) {
     const winnerLabel = winnerVariant ? (winnerVariant.short_label || "BẢN A") : "BẢN A";
     const winnerCtr = winnerVariant ? evaluateVariantCtr(winnerVariant) : { score: 83, predicted_ctr_pct: 11.8 };
 
     return `
-      <div class="thumb-master-header">
-        <div class="header-left">
-          <div class="header-kicker">PHASE 07 · BAO BÌ &amp; ĐÓNG GÓI PHÁT HÀNH YOUTUBE</div>
-          <h2 class="header-title">YouTube Packaging Studio · Thumbnail &amp; SEO</h2>
-          <div class="header-status-line">
-            <span class="status-pill winner">★ Winner: ${esc(winnerLabel)} (CTR ${winnerCtr.score}점 · ${winnerCtr.predicted_ctr_pct || 11.8}%)</span>
-            <span class="status-pill safe">✓ 100% An toàn Kiếm tiền Xanh</span>
-            <span class="status-pill dna">Hồ sơ: ${esc(channelDnaSig)}</span>
-          </div>
+      <div class="thumb-saas-command-bar">
+        <div class="thumb-unified-nav" role="tablist" aria-label="Chế độ bàn dựng Thumbnail & SEO">
+          <button type="button" class="thumb-nav-tab ${activeTab === 'editor' ? 'active' : ''}" data-thumb-main-tab="editor">
+            <span class="tab-icon">🎨</span>
+            <span class="tab-title">Bàn dựng Canvas</span>
+          </button>
+          <button type="button" class="thumb-nav-tab ${activeTab === 'compare' ? 'active' : ''}" data-thumb-main-tab="compare">
+            <span class="tab-icon">⊞</span>
+            <span class="tab-title">So sánh 4 Bản</span>
+          </button>
+          <button type="button" class="thumb-nav-tab ${activeTab === 'seo' ? 'active' : ''}" data-thumb-main-tab="seo">
+            <span class="tab-icon">📋</span>
+            <span class="tab-title">Gói SEO</span>
+          </button>
+          <button type="button" class="thumb-nav-tab ${activeTab === 'preview' ? 'active' : ''}" data-thumb-main-tab="preview">
+            <span class="tab-icon">📺</span>
+            <span class="tab-title">Mô phỏng Feed</span>
+          </button>
         </div>
-        <div class="header-right">
-          <button type="button" class="primary compact" id="thumbCopyAllSeoBtn" title="Sao chép toàn bộ Tiêu đề, Mô tả và Tags YouTube">📋 Sao chép Trọn Gói SEO</button>
-          <button type="button" class="ghost compact" id="thumbDownloadAllBtn" ${studioState.busyExportAll ? "disabled" : ""}>📦 Tải hết ${variants.length} Bản (.JPG)</button>
-          <button type="button" class="ghost compact" id="thumbExportAbPackBtn" ${studioState.busyExportAbPack ? "disabled" : ""}>📦 Xuất Gói A/B Test</button>
-          <button type="button" class="ghost compact" id="thumbBatchFlowBtn" ${studioState.busyBatchFlow ? "disabled" : ""}>🎨 Tạo 3 Nền Flow</button>
-          <button type="button" class="ghost compact" id="thumbLockChannelDnaBtn" ${studioState.busyLockDna ? "disabled" : ""}>🔒 Lưu DNA Kênh</button>
+        <div class="thumb-master-actions">
+          <span class="status-pill winner" title="Hồ sơ: ${esc(channelDnaSig)}">★ Winner: ${esc(winnerLabel)} · ${winnerCtr.score}점 (${winnerCtr.predicted_ctr_pct || 11.8}%)</span>
+          <button type="button" class="primary compact" id="thumbCopyAllSeoBtn" title="Sao chép toàn bộ Tiêu đề, Mô tả và Tags YouTube">📋 Copy Gói SEO</button>
+          <button type="button" class="ghost compact" id="thumbDownloadAllBtn" ${studioState.busyExportAll ? "disabled" : ""}>📦 Tải ${variants.length} Bản</button>
+          <button type="button" class="ghost compact" id="thumbExportAbPackBtn" ${studioState.busyExportAbPack ? "disabled" : ""}>📦 Gói A/B</button>
+          <button type="button" class="ghost compact" id="thumbBatchFlowBtn" ${studioState.busyBatchFlow ? "disabled" : ""}>🎨 3 Nền Flow</button>
+          <button type="button" class="ghost compact" id="thumbLockChannelDnaBtn" ${studioState.busyLockDna ? "disabled" : ""}>🔒 Lưu DNA</button>
         </div>
-      </div>
-    `;
-  }
-
-  function buildUnifiedNavHtml(activeTab) {
-    return `
-      <div class="thumb-unified-nav">
-        <button type="button" class="thumb-nav-tab ${activeTab === 'compare' ? 'active' : ''}" data-thumb-main-tab="compare">
-          <span class="tab-badge-num">1</span>
-          <span class="tab-icon">⊞</span>
-          <div class="tab-labels">
-            <span class="tab-title">So Sánh 4 Bản Test (A/B/C/D)</span>
-            <span class="tab-sub">Lưới 4 phương án · Dự đoán CTR &amp; Tải lẻ</span>
-          </div>
-        </button>
-        <button type="button" class="thumb-nav-tab ${activeTab === 'editor' ? 'active' : ''}" data-thumb-main-tab="editor">
-          <span class="tab-badge-num">2</span>
-          <span class="tab-icon">🎨</span>
-          <div class="tab-labels">
-            <span class="tab-title">Bàn Dựng Canva Studio (Chỉnh Sửa)</span>
-            <span class="tab-sub">Chỉnh sửa trực quan · 10 Font Hàn · Khung &amp; Hiệu ứng</span>
-          </div>
-        </button>
-        <button type="button" class="thumb-nav-tab ${activeTab === 'seo' ? 'active' : ''}" data-thumb-main-tab="seo">
-          <span class="tab-badge-num">3</span>
-          <span class="tab-icon">📋</span>
-          <div class="tab-labels">
-            <span class="tab-title">Gói SEO YouTube Studio</span>
-            <span class="tab-sub">8 Tiêu Đề Song Ngữ · Mô Tả · Tags</span>
-          </div>
-        </button>
-        <button type="button" class="thumb-nav-tab ${activeTab === 'preview' ? 'active' : ''}" data-thumb-main-tab="preview">
-          <span class="tab-badge-num">4</span>
-          <span class="tab-icon">📺</span>
-          <div class="tab-labels">
-            <span class="tab-title">Mô Phỏng YouTube Feed</span>
-            <span class="tab-sub">Kiểm tra thực tế Home &amp; Sidebar</span>
-          </div>
-        </button>
       </div>
     `;
   }
@@ -5528,10 +8265,9 @@
 
     return `
       <div class="thumb-editor-suite unified-studio-frame">
-        <!-- 1. INTEGRATED STUDIO TOPBAR -->
-        <div class="studio-topbar">
+        <!-- 1. INTEGRATED 1-ROW VARIANT + PAIRED YOUTUBE TITLE BAR -->
+        <div class="studio-topbar thumb-workbench-variant-bar">
           <div class="studio-topbar-left">
-            <span class="studio-topbar-label">PHƯƠNG ÁN:</span>
             <div class="studio-variant-segments">
               ${variants.map((v, idx) => {
                 const isAct = v.id === activeVariant.id;
@@ -5542,53 +8278,43 @@
                 const aName = aObj ? aObj.name.split("—")[0].trim() : v.archetype;
 
                 return `
-                  <button type="button" class="studio-variant-seg ${isAct ? 'active' : ''} ${isWin ? 'is-winner' : ''}" data-switch-workbench-variant="${esc(v.id)}" title="${esc(aName)}">
+                  <button type="button" class="studio-variant-seg variant-pill-btn ${isAct ? 'active' : ''} ${isWin ? 'is-winner' : ''}" data-switch-workbench-variant="${esc(v.id)}" title="${esc(aName)}">
                     <span class="seg-tag">${esc(label)}</span>
                     <span class="seg-name">${esc(aName)}</span>
-                    <span class="seg-ctr ${ctr.score >= 85 ? 'ok' : 'warn'}">${ctr.score}점 (${ctr.predicted_ctr_pct || 10.5}%)</span>
+                    <span class="seg-ctr ${ctr.score >= 85 ? 'ok' : 'warn'}">${ctr.score}점</span>
                     ${isWin ? `<span class="seg-win">★</span>` : ""}
                   </button>
                 `;
               }).join("")}
             </div>
           </div>
+
+          <div class="studio-inline-paired-title" title="${esc(pairedTitleVi ? `${pairedTitleKo} — 🇻🇳 ${pairedTitleVi}` : pairedTitleKo)}">
+            <span class="paired-ko-text">🎬 🇰🇷 ${esc(pairedTitleKo)}</span>
+            <button type="button" class="ghost compact" data-copy-paired-title="${esc(activeVariant.id)}" title="Sao chép tiêu đề YouTube đi cặp">📋 Copy</button>
+            <button type="button" class="ghost compact" data-switch-to-seo-tab="1" title="Mở chi tiết gói SEO">SEO ↗</button>
+          </div>
+
           <div class="studio-topbar-right">
-            ${isWinner ? `<span class="studio-win-badge">✓ Đang là Winner</span>` : `<button type="button" class="primary compact" id="editorSavePrimaryBtn" data-select-winner="${esc(activeVariant.id)}">★ Chọn Làm Winner</button>`}
-            <button type="button" class="ghost compact" id="editorDownloadThisBtn" data-download-variant="${esc(activeVariant.id)}">⬇ Tải .JPG</button>
-            <button type="button" class="ghost compact" data-thumb-main-tab="compare">⊞ Bảng So Sánh</button>
-            <button type="button" class="ghost compact" data-zoom-variant="${esc(activeVariant.id)}">🔍 Phóng to</button>
+            ${isWinner ? `<span class="studio-win-badge">✓ Winner</span>` : `<button type="button" class="primary compact" id="editorSavePrimaryBtn" data-select-winner="${esc(activeVariant.id)}">★ Chọn Winner</button>`}
+            <button type="button" class="ghost compact" id="editorDownloadThisBtn" data-download-variant="${esc(activeVariant.id)}">⬇ .JPG</button>
+            <button type="button" class="ghost compact" data-zoom-variant="${esc(activeVariant.id)}" title="Phóng to 1280x720">🔍</button>
             <button type="button" class="ghost compact" id="thumbToggleDrawerBtn" style="display:none;" title="Thu gọn/Mở">▼</button>
-            <button type="button" class="${studioState.editorZoomed ? "primary" : "ghost"} compact" id="thumbToggleZoomEditorBtn">${studioState.editorZoomed ? "🗗 Thoát Full" : "⛶ Toàn màn hình"}</button>
+            <button type="button" class="${studioState.editorZoomed ? "primary" : "ghost"} compact" id="thumbToggleZoomEditorBtn">${studioState.editorZoomed ? "🗗 Thoát" : "⛶ Full"}</button>
           </div>
         </div>
 
-        <!-- 2. INTEGRATED PAIRED YOUTUBE TITLE STRIP -->
-        <div class="studio-paired-bar">
-          <div class="paired-bar-tag">🎬 TIÊU ĐỀ YOUTUBE GHÉP CẶP (${esc(activeVariant.short_label || 'Bản này')}):</div>
-          <div class="paired-bar-content">
-            <span class="paired-bar-ko">🇰🇷 <b>${esc(pairedTitleKo)}</b></span>
-            ${pairedTitleVi ? `<span class="paired-bar-vi">🇻🇳 ${esc(pairedTitleVi)}</span>` : ""}
-            ${activeVi.synergyVi ? `<span class="paired-bar-syn">🔗 ${esc(activeVi.synergyVi)}</span>` : ""}
-          </div>
-          <div class="paired-bar-actions">
-            <button type="button" class="ghost compact" data-copy-raw-title="${esc(pairedTitleKo)}">📋 Sao chép Tiêu đề</button>
-            <button type="button" class="ghost compact" data-switch-to-seo-tab="1">👉 Mở Gói SEO</button>
-          </div>
-        </div>
-
-        <!-- 3. CANVA 3-COLUMN WORKBENCH -->
+        <!-- 2. FIGMA / CAPCUT 3-COLUMN WORKBENCH -->
         <div class="canva-workbench-3col">
-          <!-- CỘT TRÁI: DOCK CÔNG CỤ & THƯ VIỆN -->
+          <!-- CỘT TRÁI: MẪU / CÂY LỚP / FONT / ĐỒ HỌA -->
           <aside class="canva-left-dock" id="cofiThumbLeftDock">
             ${buildLeftDockInnerHtml(activeVariant)}
           </aside>
 
-          <!-- CỘT GIỮA: STAGE CANVAS 16:9 -->
+          <!-- CỘT GIỮA: CLEAN STAGE CANVAS 16:9 -->
           <main class="canva-center-stage" id="cofiThumbCenterStage">
-            <!-- THANH CÔNG CỤ CANVAS NHANH -->
             <div class="thumb-stage-toolbar">
               <div class="stage-tools-left">
-                <span style="font-size:11px;font-weight:700;color:#94a3b8;margin-right:2px;">LỚP:</span>
                 <div class="thumb-quick-layers-bar" id="cofiThumbQuickLayersBar">
                   ${buildQuickLayersBarInnerHtml(activeVariant)}
                 </div>
@@ -5618,16 +8344,15 @@
               </div>
             </div>
 
-            <!-- THANH GIẢI NGHĨA TIẾNG VIỆT -->
-            <div class="thumb-stage-vi-bar">
-              <span class="vi-title"><b style="color:#4ade80;">🇻🇳 Nghĩa chữ Thumbnail:</b></span>
-              <span class="vi-badge">[Tag: ${esc(activeVi.badgeVi || activeVariant.badge_text || "")}]</span> ·
-              <span class="vi-line1">D1: ${esc(activeVi.line1Vi || "")}</span> ·
-              <span class="vi-line2">D2: ${esc(activeVi.line2Vi || "")}</span>
+            <div class="thumb-stage-vi-bar" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:8px 12px;height:auto;min-height:64px;white-space:normal;line-height:1.4;background:rgba(15,23,42,0.95);border-top:1px solid rgba(34,197,94,0.35);">
+              <div style="font-size:11.5px;color:#cbd5e1;width:100%;"><b style="color:#4ade80;">🇻🇳 Nghĩa Dòng Nhãn (Badge):</b> <span style="color:#86efac;">${esc(activeVi.badgeVi || "Truy Nã Đặc Biệt · Vụ Án Có Thật Trung Quốc")}</span> <span style="color:#64748b;">(${esc(activeVariant.badge_text || "")})</span></div>
+              <div style="font-size:12.5px;color:#f8fafc;width:100%;"><b style="color:#fde047;">🇻🇳 Nghĩa Dòng 1:</b> <strong>${esc(activeVi.line1Vi || "")}</strong> <span style="color:#94a3b8;">(${esc(activeVariant.line_1 || "")})</span></div>
+              <div style="font-size:12.5px;color:#f8fafc;width:100%;"><b style="color:#f87171;">🇻🇳 Nghĩa Dòng 2:</b> <strong style="color:#fca5a5;">${esc(activeVi.line2Vi || "")}</strong> <span style="color:#94a3b8;">(${esc(activeVariant.line_2 || "")})</span></div>
+              ${activeVi.pairedTitleVi ? `<div style="font-size:11.5px;color:#93c5fd;width:100%;border-top:1px dashed rgba(148,163,184,0.2);padding-top:3px;"><b style="color:#38bdf8;">🎬 Tiêu đề ghép (VN):</b> ${esc(activeVi.pairedTitleVi)}</div>` : ""}
             </div>
           </main>
 
-          <!-- CỘT PHẢI: INSPECTOR THEO NGỮ CẢNH -->
+          <!-- CỘT PHẢI: INSPECTOR THUỘC TÍNH ĐỐI TƯỢNG ĐANG CHỌN -->
           <aside class="canva-right-inspector" id="cofiThumbRightInspector">
             ${buildRightContextualInspectorHtml(activeVariant)}
           </aside>
@@ -5667,11 +8392,13 @@
           <div class="compare-card-body">
             <div class="hook-badge-line">🏷 [${esc(v.badge_text || "")}] · <span style="color:#93c5fd;">${esc(hookBadge)}</span></div>
             <div class="hook-text-line"><strong>${esc(v.line_1 || "")}</strong> · <span style="color:#fbbf24;">${esc(v.line_2 || "")}</span></div>
-            ${(vVi.line1Vi || vVi.line2Vi) ? `
+            ${(vVi.badgeVi || vVi.line1Vi || vVi.line2Vi || vVi.fullVi) ? `
               <div class="compare-vi-text">
-                ${vVi.badgeVi ? `<div><b style="color:#4ade80;">Tag:</b> ${esc(vVi.badgeVi)}</div>` : ""}
-                ${vVi.line1Vi ? `<div><b style="color:#fde047;">D1:</b> ${esc(vVi.line1Vi)}</div>` : ""}
-                ${vVi.line2Vi ? `<div><b style="color:#f87171;">D2:</b> ${esc(vVi.line2Vi)}</div>` : ""}
+                ${(vVi.badgeVi || vVi.line1Vi || vVi.line2Vi) ? `
+                  ${vVi.badgeVi ? `<div><b style="color:#4ade80;">Tag:</b> ${esc(vVi.badgeVi)}</div>` : ""}
+                  ${vVi.line1Vi ? `<div><b style="color:#fde047;">D1:</b> ${esc(vVi.line1Vi)}</div>` : ""}
+                  ${vVi.line2Vi ? `<div><b style="color:#f87171;">D2:</b> ${esc(vVi.line2Vi)}</div>` : ""}
+                ` : `<div><b style="color:#4ade80;">🇻🇳 Nghĩa:</b> ${esc(vVi.fullVi)}</div>`}
               </div>` : ""}
             
             <div class="compare-paired-title">
@@ -5704,32 +8431,84 @@
     `;
   }
 
+  function buildSeoChaptersBilingualHtml(pack) {
+    const rawChapters = Array.isArray(pack?.chapters) ? pack.chapters : [];
+    const rawChaptersVi = Array.isArray(pack?.chapters_vi) ? pack.chapters_vi : [];
+    const count = Math.max(rawChapters.length, rawChaptersVi.length);
+    if (!count) return "";
+    const rows = [];
+    for (let i = 0; i < count; i += 1) {
+      const ch = rawChapters[i] || {};
+      const chVi = rawChaptersVi[i] || {};
+      const ts = String(ch.timestamp || chVi.timestamp || "").trim();
+      const koTitle = String(ch.title_ko || ch.title || chVi.title_ko || "").trim();
+      const viTitle = String(
+        ch.title_vi
+        || chVi.title_vi
+        || (typeof chVi === "string" ? chVi : chVi.title)
+        || ""
+      ).trim();
+      if (!ts && !koTitle && !viTitle) continue;
+      rows.push(`
+        <div style="display:flex;flex-direction:column;gap:3px;padding:7px 10px;background:rgba(15,23,42,0.85);border:1px solid rgba(56,189,248,0.22);border-radius:6px;">
+          <div style="font-size:12.5px;color:#f8fafc;font-weight:700;">
+            <span style="display:inline-block;padding:1px 6px;margin-right:6px;border-radius:4px;background:rgba(56,189,248,0.2);color:#38bdf8;font-family:monospace;font-weight:800;">⏱ ${esc(ts || "00:00")}</span>
+            <span style="display:inline-block;padding:1px 5px;margin-right:5px;border-radius:3px;background:rgba(56,189,248,0.16);color:#7dd3fc;font-size:10px;font-weight:800;">KR</span>
+            ${esc(koTitle)}
+          </div>
+          ${viTitle && viTitle !== koTitle ? `
+            <div style="font-size:12.5px;color:#f8fafc;padding-left:6px;border-left:3px solid #4ade80;margin-left:4px;">
+              <span style="display:inline-block;padding:1px 5px;margin-right:5px;border-radius:3px;background:rgba(34,197,94,0.25);color:#4ade80;font-size:10px;font-weight:800;">VN</span>
+              <b style="color:#4ade80;">🇻🇳 Nghĩa:</b> ${esc(viTitle)}
+            </div>` : ""}
+        </div>
+      `);
+    }
+    if (!rows.length) return "";
+    return `
+      <div style="margin-top:10px;padding:10px 12px;background:rgba(15,23,42,0.92);border:1px solid rgba(56,189,248,0.32);border-radius:8px;">
+        <div style="font-size:12px;font-weight:800;color:#38bdf8;margin-bottom:8px;">⏱️ TIMESTAMPS CÁC CHƯƠNG SONG NGỮ (HÀN — VIỆT):</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">${rows.join("")}</div>
+      </div>
+    `;
+  }
+
   function buildSeoViewHtml(activeVariant, winnerVariant) {
     const pack = studioState.seoPack || studioState.data?.seo_package || {};
-    const recKo = String(pack.recommended_title || "").trim();
-    const recVi = String(pack.recommended_title_vi || "").trim();
+    const optionsList = extractSeoTitleOptionsList(pack);
+    const rawRecKo = String(pack.recommended_title || studioState.data?.recommended_title || optionsList[0]?.ko || "").trim();
+    const rawRecVi = String(
+      pack.recommended_title_vi
+      || pack.title_vi
+      || studioState.data?.recommended_title_vi
+      || optionsList[0]?.vi
+      || (Array.isArray(pack.title_options_vi) ? pack.title_options_vi[0] : "")
+      || (Array.isArray(pack.titles_vi) ? pack.titles_vi[0] : "")
+      || ""
+    ).trim();
+    const { ko: recKo, vi: recVi } = splitSeoBilingualTitle(rawRecKo, rawRecVi);
     const rawPrimaryKw = pack.primary_keywords_summary;
     const kwSummary = rawPrimaryKw && typeof rawPrimaryKw === "object"
       ? Object.values(rawPrimaryKw).map(v => String(v || "").trim()).filter(Boolean).join(" · ")
       : String(rawPrimaryKw || "").trim();
     const synergyVi = String(pack.title_thumb_synergy_vi || "").trim();
-    const rawOpts = Array.isArray(pack.title_options) ? pack.title_options : [];
-    const details = Array.isArray(pack.title_options_details) ? pack.title_options_details : [];
-    const optsVi = Array.isArray(pack.title_options_vi) ? pack.title_options_vi : [];
     const desc = String(pack.description || "").trim();
     const descVi = String(pack.description_vi || "").trim();
+    const chaptersBilingualHtml = buildSeoChaptersBilingualHtml(pack);
     const hashtags = Array.isArray(pack.hashtags) ? pack.hashtags.join(" ") : "";
     const tags = Array.isArray(pack.tags) ? pack.tags.join(", ") : "";
     const keywords = Array.isArray(pack.keywords) ? pack.keywords.join(", ") : "";
     const kwVi = Array.isArray(pack.keywords_vi) ? pack.keywords_vi : [];
-    const fullDesc = [desc, hashtags].filter(Boolean).join("\n\n");
+    const fullDesc = desc && hashtags && !desc.includes(hashtags.split(" ")[0] || "__none__")
+      ? [desc, hashtags].filter(Boolean).join("\n\n")
+      : (desc || hashtags);
     const preflight = pack.preflight_summary || {};
     const preflightPassed = preflight.passed !== false;
     const matchedPatterns = Array.isArray(preflight.winner_patterns_matched) && preflight.winner_patterns_matched.length
       ? preflight.winner_patterns_matched
       : [
         "중국 실화 사건 Khóa chính",
-        "Con số định lượng (6,000 CCTV, 38 xe)",
+        "Con số định lượng (10 tỉnh, 13 năm)",
         "Tam giác Bổ trợ Title + Thumb 0% trùng lặp"
       ];
     const fw = pack.channel_framework || {};
@@ -5763,8 +8542,8 @@
                 <button type="button" class="primary compact" data-copy-raw-title="${esc(recKo)}">📋 Sao chép</button>
               </div>
               <div class="seo-title-display-box">
-                <div class="ko-title">🇰🇷 ${esc(recKo || "Chưa có tiêu đề")}</div>
-                ${recVi ? `<div class="vi-title"><b style="color:#4ade80;">🇻🇳 Nghĩa Tiếng Việt:</b> ${esc(recVi)}</div>` : ""}
+                <div class="ko-title"><span style="display:inline-block;padding:1px 6px;margin-right:6px;border-radius:4px;background:rgba(56,189,248,0.22);color:#7dd3fc;font-size:11px;font-weight:800;">KR</span> 🇰🇷 ${esc(recKo || "Chưa có tiêu đề")}</div>
+                ${recVi ? `<div class="vi-title" style="margin-top:8px;padding:8px 12px;background:rgba(34,197,94,0.14);border-left:3px solid #4ade80;border-radius:6px;color:#f8fafc;font-size:13.5px;font-weight:700;line-height:1.5;"><span style="display:inline-block;padding:1px 6px;margin-right:6px;border-radius:4px;background:rgba(34,197,94,0.28);color:#4ade80;font-size:11px;font-weight:800;">VN</span> <b style="color:#4ade80;">🇻🇳 Nghĩa Tiếng Việt:</b> ${esc(recVi)}</div>` : ""}
               </div>
               ${(kwSummary || synergyVi) ? `
                 <div class="seo-title-meta-box">
@@ -5778,19 +8557,12 @@
               <div class="seo-card-head">
                 <div class="head-title">
                   <span class="head-badge">8 PHƯƠNG ÁN TIÊU ĐỀ THEO BỘ BẢN TEST (A / B / C / D)</span>
-                  <strong>Mỗi tiêu đề được tối ưu hóa cho từng góc tiếp cận tâm lý</strong>
+                  <strong>Mỗi tiêu đề được tối ưu hóa cho từng góc tiếp cận tâm lý (Song ngữ Hàn — Việt)</strong>
                 </div>
               </div>
               <div class="seo-options-grid-2col">
-                ${rawOpts.map((opt, idx) => {
-                  const d = (typeof opt === "object" && opt !== null) ? opt : (details[idx] || {});
-                  const ko = typeof opt === "object" && opt !== null ? String(opt.title_ko || opt.title || "").trim() : String(opt || "").trim();
-                  const vi = String(d.title_vi || optsVi[idx] || "").trim();
-                  const paired = String(d.paired_variant || (idx % 4 === 0 ? "v1" : idx % 4 === 1 ? "v2" : idx % 4 === 2 ? "v3" : "v4")).trim();
-                  const pairedLabel = paired === "v1" ? "BẢN A" : paired === "v2" ? "BẢN B" : paired === "v3" ? "BẢN C" : "BẢN D";
-                  const kw = String(d.keyword_anchor || "").trim();
-                  const syn = String(d.synergy_vi || "").trim();
-
+                ${optionsList.map((item) => {
+                  const { idx, ko, vi, paired, pairedLabel, kw, syn } = item;
                   return `
                     <div class="seo-title-option-card">
                       <div class="opt-card-top">
@@ -5800,8 +8572,8 @@
                         </div>
                         <button type="button" class="ghost compact" data-copy-raw-title="${esc(ko)}">📋 Sao chép</button>
                       </div>
-                      <div class="opt-ko-title">🇰🇷 ${esc(ko)}</div>
-                      ${vi ? `<div class="opt-vi-title"><b>🇻🇳 Nghĩa:</b> ${esc(vi)}</div>` : ""}
+                      <div class="opt-ko-title"><span style="display:inline-block;padding:1px 5px;margin-right:5px;border-radius:3px;background:rgba(56,189,248,0.2);color:#7dd3fc;font-size:10.5px;font-weight:800;">KR</span> 🇰🇷 ${esc(ko)}</div>
+                      ${vi ? `<div class="opt-vi-title" style="margin-top:6px;padding:6px 10px;background:rgba(34,197,94,0.12);border-left:3px solid #4ade80;border-radius:5px;color:#f8fafc;font-size:12.5px;font-weight:600;line-height:1.45;"><span style="display:inline-block;padding:1px 5px;margin-right:5px;border-radius:3px;background:rgba(34,197,94,0.28);color:#4ade80;font-size:10.5px;font-weight:800;">VN</span> <b style="color:#4ade80;">🇻🇳 Nghĩa:</b> ${esc(vi)}</div>` : ""}
                       ${kw ? `<div class="opt-kw-anchor"><b>📍 Khóa:</b> ${esc(kw)}</div>` : ""}
                       ${syn ? `<div class="opt-synergy"><b>🔗 Bổ trợ:</b> ${esc(syn)}</div>` : ""}
                       <div class="opt-card-actions">
@@ -5822,12 +8594,14 @@
                 </div>
                 <button type="button" class="primary compact" data-copy-raw-desc="1">📋 Sao chép Mô Tả</button>
               </div>
+              <div style="font-size:11.5px;font-weight:800;color:#7dd3fc;margin-bottom:4px;">🇰🇷 BẢN GỐC TIẾNG HÀN (DÙNG ĐỂ ĐĂNG YOUTUBE):</div>
               <pre class="seo-raw-prebox" id="seoRawDescBox">${esc(fullDesc || "Chưa có mô tả")}</pre>
               ${descVi ? `
-                <details class="seo-desc-vi-accordion" style="margin-top:10px;">
-                  <summary style="cursor:pointer;color:#4ade80;font-weight:700;font-size:12px;">▼ Bấm để xem Bản dịch Nghĩa Tiếng Việt của Phần Mô Tả</summary>
-                  <pre class="seo-raw-prebox vi" style="margin-top:6px;background:rgba(15,23,42,0.92);border-color:rgba(34,197,94,0.3);color:#e2e8f0;">${esc(descVi)}</pre>
-                </details>` : ""}
+                <div class="seo-desc-vi-panel" style="margin-top:12px;padding:12px 14px;background:rgba(15,23,42,0.95);border:1px solid rgba(34,197,94,0.42);border-radius:8px;">
+                  <div style="color:#4ade80;font-weight:800;font-size:12.5px;margin-bottom:6px;">🇻🇳 BẢN DỊCH NGHĨA TIẾNG VIỆT (MÔ TẢ &amp; TIMESTAMPS ĐỂ ĐỌC DUYỆT):</div>
+                  <pre class="seo-raw-prebox vi" style="margin:0;background:rgba(9,14,26,0.85);border-color:rgba(34,197,94,0.25);color:#f8fafc;font-size:13px;line-height:1.55;">${esc(descVi)}</pre>
+                </div>` : ""}
+              ${chaptersBilingualHtml}
             </section>
           </div>
 
@@ -5846,9 +8620,16 @@
                 <canvas data-thumb-card-canvas="${esc(winnerVariant?.id || 'v1')}" width="${CW}" height="${CH}"></canvas>
                 <div class="winner-thumb-overlay"><span>🔍 Xem Full</span></div>
               </div>
-              <div style="margin-top:8px;font-size:12px;color:#cbd5e1;line-height:1.4;">
-                <b style="color:#fbbf24;">Hook trên ảnh:</b> ${esc(winnerVariant?.line_1 || "")} ${esc(winnerVariant?.line_2 || "")}
-              </div>
+              ${(() => {
+                const winVi = parseVariantVietnamese(winnerVariant, 0);
+                return `<div style="margin-top:8px;padding:8px 10px;background:rgba(15,23,42,0.9);border:1px solid rgba(34,197,94,0.3);border-radius:8px;font-size:12px;color:#cbd5e1;line-height:1.45;display:flex;flex-direction:column;gap:4px;">
+                  <div><b style="color:#fbbf24;">🇰🇷 Chữ trên ảnh:</b> ${esc(winnerVariant?.badge_text || "")} · ${esc(winnerVariant?.line_1 || "")} · ${esc(winnerVariant?.line_2 || "")}</div>
+                  ${winVi.badgeVi ? `<div><b style="color:#4ade80;">🇻🇳 Tag:</b> ${esc(winVi.badgeVi)}</div>` : ""}
+                  ${winVi.line1Vi ? `<div><b style="color:#fde047;">🇻🇳 Dòng 1:</b> ${esc(winVi.line1Vi)}</div>` : ""}
+                  ${winVi.line2Vi ? `<div><b style="color:#f87171;">🇻🇳 Dòng 2:</b> ${esc(winVi.line2Vi)}</div>` : ""}
+                  ${winVi.pairedTitleVi ? `<div><b style="color:#38bdf8;">🎬 Tiêu đề (VN):</b> ${esc(winVi.pairedTitleVi)}</div>` : ""}
+                </div>`;
+              })()}
               <div style="margin-top:8px;display:flex;gap:6px;">
                 <button type="button" class="ghost compact" data-edit-variant="${esc(winnerVariant?.id || 'v1')}" style="flex:1;">✎ Chỉnh sửa bản này</button>
                 <button type="button" class="ghost compact" data-thumb-main-tab="compare" style="flex:1;">⊞ So sánh 4 bản</button>
@@ -6030,8 +8811,7 @@
 
     host.innerHTML = `
       <div class="thumb-studio-card ${studioState.editorZoomed ? 'is-fullscreen-editor' : ''}">
-        ${buildMasterHeaderHtml(winnerVariant, channelDnaSig, variants)}
-        ${buildUnifiedNavHtml(studioState.activeTab)}
+        ${buildMasterHeaderHtml(winnerVariant, channelDnaSig, variants, studioState.activeTab)}
 
         ${studioState.activeTab === 'compare'
           ? buildCompareViewHtml(variants, archetypes, design)
@@ -6531,17 +9311,34 @@
     } catch (_) {}
   }
 
-  window.mountCofiThumbnailStudio = async function (jobId, hostElement) {
+  window.mountCofiThumbnailStudio = async function (jobId, hostElement, options = {}) {
     if (!jobId || !hostElement) return;
-    studioState.jobId = jobId;
-    studioState.imageCache.clear();
-    studioState.lightboxVariantId = null;
-    hostElement.innerHTML = `<div class="thumb-studio-loading">⏳ Đang nạp 10 Font Tiếng Hàn Chuẩn Đài &amp; dựng Bộ 4 Bản Thumbnail Test (A/B/C/D)…</div>`;
+    const forceReload = Boolean(options && options.force);
+    const sameJob = studioState.jobId === jobId;
+    if (!forceReload && sameJob && studioState.mountingInFlight) return;
+    if (!forceReload && sameJob && studioState.data && hostElement.querySelector(".thumb-studio-card")) {
+      hostElement.dataset.mountedJobId = String(jobId);
+      return;
+    }
+    studioState.mountingInFlight = true;
+    hostElement.dataset.mountedJobId = String(jobId);
+    if (!sameJob) {
+      studioState.jobId = jobId;
+      studioState.data = null;
+      studioState.seoPack = null;
+      studioState.imageCache.clear();
+      studioState.lightboxVariantId = null;
+    } else {
+      studioState.jobId = jobId;
+    }
+    if (!hostElement.querySelector(".thumb-studio-card")) {
+      hostElement.innerHTML = `<div class="thumb-studio-loading">⏳ Đang nạp 10 Font Tiếng Hàn Chuẩn Đài &amp; dựng Bộ 4 Bản Thumbnail Test (A/B/C/D)…</div>`;
+    }
     try {
       await Promise.race([ensureKoreanFontsLoaded(), new Promise((r) => setTimeout(r, 1200))]);
       const [resp, seoResp] = await Promise.all([
         fetch(`/api/jobs/${encodeURIComponent(jobId)}/thumbnail-studio?t=${Date.now()}`),
-        fetch(`/api/jobs/${encodeURIComponent(jobId)}/artifacts/seo_package.json?t=${Date.now()}`).catch(() => null),
+        fetch(`/api/jobs/${encodeURIComponent(jobId)}/artifact/seo_package.json?t=${Date.now()}`).catch(() => null),
       ]);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
       studioState.data = await resp.json();
@@ -6554,7 +9351,7 @@
       if (!studioState.seoPack && studioState.data?.seo_package) {
         studioState.seoPack = studioState.data.seo_package;
       }
-      let sanitized = normalizeAndRepairDesign();
+      normalizeAndRepairDesign();
       const variants = getVariants();
       variants.forEach((v, idx) => {
         const defaultFontObj = KOREAN_BROADCAST_FONTS[idx % 4] || KOREAN_BROADCAST_FONTS[0];
@@ -6562,16 +9359,18 @@
           if (l && (l.type === "textbox" || l.type === "badge" || l.type === "stamp")) {
             if (!l.fontFamily || String(l.fontFamily).includes("Black Han Sans")) {
               l.fontFamily = defaultFontObj.stack;
-              sanitized = true;
             }
           }
         });
       });
       renderStudioDom();
       upgradeSeoCleanHubDom(hostElement);
-      if (sanitized) scheduleSaveDesign();
     } catch (err) {
-      hostElement.innerHTML = `<div class="thumb-studio-loading">Không tải được Thumbnail Studio: ${esc(err.message)}</div>`;
+      if (!hostElement.querySelector(".thumb-studio-card")) {
+        hostElement.innerHTML = `<div class="thumb-studio-loading">Không tải được Thumbnail Studio: ${esc(err.message)}</div>`;
+      }
+    } finally {
+      studioState.mountingInFlight = false;
     }
   };
 })();

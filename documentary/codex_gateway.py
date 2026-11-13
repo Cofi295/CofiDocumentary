@@ -14,6 +14,11 @@ import tomllib
 from typing import Callable
 
 from .prompts import build_phase_prompt
+from .render_cache import (
+    apply_background_worker_qos,
+    background_worker_creationflags,
+    background_worker_env_overrides,
+)
 from .source_discovery import scrub_source_secret_env
 
 
@@ -30,7 +35,7 @@ class CodexGateway:
     DEFAULT_SESSION_MAX_TURNS = 0
     DEFAULT_SESSION_MAX_PROMPT_CHARS = 450_000
     DEFAULT_SAME_SESSION_TRANSIENT_RETRIES = 1
-    DEFAULT_MIN_TURN_GAP_SECONDS = 15
+    DEFAULT_MIN_TURN_GAP_SECONDS = 2
     HANDOFF_MAX_CHARS = 12_000
     HANDOFF_PROMPT = (
         "Bạn sắp kết thúc conversation ChatGPT hiện tại để tiếp tục công việc trong một conversation mới. "
@@ -107,6 +112,11 @@ class CodexGateway:
         env["COFI_FFMPEG_BIN"] = str(self.tools_dir / "ffmpeg.exe")
         env["COFI_FFPROBE_BIN"] = str(self.tools_dir / "ffprobe.exe")
         env["COFI_NODE_BIN"] = str(self.tools_dir / "node.exe")
+        try:
+            for k, v in background_worker_env_overrides().items():
+                env.setdefault(k, v)
+        except Exception:
+            pass
         return env
 
     def _transport_config_args(self) -> list[str]:
@@ -716,7 +726,7 @@ class CodexGateway:
             # console host and make Codex exit before emitting JSONL with
             # 0xC0000142 (DLL initialization failed).  Codex is a piped worker;
             # it does not need its own console window.
-            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0) if os.name == "nt" else 0,
+            creationflags=background_worker_creationflags() if os.name == "nt" else 0,
             startupinfo=(
                 subprocess.STARTUPINFO(
                     dwFlags=getattr(subprocess, "STARTF_USESHOWWINDOW", 1),
@@ -726,6 +736,7 @@ class CodexGateway:
                 else None
             ),
         )
+        apply_background_worker_qos(process)
         assert process.stdin is not None
         assert process.stdout is not None
         stdin_error = ""

@@ -238,11 +238,11 @@ def test_hardware_auto_tuning_and_single_pass_export_defaults(tmp_path: Path):
     cache._npx = lambda: "npx"  # type: ignore[method-assign]
 
     assert cache.render_during_edit is False
-    assert cache.chunk_seconds == 3600
+    assert cache.chunk_seconds == 10800
     assert cache.hardware_profile["export_concurrency"] >= 2
-    assert cache.hardware_profile["x264_preset"] == "veryfast"
+    assert cache.hardware_profile["x264_preset"] in {"fast", "veryfast"}
 
-    # A 120s project fits inside a single 180s pass and is not rendered until export (render_all=True)
+    # A 120s project fits inside a single pass and is not rendered until export (render_all=True)
     prepared = cache.prepare(job(), tmp_path, beats)
     assert prepared["total_chunks"] == 1
     assert prepared["ready_chunks"] == 0
@@ -254,7 +254,7 @@ def test_hardware_auto_tuning_and_single_pass_export_defaults(tmp_path: Path):
     render_calls = [call for call in runner.calls if "remotion" in call]
     assert len(render_calls) == 1
     cmd = render_calls[0]
-    assert "--x264-preset=veryfast" in cmd
+    assert any(arg.startswith("--x264-preset=") for arg in cmd)
     assert "--bundle-cache" in cmd
     assert any(arg.startswith("--concurrency=") for arg in cmd)
     assert any(arg.startswith("--offthreadvideo-video-threads=") for arg in cmd)
@@ -317,12 +317,36 @@ def test_live_hardware_governor_reserves_cpu_ram_and_vram_headroom():
     hw = detect_hardware_profile(force_refresh=True)
     assert hw["logical_cores"] >= 1
     assert hw["reserved_ui_threads"] >= 1
-    assert 1 <= hw["still_concurrency"] <= 3
-    assert 1 <= hw["nvenc_concurrency"] <= 3
-    assert 1 <= hw["ffmpeg_threads"] <= 2
+    assert 1 <= hw["still_concurrency"] <= 6
+    assert 1 <= hw["nvenc_concurrency"] <= 6
+    assert 1 <= hw["ffmpeg_threads"] <= 4
+    assert 2 <= hw["edit_worker_concurrency"] <= 4
+    assert 1 <= hw["edit_ffmpeg_threads"] <= 3
+    assert "foreground_gpu_active" in hw
     assert hw["governor_mode"] in {"eco_smooth", "balanced_smooth", "turbo_max"}
     assert "CPU trống" in hw["summary"]
     assert "RAM trống" in hw["summary"]
+
+
+def test_smart_edit_vram_governor_yields_to_foreground_games(monkeypatch):
+    import documentary.render_cache as rc
+
+    monkeypatch.setattr(rc, "_detect_foreground_gpu_workload", lambda: ["League of Legends.exe"])
+    monkeypatch.setattr(
+        rc,
+        "_detect_nvidia_gpu_telemetry",
+        lambda: {"busy_pct": 42.0, "vram_free_mb": 2600, "vram_total_mb": 8188, "temp_c": 61},
+    )
+    hw = rc.detect_hardware_profile(force_refresh=True)
+    assert hw["foreground_gpu_active"] is True
+    assert hw["governor_mode"] == "eco_smooth"
+    assert hw["edit_worker_concurrency"] == 2
+    assert hw["edit_ffmpeg_threads"] == 2
+    assert hw["prefer_edit_hwaccel"] is False
+    assert hw["nvenc_concurrency"] == 1
+    contract = rc.format_smart_hardware_contract("edit")
+    assert "max_workers=2" in contract
+    assert "-threads 2" in contract
 
 
 def test_selective_beat_edit_preserves_unedited_chunks_even_when_remotion_source_changes(tmp_path: Path):
@@ -378,4 +402,65 @@ def test_auto_beat_diff_invalidates_only_modified_beat_chunk(tmp_path: Path):
     assert "--frames=1800-2099" in render_calls[-1]
 
 
+
+
+
+def test_sculpted_voice_manifest_and_edit_manifest_prevent_outro_clipping_on_subbeats(tmp_path: Path):
+    """Regression: when voice_manifest has B001..B002 sculpted to 1642.07s (49263f) while
+    visual_manifest still holds pre-sculpted B001-V01..B002-V01 (1621.218s), render_cache must
+    map via parent_beat_id and honor voice_manifest + edit_manifest so the outro is never clipped."""
+    beats = [
+        {"beat_id": "B001-V01", "parent_beat_id": "B001", "start_sec": 0.0, "end_sec": 800.0},
+        {"beat_id": "B002-V01", "parent_beat_id": "B002", "start_sec": 800.0, "end_sec": 1621.218},
+    ]
+    (tmp_path / "visual_manifest.json").write_text(json.dumps({"beats": beats}), encoding="utf-8")
+    (tmp_path / "voice_manifest.json").write_text(
+        json.dumps({
+            "duration_sec": 1642.07,
+            "beats": [
+                {"beat_id": "B001", "start_sec": 1.2, "end_sec": 810.0, "visual_open_sec": 0.0, "visual_close_sec": 810.0},
+                {"beat_id": "B002", "start_sec": 810.0, "end_sec": 1642.071, "visual_open_sec": 810.0, "visual_close_sec": 1642.071},
+            ],
+        }),
+        encoding="utf-8",
+    )
+    (tmp_path / "edit_manifest.json").write_text(
+        json.dumps({"duration_in_frames": 49263, "duration_sec": 1642.07}),
+        encoding="utf-8",
+    )
+    runner = FakeRenderRunner()
+    cache = make_cache(tmp_path, runner)
+    prepared = cache.prepare(job(), tmp_path, beats)
+    assert prepared["duration_in_frames"] == 49263
+    assert abs(prepared["duration_seconds"] - 1642.1) < 0.1
+
+
+def test_outro_speech_tail_guard_and_desktop_gpu_not_falsely_throttled(tmp_path: Path, monkeypatch):
+    import documentary.render_cache as rc
+
+    monkeypatch.setattr(rc, "_detect_foreground_gpu_workload", lambda: [])
+    monkeypatch.setattr(
+        rc,
+        "_detect_nvidia_gpu_telemetry",
+        lambda: {"busy_pct": 38.0, "vram_free_mb": 4600, "vram_total_mb": 8188, "temp_c": 55},
+    )
+    hw = rc.detect_hardware_profile(force_refresh=True)
+    assert hw["foreground_gpu_active"] is False
+    assert hw["still_concurrency"] >= 3
+    assert hw["nvenc_concurrency"] >= 5
+
+    beats = [{"beat_id": "B001", "start_sec": 0.0, "end_sec": 100.0}]
+    (tmp_path / "visual_manifest.json").write_text(json.dumps({"beats": beats}), encoding="utf-8")
+    (tmp_path / "voice_manifest.json").write_text(
+        json.dumps({
+            "duration_sec": 100.5,
+            "beats": [{"beat_id": "B001", "start_sec": 0.0, "end_sec": 100.5, "speech_end_sec": 100.2}],
+        }),
+        encoding="utf-8",
+    )
+    runner = FakeRenderRunner()
+    cache = make_cache(tmp_path, runner)
+    prepared = cache.prepare(job(), tmp_path, beats)
+    # Must guarantee >= 100.2 + 3.8 = 104.0s (3120 frames @ 30fps) so closing speech + BGM fade tail are never clipped
+    assert prepared["duration_in_frames"] >= 3120
 

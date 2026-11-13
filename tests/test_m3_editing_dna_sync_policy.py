@@ -127,7 +127,7 @@ def test_lock_edit_dna_persists_to_channel_profile_and_increments_version(tmp_pa
     assert res["history_count"] == 1
 
     # Verify channel profile on disk
-    saved = json.loads(profiles_file.read_text())["profiles"][0]
+    saved = json.loads(profiles_file.read_text(encoding="utf-8"))["profiles"][0]
     assert saved["editing_dna"]["version"] == 2
     assert saved["editing_dna"]["locked_from_job_id"] == job_id
     assert saved["allowed_topics"] == "True Crime"  # Preserved

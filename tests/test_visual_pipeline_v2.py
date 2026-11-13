@@ -65,11 +65,12 @@ def test_general_ai_prompt_is_not_locked_to_producer_role_and_knows_visuals_phas
     prompt = build_producer_chat_prompt([], "hãy sửa app và viết lại nội dung nếu cần")
     assert "Your scope is the application itself" not in prompt
     assert "COFI PRODUCER CODEX" not in prompt
-    assert "general-purpose" in prompt.lower() or "mọi yêu cầu" in prompt.lower()
-    assert "KHÔNG ÉP ROLE, KHÔNG GIỚI HẠN CHỦ ĐỀ" in prompt
-    assert "persona cố định" in prompt
-    assert "browser/web" in prompt
-    assert "không phải role bắt buộc" in prompt
+    assert "FULL QUYỀN THỰC THI TRỰC TIẾP" not in prompt
+    assert "KHÔNG ÉP ROLE" not in prompt
+    assert "0% SELF-EXECUTION" in prompt
+    assert "100% MANDATORY DELEGATION" in prompt
+    assert "delegate_agent" in prompt
+    assert "delegate_squad" in prompt
     assert "plan|voice|visuals|footage|ai_visual|edit|seo|qc" in prompt
 
 
@@ -443,3 +444,34 @@ def test_pipeline_polling_does_not_switch_away_from_preview():
     js = Path("static/app.js").read_text(encoding="utf-8")
     assert "followPipelineJob(externalActive, { switchTab: false })" in js
     assert "followPipelineJob(current, { switchTab: false })" in js
+
+
+def test_visuals_phase_ignores_markdown_chapter_headings_in_script_md(tmp_path: Path):
+    from documentary.visuals import VisualsCoordinator
+
+    script_with_headings = (
+        "## ACT01\n\n"
+        "첫 번째 문장입니다.\n\n"
+        "## ACT02\n\n"
+        "두 번째 문장입니다.\n"
+    )
+    (tmp_path / "script.md").write_text(script_with_headings, encoding="utf-8")
+    (tmp_path / "visual_manifest.json").write_text(json.dumps({
+        "beats": [
+            {"beat_id": "B001", "narration_text": "첫 번째 문장입니다.", "visual_description": "Scene 1", "source_priority": "must_real"},
+            {"beat_id": "B002", "narration_text": "두 번째 문장입니다.", "visual_description": "Scene 2", "source_priority": "ai_ok"},
+        ],
+    }, ensure_ascii=False), encoding="utf-8")
+    (tmp_path / "voice_manifest.json").write_text(json.dumps({
+        "duration_sec": 10.0,
+        "beats": [
+            {"beat_id": "B001", "text": "첫 번째 문장입니다.", "start_sec": 0.0, "end_sec": 5.0},
+            {"beat_id": "B002", "text": "두 번째 문장입니다.", "start_sec": 5.0, "end_sec": 10.0},
+        ],
+    }, ensure_ascii=False), encoding="utf-8")
+
+    result = VisualsCoordinator(max_chars=90).run({"visual_strategy": "hybrid"}, tmp_path)
+    assert result.returncode == 0
+    refined = json.loads((tmp_path / "visual_manifest.json").read_text(encoding="utf-8"))
+    assert len(refined["beats"]) == 2
+
