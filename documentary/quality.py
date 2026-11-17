@@ -35,10 +35,20 @@ def normalize_production_recipe(
     edna = editing_dna if isinstance(editing_dna, dict) else {}
     vox_preset = str(edna.get("preset_id") or edna.get("editing_dna_preset") or "").strip()
     edna_vm = edna.get("visual_mix") if isinstance(edna.get("visual_mix"), dict) else {}
+    is_non_vox_cinema = (
+        edna.get("vox_enabled") is False
+        or (edna.get("vox_desk_enabled") is False and edna.get("vox_satellite_enabled") is False)
+        or str(edna.get("visual_priority_mode") or "").strip().lower() == "ai_cinema_character_drama"
+        or str(edna.get("content_mode") or "").strip().lower() in {"creative_audio_drama", "devotional_essay"}
+        or vox_preset in {"kr_goodnight_cinema_drama", "cinema_character_drama", "sacred_devotional", "grace_letter"}
+    )
     is_vox_newsroom = (
-        vox_preset in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"}
-        or str(edna.get("director_mode") or "").strip().lower() in {"v2", "vox_china_crime_newsroom_v10"}
-        or (_number(edna.get("min_real_footage_ratio")) or _number(edna_vm.get("min_footage_floor")) or 0.0) >= 0.45
+        not is_non_vox_cinema
+        and (
+            vox_preset in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"}
+            or str(edna.get("director_mode") or "").strip().lower() in {"v2", "vox_china_crime_newsroom_v10"}
+            or (_number(edna.get("min_real_footage_ratio")) or _number(edna_vm.get("min_footage_floor")) or 0.0) >= 0.45
+        )
     )
     strategy = str(visual_strategy or result.get("visual_strategy") or "full_footage").strip().lower()
     if strategy == "footage_first":
@@ -72,16 +82,20 @@ def normalize_production_recipe(
     min_sources = max(3, min(15, ceil(target / 50)))
     tolerance = max(480, round(target * 0.35)) if target >= 600 else max(45, round(target * 0.25))
     routing_policy = (
-        "vox_newsroom_v13_composable_lego_50pct_footage"
-        if is_vox_newsroom
-        else {
-            "full_ai": "ai_only",
-            "full_footage": "footage_only",
-            "hybrid": "story_driven",
-            "evidence_footage": "evidence_first",
-            "selective_footage": "evidence_first",
-            "edit_direct_footage": "edit_agent_footage_plus_selective_ai",
-        }[strategy]
+        "ai_cinema_character_drama_80_15_5"
+        if is_non_vox_cinema and str(edna.get("visual_priority_mode") or "").strip().lower() == "ai_cinema_character_drama"
+        else (
+            "vox_newsroom_v13_composable_lego_50pct_footage"
+            if is_vox_newsroom
+            else {
+                "full_ai": "ai_only",
+                "full_footage": "footage_only",
+                "hybrid": "story_driven",
+                "evidence_footage": "evidence_first",
+                "selective_footage": "evidence_first",
+                "edit_direct_footage": "edit_agent_footage_plus_selective_ai",
+            }[strategy]
+        )
     )
     contract = {
         "version": 7, "enforce": True,
@@ -102,16 +116,16 @@ def normalize_production_recipe(
         "require_contextual_motion_text_diversity": True,
         "forbid_periodic_motion_text_spacing": True,
         "require_context_matched_motion_text_style": True,
-        "require_native_motion_semantic_coverage": True,
-        "require_clause_ordered_motion_storyboard": True,
-        "require_native_motion_against_voice_self_check": True,
+        "require_native_motion_semantic_coverage": not is_non_vox_cinema,
+        "require_clause_ordered_motion_storyboard": not is_non_vox_cinema,
+        "require_native_motion_against_voice_self_check": not is_non_vox_cinema,
         "disallow_generic_native_motion_fallback_for_sourced_video": True,
         "disallow_decorative_only_native_motion": True,
         "allow_ai_reconstruction_fallback": strategy != "full_footage",
         "prefer_ai_reconstruction_over_generic_still": True,
-        "require_must_real_source_coverage": strategy not in {"full_ai", "edit_direct_footage"},
+        "require_must_real_source_coverage": (not is_non_vox_cinema) and (strategy not in {"full_ai", "edit_direct_footage"}),
         "allow_standalone_native_motion": bool(is_vox_newsroom),
-        "require_media_anchored_annotation_motion": not is_vox_newsroom,
+        "require_media_anchored_annotation_motion": (not is_vox_newsroom) and (not is_non_vox_cinema),
         "mobile_annotation_min_font_px": 48,
         "require_authored_visual_system": True,
         "require_layered_compositing_review": True,
@@ -127,7 +141,7 @@ def normalize_production_recipe(
         "min_scene_count": beat_target, "target_scene_count": beat_target,
         "min_video_clip_uses": min_video, "target_video_clip_uses": target_video,
         "min_sourced_still_uses": 0, "target_sourced_still_uses": 0,
-        "require_video_before_still_fallback": is_vox_newsroom or (strategy != "full_ai"),
+        "require_video_before_still_fallback": (not is_non_vox_cinema) and (is_vox_newsroom or (strategy != "full_ai")),
         "min_video_search_queries_before_still": 2,
         "min_native_motion_treatments": ceil(beat_target * 0.18) if is_vox_newsroom else 0,
         "min_unique_video_sources": min_sources if (strategy == "full_footage" or is_vox_newsroom) else 0,
@@ -158,12 +172,24 @@ def normalize_production_recipe(
     asset_rules = [
         "100% EYE-VERIFIED CLEAN CROP & 100% VOICE MATCH LAW: Every video or image footage attached to a spoken sentence must be visually inspected by the AI Agent's eyes (`read_file` / `vision_inspect_frames` on `STORYBOARD_<id>.jpg`, `GRID_<id>.jpg`, and `*_3frames.jpg`) to guarantee: (1) 100% of third-party logos/watermarks/QR codes and 100% of third-party running text/tickers/burned-in foreign subtitles are cleanly cropped out (`crop=W:H:X:Y`), and (2) the visual content matches 100% of what the spoken sentence is talking about.",
         "STRICT BAN ON AUTOMATIC CUTTING AND AUTOMATIC SPLICING (`0%` `--auto`, `0%` blind offset math, `0%` cross-beat clip holding): Never use code to automatically cut or automatically splice footage onto beats, which causes image and voice meaning to drift apart.",
-        "3-TIER VISUAL PRIORITY (`#1 Real Footage -> #2 Bespoke VOX Illustration -> #3 AI Image Last Resort`): Each footage clip may be used at most once (`max_uses = 1`). Whenever a sentence has no authentic footage matching 100% of its meaning, route that sentence to Priority #2 VOX illustration (`<Desk>` or `<GeoJson3DMapStage>`) first, and Priority #3 AI Image only as the final fallback.",
     ]
+    if is_non_vox_cinema:
+        asset_rules.append(
+            "WARM 35MM CINEMA & ATMOSPHERIC B-ROLL PRIORITY (`~80% Character-Sheet-Locked 35mm AI Cinema + ~15% Clean 4K Atmospheric B-Roll + ~5% Warm Chapter Cards`, `0%` VOX graphics): `@vox` is completely bypassed (`vox_enabled = false`). Lock every recurring character's face, age, hair, and wardrobe to the episode's Flow Character Reference Sheet (`media/character_sheet/`), keep Highlight Luma <= 215 for night-safe viewing, and restrict sourced B-roll strictly to clean atmospheric scenery/craft hands (`0%` news broadcasts or stranger faces, `max_uses = 1`)."
+        )
+    else:
+        asset_rules.append(
+            "3-TIER VISUAL PRIORITY (`#1 Real Footage -> #2 Bespoke VOX Illustration -> #3 AI Image Last Resort`): Each footage clip may be used at most once (`max_uses = 1`). Whenever a sentence has no authentic footage matching 100% of its meaning, route that sentence to Priority #2 VOX illustration (`<Desk>` or `<GeoJson3DMapStage>`) first, and Priority #3 AI Image only as the final fallback."
+        )
     if is_vox_newsroom:
         asset_rules.insert(
             0,
             "Director V2 Canonical 3-Tier Visual Priority (`forensic_noir_director_v2` — `#1 Real Footage -> #2 Bespoke VOX Illustration -> #3 AI Image Last Resort`): (1) Priority #1 `REAL_FTG`: 100% eye-verified authentic case/investigation/courtroom/forensic archival footage (`footage/S_F*.mp4`, calibrated `crop=W:H:X:Y` on `100px` grid stripping 100% of third-party logos & running text, `15%-50%-85%` contact-sheet verified 100% semantic match with the spoken sentence, `0%` automatic cutting/splicing, `max_uses = 1`); (2) Priority #2 `VOX_NEWSROOM` (`src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>`): mandatory whenever a sentence lacks 100%-matching real footage, with 0% fixed template count, 0% fixed spacing, and 100% independent per-sentence meaning, motion, layout, entry, cut-and-paste, and purposeful `<RedCircle>` (only when needed) + `<GeoJson3DMapStage>` strictly for suspect/police movement routes with exact real-world WGS84 coordinates; (3) Priority #3 `AI_MASCOT` (`<beat_id>_ai_keyframe.jpg`) + dark `FramelessCinemaTextBeat.tsx` (`8%–12%`) only as the final fallback.",
+        )
+    elif is_non_vox_cinema:
+        asset_rules.insert(
+            0,
+            "Non-VOX Cinema Character & Atmospheric Priority (`vox_enabled = false`): Route ~80% character/dialogue beats to Character-Sheet-locked Warm 35mm AI Cinema (`@ai_visual`), ~15% transitional scenery/craft beats to eye-verified clean 4K Atmospheric B-Roll (`@footage`), and ~5% chapter/quote beats to warm serif `FramelessCinemaTextBeat.tsx` (`0%` VOX boards or 3D pursuit maps).",
         )
     elif strategy == "hybrid":
         asset_rules.insert(0, "Route each visual unit to 100% eye-verified authentic Footage, bespoke VOX, or AI Visual according to 100% spoken-sentence semantic match. Never use automatic cutting/splicing or fixed quotas.")
@@ -179,13 +205,22 @@ def normalize_production_recipe(
     motion_rule = (
         "Author 100% independent per-sentence VOX scenes (`src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>`) as Priority #2 whenever a spoken sentence lacks 100%-matching real footage (`0%` template copy-paste, `0%` decorative clutter, `max_uses = 1` per prop/cutout, verified via `read_file`) + dark `FramelessCinemaTextBeat.tsx` alongside 100% eye-verified clean-cropped real archival case footage."
         if is_vox_newsroom
-        else "Use motion only as an annotation overlay anchored to an approved real/AI image or video. No standalone native-motion scene is allowed."
+        else (
+            "Bypass `@vox` completely (`0%` VOX tabletop boards, `0%` 3D GIS maps). Use slow, soothing Ken Burns (`1.00 -> 1.035`), `26-frame` warm cross-dissolves, and warm serif `FramelessCinemaTextBeat.tsx` chapter curtains (`제1장`..`제6장`) with Warm Nocturne Piano/Cello BGM and `0%` startle SFX."
+            if is_non_vox_cinema
+            else "Use motion only as an annotation overlay anchored to an approved real/AI image or video. No standalone native-motion scene is allowed."
+        )
+    )
+    priority_editorial_rule = (
+        "Route character & emotional beats to Priority #1 Warm 35mm AI Cinema locked to the episode's Flow Character Reference Sheet, transitional atmosphere beats to clean 4K B-Roll (`max_uses = 1`), and chapter openings to warm serif `FramelessCinemaTextBeat.tsx` (`0%` VOX graphics)."
+        if is_non_vox_cinema
+        else "Whenever a spoken sentence has no authentic footage matching 100% of its meaning, route it to Priority #2 VOX illustration first, and Priority #3 AI Image only as the last resort."
     )
     result["editorial_rules"] = [
         "Operate with production-director ownership and senior-editor judgment: own the attention curve, emotional arc, pacing, shot priority and polish instead of waiting for micro-instructions.",
         "Treat every second as editorially intentional: reveal, clarify, build tension, reset attention, deliver emotion or provide deliberate stillness; fix dead visual holds and retention valleys without forcing an effect every second.",
         "100% EYE-VERIFIED FOOTAGE & ZERO AUTO-CUT/AUTO-SPLICE: Visually inspect every video/image attached to a spoken sentence by eye (`read_file` / `vision_inspect_frames`). Guarantee 100% of third-party logos and running text are cropped out, and guarantee 100% semantic match between the visual and the spoken sentence. Never run automatic cutting or automatic splicing code, and never hold/repeat a clip across sentences (`max_uses = 1`).",
-        "Whenever a spoken sentence has no authentic footage matching 100% of its meaning, route it to Priority #2 VOX illustration first, and Priority #3 AI Image only as the last resort.",
+        priority_editorial_rule,
         motion_rule,
         "When the narration benefits from annotation, cover the meaningful clauses in spoken order with large mobile-readable text plus direct line/circle/callout, arrow or highlight interaction on the base media.",
         "Never replace a sourced-video beat that has approved media with a generic native graphic merely because a hard-coded media mapping is missing; fix the mapping/data path instead.",
@@ -852,6 +887,65 @@ def validate_korean_script_grammar_integrity(
                         "shift subjects across physical scene details ('비상벨이', '잠금장치가', '차량 불빛이')"
                     )
 
+            # Profile-Isolated Factual & Anti-AI Smell Gates (ONLY when `editorial_dna.profile_script_gates.enabled` is True on active profile)
+            from .critic_loops import (
+                _KO_AI_GWAYEON_RHETORICAL_RE,
+                _KO_AI_SPOONFED_EXCLAMATION_RE,
+                _KO_POST2024_HERITAGE_RULES,
+                _KO_PRE2024_HISTORICAL_LINE_RE,
+                audit_korean_chronology_consistency,
+                resolve_profile_script_gates,
+                script_has_post2024_modern_anchor,
+                verify_and_fix_korean_char_count_claims,
+            )
+
+            prof_gates_q = resolve_profile_script_gates(job)
+            if prof_gates_q.get("enabled") is True:
+                full_ko_blob = "\n".join(s for _, s in sentences)
+                is_modern_post2024 = bool(
+                    prof_gates_q.get("enforce_post2024_korean_heritage_names") is True
+                    and script_has_post2024_modern_anchor(full_ko_blob)
+                )
+                check_char_math = bool(prof_gates_q.get("verify_korean_char_count_claims") is True)
+                for bid, s in sentences:
+                    if check_char_math:
+                        _, mm_claims = verify_and_fix_korean_char_count_claims(s)
+                        if mm_claims:
+                            mm0 = mm_claims[0]
+                            raise RuntimeError(
+                                f"PLAN Korean character-count math error in {bid}: '{mm0['phrase']}' has {mm0['actual']} Hangul syllables "
+                                f"('{mm0['fixed_token']}'), NOT '{mm0['claimed_token']}'"
+                            )
+                    if is_modern_post2024 and not _KO_PRE2024_HISTORICAL_LINE_RE.search(s):
+                        for h_pat, h_repl in _KO_POST2024_HERITAGE_RULES:
+                            m_h = h_pat.search(s)
+                            if m_h:
+                                raise RuntimeError(
+                                    f"PLAN Korean post-2024 institutional naming error in {bid}: outdated '{m_h.group(0)}' in modern timeline; "
+                                    f"use official '{h_repl}' (effective May 17, 2024)"
+                                )
+
+                if prof_gates_q.get("enforce_chronology_year_span_math") is True:
+                    chrono_res = audit_korean_chronology_consistency(
+                        [(i + 1, s) for i, (_, s) in enumerate(sentences)]
+                    )
+                    if chrono_res.get("contradictions"):
+                        c0 = chrono_res["contradictions"][0]
+                        raise RuntimeError(
+                            f"PLAN Korean chronology math contradiction: present year {c0['present_year']} vs flashback year {c0['past_year']} "
+                            f"equals {c0['expected_span']}년, contradicting '{c0['claimed_span']}년' ({c0['excerpt']})"
+                        )
+
+                spoonfed_hits = [bid for bid, s in narrator_sents if _KO_AI_SPOONFED_EXCLAMATION_RE.search(s)]
+                gwayeon_hits = [bid for bid, s in narrator_sents if _KO_AI_GWAYEON_RHETORICAL_RE.search(s)]
+                max_gwayeon_gate = 5 if total_narr > 180 else 4
+                if len(spoonfed_hits) >= 3 or len(gwayeon_hits) > max_gwayeon_gate:
+                    raise RuntimeError(
+                        f"PLAN Korean AI spoon-fed commentary excess: exclamation judgements={len(spoonfed_hits)} (near {spoonfed_hits[:4]}), "
+                        f"'과연 ...?' rhetorical commentary={len(gwayeon_hits)} (near {gwayeon_hits[:5]}, max {max_gwayeon_gate}); "
+                        "cut narrator emotional spoon-feeding and let character actions speak"
+                    )
+
     short_brake_count = sum(
         1
         for _, s in sentences
@@ -946,7 +1040,11 @@ def validate_korean_anti_template_diversity(
     _ed_cta = _snap_cta.get("editorial_dna") if isinstance(_snap_cta.get("editorial_dna"), dict) else {}
     _prof_id_cta = str((job or {}).get("channel_profile_id") or _snap_cta.get("id") or "").strip()
     _allow_dual_sub_cta = bool(
-        _prof_id_cta == "channel-kr-financial-fugitive-director-v2"
+        _prof_id_cta in {
+            "channel-kr-financial-fugitive-director-v2",
+            "channel-kr-truecrime-director-v2",
+            "channel-e544a64b7c",
+        }
         or _ed_cta.get("outro_mode") == "standalone_case_closure"
         or _ed_cta.get("allow_dual_subscriber_cta") is True
     )
@@ -1227,6 +1325,7 @@ def evaluate_ypp_motion_floor(
         or (b.get("media_type") in motion_kinds)
         or b.get("has_motion_override")
         or (b.get("camera_mode") and b.get("camera_mode") != "static_hold")
+        or (b.get("cameraMotion") and b.get("cameraMotion") != "static_hold")
     )
     total_beats = len(beats)
     motion_ratio = motion_beats / total_beats
@@ -1677,8 +1776,18 @@ def validate_phase_quality(phase: str, workspace: Path, job: dict[str, Any]) -> 
                         if ln.strip() and not ln.strip().startswith("#")
                     )
                 effective_spoken_chars = max(spoken_from_beats, spoken_from_md)
-                min_spoken_floor = int(round(max(8500, target_mins * 350)))
+                is_drama_plan = (
+                    str(job.get("content_mode") or snapshot.get("content_mode") or ed_dna_plan.get("content_mode") or "").strip().lower() == "creative_audio_drama"
+                )
+                chars_per_min_floor = 255 if is_drama_plan else 350
+                min_spoken_floor = int(round(max(7500 if is_drama_plan else 8500, target_mins * chars_per_min_floor)))
                 if effective_spoken_chars < min_spoken_floor:
+                    if is_drama_plan:
+                        raise RuntimeError(
+                            f"PLAN Korean Audio-Drama duration error: script has only {effective_spoken_chars} spoken chars "
+                            f"for a {target_mins:.0f}-minute episode (minimum required >= {min_spoken_floor} chars at 0.94x bedtime cadence); "
+                            "deepen interpersonal scenes, craft sensory details, and dual-reversal dialogue across ACT01..ACT06"
+                        )
                     raise RuntimeError(
                         f"PLAN Korean long-form duration error: script has only {effective_spoken_chars} spoken chars "
                         f"for a {target_mins:.0f}-minute episode (minimum required >= {min_spoken_floor} chars, target 9,500–11,500 chars); "
@@ -1863,10 +1972,22 @@ def validate_phase_quality(phase: str, workspace: Path, job: dict[str, Any]) -> 
 
         if candidate_beats:
             policy = contract.get("monetization_policy") if isinstance(contract.get("monetization_policy"), dict) else {}
-            max_wrapper = float(job.get("max_single_wrapper_ratio") or policy.get("max_single_wrapper_ratio") or 0.55)
+            ed_dna_ypp = job.get("editing_dna") if isinstance(job.get("editing_dna"), dict) else {}
+            snap_ypp = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+            is_ai_cinema_ypp = (
+                str(ed_dna_ypp.get("visual_priority_mode") or "").strip().lower() == "ai_cinema_character_drama"
+                or str(job.get("content_mode") or snap_ypp.get("content_mode") or "").strip().lower() == "creative_audio_drama"
+            )
+            default_max_wrapper = (
+                max(0.55, min(0.88, float(((ed_dna_ypp.get("visual_mix") or {}).get("ai") or 0.80)) + 0.08))
+                if is_ai_cinema_ypp
+                else 0.55
+            )
+            max_wrapper = float(job.get("max_single_wrapper_ratio") or policy.get("max_single_wrapper_ratio") or default_max_wrapper)
             evaluate_ypp_framing_wrapper_cap(candidate_beats, max_wrapper_ratio=max_wrapper)
 
-            min_motion = float(job.get("min_motion_ratio") or policy.get("min_motion_ratio") or 0.35)
+            default_min_motion = 0.14 if is_ai_cinema_ypp else 0.35
+            min_motion = float(job.get("min_motion_ratio") or policy.get("min_motion_ratio") or default_min_motion)
             evaluate_ypp_motion_floor(candidate_beats, min_motion_ratio=min_motion)
 
         edit_manifest_path = workspace / "edit_manifest.json"

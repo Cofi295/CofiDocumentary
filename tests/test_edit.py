@@ -277,3 +277,291 @@ def test_edit_disconnect_reloads_per_beat_progress_before_retry(tmp_path: Path):
     assert 'Already completed in earlier batches:\n["B001", "B002"]' in gateway.prompts[1]
     assert progress["completed_beats"] == 4
     assert progress["pending_beat_ids"] == []
+
+
+def test_footage_batch_manifest_slices_commits_and_builds_contact_sheet(tmp_path: Path, monkeypatch):
+    from PIL import Image
+    from documentary.edit_footage_fetcher import EditDirectFootageFetcher, _ytdlp_format_selector
+
+    assert "height<=720" in _ytdlp_format_selector()
+    monkeypatch.setenv("COFI_FOOTAGE_MAX_HEIGHT", "1080")
+    assert "height<=1080" in _ytdlp_format_selector()
+    monkeypatch.delenv("COFI_FOOTAGE_MAX_HEIGHT", raising=False)
+
+    remotion_dir = tmp_path / "CofiRemotion"
+    (remotion_dir / "public" / "jobs" / "job-batch" / "footage").mkdir(parents=True, exist_ok=True)
+    ws = tmp_path / "ws"
+    ws.mkdir(parents=True, exist_ok=True)
+    (ws / "visual_manifest.json").write_text(
+        json.dumps(
+            {
+                "beats": [
+                    {"id": "B001", "voice_text": "첫 번째 장면 테스트"},
+                    {"id": "B002", "voice_text": "두 번째 장면 테스트"},
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    fetcher = EditDirectFootageFetcher(ws, remotion_dir, job_id="job-batch")
+
+    def fake_slice(self, url, output_stem, **kwargs):
+        out = self.media_dir / f"{output_stem}.mp4"
+        out.write_bytes(b"0" * 16384)
+        sheet = self.media_dir / f"{output_stem}_3frames.jpg"
+        Image.new("RGB", (480, 90), (40, 80, 120)).save(sheet)
+        return out
+
+    monkeypatch.setattr(EditDirectFootageFetcher, "download_and_slice_clip", fake_slice)
+    monkeypatch.setattr("documentary.edit_footage_fetcher.measure_clip_signalstats", lambda p: {"yavg": 110.0, "motion": 5.0})
+
+    res = fetcher.fetch_batch_manifest(
+        "job-batch",
+        [
+            {
+                "beat_id": "B001",
+                "url": "src01.mp4",
+                "start_offset": 12.5,
+                "duration": 5.0,
+                "crop_mode": "crop=1140:640:60:40",
+                "observed_content": "Two boys walking outside Pingyu netcafe entrance at dusk",
+            },
+            {
+                "beat_id": "B002",
+                "url": "src01.mp4",
+                "start_offset": 44.0,
+                "duration": 5.0,
+                "crop_mode": "crop=1140:640:60:40",
+                "observed_content": "Police cruiser parked outside rural brick farmhouse courtyard",
+            },
+            {
+                "beat_id": "B003",
+                "url": "src01.mp4",
+                "start_offset": -1,
+                "crop_mode": "none",
+                "observed_content": "bad",
+            },
+        ],
+    )
+
+    assert res["sliced_count"] == 2
+    assert res["rejected_count"] == 1
+    assert res["sliced_beats"] == ["B001", "B002"]
+    sheet_path = ws / res["batch_verify_sheet"]
+    assert sheet_path.is_file()
+    reg = json.loads((ws / "asset_registry.json").read_text(encoding="utf-8"))
+    assert {a["beat_id"] for a in reg["assets"]} == {"B001", "B002"}
+    rev = json.loads((ws / "footage_review.json").read_text(encoding="utf-8"))
+    assert {c["beat_id"] for c in rev["selected_candidates"]} == {"B001", "B002"}
+
+
+def test_dedicated_footage_eye_runs_parallel_act_workers_and_skips_completed(tmp_path: Path, monkeypatch):
+    remotion_dir = tmp_path / "CofiRemotion"
+    ws = tmp_path / "ws"
+    (ws / "media" / "edit_footage").mkdir(parents=True, exist_ok=True)
+    (ws / "media" / "footage" / "sources").mkdir(parents=True, exist_ok=True)
+    (ws / "media" / "footage" / "sources" / "src_clean_01.mp4").write_bytes(b"0" * 150_000)
+
+    # Mark B001 as already eye-verified on disk
+    (ws / "media" / "edit_footage" / "edit_broll_B001.mp4").write_bytes(b"0" * 16384)
+    (ws / "asset_registry.json").write_text(
+        json.dumps(
+            {
+                "assets": [
+                    {
+                        "id": "edit_broll_B001",
+                        "beat_id": "B001",
+                        "kind": "sourced_video",
+                        "path": "media/edit_footage/edit_broll_B001.mp4",
+                        "eye_verified": True,
+                        "observed_content": "Already verified entrance clip for B001",
+                    }
+                ]
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    beats = []
+    for i in range(1, 21):
+        act = "ACT01" if i <= 7 else ("ACT02" if i <= 14 else "ACT03")
+        beats.append({"id": f"B{i:03d}", "act": act, "voice_text": f"Sentence {i}", "duration_sec": 5.0})
+
+    calls: list[tuple[str, str]] = []
+
+    class ParallelFootageGateway:
+        def available(self) -> bool:
+            return True
+
+        def run_prompt_reusable(self, prompt, workspace, label, use_remotion_root=False):
+            calls.append((label, prompt))
+            return StageResult(0, f"done {label}", Path(workspace) / ".producer" / label)
+
+    monkeypatch.setattr("documentary.critic_loops.is_live_critic_gateway_available", lambda gw: True)
+    audit_calls = {"n": 0}
+
+    def fake_audit(workspace, job):
+        audit_calls["n"] += 1
+        return {"status": "FAILED" if audit_calls["n"] == 1 else "PASSED", "assets_inspected": 20, "failures": []}
+
+    monkeypatch.setattr("documentary.critic_loops.audit_footage_hygiene", fake_audit)
+    monkeypatch.setattr(
+        "documentary.edit_footage_fetcher.EditDirectFootageFetcher.build_verify_ftg_clips_sheets",
+        lambda self, job: {"ok": True},
+    )
+
+    coordinator = EditCoordinator(ParallelFootageGateway(), RemotionManager(remotion_dir), remotion_dir)
+    res = coordinator._run_dedicated_footage_eye_agent({"id": "job-par"}, ws, beats)
+
+    assert res is not None and res.returncode == 0
+    labels = {lbl for lbl, _ in calls}
+    assert labels == {"footage_eye_act01", "footage_eye_act02", "footage_eye_act03"}
+    for lbl, prompt in calls:
+        assert "src_clean_01.mp4" in prompt
+        assert "--batch-manifest" in prompt
+        if lbl == "footage_eye_act01":
+            assert '"beat_id": "B001"' not in prompt
+            assert '"beat_id": "B002"' in prompt
+
+
+def test_dedicated_footage_eye_filters_non_footage_routes_and_focuses_rework(tmp_path: Path, monkeypatch):
+    remotion_dir = tmp_path / "CofiRemotion"
+    ws = tmp_path / "ws"
+    (ws / "media" / "edit_footage").mkdir(parents=True, exist_ok=True)
+    (ws / "media" / "footage" / "sources").mkdir(parents=True, exist_ok=True)
+
+    # 8 REAL_FTG beats (6 completed >= 50%, 1 failed, 1 intentionally skipped for fallback)
+    # + VOX_NEWSROOM, CINEMA_TEXT, AI_4D beats that must NEVER be passed to @footage.
+    beats = []
+    assets = []
+    for i in range(1, 9):
+        bid = f"B{i:03d}-V01"
+        beats.append({
+            "beat_id": bid,
+            "act": "ACT01" if i <= 4 else "ACT02",
+            "route": "REAL_FTG",
+            "visual_route": "footage",
+            "visual_type": "sourced_video",
+            "voice_text": f"Real footage line {i}",
+            "duration_sec": 4.5,
+        })
+        if i <= 6:
+            clip_p = ws / "media" / "edit_footage" / f"{bid}_edit_broll.mp4"
+            clip_p.write_bytes(b"0" * 16384)
+            assets.append({
+                "beat_id": bid,
+                "path": f"media/edit_footage/{bid}_edit_broll.mp4",
+                "source_video": "src42_bad.mp4" if i == 2 else "src01_clean.mp4",
+                "eye_verified": True,
+                "observed_content": f"Observed clean frame {i} for documentary",
+            })
+
+    beats.extend([
+        {"beat_id": "B090-V01", "act": "ACT01", "route": "VOX_NEWSROOM", "visual_route": "vox", "visual_type": "vox", "voice_text": "Vox line", "duration_sec": 5.0},
+        {"beat_id": "B091-V01", "act": "ACT01", "route": "CINEMA_TEXT", "visual_route": "footage", "visual_type": "cinema_text", "voice_text": "Text beat", "duration_sec": 3.5},
+        {"beat_id": "B092-V01", "act": "ACT02", "route": "AI_4D", "visual_route": "footage", "visual_type": "sourced_video", "voice_text": "AI line", "duration_sec": 5.0},
+    ])
+    (ws / "asset_registry.json").write_text(json.dumps({"assets": assets}), encoding="utf-8")
+
+    calls: list[tuple[str, str]] = []
+
+    class FocusedReworkGateway:
+        def available(self) -> bool:
+            return True
+
+        def run_prompt_reusable(self, prompt, workspace, label, use_remotion_root=False):
+            calls.append((label, prompt))
+            return StageResult(0, f"done {label}", Path(workspace) / ".producer" / label)
+
+    monkeypatch.setattr("documentary.critic_loops.is_live_critic_gateway_available", lambda gw: True)
+    audit_calls = {"n": 0}
+
+    def fake_audit(workspace, job):
+        audit_calls["n"] += 1
+        if audit_calls["n"] <= 2:
+            return {
+                "status": "NEEDS_ATTENTION",
+                "assets_inspected": 6,
+                "failures": [
+                    {"beat_id": "B003-V01", "reason": "internal_hard_cut_detected"},
+                    {"beat_id": "GLOBAL_FOOTAGE", "reason": "progressive_monotonic_slicing_detected on src42_bad.mp4"},
+                ],
+            }
+        return {"status": "PASSED", "assets_inspected": 6, "failures": []}
+
+    monkeypatch.setattr("documentary.critic_loops.audit_footage_hygiene", fake_audit)
+    monkeypatch.setattr(
+        "documentary.edit_footage_fetcher.EditDirectFootageFetcher.build_verify_ftg_clips_sheets",
+        lambda self, job: {"ok": True},
+    )
+
+    coordinator = EditCoordinator(FocusedReworkGateway(), RemotionManager(remotion_dir), remotion_dir)
+    res = coordinator._run_dedicated_footage_eye_agent({"id": "job-focused"}, ws, beats)
+
+    assert res is not None and res.returncode == 0
+    labels = [lbl for lbl, _ in calls]
+    assert labels == ["footage_eye", "footage_eye_rework"]
+    for _, prompt in calls:
+        assert "B090-V01" not in prompt
+        assert "B091-V01" not in prompt
+        assert "B092-V01" not in prompt
+    rework_prompt = calls[1][1]
+    assert "B002-V01" in rework_prompt  # from flagged GLOBAL_FOOTAGE source src42_bad.mp4
+    assert "B003-V01" in rework_prompt  # explicit beat failure
+    assert "B008-V01" not in rework_prompt  # intentionally skipped beat is NOT re-dumped into rework
+
+
+def test_dedicated_footage_eye_parallelizes_large_rework(tmp_path: Path, monkeypatch):
+    remotion_dir = tmp_path / "CofiRemotion"
+    ws = tmp_path / "ws"
+    (ws / "media" / "edit_footage").mkdir(parents=True, exist_ok=True)
+    (ws / "media" / "footage" / "sources").mkdir(parents=True, exist_ok=True)
+
+    beats = []
+    failures = []
+    for i in range(1, 21):
+        bid = f"B{i:03d}-V01"
+        beats.append({
+            "beat_id": bid,
+            "act": "ACT01" if i <= 10 else "ACT02",
+            "route": "REAL_FTG",
+            "visual_type": "sourced_video",
+            "voice_text": f"Sentence {i}",
+            "duration_sec": 4.0,
+        })
+        failures.append({"beat_id": bid, "reason": "unverified_blind_auto_cut"})
+
+    calls: list[str] = []
+
+    class ParallelReworkGateway:
+        def available(self) -> bool:
+            return True
+
+        def run_prompt_reusable(self, prompt, workspace, label, use_remotion_root=False):
+            calls.append(label)
+            return StageResult(0, f"done {label}", Path(workspace) / ".producer" / label)
+
+    monkeypatch.setattr("documentary.critic_loops.is_live_critic_gateway_available", lambda gw: True)
+    audit_calls = {"n": 0}
+
+    def fake_audit(workspace, job):
+        audit_calls["n"] += 1
+        if audit_calls["n"] <= 2:
+            return {"status": "NEEDS_ATTENTION", "assets_inspected": 20, "failures": failures}
+        return {"status": "PASSED", "assets_inspected": 20, "failures": []}
+
+    monkeypatch.setattr("documentary.critic_loops.audit_footage_hygiene", fake_audit)
+    monkeypatch.setattr(
+        "documentary.edit_footage_fetcher.EditDirectFootageFetcher.build_verify_ftg_clips_sheets",
+        lambda self, job: {"ok": True},
+    )
+
+    coordinator = EditCoordinator(ParallelReworkGateway(), RemotionManager(remotion_dir), remotion_dir)
+    res = coordinator._run_dedicated_footage_eye_agent({"id": "job-par-rw"}, ws, beats)
+
+    assert res is not None and res.returncode == 0
+    assert "footage_eye_rework_act01" in calls
+    assert "footage_eye_rework_act02" in calls
+    assert "footage_eye_rework" not in calls

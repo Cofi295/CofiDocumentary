@@ -13,16 +13,15 @@ _MAX_GAIN = 1.20
 _MIN_NCC = 0.80
 
 
-@lru_cache(maxsize=1)
-def _cached_alpha_map() -> Image.Image:
-    # G-Labs' remover reveals a 48x48 translucent four-point mark. Cofi Studio
-    # generates an equivalent mask geometrically so it does not depend on any
-    # asset extracted from the packaged application.
+@lru_cache(maxsize=16)
+def _cached_alpha_map(side: int = 48) -> Image.Image:
+    # G-Labs' remover reveals a translucent four-point mark (48x48 on ~1K frames,
+    # 54-64px on 1376x768 / 1408x768 Nano Banana 2 frames). Generate geometrically
+    # at any candidate side so multi-resolution outputs are matched cleanly.
     scale = 4
-    side = 48
     canvas_side = side * scale
     center = (canvas_side - 1) / 2.0
-    radius = 24.0 * scale
+    radius = (side / 2.0) * scale
     shape_power = 0.725
     alpha = Image.new('L', (canvas_side, canvas_side), 0)
     pixels = alpha.load()
@@ -164,12 +163,22 @@ def _find_mark(image: Image.Image, alpha: Image.Image) -> tuple[int, int, float]
 def purify(image: Image.Image, *, verbose: bool = False) -> tuple[Image.Image, bool]:
     del verbose  # API parity with the G-Labs helper; Cofi Studio keeps logs at provider level.
     rgb = image.convert('RGB')
-    alpha = _cached_alpha_map()
-    match = _find_mark(rgb, alpha)
-    if match is None:
+    best_alpha: Image.Image | None = None
+    best_match: tuple[int, int, float] | None = None
+    for cand_side in (48, 56, 52, 60, 64):
+        alpha_cand = _cached_alpha_map(cand_side)
+        m_cand = _find_mark(rgb, alpha_cand)
+        if m_cand is not None:
+            if best_match is None or m_cand[2] > best_match[2]:
+                best_match = m_cand
+                best_alpha = alpha_cand
+            if cand_side in (48, 56) and m_cand[2] >= 0.48:
+                break
+    if best_match is None or best_alpha is None:
         return rgb.copy(), False
 
-    x, y, _gain = match
+    alpha = best_alpha
+    x, y, _gain = best_match
     result = rgb.copy()
     mark_width, mark_height = alpha.size
     cleanup_mask = alpha.filter(ImageFilter.MaxFilter(7))

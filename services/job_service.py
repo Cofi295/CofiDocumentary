@@ -113,10 +113,21 @@ class JobService:
             vs_norm = str(effective_strategy or "").strip().lower()
             merged_ai_vis = copy.deepcopy(sanitized_patch.get("ai_visual") or existing.get("ai_visual") or {})
             if isinstance(merged_ai_vis, dict):
+                ed_dna_patch = effective_editing_dna if isinstance(effective_editing_dna, dict) else {}
+                vpm_patch = str(ed_dna_patch.get("visual_priority_mode") or "").strip().lower()
+                cm_patch = str(sanitized_patch.get("content_mode") or existing.get("content_mode") or "").strip().lower()
                 merged_ai_vis["coverage_mode"] = (
                     "full_ai"
                     if vs_norm == "full_ai"
-                    else ("selective_ai" if vs_norm == "edit_direct_footage" else "fallback_only")
+                    else (
+                        "selective_ai"
+                        if (
+                            vs_norm == "edit_direct_footage"
+                            or vpm_patch == "ai_cinema_character_drama"
+                            or cm_patch == "creative_audio_drama"
+                        )
+                        else "fallback_only"
+                    )
                 )
                 sanitized_patch["ai_visual"] = merged_ai_vis
             snap = copy.deepcopy(sanitized_patch.get("channel_profile_snapshot") or existing.get("channel_profile_snapshot") or {})
@@ -206,6 +217,15 @@ class JobService:
             if not job_data.get("voice_signature") and profile.get("voice_signature"):
                 job_data["voice_signature"] = copy.deepcopy(profile["voice_signature"])
 
+            prof_content_mode = str(
+                profile.get("content_mode")
+                or (profile.get("editorial_dna") or {}).get("content_mode")
+                or ((profile.get("editing_dna") or {}).get("content_mode") if isinstance(profile.get("editing_dna"), dict) else "")
+                or ""
+            ).strip()
+            if prof_content_mode and not job_data.get("content_mode"):
+                job_data["content_mode"] = prof_content_mode
+
             if not job_data.get("ai_media_mode") and profile.get("default_ai_media_mode"):
                 job_data["ai_media_mode"] = str(profile["default_ai_media_mode"])
 
@@ -220,9 +240,22 @@ class JobService:
                 ai_vis["ai_media_mode"] = str(job_data["ai_media_mode"])
             if not ai_vis.get("coverage_mode"):
                 vs_val = str(job_data.get("visual_strategy") or "").strip().lower()
+                ed_dna_job = job_data.get("editing_dna") if isinstance(job_data.get("editing_dna"), dict) else {}
+                vmix_ai = float(((ed_dna_job.get("visual_mix") or {}).get("ai") or 0.0))
+                vpm_job = str(ed_dna_job.get("visual_priority_mode") or "").strip().lower()
                 ai_vis["coverage_mode"] = (
-                    "full_ai" if vs_val == "full_ai"
-                    else ("selective_ai" if vs_val == "edit_direct_footage" else "fallback_only")
+                    "full_ai"
+                    if vs_val == "full_ai"
+                    else (
+                        "selective_ai"
+                        if (
+                            vs_val == "edit_direct_footage"
+                            or vmix_ai >= 0.40
+                            or vpm_job == "ai_cinema_character_drama"
+                            or prof_content_mode == "creative_audio_drama"
+                        )
+                        else "fallback_only"
+                    )
                 )
             if ai_vis.get("style_mode") == "preset" and ai_vis.get("style_preset") and not ai_vis.get("style_prompt"):
                 try:
@@ -263,6 +296,7 @@ class JobService:
             job_data["channel_profile_snapshot"] = {
                 "id": profile.get("id") or profile_id,
                 "channel_profile_id": profile.get("id") or profile_id,
+                "content_mode": job_data.get("content_mode") or profile.get("content_mode") or (profile.get("editorial_dna") or {}).get("content_mode"),
                 "label": profile.get("label"),
                 "market": profile.get("market"),
                 "language": profile.get("default_language") or profile.get("language"),
@@ -363,10 +397,12 @@ class JobService:
 
         created = self.store.create(job_data)
 
-        # Sync to profile produced-topic memory
+        # Sync to profile produced-topic memory, auto-prune curated list, and auto-replenish +1 topic
         if created.get("channel_profile_id"):
             try:
-                self.profile_service.sync_job_to_topic_memory(created)
+                mem_sync = self.profile_service.sync_job_to_topic_memory(created)
+                if isinstance(mem_sync, dict):
+                    created = self.store.update(created["id"], {"topic_memory_sync": mem_sync})
             except Exception:
                 pass
 

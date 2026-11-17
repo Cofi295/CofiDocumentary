@@ -436,31 +436,36 @@ def test_export_thumbnail_ab_pack_and_select_winner(tmp_path: Path):
 # ==============================================================================
 
 def test_style_locking_endpoints(tmp_path: Path):
-    """Verify REST API style locking endpoints for job and profile."""
-    app = create_app()
-    client = TestClient(app)
+    """Verify REST API style locking endpoints for job and profile without mutating live channel_profiles.json."""
+    profiles_file = ROOT / "data" / "channel_profiles.json"
+    original_bytes = profiles_file.read_bytes()
+    try:
+        app = create_app()
+        client = TestClient(app)
 
-    # 1. Lock channel profile directly via REST
-    lock_resp = client.post(
-        "/api/radar/channel-profiles/channel-aa913eb90d/lock-thumbnail-dna",
-        json={
-            "thumbnail_dna": {
-                "color_palette": {
-                    "headline_accent": "#facc15",
+        # 1. Lock channel profile directly via REST (English badge on US profile)
+        lock_resp = client.post(
+            "/api/radar/channel-profiles/channel-aa913eb90d/lock-thumbnail-dna",
+            json={
+                "thumbnail_dna": {
+                    "color_palette": {
+                        "headline_accent": "#facc15",
+                    },
+                    "visual_signature": {
+                        "stamp_badge": "BREAKING",
+                    },
                 },
-                "visual_signature": {
-                    "stamp_badge": "속보",
-                },
+                "notes": "Automated style lock test",
             },
-            "notes": "Automated style lock test",
-        },
-    )
-    assert lock_resp.status_code == 200
-    lock_data = lock_resp.json()
-    assert lock_data["ok"] is True
-    assert lock_data["channel_profile_id"] == "channel-aa913eb90d"
-    assert lock_data["version"] >= 2
-    assert "locked_at" in lock_data
+        )
+        assert lock_resp.status_code == 200
+        lock_data = lock_resp.json()
+        assert lock_data["ok"] is True
+        assert lock_data["channel_profile_id"] == "channel-aa913eb90d"
+        assert lock_data["version"] >= 2
+        assert "locked_at" in lock_data
+    finally:
+        profiles_file.write_bytes(original_bytes)
 
 
 # ==============================================================================

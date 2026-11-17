@@ -25,6 +25,45 @@
         "cta_strategy": "ROLE KỂ CHUYỆN & CTA LINH HOẠT THEO TRUYỆN — KHÔNG BAO GIỜ LẶP LẠI CTA Ở BẤT KỲ ĐÂU (ZERO CTA REPETITION ANYWHERE): (1) CẤM TUYỆT ĐỐI LẶP LẠI CTA TRONG CÙNG MỘT TẬP HOẶC GIỮA CÁC TẬP: Toàn bộ kịch bản chỉ có tối đa 0 hoặc 1 nhịp kết nối khán giả duy nhất mọc tự nhiên từ cảm xúc/tình tiết của chính câu chuyện đó (cấm tuyệt đối vừa có CTA giữa bài vừa có CTA cuối bài, cấm CTA trong 2 phút đầu 00:00–02:00, cấm đóng đinh cuối Hồi 2). (2) BIẾN HÓA KHÉO LÉO 6 CẤU TRÚC NGỮ PHÁP CTA KHÁC HẲN NHAU THEO TỪNG VỤ ÁN: CẤM TUYỆT ĐỐI khung câu công nghiệp '[~하시려면 / ~싶으시다면 / ~궁금하시다면 / ~놓치지 않으시려면] + [구독과 좋아요/알림 설정을 눌러 주시기 바랍니다]'. Luân phiên 6 hình thái tự nhiên: Thuần kể chuyện phóng sự 0 nút bấm / Câu hỏi mở đặt người xem vào tình huống (?) / Lời ghi chú trầm tĩnh khi khép hồ sơ / Một nhịp thở đồng hành duy nhất giữa quãng lặng năm tháng của vụ án (kết bài 0% CTA) / Liên kết mạch ngầm giữa hai vật chứng thực tế / Đoản ngữ danh từ tiết chế hẹn hồ sơ kế tiếp. (3) XOAY VÒNG 4 KIỂU MỞ BÀI & 4 KIỂU KẾT BÀI ĐỘC BẢN: Cấm câu tua ngược đồng hồ ('시계를/시간을 ... 되돌려 봅니다'), phá bỏ công thức kết 4 bước rập khuôn ('완전범죄는 존재할 수 없습니다') và viết mới 100% 5 dòng cuối mỗi tập (CẤM '매주 실제 수사 기록과...', '지금 화면에 표시되고/나타나는...', '끝까지 시청해 주셔서 감사합니다')."
       },
       "updated_at": "2026-10-17T09:09:50.718690+00:00"
+    },
+    {
+      "id": "kr_goodnight_family_audio_drama_50m",
+      "name": "🇰🇷 K-Audio Drama Đêm Khuya & Phẩm Giá Gia Đình 5070 (KR · 감동 오디오드라마 / 숨은 명인 반전 · Xanh Tiền 100%)",
+      "description": "K-Audio Drama đêm khuya 5070 Hàn Quốc (Ma trận 5 Quan hệ Gia đình × 6 Tài năng Tinh hoa · 80% AI K-Drama 30fps + 15% Korean B-Roll 4K + 5% Props · Xanh tiền bền vững 100%).",
+      "builtin": false,
+      "built_in": false,
+      "market": "KR",
+      "language": "ko",
+      "visual_strategy": "edit_direct_footage",
+      "ai_media_mode": "mixed",
+      "creative_brief": {
+        "market": "KR",
+        "language": "ko",
+        "target_duration_minutes": 50.0,
+        "ai_media_mode": "mixed",
+        "visual_strategy": "edit_direct_footage",
+        "narrative_angle": "3인칭 감성 라디오 드라마 내레이션 — 가족 갈등 속 숨은 명인·거장의 품격 있는 반전 사이다 & 눈물의 치유",
+        "writing_style": "Ấm áp, sâu lắng, giàu chi tiết giác quan & nghề nghiệp tinh hoa Hàn Quốc (MBC 여성시대 × KBS 단막극 문체 · 0% 막장 욕설 · 0% 반복 고구마)",
+        "hook_archetype": "In Media Res 55s — Xoay vòng 6 Kiểu Mở Màn Độc Bản (공개 내기형 / 이름 없는 자리형 / 위기의 빈자리형 / 버려진 유품형 / 십 년 만의 재회형 / 비밀 문서 해독형)",
+        "editing_archetypes": [
+          "K_DRAMA_AI_CHARACTER_CINEMA_30FPS: 80% cảnh nhân vật đồng bộ Reference Sheet riêng mỗi tập, chuyển động quang học 30fps, nhịp cắt hữu cơ 4.5s-11.5s",
+          "KOREAN_ATMOSPHERIC_BROLL_4K: 15% cảnh không gian Hàn Quốc đêm mưa, hiên Hanok, ấm trà bốc khói, phố đêm Seoul (0% mặt người lạ)",
+          "TACTILE_KOREAN_STORY_PROPS: 5% thư tay chữ Hàn, thiệp mời hòa nhạc, sổ công thức ố vàng & thẻ chương 제1장..제5장 thanh lịch"
+        ],
+        "opening_hook": "",
+        "notes": "Biến thiên tự nhiên độ dài 44-56 phút mỗi tập; xoay vòng 5 quan hệ gia đình × 6 nhóm nghề văn hóa nghệ thuật an toàn 0% YMYL × 4 kiểu kết cục.",
+        "custom_rules": "[CHỈ CHỌN ĐỀ TÀI]: Ma trận 5 Trục Drama Gia Đình Hàn Quốc 5070 × 6 Nhóm Tài Năng & Tay Nghề Tinh Hoa Văn Hóa (30+ cốt truyện độc bản, 0% YMYL):\n1. Trục Quan Hệ Gia Đình: (A) Mẹ chồng – Nàng dâu & Chị em dâu (고부·동서 갈등 / 시월드 학벌 멸시); (B) Chị em ruột / Anh chị em ruột (장녀·차녀의 평생 희생 vs 이기적인 동생들); (C) Mâu thuẫn Mẹ – Con đẻ (자식의 무심함·체면치레 -> 어머니의 숨겨진 헌신 발견 후 눈물의 참회); (D) Vợ chồng tuổi xế chiều (가부장적 남편의 30년 무시 -> 아내의 품격 있는 홀로서기); (E) Thông gia / Con rể – Mẹ vợ (상견례·결혼식 사돈/사위의 멸시 -> 거장 귀빈 등판 역전).\n2. Trục Vũ Khí Lật Kèo Bằng Thực Lực & Phẩm Giá (0% khoe sổ đỏ/trúng số rẻ tiền): (1) Âm nhạc cổ điển & Quốc nhạc (피아노·바이올린·가야금·성악); (2) Ẩm thực truyền thống bậc thầy (한식 대가·종갓집 씨간장·궁중 병과); (3) Trang phục & Thủ công di sản (한복 명장·궁중 자수·나전칠기·도자기); (4) Hội họa, Thư pháp & Phục chế cổ vật (고미술 복원·동양화·서예); (5) Kiến trúc mộc truyền thống & Chế tác (한옥 대목장·현악기 제작·분재); (6) Văn chương & Phiên dịch văn hóa quốc tế (고전 번역·외교 통역). | [CẤM TUYỆT ĐỐI]: 1. CẤM TUYỆT ĐỐI BẪY YMYL (Chính sách Inauthentic Content Nhánh C 15/07/2025): Không làm nhân vật bác sĩ/Đông y kê đơn chữa bệnh nan y, không tư vấn đầu tư chứng khoán/bất động sản/tiền ảo, không giảng giải lách luật thuế/kiện tụng thừa kế.\n2. CẤM TUYỆT ĐỐI 막장 패륜 & CỜ ĐỎ 노란딱지: Ngoại tình giường chiếu thô tục (불륜·치정·동침), bạo hành thể xác đẫm máu (폭행·구타·학대·뺨 때리기·피), tự sát (자살·극단적 선택), giết người cướp bảo hiểm (살인·독극물·사망보험금 범죄), chửi rủa độc địa chợ búa (죽어라·식충이·쓰레기).\n3. CẤM REUSED & TEMPLATE SPAM: Cấm lấy truyện có sẵn trên 네이트판/블라인드/카페; cấm xào lặp mô-típ rút sổ tiết kiệm 50억/trúng số/bố đẻ tự nhiên là chủ tịch 재벌; cấm kéo dài đoạn hành hạ khổ nhục (고구마 구간) lê thê quá 15 phút. | [AN TOÀN XANH TIỀN 100%]: CHUẨN XANH TIỀN BỀN VỮNG 100% YOUTUBE YPP HÀN QUỐC (15/07/2025 – 2026):\n(1) MINH BẠCH AI & CHỐNG DECEPTIVE CLICKBAIT: Tuyệt đối không gắn nhãn giả mạo [실화] / [실제 사건]; định danh đúng '창작 오디오드라마 / 감동 인생사연', bật công tắc Altered/Synthetic Content trong YouTube Studio, không đóng watermark chữ trắng tĩnh trùng lặp góc trái suốt 60 phút. Mọi câu thoại ngoặc kép, con số và đạo cụ trên Title/Thumbnail phải xuất hiện thật 100% ở Hồi 1 và giải quyết trọn vẹn ở Hồi 4.\n(2) VÙNG KIM CƯƠNG 60 GIÂY ĐẦU (00:00–00:55): 0% từ vựng tử vong, tự sát, bạo lực, máu me, ngoại tình, chửi tục. Đổi các cụm nhạy cảm như '남편 사망보험금' thành '남편이 남긴 유산' / '남편 떠나보내고 지킨 목돈'.\n(3) CHỐNG INAUTHENTIC CONTENT (양산형 콘텐츠): Biến thiên tự nhiên độ dài tập (44–56 phút) và cấu trúc (5 Hồi hoặc 6 Hồi), xoay vòng 6 Kiểu Hook × 4 Kiểu Kết Cục, thiết kế Reference Sheet nhân vật mới riêng cho từng tập, khóa Global dHash >= 14 từ phút đầu đến phút cuối (0% lấy ảnh đầu phim đắp vào cuối phim). | [GIỌNG KỂ & CẤU TRÚC]: NGÔI KỂ & CẤU TRÚC K-AUDIO DRAMA ĐÊM KHUYA (45–55 PHÚT · ~14.000–16.500 KÝ TỰ HANGUL):\n(1) ROLE CỐ ĐỊNH 100%: Ngôi thứ 3 Người Kể Chuyện Đêm Khuya Ấm Áp (3인칭 전지적 라디오 내레이터 — phong cách MBC 여성시대 × KBS 라디오 극장), tốc độ đọc điềm đạm ấm áp, tuân thủ tuyệt đối luật 화자 선행 (luôn dẫn chủ ngữ + cử chỉ/ánh mắt trước lời thoại trực tiếp để 1 giọng đọc không bao giờ loạn vai).\n(2) NHẠC TÍNH ĐUÔI CÂU TIẾNG HÀN: ~습니다/었습니다 (60–68%, tối đa 3–4 câu liên tiếp phải đổi nhịp), ~었죠/았죠 (12–15%), ~거든요 (4–6%), ~겁니다/셈입니다 (5–8%), câu hỏi gợi mở ? (4–6%); CẤM 100% 체언 종결 lặp ý cuối đoạn và CẤM câu dẫn MC ('자, 그럼 시간을 거슬러...').\n(3) CẤU TRÚC 5 HỒI KHÓA SỔ LẶP Ý (State-Change Ledger — Mỗi chương bắt buộc đổi trạng thái sự kiện mới): Hồi 1 (00:00–07:30): Cold-Open Hook 55s In Media Res ngay đỉnh điểm thách thức + Bối cảnh nhẫn nhịn hiện tại & Sự cố chạm ranh giới thiêng liêng -> Hồi 2 (07:30–17:30): Cánh cửa bị khóa & Đêm chuẩn bị âm thầm (luôn có 1 nhân vật phụ tử tế hỗ trợ + gieo 2 chi tiết tay nghề sắc bén) -> Hồi 3 (17:30–29:30): Hồi ức giải mã quá khứ vì sao bậc thầy năm xưa tự nguyện giấu tên 20–30 năm (lấy nước mắt cảm động) -> Hồi 4 (29:30–43:00): Cao trào 사이다 bằng thực lực đỉnh cao trên sân khấu/bàn thẩm định + Đại danh sư công nhận + Sự sụp đổ uy tín của kẻ ngạo mạn -> Hồi 5 (43:00–50:00): Nhân quả thanh lịch, chữa lành ấm áp & 60 giây lời chúc ngủ ngon (굿밤 엔딩) viết mới 100% theo hình ảnh ẩn dụ riêng của tập.",
+        "cta_strategy": "0% SPOKEN ENGAGEMENT BAIT TRONG AUDIO (CHỐNG TEMPLATE MASS-PRODUCTION & ARTIFICIAL ENGAGEMENT): (1) CẤM TUYỆT ĐỐI chèn câu xin 구독·좋아요·알림설정 hay ép gõ từ khóa bình luận vào trong kịch bản thu âm (cả đầu, giữa lẫn cuối bài = 0%). (2) 60 giây cuối Hồi 5 khép lại thuần túy bằng dư âm văn học ấm áp vỗ về giấc ngủ đêm khuya bám sát đạo cụ của chính câu chuyện đó (tiếng nắp đàn khép nhẹ, hương trà ấm, ánh đèn hiên nhà). (3) Lời nhắn giao lưu khán giả và gợi ý bấm Hype (띄우기) chỉ đặt tự nhiên, viết mới riêng biệt dưới Bình luận ghim (Pinned Comment) của từng video."
+      },
+      "updated_at": "2026-11-15T17:54:17.009663+00:00",
+      "default_duration_minutes": 70,
+      "target_duration_minutes": 70,
+      "flexible_duration_window_minutes": [
+        60,
+        82
+      ],
+      "character_reference_policy": "per_episode_self_generated_flow_character_sheet_zero_real_celebrities",
+      "ai_cinema_style": "warm_korean_prestige_kdrama_35mm_3200k"
     }
   ]
 }

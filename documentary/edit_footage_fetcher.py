@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from contextlib import contextmanager
 from datetime import datetime, timezone
 import json
 import os
@@ -9,6 +10,8 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import threading
+import time
 from typing import Any
 import urllib.parse
 import urllib.request
@@ -59,7 +62,69 @@ def _edit_ffmpeg_threads() -> str:
     try:
         return str(max(1, int(detect_hardware_profile().get("edit_ffmpeg_threads") or 2)))
     except Exception:
-        return "2" 
+        return "2"
+
+
+_THREAD_REGISTRY_LOCKS_GUARD = threading.Lock()
+_THREAD_REGISTRY_LOCKS: dict[str, threading.RLock] = {}
+
+
+def _ytdlp_max_height() -> int:
+    """Cap archival source downloads to 720p by default for 3x faster fetching."""
+    try:
+        val = int(os.getenv("COFI_FOOTAGE_MAX_HEIGHT", "720") or 720)
+    except (TypeError, ValueError):
+        val = 720
+    return max(480, min(1080, val))
+
+
+def _ytdlp_format_selector(*, include_audio: bool = False) -> str:
+    h = _ytdlp_max_height()
+    if include_audio:
+        return f"bestvideo[height<={h}][ext=mp4]+bestaudio/best[height<={h}][ext=mp4]/best[height<={h}]/best"
+    return f"bestvideo[height<={h}][ext=mp4]/best[height<={h}][ext=mp4]/best[height<={h}]/best"
+
+
+@contextmanager
+def _workspace_registry_lock(workspace: Path, *, timeout_sec: float = 30.0):
+    """Cross-thread and cross-process lock protecting shared footage JSON registries."""
+    key = str(Path(workspace).resolve())
+    with _THREAD_REGISTRY_LOCKS_GUARD:
+        t_lock = _THREAD_REGISTRY_LOCKS.setdefault(key, threading.RLock())
+    lock_file = Path(workspace) / ".producer" / ".footage_registry.lock"
+    lock_file.parent.mkdir(parents=True, exist_ok=True)
+    with t_lock:
+        fd: int | None = None
+        deadline = time.monotonic() + timeout_sec
+        while True:
+            try:
+                fd = os.open(str(lock_file), os.O_CREAT | os.O_EXCL | os.O_RDWR)
+                os.write(fd, f"{os.getpid()}".encode("ascii", errors="ignore"))
+                break
+            except FileExistsError:
+                try:
+                    if time.time() - lock_file.stat().st_mtime > 30.0:
+                        lock_file.unlink(missing_ok=True)
+                        continue
+                except OSError:
+                    pass
+                if time.monotonic() >= deadline:
+                    break
+                time.sleep(0.05)
+            except OSError:
+                break
+        try:
+            yield
+        finally:
+            if fd is not None:
+                try:
+                    os.close(fd)
+                except OSError:
+                    pass
+                try:
+                    lock_file.unlink(missing_ok=True)
+                except OSError:
+                    pass
 
 
 class EditDirectFootageFetcher:
@@ -561,7 +626,7 @@ class EditDirectFootageFetcher:
                 "--no-playlist",
                 "--no-warnings",
                 "--socket-timeout", "15",
-                "-f", "bestvideo[height<=1080][ext=mp4]/best[height<=1080][ext=mp4]/best[height<=1080]",
+                "-f", _ytdlp_format_selector(include_audio=False),
                 "--download-sections", section_arg,
                 "-o", str(raw_tmp),
                 url,
@@ -582,7 +647,7 @@ class EditDirectFootageFetcher:
                         "--no-playlist",
                         "--no-warnings",
                         "--socket-timeout", "18",
-                        "-f", "bestvideo[height<=1080][ext=mp4]+bestaudio/best[height<=1080][ext=mp4]/best[height<=1080]/best",
+                        "-f", _ytdlp_format_selector(include_audio=True),
                         "--merge-output-format", "mp4",
                         "-o", str(full_tmp),
                         url,
@@ -657,17 +722,18 @@ class EditDirectFootageFetcher:
             except Exception:
                 pass
             self.extract_3frame_contact_sheet(target)
-            # Enforce perceptual dHash >= 14 uniqueness against already-sliced clips
-            cand_hash = self.compute_clip_dhash(target)
-            if cand_hash is not None:
-                for other_mp4 in self.media_dir.glob("edit_broll_*.mp4"):
-                    if other_mp4.resolve() == target.resolve():
-                        continue
-                    oh = self.compute_clip_dhash(other_mp4)
-                    if oh is not None and self.hamming_distance_64(cand_hash, oh) < 14:
-                        target.unlink(missing_ok=True)
-                        (target.parent / f"{target.stem}_3frames.jpg").unlink(missing_ok=True)
-                        return None
+            # Enforce perceptual dHash >= 14 uniqueness against already-sliced clips (locked across parallel workers)
+            with _workspace_registry_lock(self.workspace):
+                cand_hash = self.compute_clip_dhash(target)
+                if cand_hash is not None:
+                    for other_mp4 in self.media_dir.glob("edit_broll_*.mp4"):
+                        if other_mp4.resolve() == target.resolve():
+                            continue
+                        oh = self.compute_clip_dhash(other_mp4)
+                        if oh is not None and self.hamming_distance_64(cand_hash, oh) < 14:
+                            target.unlink(missing_ok=True)
+                            (target.parent / f"{target.stem}_3frames.jpg").unlink(missing_ok=True)
+                            return None
             return target
         except Exception:
             raw_tmp.unlink(missing_ok=True)
@@ -694,7 +760,7 @@ class EditDirectFootageFetcher:
                     "--no-playlist",
                     "--no-warnings",
                     "--socket-timeout", "18",
-                    "-f", "bestvideo[height<=1080][ext=mp4]/best[height<=1080][ext=mp4]/best[height<=1080]",
+                    "-f", _ytdlp_format_selector(include_audio=False),
                     "-o", str(src_path),
                     url_or_path,
                 ]
@@ -824,85 +890,25 @@ class EditDirectFootageFetcher:
         rel_path = str(clip_path.relative_to(self.workspace))
         rel_sheet = str(sheet_path.relative_to(self.workspace)) if sheet_path.exists() else ""
 
-        registry_path = self.workspace / "asset_registry.json"
-        registry = self._read_json(registry_path, {"assets": [], "ai_fallback_beats": [], "ai_usage_notes": []})
-        assets = [
-            item for item in (registry.get("assets") or [])
-            if isinstance(item, dict) and str(item.get("beat_id") or "") not in set(beat_ids)
-        ]
-        for bid in beat_ids:
-            beat_file = self.media_dir / f"{bid}_edit_broll.mp4"
-            if beat_file.resolve() != clip_path.resolve():
-                shutil.copy2(clip_path, beat_file)
-            assets.append({
-                "id": f"edit_broll_{bid}",
-                "beat_id": bid,
-                "kind": "sourced_video",
-                "path": str(beat_file.relative_to(self.workspace)),
-                "contact_sheet_3frame": rel_sheet,
-                "crop_mode": resolved_crop_mode,
-                "eye_verified": True,
-                "observed_content": clean_obs,
-                "selection_method": "eye_verified_cut",
-                "start_offset_sec": round(float(start_offset_sec), 2),
-                "signalstats": sig_stats,
-                "source": {
-                    "fetched_by": "edit_direct_footage_agent",
+        self._commit_sliced_clips_to_registries(
+            job_id,
+            [
+                {
+                    "beat_id": bid,
+                    "clip_path": clip_path,
+                    "rel_sheet": rel_sheet,
+                    "crop_mode": resolved_crop_mode,
+                    "observed_content": clean_obs,
+                    "start_offset_sec": round(float(start_offset_sec), 2),
+                    "duration_sec": round(float(clip_duration_sec), 2),
+                    "signalstats": sig_stats,
                     "query": query,
-                    "url": chosen_url,
-                    "title": chosen_title,
-                    "fetched_at": _now(),
-                },
-            })
-        registry["assets"] = assets
-        self._write_json(registry_path, registry)
-
-        # Also sync to footage_review.json & media/footage/clips/S_Fxxx.mp4 + public/jobs/<job_id>/footage/
-        ftg_review_path = self.workspace / "footage_review.json"
-        ftg_review = self._read_json(ftg_review_path, {"selected_candidates": []})
-        sel_list = [
-            item for item in (ftg_review.get("selected_candidates") or [])
-            if isinstance(item, dict)
-        ]
-        existing_sf_by_beat = {
-            str(item.get("beat_id") or ""): str(item.get("path") or "")
-            for item in sel_list
-            if str(item.get("beat_id") or "")
-        }
-        sel_list = [
-            item for item in sel_list
-            if str(item.get("beat_id") or "") not in set(beat_ids)
-        ]
-        clips_dir = self.workspace / "media" / "footage" / "clips"
-        clips_dir.mkdir(parents=True, exist_ok=True)
-        pub_ftg_dir = self.remotion_dir / "public" / "jobs" / str(job_id) / "footage"
-        pub_ftg_dir.mkdir(parents=True, exist_ok=True)
-        for bid in beat_ids:
-            prev_rel = existing_sf_by_beat.get(bid) or ""
-            sf_name = Path(prev_rel).name if prev_rel.endswith(".mp4") else f"{bid}_edit_broll.mp4"
-            sf_clip_path = clips_dir / sf_name
-            shutil.copy2(clip_path, sf_clip_path)
-            shutil.copy2(clip_path, pub_ftg_dir / sf_name)
-            shutil.copy2(clip_path, pub_ftg_dir / f"{bid}_edit_broll.mp4")
-            sel_list.append({
-                "beat_id": bid,
-                "candidate_id": Path(sf_name).stem,
-                "path": str(sf_clip_path.relative_to(self.workspace)),
-                "source_file": Path(chosen_url).name if chosen_url else query,
-                "source_url": chosen_url,
-                "start_offset_sec": round(float(start_offset_sec), 2),
-                "duration_sec": round(float(clip_duration_sec), 2),
-                "crop_mode": resolved_crop_mode,
-                "eye_verified": True,
-                "selection_method": "eye_verified_cut",
-                "observed_content": clean_obs,
-                "contact_sheet_3frame": rel_sheet,
-                "signalstats": sig_stats,
-            })
-        ftg_review["selected_candidates"] = sel_list
-        ftg_review["selection_method"] = "eye_verified_cut"
-        ftg_review["updated_at"] = _now()
-        self._write_json(ftg_review_path, ftg_review)
+                    "chosen_url": chosen_url,
+                    "chosen_title": chosen_title,
+                }
+                for bid in beat_ids
+            ],
+        )
         return {
             "ok": True,
             "beat_ids": beat_ids,
@@ -915,72 +921,312 @@ class EditDirectFootageFetcher:
             "signalstats": sig_stats,
         }
 
-    def build_verify_ftg_clips_sheets(self, job: dict[str, Any]) -> dict[str, Any]:
-        """Generate VERIFY_FTG_CLIPS_1.jpg & VERIFY_FTG_CLIPS_2.jpg showing 3 frames (15%-50%-85%)
-        of every REAL_FTG clip alongside beat_id, source_file, start_offset_sec, and voice_text,
-        then run audit_footage_hygiene(workspace, job)."""
-        from PIL import Image, ImageDraw, ImageFont
-        from .critic_loops import audit_footage_hygiene
+    def _commit_sliced_clips_to_registries(
+        self,
+        job_id: str,
+        records: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Atomically persist eye-verified clip metadata across asset_registry.json and footage_review.json."""
+        if not records:
+            return []
+        target_bids = {str(rec.get("beat_id") or "").strip() for rec in records if str(rec.get("beat_id") or "").strip()}
+        if not target_bids:
+            return []
 
-        ftg_review = self._read_json(self.workspace / "footage_review.json", {})
-        sel_map = {
-            str(item.get("beat_id") or ""): item
-            for item in (ftg_review.get("selected_candidates") or [])
-            if isinstance(item, dict) and str(item.get("beat_id") or "")
-        }
-        registry = self._read_json(self.workspace / "asset_registry.json", {})
-        for item in (registry.get("assets") or []):
-            if isinstance(item, dict) and str(item.get("beat_id") or "") and str(item.get("beat_id") or "") not in sel_map:
-                sel_map[str(item.get("beat_id") or "")] = item
+        clips_dir = self.workspace / "media" / "footage" / "clips"
+        clips_dir.mkdir(parents=True, exist_ok=True)
+        pub_ftg_dir = self.remotion_dir / "public" / "jobs" / str(job_id) / "footage"
+        pub_ftg_dir.mkdir(parents=True, exist_ok=True)
 
+        committed_entries: list[dict[str, Any]] = []
+        with _workspace_registry_lock(self.workspace):
+            registry_path = self.workspace / "asset_registry.json"
+            registry = self._read_json(registry_path, {"assets": [], "ai_fallback_beats": [], "ai_usage_notes": []})
+            assets = [
+                item for item in (registry.get("assets") or [])
+                if isinstance(item, dict) and str(item.get("beat_id") or "") not in target_bids
+            ]
+
+            ftg_review_path = self.workspace / "footage_review.json"
+            ftg_review = self._read_json(ftg_review_path, {"selected_candidates": []})
+            sel_list = [
+                item for item in (ftg_review.get("selected_candidates") or [])
+                if isinstance(item, dict)
+            ]
+            existing_sf_by_beat = {
+                str(item.get("beat_id") or ""): str(item.get("path") or "")
+                for item in sel_list
+                if str(item.get("beat_id") or "")
+            }
+            sel_list = [
+                item for item in sel_list
+                if str(item.get("beat_id") or "") not in target_bids
+            ]
+
+            for rec in records:
+                bid = str(rec.get("beat_id") or "").strip()
+                clip_path = Path(rec["clip_path"])
+                if not bid or not clip_path.is_file():
+                    continue
+                rel_sheet = str(rec.get("rel_sheet") or "")
+                resolved_crop_mode = str(rec.get("crop_mode") or "")
+                clean_obs = str(rec.get("observed_content") or "")
+                start_offset_sec = round(float(rec.get("start_offset_sec") or 0.0), 2)
+                clip_duration_sec = round(float(rec.get("duration_sec") or 6.2), 2)
+                sig_stats = rec.get("signalstats") or {}
+                query = str(rec.get("query") or "")
+                chosen_url = str(rec.get("chosen_url") or "")
+                chosen_title = str(rec.get("chosen_title") or "")
+
+                beat_file = self.media_dir / f"{bid}_edit_broll.mp4"
+                if beat_file.resolve() != clip_path.resolve():
+                    shutil.copy2(clip_path, beat_file)
+                assets.append({
+                    "id": f"edit_broll_{bid}",
+                    "beat_id": bid,
+                    "kind": "sourced_video",
+                    "path": str(beat_file.relative_to(self.workspace)),
+                    "contact_sheet_3frame": rel_sheet,
+                    "crop_mode": resolved_crop_mode,
+                    "eye_verified": True,
+                    "observed_content": clean_obs,
+                    "selection_method": "eye_verified_cut",
+                    "start_offset_sec": start_offset_sec,
+                    "signalstats": sig_stats,
+                    "source": {
+                        "fetched_by": "edit_direct_footage_agent",
+                        "query": query,
+                        "url": chosen_url,
+                        "title": chosen_title,
+                        "fetched_at": _now(),
+                    },
+                })
+
+                prev_rel = existing_sf_by_beat.get(bid) or ""
+                sf_name = Path(prev_rel).name if prev_rel.endswith(".mp4") else f"{bid}_edit_broll.mp4"
+                sf_clip_path = clips_dir / sf_name
+                if sf_clip_path.resolve() != clip_path.resolve():
+                    shutil.copy2(clip_path, sf_clip_path)
+                shutil.copy2(clip_path, pub_ftg_dir / sf_name)
+                shutil.copy2(clip_path, pub_ftg_dir / f"{bid}_edit_broll.mp4")
+                sel_entry = {
+                    "beat_id": bid,
+                    "candidate_id": Path(sf_name).stem,
+                    "path": str(sf_clip_path.relative_to(self.workspace)),
+                    "source_file": Path(chosen_url).name if chosen_url else query,
+                    "source_url": chosen_url,
+                    "start_offset_sec": start_offset_sec,
+                    "duration_sec": clip_duration_sec,
+                    "crop_mode": resolved_crop_mode,
+                    "eye_verified": True,
+                    "selection_method": "eye_verified_cut",
+                    "observed_content": clean_obs,
+                    "contact_sheet_3frame": rel_sheet,
+                    "signalstats": sig_stats,
+                }
+                sel_list.append(sel_entry)
+                committed_entries.append(sel_entry)
+
+            registry["assets"] = assets
+            self._write_json(registry_path, registry)
+            ftg_review["selected_candidates"] = sel_list
+            ftg_review["selection_method"] = "eye_verified_cut"
+            ftg_review["updated_at"] = _now()
+            self._write_json(ftg_review_path, ftg_review)
+        return committed_entries
+
+    def _voice_text_by_beat(self) -> dict[str, str]:
         vm = self._read_json(self.workspace / "visual_manifest.json", {})
         beats = [b for b in (vm.get("beats") or []) if isinstance(b, dict)]
-        voice_by_beat = {str(b.get("id") or ""): str(b.get("voice_text") or "") for b in beats}
+        return {str(b.get("id") or b.get("beat_id") or ""): str(b.get("voice_text") or b.get("narration_text") or "") for b in beats}
 
-        items = sorted(sel_map.values(), key=lambda x: str(x.get("beat_id") or ""))
-        probes_dir = self.workspace / "media" / "footage" / "probes"
-        probes_dir.mkdir(parents=True, exist_ok=True)
+    def _render_contact_sheet_page(
+        self,
+        batch: list[dict[str, Any]],
+        out_sheet: Path,
+        voice_by_beat: dict[str, str],
+    ) -> Path:
+        """Render a readable multi-clip 3-frame contact sheet with voice_text & observed_content."""
+        from PIL import Image, ImageDraw, ImageFont
 
         try:
             font = ImageFont.truetype("malgun.ttf", 14)
         except Exception:
             font = ImageFont.load_default()
 
+        row_h = 92
+        img_w = 1280
+        img_h = max(row_h * max(1, len(batch)), 180)
+        canvas = Image.new("RGB", (img_w, img_h), (15, 18, 24))
+        draw = ImageDraw.Draw(canvas)
+        for r_i, entry in enumerate(batch):
+            y0 = r_i * row_h
+            bid = str(entry.get("beat_id") or "")
+            rel_p = str(entry.get("path") or "")
+            mp4_p = self.workspace / rel_p if rel_p else self.media_dir / f"{bid}_edit_broll.mp4"
+            sheet_3 = mp4_p.parent / f"{mp4_p.stem}_3frames.jpg"
+            if not sheet_3.is_file():
+                alt_3 = self.media_dir / f"edit_broll_{bid}_3frames.jpg"
+                if alt_3.is_file():
+                    sheet_3 = alt_3
+            if mp4_p.is_file() and not sheet_3.is_file():
+                self.extract_3frame_contact_sheet(mp4_p, sheet_3)
+            if sheet_3.is_file():
+                try:
+                    with Image.open(sheet_3) as s3:
+                        s3_resized = s3.convert("RGB").resize((480, 86))
+                        canvas.paste(s3_resized, (6, y0 + 3))
+                except Exception:
+                    pass
+            src_name = str(entry.get("source_file") or (entry.get("source") or {}).get("url") or "")
+            start_off = entry.get("start_offset_sec", 0.0)
+            v_txt = voice_by_beat.get(bid, "")[:68]
+            obs_txt = str(entry.get("observed_content") or "")[:68]
+            draw.text((496, y0 + 8), f"{bid} | src={Path(src_name).name} @ {start_off}s", fill=(125, 211, 252), font=font)
+            draw.text((496, y0 + 34), f"Voice: {v_txt}", fill=(241, 245, 249), font=font)
+            draw.text((496, y0 + 58), f"Eye: {obs_txt}", fill=(167, 243, 208), font=font)
+        out_sheet.parent.mkdir(parents=True, exist_ok=True)
+        canvas.save(out_sheet, quality=88)
+        return out_sheet
+
+    def fetch_batch_manifest(
+        self,
+        job_id: str,
+        manifest_items: list[dict[str, Any]],
+        *,
+        sheet_out: Path | None = None,
+        max_workers: int = 4,
+    ) -> dict[str, Any]:
+        """Slice a batch of 10-15 eye-verified beats in parallel and emit a single Contact Sheet."""
+        valid_items: list[dict[str, Any]] = []
+        rejected: list[dict[str, Any]] = []
+        for idx, raw in enumerate(manifest_items):
+            if not isinstance(raw, dict):
+                continue
+            bid = str(raw.get("beat_id") or "").strip()
+            url = str(raw.get("url") or raw.get("source") or "").strip()
+            query = str(raw.get("query") or bid).strip()
+            crop_mode = str(raw.get("crop_mode") or "").strip()
+            obs = str(raw.get("observed_content") or "").strip()
+            try:
+                start_offset = float(raw.get("start_offset", -1.0))
+            except (TypeError, ValueError):
+                start_offset = -1.0
+            try:
+                duration = float(raw.get("duration") or 6.2)
+            except (TypeError, ValueError):
+                duration = 6.2
+            if not bid or not url or start_offset < 0 or not crop_mode or crop_mode.lower() == "none" or len(obs) < 10:
+                rejected.append({
+                    "index": idx,
+                    "beat_id": bid,
+                    "error": "FORBIDDEN_AUTO_CUT: requires beat_id, url, start_offset>=0, calibrated crop_mode, observed_content>=10 chars",
+                })
+                continue
+            valid_items.append({
+                "beat_id": bid,
+                "url": url,
+                "query": query,
+                "crop_mode": crop_mode,
+                "observed_content": obs,
+                "start_offset": start_offset,
+                "duration": duration,
+                "force": bool(raw.get("force", True)),
+            })
+
+        def _slice_one(item: dict[str, Any]) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
+            bid = item["beat_id"]
+            stem = f"edit_broll_{bid}"
+            clip_path = self.download_and_slice_clip(
+                item["url"],
+                stem,
+                clip_duration_sec=item["duration"],
+                start_offset_sec=item["start_offset"],
+                crop_mode=item["crop_mode"],
+                reference_text=item["query"],
+                force_redownload=item["force"],
+            )
+            if clip_path is None:
+                return None, {"beat_id": bid, "error": "Failed to slice or rejected by dHash/hard-cut/banner filter"}
+            sig_stats = measure_clip_signalstats(clip_path)
+            sheet_path = clip_path.parent / f"{clip_path.stem}_3frames.jpg"
+            if not sheet_path.exists():
+                self.extract_3frame_contact_sheet(clip_path, sheet_path)
+            rel_sheet = str(sheet_path.relative_to(self.workspace)) if sheet_path.exists() else ""
+            return {
+                "beat_id": bid,
+                "clip_path": clip_path,
+                "rel_sheet": rel_sheet,
+                "crop_mode": item["crop_mode"],
+                "observed_content": item["observed_content"],
+                "start_offset_sec": round(item["start_offset"], 2),
+                "duration_sec": round(item["duration"], 2),
+                "signalstats": sig_stats,
+                "query": item["query"],
+                "chosen_url": item["url"],
+                "chosen_title": item["query"],
+            }, None
+
+        records: list[dict[str, Any]] = []
+        if valid_items:
+            workers = max(1, min(max_workers, len(valid_items)))
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = [pool.submit(_slice_one, it) for it in valid_items]
+                for fut in as_completed(futures):
+                    rec, err = fut.result()
+                    if rec is not None:
+                        records.append(rec)
+                    elif err is not None:
+                        rejected.append(err)
+
+        records.sort(key=lambda r: str(r.get("beat_id") or ""))
+        committed = self._commit_sliced_clips_to_registries(job_id, records)
+        batch_sheet_rel = ""
+        if committed:
+            probes_dir = self.workspace / "media" / "footage" / "probes"
+            out_path = Path(sheet_out) if sheet_out else probes_dir / f"BATCH_VERIFY_{records[0]['beat_id']}_{records[-1]['beat_id']}.jpg"
+            self._render_contact_sheet_page(committed, out_path, self._voice_text_by_beat())
+            batch_sheet_rel = str(out_path.relative_to(self.workspace))
+
+        return {
+            "ok": bool(committed) and not rejected,
+            "sliced_count": len(committed),
+            "rejected_count": len(rejected),
+            "sliced_beats": [str(r.get("beat_id") or "") for r in committed],
+            "rejected": rejected,
+            "batch_verify_sheet": batch_sheet_rel,
+        }
+
+    def build_verify_ftg_clips_sheets(self, job: dict[str, Any]) -> dict[str, Any]:
+        """Generate paginated VERIFY_FTG_CLIPS_*.jpg (<=25 clips/sheet) showing 3 frames (15%-50%-85%)
+        of every REAL_FTG clip alongside beat_id, source_file, start_offset_sec, and voice_text,
+        then run audit_footage_hygiene(workspace, job)."""
+        from .critic_loops import audit_footage_hygiene
+
+        with _workspace_registry_lock(self.workspace):
+            ftg_review = self._read_json(self.workspace / "footage_review.json", {})
+            sel_map = {
+                str(item.get("beat_id") or ""): item
+                for item in (ftg_review.get("selected_candidates") or [])
+                if isinstance(item, dict) and str(item.get("beat_id") or "")
+            }
+            registry = self._read_json(self.workspace / "asset_registry.json", {})
+            for item in (registry.get("assets") or []):
+                if isinstance(item, dict) and str(item.get("beat_id") or "") and str(item.get("beat_id") or "") not in sel_map:
+                    sel_map[str(item.get("beat_id") or "")] = item
+
+        voice_by_beat = self._voice_text_by_beat()
+        items = sorted(sel_map.values(), key=lambda x: str(x.get("beat_id") or ""))
+        probes_dir = self.workspace / "media" / "footage" / "probes"
+        probes_dir.mkdir(parents=True, exist_ok=True)
+
         sheet_paths: list[str] = []
-        chunk_size = max(1, (len(items) + 1) // 2) if items else 55
-        for sheet_idx in range(2):
-            batch = items[sheet_idx * chunk_size : (sheet_idx + 1) * chunk_size]
-            if not batch and sheet_idx > 0:
-                break
-            row_h = 92
-            img_w = 1280
-            img_h = max(row_h * max(1, len(batch)), 180)
-            canvas = Image.new("RGB", (img_w, img_h), (15, 18, 24))
-            draw = ImageDraw.Draw(canvas)
-            for r_i, entry in enumerate(batch):
-                y0 = r_i * row_h
-                bid = str(entry.get("beat_id") or "")
-                rel_p = str(entry.get("path") or "")
-                mp4_p = self.workspace / rel_p if rel_p else self.media_dir / f"{bid}_edit_broll.mp4"
-                sheet_3 = mp4_p.parent / f"{mp4_p.stem}_3frames.jpg"
-                if mp4_p.is_file() and not sheet_3.is_file():
-                    self.extract_3frame_contact_sheet(mp4_p, sheet_3)
-                if sheet_3.is_file():
-                    try:
-                        with Image.open(sheet_3) as s3:
-                            s3_resized = s3.convert("RGB").resize((480, 86))
-                            canvas.paste(s3_resized, (6, y0 + 3))
-                    except Exception:
-                        pass
-                src_name = str(entry.get("source_file") or (entry.get("source") or {}).get("url") or "")
-                start_off = entry.get("start_offset_sec", 0.0)
-                v_txt = voice_by_beat.get(bid, "")[:68]
-                obs_txt = str(entry.get("observed_content") or "")[:68]
-                draw.text((496, y0 + 8), f"{bid} | src={Path(src_name).name} @ {start_off}s", fill=(125, 211, 252), font=font)
-                draw.text((496, y0 + 34), f"Voice: {v_txt}", fill=(241, 245, 249), font=font)
-                draw.text((496, y0 + 58), f"Eye: {obs_txt}", fill=(167, 243, 208), font=font)
+        per_sheet = 25
+        total_sheets = max(1, (len(items) + per_sheet - 1) // per_sheet)
+        for sheet_idx in range(total_sheets):
+            batch = items[sheet_idx * per_sheet : (sheet_idx + 1) * per_sheet]
             out_sheet = probes_dir / f"VERIFY_FTG_CLIPS_{sheet_idx + 1}.jpg"
-            canvas.save(out_sheet, quality=88)
+            self._render_contact_sheet_page(batch, out_sheet, voice_by_beat)
             sheet_paths.append(str(out_sheet.relative_to(self.workspace)))
 
         audit_report = audit_footage_hygiene(self.workspace, job)
@@ -1025,6 +1271,8 @@ def main() -> int:
     parser.add_argument("--observed-content", default="", help="Mandatory eye-verified description of what appears in the frame and how it matches 100% of the voice sentence")
     parser.add_argument("--probe-storyboard", default="", help="URL or local video path to extract a storyboard + 100px grid for eye inspection before cutting")
     parser.add_argument("--probe-id", default="raw_source_01", help="Identifier for the storyboard/grid probe output")
+    parser.add_argument("--batch-manifest", default="", help="Path to JSON array of 10-15 eye-verified clip specs for parallel slicing + 1 Contact Sheet output")
+    parser.add_argument("--batch-sheet-out", default="", help="Optional output path for the batch verification Contact Sheet JPG")
     parser.add_argument("--build-verify-sheets", action="store_true", help="Build VERIFY_FTG_CLIPS_*.jpg contact sheets and run audit_footage_hygiene")
     parser.add_argument("--force", action="store_true", help="Force redownload and re-slice even if cached")
     args = parser.parse_args()
@@ -1049,6 +1297,22 @@ def main() -> int:
             "Run --probe-storyboard first, inspect STORYBOARD_<id>.jpg and GRID_<id>.jpg by eye, "
             "then slice each beat with explicit --start-offset, --crop-mode, and --observed-content."
         )
+
+    if args.batch_manifest:
+        manifest_path = Path(args.batch_manifest)
+        raw_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if isinstance(raw_manifest, dict):
+            raw_manifest = raw_manifest.get("items") or raw_manifest.get("clips") or []
+        if not isinstance(raw_manifest, list) or not raw_manifest:
+            parser.error("--batch-manifest must point to a non-empty JSON list of beat slice specs")
+        sheet_out = Path(args.batch_sheet_out) if args.batch_sheet_out else None
+        batch_res = fetcher.fetch_batch_manifest(args.job_id, raw_manifest, sheet_out=sheet_out)
+        if batch_res.get("sliced_count"):
+            with _workspace_registry_lock(fetcher.workspace):
+                manager = RemotionManager(fetcher.remotion_dir, tools_dir=Path(__file__).resolve().parents[1] / "tools")
+                manager.prepare_job_media(job_payload, fetcher.workspace)
+        print(json.dumps(batch_res, ensure_ascii=False, indent=2))
+        return 0 if batch_res.get("sliced_count") and not batch_res.get("rejected_count") else 1
 
     beat_ids = [b.strip() for b in str(args.beat_id or "").split(",") if b.strip()]
     if not beat_ids or not (args.query or args.url):

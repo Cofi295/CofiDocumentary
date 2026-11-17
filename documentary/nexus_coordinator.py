@@ -88,6 +88,36 @@ class NexusCoordinator:
             return ""
         return "\n=== BOUND SPECIALIST SKILLS ===\n" + "\n\n".join(rendered_chunks) + "\n=== END BOUND SPECIALIST SKILLS ===\n"
 
+    def _format_bound_skills_pointer_block(
+        self,
+        agent_ids: list[str],
+        *,
+        target_language: str = "",
+        selected_job: dict[str, Any] | None = None,
+    ) -> str:
+        """Compact pointer list of bound skills for phase prompts (prevents dumping 45 KB of duplicate SKILL.md inline)."""
+        seen_skills: set[str] = set()
+        lines: list[str] = []
+        for aid in agent_ids:
+            try:
+                items = self.agent_manager.resolve_bound_skills(
+                    aid,
+                    target_language=target_language,
+                    max_chars_per_skill=240,
+                    selected_job=selected_job,
+                )
+            except Exception:
+                continue
+            for item in items:
+                slug = str(item.get("skill") or "").strip()
+                if not slug or slug in seen_skills:
+                    continue
+                seen_skills.add(slug)
+                lines.append(f"- `{slug}` (`{item.get('path', '')}`) — load via `read_file` only if specialized edge rules are needed")
+        if not lines:
+            return ""
+        return "\n=== BOUND SPECIALIST SKILLS (ON-DEMAND) ===\n" + "\n".join(lines) + "\n=== END BOUND SPECIALIST SKILLS ===\n"
+
     def build_specialist_soul_header(
         self,
         agent_id: str,
@@ -95,16 +125,32 @@ class NexusCoordinator:
         *,
         job: dict[str, Any] | None = None,
     ) -> str:
-        """Return the complete standalone `.md` SOUL + OPERATIONS + Bound Skills Charter for any specialist."""
+        """Return the standalone `.md` SOUL + OPERATIONS + Bound Skills Charter for any delegated specialist."""
         prof = self.agent_manager.get(agent_id)
         mode_line = f"- Operational Role: {role_note}\n" if role_note else ""
         write_scope = ", ".join(prof.writes_artifacts) if prof.writes_artifacts else "read_only"
         lang = str((job or {}).get("language") or "").strip().lower()
-        skills_block = self._format_bound_skills_block(
-            [prof.id],
-            target_language=lang,
-            selected_job=job if isinstance(job, dict) else None,
+        skills_block = (
+            self._format_bound_skills_pointer_block([prof.id], target_language=lang, selected_job=job if isinstance(job, dict) else None)
+            if prof.id == "orchestrator"
+            else self._format_bound_skills_block(
+                [prof.id],
+                target_language=lang,
+                selected_job=job if isinstance(job, dict) else None,
+                max_chars_per_skill=2800,
+            )
         )
+        if prof.id == "orchestrator":
+            return (
+                f"=== NEXUS SPECIALIST OPERATING CHARTER ({prof.source_path}) ===\n"
+                f"- Active Specialist: **{prof.name}** (`{prof.id}`, Division: `{prof.division}` {prof.emoji})\n"
+                f"{mode_line}"
+                f"- Core Mission: {prof.mission}\n"
+                f"- Persona & Ethos: {prof.vibe}\n"
+                f"- Permitted Write Scope: `{write_scope}` | QA Gatekeeper: `{prof.qa_partner}`\n"
+                f"{skills_block}"
+                "=== END NEXUS SPECIALIST CHARTER ===\n"
+            )
         return (
             f"=== NEXUS SPECIALIST OPERATING CHARTER ({prof.source_path}) ===\n"
             f"- Active Specialist: **{prof.name}** (`{prof.id}`, Division: `{prof.division}` {prof.emoji})\n"
@@ -123,7 +169,7 @@ class NexusCoordinator:
         phase: str,
         workspace: str | Path,
     ) -> str:
-        """Return a language-neutral Specialist Charter (SOUL + OPERATIONS + Bound Skills + Co-Leads + Upstream Handoff) for `build_phase_prompt`."""
+        """Return a compact, language-neutral Specialist Charter (SOUL + Mission + Co-Lead + Upstream Handoff) for `build_phase_prompt`."""
         try:
             lead = self.agent_manager.for_phase(phase)
         except ValueError:
@@ -142,9 +188,26 @@ class NexusCoordinator:
             if isinstance(job.get("editing_dna"), dict) and job.get("editing_dna")
             else (_snap.get("editing_dna") if isinstance(_snap.get("editing_dna"), dict) else {})
         )
+        _editorial_dna = _snap.get("editorial_dna") if isinstance(_snap.get("editorial_dna"), dict) else {}
+        _content_mode = str(
+            job.get("content_mode")
+            or _snap.get("content_mode")
+            or _editorial_dna.get("content_mode")
+            or _ed_dna.get("content_mode")
+            or ""
+        ).strip().lower()
         _preset = str(_ed_dna.get("preset_id") or "").strip()
-        _prof_id = str(job.get("channel_profile_id") or _snap.get("id") or "").strip()
-        is_vox_enabled = _preset not in {"sacred_devotional", "grace_letter"} and _prof_id != "channel-kr-grace-letter-60m"
+        _vmix = _ed_dna.get("visual_mix") if isinstance(_ed_dna.get("visual_mix"), dict) else {}
+        _motion_ratio = _vmix.get("motion", _vmix.get("motion_overlay_ratio", 0.15))
+        _is_audio_drama = _content_mode == "creative_audio_drama" or _preset in {"kr_goodnight_cinema_drama", "cinema_character_drama"}
+        is_vox_enabled = (
+            not _is_audio_drama
+            and _content_mode != "devotional_essay"
+            and _preset not in {"sacred_devotional", "grace_letter"}
+            and _ed_dna.get("vox_enabled") is not False
+            and not (_ed_dna.get("vox_desk_enabled") is False and _ed_dna.get("vox_satellite_enabled") is False)
+            and float(_motion_ratio or 0.0) > 0.0
+        )
 
         if phase == "plan":
             research_agent = self.agent_manager.get("research")
@@ -153,48 +216,38 @@ class NexusCoordinator:
             )
             co_lead_charters.append(
                 f"\n--- CO-LEAD CHARTER ({research_agent.source_path}) ---\n"
-                f"{research_agent.soul_markdown}\n\n{research_agent.operations_markdown}\n"
+                f"Mission: {research_agent.mission}\n"
+                f"Persona: {research_agent.vibe}\n"
             )
             skill_agent_ids.append("research")
+        elif phase == "visuals":
             if is_vox_enabled:
-                visuals_agent = self.agent_manager.get("visuals")
                 vox_agent = self.agent_manager.get("vox")
                 co_lead_notes.append(
-                    f"- Co-Lead Storyboard & VOX Routing (`visuals.md` + `vox.md`): **{visuals_agent.name}** & **{vox_agent.name}**"
+                    f"- Co-Lead VOX Mechanism Architecture (`vox.md`): **{vox_agent.name}** (`{vox_agent.id}`) — {vox_agent.vibe}"
                 )
                 co_lead_charters.append(
-                    f"\n--- CO-LEAD CHARTER ({visuals_agent.source_path}) ---\n"
-                    f"{visuals_agent.soul_markdown}\n\n{visuals_agent.operations_markdown}\n"
                     f"\n--- CO-LEAD CHARTER ({vox_agent.source_path}) ---\n"
-                    f"{vox_agent.soul_markdown}\n\n{vox_agent.operations_markdown}\n"
+                    f"Mission: {vox_agent.mission}\n"
+                    f"Persona: {vox_agent.vibe}\n"
                 )
-                skill_agent_ids.extend(["visuals", "vox"])
-        elif phase == "visuals" and is_vox_enabled:
-            vox_agent = self.agent_manager.get("vox")
-            footage_agent = self.agent_manager.get("footage")
-            co_lead_notes.append(
-                f"- Co-Lead VOX Mechanism Architecture (`vox.md`): **{vox_agent.name}** (`{vox_agent.id}`) — {vox_agent.vibe}"
-            )
-            co_lead_notes.append(
-                f"- Co-Lead Archival Footage Routing (`footage.md`): **{footage_agent.name}** (`{footage_agent.id}`) — {footage_agent.vibe}"
-            )
-            co_lead_charters.append(
-                f"\n--- CO-LEAD CHARTER ({vox_agent.source_path}) ---\n"
-                f"{vox_agent.soul_markdown}\n\n{vox_agent.operations_markdown}\n"
-                f"\n--- CO-LEAD CHARTER ({footage_agent.source_path}) ---\n"
-                f"{footage_agent.soul_markdown}\n\n{footage_agent.operations_markdown}\n"
-            )
-            skill_agent_ids.extend(["vox", "footage"])
+                skill_agent_ids.append("vox")
+            elif _is_audio_drama:
+                ai_agent = self.agent_manager.get("ai_visual")
+                co_lead_notes.append(
+                    f"- Co-Lead Character Sheet & 35mm Cinema (`ai_visual.md`): **{ai_agent.name}** (`{ai_agent.id}`) — {ai_agent.vibe}"
+                )
+                co_lead_charters.append(
+                    f"\n--- CO-LEAD CHARTER ({ai_agent.source_path}) ---\n"
+                    f"Mission: {ai_agent.mission}\n"
+                    f"Persona: {ai_agent.vibe}\n"
+                )
+                skill_agent_ids.append("ai_visual")
         elif phase == "edit":
             footage_agent = self.agent_manager.get("footage")
             co_lead_notes.append(
-                f"- Co-Lead Archival Eye-Verification (`footage.md`): **{footage_agent.name}** (`{footage_agent.id}`) — {footage_agent.vibe}"
+                f"- Co-Lead Archival Eye-Verification (`footage.md`): **{footage_agent.name}** (`{footage_agent.id}`) — {footage_agent.mission}"
             )
-            co_lead_charters.append(
-                f"\n--- CO-LEAD CHARTER ({footage_agent.source_path}) ---\n"
-                f"{footage_agent.soul_markdown}\n\n{footage_agent.operations_markdown}\n"
-            )
-            skill_agent_ids.append("footage")
             if is_vox_enabled:
                 vox_agent = self.agent_manager.get("vox")
                 co_lead_notes.append(
@@ -202,13 +255,25 @@ class NexusCoordinator:
                 )
                 co_lead_charters.append(
                     f"\n--- CO-LEAD CHARTER ({vox_agent.source_path}) ---\n"
-                    f"{vox_agent.soul_markdown}\n\n{vox_agent.operations_markdown}\n"
+                    f"Mission: {vox_agent.mission}\n"
+                    f"Persona: {vox_agent.vibe}\n"
                 )
                 skill_agent_ids.append("vox")
+            elif _is_audio_drama:
+                ai_agent = self.agent_manager.get("ai_visual")
+                co_lead_notes.append(
+                    f"- Co-Lead Priority #1 Character Cinema (`ai_visual.md`): **{ai_agent.name}** (`{ai_agent.id}`) — {ai_agent.vibe}"
+                )
+                co_lead_charters.append(
+                    f"\n--- CO-LEAD CHARTER ({ai_agent.source_path}) ---\n"
+                    f"Mission: {ai_agent.mission}\n"
+                    f"Persona: {ai_agent.vibe}\n"
+                )
+                skill_agent_ids.append("ai_visual")
 
         co_lead_note_block = ("\n".join(co_lead_notes) + "\n") if co_lead_notes else ""
         co_lead_soul_block = "".join(co_lead_charters)
-        skills_block = self._format_bound_skills_block(
+        skills_block = self._format_bound_skills_pointer_block(
             skill_agent_ids,
             target_language=lang,
             selected_job=job if isinstance(job, dict) else None,
@@ -245,12 +310,12 @@ class NexusCoordinator:
         return (
             f"\n=== NEXUS SPECIALIST OPERATING CHARTER ({lead.source_path}) ===\n"
             f"- Lead Specialist: **{lead.name}** (`{lead.id}`, Division: `{lead.division}` {lead.emoji})\n"
+            f"- Core Mission: {lead.mission}\n"
             f"{co_lead_note_block}"
             f"- Persona & Ethos: {lead.vibe}\n"
             f"- Permitted Write Scope: `{', '.join(lead.writes_artifacts)}` | QA Gatekeeper: `{lead.qa_partner}`\n"
             f"- Downstream Handoff Consumers: `{', '.join(lead.downstream_agents) or 'final_release'}`\n"
-            f"[SOUL — IDENTITY & CRITICAL RULES]\n{lead.soul_markdown}\n\n"
-            f"[OPERATIONS — MISSION, DELIVERABLES & WORKFLOW]\n{lead.operations_markdown}\n"
+            f"[SOUL — IDENTITY & CRITICAL RULES]\n{lead.soul_markdown}\n"
             f"{co_lead_soul_block}"
             f"{skills_block}"
             f"{upstream_summary}"

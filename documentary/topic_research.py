@@ -148,9 +148,10 @@ def _is_duplicate_against_records(
     candidate_text: str,
     records: list[dict[str, Any]],
     *,
+    candidate_id: str = "",
     enforce_mo_cooldown: bool = True,
 ) -> tuple[bool, str]:
-    if not candidate_text.strip():
+    if not candidate_text.strip() and not candidate_id.strip():
         return False, ""
     for rec in records:
         r_title = str(rec.get("title") or "")
@@ -166,17 +167,20 @@ def _is_duplicate_against_records(
         ).strip()
         r_tags = list(rec.get("tags") or [])
         r_anchors = list(rec.get("anchors") or [])
+        r_cid = str(rec.get("candidate_id") or rec.get("id") or "")
         is_dup, reason, _ = check_case_similarity(
             candidate_text,
             r_title or r_topic,
             target_topic=r_topic,
             target_entities=r_tags,
             target_keywords=r_anchors,
+            candidate_id=candidate_id,
+            target_candidate_id=r_cid,
         )
         if is_dup:
             return True, reason
 
-    if enforce_mo_cooldown and records:
+    if enforce_mo_cooldown and records and candidate_text.strip():
         is_mo_coll, mo_reason, _ = check_cross_case_mo_collision(
             candidate_text,
             records,
@@ -288,7 +292,7 @@ def harvest_live_case_leads(
 
 
 # ==============================================================================
-# VERIFIED REAL-CASE RESERVE (68 STREAM 1 FINANCIAL/VAULT/HEIST + 48 STREAM 2 PURE INVESTIGATIVE)
+# VERIFIED REAL-CASE RESERVE (52 STREAM 1 FINANCIAL/VAULT/HEIST + 48 STREAM 2 PURE INVESTIGATIVE — 0% ANONYMOUS '某')
 # 100% real documented Chinese cases with CCTV/court archival footage,
 # 100% Broadcast Green-Dollar prose & 8 Topic-Adaptive Cold-Open Hook Archetypes.
 # ==============================================================================
@@ -319,7 +323,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cơ chế kết nối mạng máy tính ngân hàng toàn quốc đêm 12/10/2001 làm lộ hổng con số 485 triệu USD — khớp hoàn hảo động từ thị giác LEDGER_DIFF_SCRUB & GEO_VECTOR_PURSUIT"
         ],
         "opening_hook": "본점 전산망이 전국 지점의 장부를 사상 처음으로 하나로 묶던 밤, 모니터 한가운데에서 믿기 힘든 숫자가 붉게 깜빡이기 시작했습니다. 광둥성 카이핑 지점 금고에서 증발한 돈은 무려 4억 8,500만 달러, 우리 돈 6,500억 원. 경보음이 울렸을 때 전·현직 지점장 세 명의 책상은 이미 텅 비어 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án 3 đời giám đốc rút ruột két sắt ngân hàng 485 triệu USD (6.500 tỷ Won) · truy nã đỏ quốc tế 20 năm】 Hồ sơ thật 100% Đại án Ngân hàng Trung Quốc chi nhánh Khai Bình (广东开平中行案 — Hứa Siêu Phàm 许超凡, Dư Chấn Đông 余振东, Hứa Quốc Tuấn 许国俊, 1993–2021): Lợi dụng kẽ hở sổ sách trước khi nối mạng toàn quốc để rút ruột 485 triệu USD, đánh bạc tại Macau & Las Vegas, kết hôn giả lấy thẻ xanh Mỹ rồi lẩn trốn ở thị trấn nhỏ Wichita (Kansas) trước khi lần lượt bị dẫn độ năm 2004, 2018 và 2021.",
+        "note": "📋 【Hồ sơ vụ án: đại án 3 đời giám đốc rút ruột két sắt ngân hàng 485 triệu USD (6.500 tỷ Won) · truy nã đỏ quốc tế 20 năm】 Hồ sơ thật 100% Đại án Ngân hàng Trung Quốc chi nhánh Khai Bình (广东开平中行案 — Hứa Siêu Phàm 许超凡, Dư Chấn Đông 余振东, Hứa Quốc Tuấn 许国俊, 1993–2021): Lợi dụng kẽ hở sổ sách trước khi nối mạng toàn quốc để rút ruột 485 triệu USD, đánh bạc tại Macau & Las Vegas, kết hôn giả lấy thẻ xanh Mỹ rồi lẩn trốn ở thị trấn nhỏ Wichita (Kansas) trước khi lần lượt bị dẫn độ năm 2004, 2018 và 2021.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -347,7 +351,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Đầy đủ tư liệu CCTV quầy vé số, lệnh truy nã cấp A Bộ Công an và phiên tòa Hàm Đan (Hà Bắc)"
         ],
         "opening_hook": "두 사람이 동시에 각자의 열쇠를 돌려야만 열리는 은행 지하 금고. 2007년 봄, 허베이성 한단시 농업은행 금고 안에 쌓여 있던 현금 다발 오천백만 위안이 감쪽같이 사라졌습니다. 놀랍게도 범인들이 빼돌린 돈다발이 향한 곳은 해외 비밀 계좌가 아니라, 동네 복권 판매점들이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án 2 thủ quỹ lấy 51 triệu tệ tiền mặt trong hầm két ngân hàng đi mua vé số · lệnh truy nã cấp A bộ công an】 Hồ sơ thật 100% Đại án Két sắt Ngân hàng Nông nghiệp Hàm Đan, Hà Bắc (河北邯郸农行5100万金库大案 — Nhậm Hiểu Phong 任晓峰 & Mã Hướng Cảnh 马向景, 3–4/2007): Ban đầu lấy trộm 200.000 tệ mua vé số trúng nhỏ, sau đó lún sâu rút 51 triệu NDT tiền mặt trong kho bạc mua vé số để mong trúng giải bù lỗ rồi đào tẩu về Liên Vân Cảng & Bắc Kinh trước khi bị bắt giữ.",
+        "note": "📋 【Hồ sơ vụ án: đại án 2 thủ quỹ lấy 51 triệu tệ tiền mặt trong hầm két ngân hàng đi mua vé số · lệnh truy nã cấp A bộ công an】 Hồ sơ thật 100% Đại án Két sắt Ngân hàng Nông nghiệp Hàm Đan, Hà Bắc (河北邯郸农行5100万金库大案 — Nhậm Hiểu Phong 任晓峰 & Mã Hướng Cảnh 马向景, 3–4/2007): Ban đầu lấy trộm 200.000 tệ mua vé số trúng nhỏ, sau đó lún sâu rút 51 triệu NDT tiền mặt trong kho bạc mua vé số để mong trúng giải bù lỗ rồi đào tẩu về Liên Vân Cảng & Bắc Kinh trước khi bị bắt giữ.",
         "hook_archetype": "micro_forensic_anomaly"
     },
     {
@@ -375,7 +379,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Bước ngoặt trớ trêu ở Vancouver (Canada): một vụ va chạm giao thông nhỏ trên đường phố Canada làm lộ tung tích kẻ đào tẩu 1 tỷ tệ"
         ],
         "opening_hook": "매달 은행에서 보내오는 잔액 증명서에는 분명 삼억 위안이 찍혀 있었습니다. 하지만 2005년 초, 하얼빈의 한 고속도로 회사가 자금을 인출하려 했을 때 계좌에 남은 돈은 고작 몇만 위안에 불과했습니다. 지점장 가오산이 만든 두 개의 장부 속에서 무려 십억 위안의 예금이 공중분해 된 뒤였습니다.",
-        "note": "【Hồ sơ vụ án: đại án giám đốc ngân hàng dùng con dấu giả rút ruột hơn 1 tỷ tệ tiền gửi · đào tẩu sang Canada 8 năm】 Hồ sơ thật 100% Đại án Ngân hàng Trung Quốc chi nhánh phố Hà Tùng, Cáp Nhĩ Tân (哈尔滨中行河松街支行案 — Giám đốc Cao Sơn 高山 & anh em Lý Đông Triết 李东哲, 2000–2012): Dùng 'dịch vụ giao sổ đối chiếu tận cửa' bằng con dấu giả để rút ruột hơn 1 tỷ NDT từ hàng chục tập đoàn rồi trốn sang Vancouver (Canada) năm 2004, lộ diện sau một vụ tai nạn giao thông ở Canada và về nước chịu án.",
+        "note": "📋 【Hồ sơ vụ án: đại án giám đốc ngân hàng dùng con dấu giả rút ruột hơn 1 tỷ tệ tiền gửi · đào tẩu sang Canada 8 năm】 Hồ sơ thật 100% Đại án Ngân hàng Trung Quốc chi nhánh phố Hà Tùng, Cáp Nhĩ Tân (哈尔滨中行河松街支行案 — Giám đốc Cao Sơn 高山 & anh em Lý Đông Triết 李东哲, 2000–2012): Dùng 'dịch vụ giao sổ đối chiếu tận cửa' bằng con dấu giả để rút ruột hơn 1 tỷ NDT từ hàng chục tập đoàn rồi trốn sang Vancouver (Canada) năm 2004, lộ diện sau một vụ tai nạn giao thông ở Canada và về nước chịu án.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -403,36 +407,8 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Có đầy đủ phóng sự CCTV, ảnh đối chiếu trước-sau phẫu thuật cực đắt cho động từ thị giác DUAL_ERA_LOCK"
         ],
         "opening_hook": "사억 이천만 위안의 은행 자금을 마카오 카지노 테이블 위에서 날려버린 부부. 수배령이 떨어지자 남편 천만슝은 자신의 검붉은 피부와 얼굴 윤곽까지 수술대 위에서 통째로 갈아엎었습니다. 7년 뒤 태국 치앙마이의 호화 저택에서 붙잡혔을 때, 옛 동료들조차 그의 얼굴을 알아보지 못했습니다.",
-        "note": "【Hồ sơ vụ án: đại án biển thủ 420 triệu tệ công quỹ đánh bạc Macau · phẫu thuật lột da đổi mặt trốn sang Thái Lan 7 năm】 Hồ sơ thật 100% Đại án Trần Mãn Hùng & Trần Thu Viên tại Trung Sơn, Quảng Đông (广东中山4.2亿挪用公款案 — 陈满雄·陈秋园, 1995–2002): Thông đồng cán bộ ngân hàng rút 420 triệu NDT sang Macau đánh bạc, sau đó trốn sang Chiang Mai (Thái Lan), làm phẫu thuật thẩm mỹ xóa nốt ruồi, lột trắng da toàn thân, mua danh tính 'Suthon' làm ông chủ giàu có suốt 7 năm trước khi bị bắt giữ và dẫn độ về Quảng Đông.",
+        "note": "📋 【Hồ sơ vụ án: đại án biển thủ 420 triệu tệ công quỹ đánh bạc Macau · phẫu thuật lột da đổi mặt trốn sang Thái Lan 7 năm】 Hồ sơ thật 100% Đại án Trần Mãn Hùng & Trần Thu Viên tại Trung Sơn, Quảng Đông (广东中山4.2亿挪用公款案 — 陈满雄·陈秋园, 1995–2002): Thông đồng cán bộ ngân hàng rút 420 triệu NDT sang Macau đánh bạc, sau đó trốn sang Chiang Mai (Thái Lan), làm phẫu thuật thẩm mỹ xóa nốt ruồi, lột trắng da toàn thân, mua danh tính 'Suthon' làm ông chủ giàu có suốt 7 năm trước khi bị bắt giữ và dẫn độ về Quảng Đông.",
         "hook_archetype": "last_ordinary_routine"
-    },
-    {
-        "id": "fin_cn_nanjing_fake_bank_400m",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "江苏南京假银行揽储4.2亿元特大金融诈骗案 — 张某·刘某农村经济专业合作社案 (2014–2015)",
-        "archival_search_keywords_zh": [
-            "南京 假银行 4亿 揽储 今日说法",
-            "农村经济专业合作社 假冒银行 南京",
-            "南京假银行案 庭审"
-        ],
-        "recommended_vox_verbs": [
-            "SPLIT_PARADOX",
-            "SCALE_MULTIPLICATION",
-            "FORENSIC_ZOOM_CHAIN"
-        ],
-        "title": "[중국 실화 사건] 번호표 기계부터 방탄유리 창구까지 똑같이 지어 예금주 200명을 속인 가짜 국유은행 | 난징 위장 은행 사건 ([Vụ Án Có Thật ở Trung Quốc] Dựng nguyên quầy kính chống đạn và máy lấy số giống hệt ngân hàng quốc doanh để lừa 200 người gửi tiền | Đại án ngân hàng giả Nam Kinh)",
-        "topic_anchor": "[중국 실화 사건] 번호표 기계부터 방탄유리 창구까지 똑같이 지어 예금주 200명을 속인 가짜 국유은행 | 난징 위장 은행 사건",
-        "winner_cluster": "Luồng 1 · Đại Án Dựng Quầy Ngân Hàng Quốc Doanh Giả Huy Động 420 Triệu Tệ (난징 가짜 은행 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án 'Ngân Hàng Giả' Phố Phổ Khẩu, Nam Kinh (南京假银行揽储案) — Bóc Tách Màn Dàn Dựng Chi Nhánh Ngân Hàng Ma Đánh Lừa Hơn 200 Người Gửi Tiết Kiệm",
-        "codex_reasons": [
-            "Nghịch lý thị giác cực mạnh: biển đèn LED, quầy giao dịch kính dày, đồng phục giao dịch viên, cuốn sổ tiết kiệm đỏ in chìm đều giống ngân hàng thật 99%",
-            "Nhiều phóng sự hiện trường của CCTV & Đài Giang Tô ghi hình trực tiếp quầy giao dịch giả"
-        ],
-        "opening_hook": "번듯한 LED 전광판과 번호표 발권기, 제복을 차려입은 창구 직원들, 그리고 도장이 선명하게 찍힌 붉은색 예금 통장까지. 누가 봐도 완벽한 국유은행 지점이었습니다. 하지만 만기 날 이자를 찾으러 간 예금주 이백여 명은 충격적인 진실과 마주했습니다. 그 건물은 아예 은행이 아니었습니다.",
-        "note": "【Hồ sơ vụ án: đại án dựng quầy giao dịch ngân hàng quốc doanh giả 100% để lừa 420 triệu tệ tiền gửi của 200 người】 Hồ sơ thật 100% Vụ án 'Ngân hàng giả' tại quận Phổ Khẩu, Nam Kinh, Giang Tô (南京浦口假银行4.2亿揽储案, 2014–2015): Nhóm tội phạm dùng giấy phép 'Hợp tác xã kinh tế nông thôn' nhưng bỏ hàng triệu tệ thiết kế toàn bộ nội thất giống hệt quầy giao dịch ngân hàng quốc doanh, trả 'phí贴息' tuần đầu 2% để hút hơn 420 triệu NDT của gần 200 người dân.",
-        "hook_archetype": "double_life_unmasking"
     },
     {
         "id": "fin_cn_shanghai_327_bond",
@@ -459,35 +435,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cơ chế đếm ngược 8 phút cuối 16:22–16:30 khớp hoàn hảo động từ CRASH_TIMELINE & RADIAL_TIME_PRESSURE"
         ],
         "opening_hook": "1995년 2월 23일 오후 4시 22분, 상하이 증권거래소 마감까지 남은 시간은 단 팔 분. 패배가 확정된 듯 보였던 중국 최대 증권사 완궈증권의 단말기에서 갑자기 수백만 구좌의 무담보 매도 폭탄이 쏟아져 나왔습니다. 단 팔 분 만에 시장 전체가 뒤집혔지만, 그날 밤 거래소 문이 닫히며 전설의 몰락이 시작되었습니다.",
-        "note": "【Hồ sơ vụ án: đại án thao túng sàn giao dịch công trái 327 bằng 10 triệu lệnh bán khống trong 8 phút cuối · sập công ty chứng khoán số 1】 Hồ sơ thật 100% Sự kiện hợp đồng tương lai công trái mã 327 tại Thượng Hải ngày 23/2/1995 (上海327国债期货事件 — Tổng giám đốc Vạn Quốc Chứng Khoán Quản Kim Sinh 管金生): Đối mặt nguy cơ vỡ nợ 6 tỷ NDT khi Bộ Tài chính nâng lãi bù trượt giá, trong 8 phút cuối (16:22:13–16:30) Quản Kim Sinh tung hơn 10 triệu lô lệnh bán khống không tiền ký quỹ kéo sập giá sàn trước khi Sở Giao dịch tuyên hủy giao dịch 8 phút cuối.",
-        "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "fin_cn_hangzhou_42m_vanished_deposit",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "浙江杭州联合银行4200万元等9505万元储户存款失踪案 — 祝某·陈某 (2014–2015)",
-        "archival_search_keywords_zh": [
-            "杭州联合银行 4200万 存款失踪 今日说法",
-            "银行卡在身上 4200万没了 杭州",
-            "9505万 存款失踪案"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "CAUSAL_CHAIN",
-            "BLIND_SPOT_REVEAL"
-        ],
-        "title": "[중국 실화 사건] 통장도 비밀번호도 내 손에 있었는데 은행 창구 뒤에서 사라진 9,500만 위안 | 항저우 예금 증발 미스터리 ([Vụ Án Có Thật ở Trung Quốc] Sổ tiết kiệm và mật khẩu vẫn nằm trên tay nhưng 95 triệu tệ bốc hơi ngay sau quầy giao dịch | Bí ẩn tiền gửi biến mất ở Hàng Châu)",
-        "topic_anchor": "[중국 실화 사건] 통장도 비밀번호도 내 손에 있었는데 은행 창구 뒤에서 사라진 9,500만 위안 | 항저우 예금 증발 미스터리",
-        "winner_cluster": "Luồng 1 · Bí Ẩn 95 Triệu Tệ Bốc Hơi Khỏi Sổ Tiết Kiệm Không Tin Nhắn Báo Động (항저우 예금 증발 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Vụ Án 42 Nạn Nhân Mất Trắng 95,05 Triệu NDT Tại Ngân Hàng Ở Hàng Châu — Kịch Bản '3 Không' Trên Bàn Giao Dịch Viên Nội Gián",
-        "codex_reasons": [
-            "Đánh trúng tâm lý sợ hãi thực tế nhất của khán giả Hàn Quốc (gửi tiền trực tiếp tại quầy ngân hàng thật, giữ sổ thật mà số dư bằng 0)",
-            "Phóng sự điều tra chi tiết trên CCTV 今日说法 bóc tách từng thao tác tráo lệnh chuyển tiền 3 giây trên bàn phím giao dịch viên"
-        ],
-        "opening_hook": "통장은 집 금고 안에 그대로 있었고, 비밀번호는 오직 본인만 알고 있었습니다. 은행 정식 창구에서 직접 입금한 사천이백만 위안. 그런데 몇 달 뒤 잔액을 조회한 순간 화면에 찍힌 숫자는 단 일 위안뿐이었습니다. 문자 알림 하나 울리지 않은 채 구천오백만 위안이 창구 너머로 증발한 것입니다.",
-        "note": "【Hồ sơ vụ án: đại án nội gián ngân hàng tráo lệnh tại quầy làm bốc hơi 95,05 triệu tệ trong sổ tiết kiệm của 42 khách hàng】 Hồ sơ thật 100% Vụ án bốc hơi 95,05 triệu NDT tiền gửi của 42 khách hàng tại Ngân hàng Liên Hợp Hàng Châu, Chiết Giang (杭州联合银行9505万存款失踪案, 2014–2015): Trưởng bộ phận giao dịch Chúc Mỗ (祝某) cấu kết môi giới tài chính dùng ưu đãi 'gửi 1 năm không rút, không mở SMS/Internet Banking' rồi lén kẹp giấy ủy quyền chuyển khoản ngay lúc khách bấm mật khẩu tại quầy.",
+        "note": "📋 【Hồ sơ vụ án: đại án thao túng sàn giao dịch công trái 327 bằng 10 triệu lệnh bán khống trong 8 phút cuối · sập công ty chứng khoán số 1】 Hồ sơ thật 100% Sự kiện hợp đồng tương lai công trái mã 327 tại Thượng Hải ngày 23/2/1995 (上海327国债期货事件 — Tổng giám đốc Vạn Quốc Chứng Khoán Quản Kim Sinh 管金生): Đối mặt nguy cơ vỡ nợ 6 tỷ NDT khi Bộ Tài chính nâng lãi bù trượt giá, trong 8 phút cuối (16:22:13–16:30) Quản Kim Sinh tung hơn 10 triệu lô lệnh bán khống không tiền ký quỹ kéo sập giá sàn trước khi Sở Giao dịch tuyên hủy giao dịch 8 phút cuối.",
         "hook_archetype": "locked_room_vault_paradox"
     },
     {
@@ -515,7 +463,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Bóc tách sắc lạnh toán học dòng tiền tín dụng ngầm Ôn Châu - Nghĩa Ô - Đông Dương"
         ],
         "opening_hook": "2006년 여름, 저장성 둥양시의 한 거리에 스물다섯 살의 낯선 젊은 여성이 나타났습니다. 그녀는 은행 대출 한 푼 없이 현금 트럭을 동원해 거리 양쪽의 상가 백여 채와 호텔을 통째로 사들였습니다. 불과 열 달 만에 삼십팔억 위안을 움직인 본색그룹 회장 우잉, 그 화려한 간판 뒤에서는 시한폭탄 같은 지하 장부가 돌아가고 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án tín dụng ngầm huy động 3,89 tỷ tệ trong 10 tháng mua đứt cả con phố thương mại · vỡ nợ dây chuyền】 Hồ sơ thật 100% Đại án Ngô Anh (吴英, sinh năm 1981) — Tập đoàn Bổn Sắc tại Đông Dương, Chiết Giang (2006–2012): Trong chưa đầy 1 năm huy động 3,89 tỷ NDT từ mạng lưới tín dụng ngầm lãi suất siêu cao để lập 12 công ty và mua cả con phố thương mại nhằm tạo vỏ bọc thanh khoản trước khi đứt gãy chuỗi vốn.",
+        "note": "📋 【Hồ sơ vụ án: đại án tín dụng ngầm huy động 3,89 tỷ tệ trong 10 tháng mua đứt cả con phố thương mại · vỡ nợ dây chuyền】 Hồ sơ thật 100% Đại án Ngô Anh (吴英, sinh năm 1981) — Tập đoàn Bổn Sắc tại Đông Dương, Chiết Giang (2006–2012): Trong chưa đầy 1 năm huy động 3,89 tỷ NDT từ mạng lưới tín dụng ngầm lãi suất siêu cao để lập 12 công ty và mua cả con phố thương mại nhằm tạo vỏ bọc thanh khoản trước khi đứt gãy chuỗi vốn.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -543,7 +491,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Bóc tách thủ đoạn 'thóc xoay vòng trên giấy' rút ruột 700 triệu NDT khớp hoàn hảo với LEDGER_DIFF_SCRUB"
         ],
         "opening_hook": "수만 톤의 국가 비상 식량이 가득 차 있어야 할 거대한 곡물 창고. 하지만 감사반이 창고 문을 열었을 때, 장부 위에 적혀 있던 수십만 톤의 곡물은 온데간데없고 바닥에는 먼지만 날리고 있었습니다. 창고장 차오젠쥔은 가짜 수매 영수증으로 칠억 위안을 챙겨 이미 지구 반대편으로 날아간 뒤였습니다.",
-        "note": "【Hồ sơ vụ án: đại án giám đốc kho lương thực quốc gia lập hợp đồng thóc ma rút ruột 700 triệu tệ · truy nã đỏ số 3 trốn 13 năm】 Hồ sơ thật 100% Đại án Kho dự trữ lương thực Trung Trữ Lương chi nhánh Chu Khẩu, Hà Nam (中储粮周口直属库主任乔建军案, 2011): Lập hợp đồng thu mua lương thực khống để rút ruột hơn 700 triệu NDT (chuyển lậu hơn 200 triệu NDT ra nước ngoài) rồi trốn qua Mỹ và Thụy Điển suốt hơn 10 năm trước khi bị dẫn độ.",
+        "note": "📋 【Hồ sơ vụ án: đại án giám đốc kho lương thực quốc gia lập hợp đồng thóc ma rút ruột 700 triệu tệ · truy nã đỏ số 3 trốn 13 năm】 Hồ sơ thật 100% Đại án Kho dự trữ lương thực Trung Trữ Lương chi nhánh Chu Khẩu, Hà Nam (中储粮周口直属库主任乔建军案, 2011): Lập hợp đồng thu mua lương thực khống để rút ruột hơn 700 triệu NDT (chuyển lậu hơn 200 triệu NDT ra nước ngoài) rồi trốn qua Mỹ và Thụy Điển suốt hơn 10 năm trước khi bị dẫn độ.",
         "hook_archetype": "micro_forensic_anomaly"
     },
     {
@@ -571,7 +519,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Nghịch lý cực đắt: một huyện nghèo cấp quốc gia nhưng trưởng phòng tài chính lại rút 94 triệu tệ chỉ bằng một con dấu giả khắc ngoài chợ"
         ],
         "opening_hook": "국가급 빈곤현으로 지정된 장시성 포양현의 재정국 사무실. 평범한 과장이었던 리화보는 길거리에서 판 가짜 은행 도장 하나로 오 년 동안 무려 구천사백만 위안의 공금을 감쪽같이 빼돌렸습니다. 설날 연휴 직전 가족과 함께 싱가포르로 사라진 그가 남긴 것은 단 한 통의 편지뿐이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án trưởng phòng tài chính dùng 1 con dấu giả rút ruột 94 triệu tệ ngân sách huyện nghèo · truy nã đỏ số 2 trốn sang Singapore】 Hồ sơ thật 100% Đại án Lý Hoa Ba — Trưởng phòng Kinh tế Xây dựng Cục Tài chính huyện Bà Dương, Giang Tây (江西鄱阳县财政局李华波9400万贪污案, 2006–2015): Dùng con dấu giả và séc thanh toán khống rút 94 triệu NDT quỹ dân sinh chuyển sang Macau đánh bạc và mua thẻ cư trú đầu tư tại Singapore trước khi bị dẫn độ về nước tháng 5/2015.",
+        "note": "📋 【Hồ sơ vụ án: đại án trưởng phòng tài chính dùng 1 con dấu giả rút ruột 94 triệu tệ ngân sách huyện nghèo · truy nã đỏ số 2 trốn sang Singapore】 Hồ sơ thật 100% Đại án Lý Hoa Ba — Trưởng phòng Kinh tế Xây dựng Cục Tài chính huyện Bà Dương, Giang Tây (江西鄱阳县财政局李华波9400万贪污案, 2006–2015): Dùng con dấu giả và séc thanh toán khống rút 94 triệu NDT quỹ dân sinh chuyển sang Macau đánh bạc và mua thẻ cư trú đầu tư tại Singapore trước khi bị dẫn độ về nước tháng 5/2015.",
         "hook_archetype": "micro_forensic_anomaly"
     },
     {
@@ -599,7 +547,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Con số chấn động: thua gần 5 triệu NZD chỉ trong 82 phút và tổng số tiền xoay vòng tại casino lên tới hàng trăm triệu đô"
         ],
         "opening_hook": "스물아홉 살의 나이에 상장 제약회사의 회장이 되어 수천억 원대 자산가로 떠올랐던 사나이 옌융밍. 그러나 회계 감사가 시작되자 그는 거액의 회사 자금을 빼돌려 뉴질랜드로 사라졌습니다. 오클랜드 최고급 호텔 펜트하우스에 숨어 단 팔십이 분 만에 수백억 원을 카지노 테이블에 뿌리던 그의 십오 년 도주극을 추적합니다.",
-        "note": "【Hồ sơ vụ án: đại án chủ tịch tập đoàn dược phẩm biển thủ 187 triệu tệ trốn sang New Zealand 15 năm · đốt 50 tỷ Won ở casino trong 82 phút】 Hồ sơ thật 100% Đại án Diêm Vĩnh Minh (闫永明, sinh năm 1971) — cựu Chủ tịch Công ty Dược phẩm Thông Hóa Kim Mã, Cát Lâm (吉林通化金马药业案, 2000–2016): Biển thủ 187 triệu NDT rồi trốn sang Úc và New Zealand dưới tên Lưu Dương (刘阳), nướng hàng trăm triệu đô tại SkyCity Casino trước khi bị phong tỏa 42,85 triệu NZD và dẫn độ về Trung Quốc tháng 11/2016.",
+        "note": "📋 【Hồ sơ vụ án: đại án chủ tịch tập đoàn dược phẩm biển thủ 187 triệu tệ trốn sang New Zealand 15 năm · đốt 50 tỷ Won ở casino trong 82 phút】 Hồ sơ thật 100% Đại án Diêm Vĩnh Minh (闫永明, sinh năm 1971) — cựu Chủ tịch Công ty Dược phẩm Thông Hóa Kim Mã, Cát Lâm (吉林通化金马药业案, 2000–2016): Biển thủ 187 triệu NDT rồi trốn sang Úc và New Zealand dưới tên Lưu Dương (刘阳), nướng hàng trăm triệu đô tại SkyCity Casino trước khi bị phong tỏa 42,85 triệu NZD và dẫn độ về Trung Quốc tháng 11/2016.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -627,7 +575,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Hành trình 6 nước (Singapore -> Mỹ -> Hà Lan -> Canada -> Mỹ) cực hợp cho GEO_VECTOR_PURSUIT"
         ],
         "opening_hook": "미국 뉴욕 맨해튼 중심가의 오층짜리 빌딩 주인이 된 중국 지방 도시의 간부. 이억 오천만 위안이 넘는 거액을 빼돌려 세계 여섯 개 나라를 돌며 십삼 년간 도망 다녔던 중국 적색수배 일 호 인물 양슈주. 화려했던 맨해튼 건물주의 도주극은 네덜란드의 축축한 지하실과 미국 이민국 구치소에서 막을 내렸습니다.",
-        "note": "【Hồ sơ vụ án: đại án phó thị trưởng tham ô 253 triệu tệ · tội phạm truy nã đỏ số 1 dùng hộ chiếu giả trốn qua 6 quốc gia suốt 13 năm】 Hồ sơ thật 100% Đại án Dương Tú Châu (杨秀珠 — cựu Phó thị trưởng Ôn Châu, Chiết Giang, đứng số 1 danh sách 100 Truy nã Đỏ, 2003–2016): Lợi dụng quy hoạch đường sắt và đất đai biển thủ hơn 253 triệu NDT, mua tòa nhà tại Manhattan (New York), chạy trốn qua 6 quốc gia suốt 13 năm trước khi bị bắt vì dùng hộ chiếu Hà Lan giả và về nước chịu án tháng 11/2016.",
+        "note": "📋 【Hồ sơ vụ án: đại án phó thị trưởng tham ô 253 triệu tệ · tội phạm truy nã đỏ số 1 dùng hộ chiếu giả trốn qua 6 quốc gia suốt 13 năm】 Hồ sơ thật 100% Đại án Dương Tú Châu (杨秀珠 — cựu Phó thị trưởng Ôn Châu, Chiết Giang, đứng số 1 danh sách 100 Truy nã Đỏ, 2003–2016): Lợi dụng quy hoạch đường sắt và đất đai biển thủ hơn 253 triệu NDT, mua tòa nhà tại Manhattan (New York), chạy trốn qua 6 quốc gia suốt 13 năm trước khi bị bắt vì dùng hộ chiếu Hà Lan giả và về nước chịu án tháng 11/2016.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -655,7 +603,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Chiến thuật phản trinh sát 'nơi nguy hiểm nhất là nơi an toàn nhất' + đối sánh sinh trắc học mắt & tai cực hợp DUAL_ERA_LOCK"
         ],
         "opening_hook": "일천백만 위안의 증권 자금을 빼돌린 뒤 중앙아메리카의 작은 나라 벨리즈로 사라졌던 증권사 사장 다이쉐민. 십사 년 동안 해외 어딘가에 숨어 있을 것이라 여겨졌던 그가, 적색수배 명단이 공개된 지 단 사흘 만에 뜻밖에도 안후이성 허페이의 한 거리에서 포착되었습니다.",
-        "note": "【Hồ sơ vụ án: đại án tổng giám đốc công ty chứng khoán biển thủ 11 triệu tệ trốn 14 năm · chuyên án số 1 chiến dịch Săn Cáo (Liệp Hồ)】 Hồ sơ thật 100% Chuyên án Đới Học Dân (戴学民 — cựu Tổng giám đốc Phòng giao dịch Chứng khoán Thượng Hải thuộc Công ty Tín thác Phát triển Kinh tế Trung Quốc, 2001–2015): Biển thủ 11 triệu NDT trốn sang Belize tháng 8/2001, sau đó làm giả hộ chiếu và CMND mang tên 'Đới Trung Quế' (戴忠桂) lén quay về Hợp Phì & Nam Kinh làm ăn suốt 14 năm trước khi bị bắt ngày 25/4/2015.",
+        "note": "📋 【Hồ sơ vụ án: đại án tổng giám đốc công ty chứng khoán biển thủ 11 triệu tệ trốn 14 năm · chuyên án số 1 chiến dịch Săn Cáo (Liệp Hồ)】 Hồ sơ thật 100% Chuyên án Đới Học Dân (戴学民 — cựu Tổng giám đốc Phòng giao dịch Chứng khoán Thượng Hải thuộc Công ty Tín thác Phát triển Kinh tế Trung Quốc, 2001–2015): Biển thủ 11 triệu NDT trốn sang Belize tháng 8/2001, sau đó làm giả hộ chiếu và CMND mang tên 'Đới Trung Quế' (戴忠桂) lén quay về Hợp Phì & Nam Kinh làm ăn suốt 14 năm trước khi bị bắt ngày 25/4/2015.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -683,7 +631,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền: tập trung vào sơ đồ kiểm toán cảng biển, mạng lưới hối lộ 'Hồng Lầu' và 12 năm đấu tranh pháp lý dẫn độ từ Vancouver (1999–2011)"
         ],
         "opening_hook": "초등학교 삼 학년 중퇴 학력으로 시작해 도시 전체의 항구와 세관을 자신의 손아귀에 넣었던 사나이 라이창싱. 오백삼십억 위안어치의 석유와 자동차가 세금 한 푼 없이 샤먼 항구로 쏟아져 들어오는 동안, 그 중심에는 '홍루'라 불린 일곱 층짜리 붉은 건물의 비밀 장부가 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án buôn lậu & trốn thuế 53 tỷ tệ lớn nhất lịch sử hiện đại · ông trùm Lại Xương Tinh đào tẩu sang Canada 12 năm】 Hồ sơ thật 100% Đại án Tập đoàn Viễn Hoa Hạ Môn, Phúc Kiến (福建厦门远华特大走私案 — Lại Xương Tinh 赖昌星, 1996–2011): Tổ chức đường dây nhập lậu xăng dầu, ô tô, nguyên liệu trị giá 53 tỷ NDT (trốn thuế 30 tỷ NDT), trốn sang Vancouver (Canada) năm 1999 và bị dẫn độ về Bắc Kinh tháng 7/2011, lĩnh án tù chung thân.",
+        "note": "📋 【Hồ sơ vụ án: đại án buôn lậu & trốn thuế 53 tỷ tệ lớn nhất lịch sử hiện đại · ông trùm Lại Xương Tinh đào tẩu sang Canada 12 năm】 Hồ sơ thật 100% Đại án Tập đoàn Viễn Hoa Hạ Môn, Phúc Kiến (福建厦门远华特大走私案 — Lại Xương Tinh 赖昌星, 1996–2011): Tổ chức đường dây nhập lậu xăng dầu, ô tô, nguyên liệu trị giá 53 tỷ NDT (trốn thuế 30 tỷ NDT), trốn sang Vancouver (Canada) năm 1999 và bị dẫn độ về Bắc Kinh tháng 7/2011, lĩnh án tù chung thân.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -711,7 +659,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Twist tâm lý đắt giá: ngay sau khi quay video chúc Tết nhà đầu tư, Trương Tiểu Lôi lặng lẽ đến Công an Nam Kinh tự thú vì sổ cái đã cạn sạch tiền"
         ],
         "opening_hook": "보증금 십만 위안을 걸어두고 매일 스마트폰 광고 몇 개만 클릭하면 연 사십 퍼센트가 넘는 수익을 챙길 수 있다는 앱 첸바오왕. 수백만 명이 집을 팔아 보증금을 넣었지만, 2017년 12월 26일 아침 경찰이 발표한 한 줄의 공고에 투자자들은 처음에 해킹이라며 믿지 않았습니다. 회장 장샤오레이가 스스로 경찰서에 걸어 들어가 자수했다는 소식이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án siêu lừa đảo tài chính 72 tỷ tệ qua ứng dụng điểm thưởng · ông chủ tự đến đồn công an đầu thú đêm sập sàn】 Hồ sơ thật 100% Đại án Tiền Bảo Võng tại Nam Kinh, Giang Tô (江苏南京钱宝网非法集资案 — Trương Tiểu Lôi 张小雷, 2012–2017): Dùng mô hình nạp tiền ký quỹ lớn để làm nhiệm vụ xem quảng cáo hưởng lãi 40%–60%/năm, thu hút hơn 72 tỷ NDT tiền nạp trước khi vỡ thanh khoản và Trương Tiểu Lôi ra đầu thú ngày 26/12/2017 (lĩnh án 15 năm tù năm 2019).",
+        "note": "📋 【Hồ sơ vụ án: đại án siêu lừa đảo tài chính 72 tỷ tệ qua ứng dụng điểm thưởng · ông chủ tự đến đồn công an đầu thú đêm sập sàn】 Hồ sơ thật 100% Đại án Tiền Bảo Võng tại Nam Kinh, Giang Tô (江苏南京钱宝网非法集资案 — Trương Tiểu Lôi 张小雷, 2012–2017): Dùng mô hình nạp tiền ký quỹ lớn để làm nhiệm vụ xem quảng cáo hưởng lãi 40%–60%/năm, thu hút hơn 72 tỷ NDT tiền nạp trước khi vỡ thanh khoản và Trương Tiểu Lôi ra đầu thú ngày 26/12/2017 (lĩnh án 15 năm tù năm 2019).",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -739,7 +687,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Khớp hoàn hảo các động từ thị giác SCALE_MULTIPLICATION & LEDGER_DIFF_SCRUB"
         ],
         "opening_hook": "반도체와 액정 화면에 쓰이는 희귀 금속 '인듐'에 투자하면 매일 저녁 이자가 통장에 꽂히고 언제든 원금을 뺄 수 있다는 상품 일금보. 이십이만 명의 투자자가 사백삼십억 위안을 쏟아부었지만, 거래소가 멈춰 섰을 때 창고에 남은 것은 아무도 사가지 않는 차가운 금속 덩어리 삼천육백 톤뿐이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án thao túng sàn giao dịch kim loại hiếm 43 tỷ tệ của 220.000 nhà đầu tư & 3.600 tấn kim loại Indium nằm chết trong kho】 Hồ sơ thật 100% Đại án Sàn giao dịch Kim loại màu Phàn Á tại Côn Minh, Vân Nam (云南昆明泛亚有色金属交易所430亿案 — Đơn Cửu Lương 单九良, 2011–2015): Dùng sản phẩm 'Nhật Kim Bảo' hứa hẹn lãi suất 13,6%/năm thanh toán theo ngày để hút 43 tỷ NDT từ 220.000 người, tự đẩy giá và ôm 3.600 tấn kim loại hiếm Indium trước khi sụp đổ tháng 4/2015 (Đơn Cửu Lương lĩnh án 18 năm tù năm 2019).",
+        "note": "📋 【Hồ sơ vụ án: đại án thao túng sàn giao dịch kim loại hiếm 43 tỷ tệ của 220.000 nhà đầu tư & 3.600 tấn kim loại Indium nằm chết trong kho】 Hồ sơ thật 100% Đại án Sàn giao dịch Kim loại màu Phàn Á tại Côn Minh, Vân Nam (云南昆明泛亚有色金属交易所430亿案 — Đơn Cửu Lương 单九良, 2011–2015): Dùng sản phẩm 'Nhật Kim Bảo' hứa hẹn lãi suất 13,6%/năm thanh toán theo ngày để hút 43 tỷ NDT từ 220.000 người, tự đẩy giá và ôm 3.600 tấn kim loại hiếm Indium trước khi sụp đổ tháng 4/2015 (Đơn Cửu Lương lĩnh án 18 năm tù năm 2019).",
         "hook_archetype": "micro_forensic_anomaly"
     },
     {
@@ -767,7 +715,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cơ chế kỹ thuật cực đắt cho SPLIT_PARADOX: khách hàng nhìn thấy số dư trên app ngân hàng nhưng dòng tiền thật bị bẻ lái sang máy chủ ngầm của Tập đoàn Tân Tài Phú"
         ],
         "opening_hook": "국가 예금보험 마크가 선명하게 찍힌 정식 은행 상품이었습니다. 전국 사십만 명의 시민들은 조금이라도 더 높은 이자를 받기 위해 허난성의 네 개 은행 계좌에 사백억 위안을 맡겼습니다. 그러나 2022년 4월 18일, 갑자기 모든 인출 창구가 닫혔고 경찰 수사 결과 그 돈은 애초에 은행 진짜 전산망에 들어간 적조차 없었다는 사실이 밝혀졌습니다.",
-        "note": "【Hồ sơ vụ án: đại án cài hệ thống máy chủ ngân hàng giả rút ruột 40 tỷ tệ tiền gửi tại 4 ngân hàng nông thôn · chủ mưu đào tẩu quốc tế】 Hồ sơ thật 100% Đại án 4 Ngân hàng Thôn Trấn Hà Nam (禹州新民生、上蔡惠民、柘城黄淮、开封新东方村镇银行 — Chủ mưu Lữ Dịch 吕奕 & Tập đoàn Tân Tài Phú 河南新财富集团, 4/2022): Thao túng cổ phần ngân hàng và thuê công ty công nghệ lập hệ thống dữ liệu giả mạo để rút ruột 40 tỷ NDT tiền gửi trực tuyến của hơn 400.000 khách hàng.",
+        "note": "📋 【Hồ sơ vụ án: đại án cài hệ thống máy chủ ngân hàng giả rút ruột 40 tỷ tệ tiền gửi tại 4 ngân hàng nông thôn · chủ mưu đào tẩu quốc tế】 Hồ sơ thật 100% Đại án 4 Ngân hàng Thôn Trấn Hà Nam (禹州新民生、上蔡惠民、柘城黄淮、开封新东方村镇银行 — Chủ mưu Lữ Dịch 吕奕 & Tập đoàn Tân Tài Phú 河南新财富集团, 4/2022): Thao túng cổ phần ngân hàng và thuê công ty công nghệ lập hệ thống dữ liệu giả mạo để rút ruột 40 tỷ NDT tiền gửi trực tuyến của hơn 400.000 khách hàng.",
         "hook_archetype": "countdown_system_breach"
     },
     {
@@ -795,7 +743,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Bóc tách sắc lạnh toán học của vòng quay Ponzi 15 ngày lãi 30%"
         ],
         "opening_hook": "어려운 이웃에게 삼천 위안을 기부하면 열닷새 뒤 하늘이 복을 내려 삼천구백 위안으로 돌려준다는 '공생 경제 시스템'. 자선과 구제를 내세운 이 달콤한 설계에 불과 일 년 만에 오백구십팔만 명이 모여들었고, 무려 일천사십육억 위안이라는 돈이 스마트폰 화면 위에서 소용돌이쳤습니다.",
-        "note": "【Hồ sơ vụ án: đại án tài chính đa cấp núp bóng quỹ từ thiện hút 104,6 tỷ tệ từ 5 triệu người chỉ trong 14 tháng】 Hồ sơ thật 100% Đại án Thiện Tâm Hội tại Thâm Quyến (深圳善心汇文化传播有限公司特大传销案 — Trương Thiên Minh 张天明, 5/2016–7/2017): Dưới khẩu hiệu 'Phù bần tế khốn, quân phú cộng sinh', lôi kéo 5,98 triệu người tham gia với tổng số tiền luân chuyển 104,6 tỷ NDT trước khi bị Bộ Công an triệt phá và Tòa án tỉnh Hồ Nam tuyên phạt Trương Thiên Minh 17 năm tù.",
+        "note": "📋 【Hồ sơ vụ án: đại án tài chính đa cấp núp bóng quỹ từ thiện hút 104,6 tỷ tệ từ 5 triệu người chỉ trong 14 tháng】 Hồ sơ thật 100% Đại án Thiện Tâm Hội tại Thâm Quyến (深圳善心汇文化传播有限公司特大传销案 — Trương Thiên Minh 张天明, 5/2016–7/2017): Dưới khẩu hiệu 'Phù bần tế khốn, quân phú cộng sinh', lôi kéo 5,98 triệu người tham gia với tổng số tiền luân chuyển 104,6 tỷ NDT trước khi bị Bộ Công an triệt phá và Tòa án tỉnh Hồ Nam tuyên phạt Trương Thiên Minh 17 năm tù.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -823,7 +771,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Tư liệu bản tin tài chính CCTV và hồ sơ xét xử cực kỳ chi tiết"
         ],
         "opening_hook": "이중 잠금장치가 걸린 국유은행 금고 안, 삼십구억 위안어치의 은행 인수어음이 들어 있어야 할 밀봉 봉투가 열렸습니다. 하지만 감사관의 손끝에 잡힌 것은 빳빳한 유가증권이 아니라, 어음 크기에 맞춰 정교하게 오려 넣은 낡은 신문지 뭉치였습니다.",
-        "note": "【Hồ sơ vụ án: đại án đánh tráo 3,9 tỷ tệ hối phiếu trong két sắt ngân hàng thành những xấp báo cũ để mang đi đầu tư chứng khoán】 Hồ sơ thật 100% Đại án 3,915 tỷ NDT tại Ngân hàng Nông nghiệp Trung Quốc chi nhánh Bắc Kinh (北京农行39亿票据大案 — Triệu Lập Quân 赵立军 & Trương Vũ 张宇, 2016): Hai nhân viên quản lý hối phiếu cấu kết với trung gian tài chính ở Trùng Khánh rút ruột toàn bộ hối phiếu thật trong két sắt đem đi chiết khấu lấy tiền炒 cổ phiếu, nhét giấy báo cắt sẵn vào phong bì niêm phong suốt nhiều tháng trước khi thị trường chứng khoán sập làm vỡ lở.",
+        "note": "📋 【Hồ sơ vụ án: đại án đánh tráo 3,9 tỷ tệ hối phiếu trong két sắt ngân hàng thành những xấp báo cũ để mang đi đầu tư chứng khoán】 Hồ sơ thật 100% Đại án 3,915 tỷ NDT tại Ngân hàng Nông nghiệp Trung Quốc chi nhánh Bắc Kinh (北京农行39亿票据大案 — Triệu Lập Quân 赵立军 & Trương Vũ 张宇, 2016): Hai nhân viên quản lý hối phiếu cấu kết với trung gian tài chính ở Trùng Khánh rút ruột toàn bộ hối phiếu thật trong két sắt đem đi chiết khấu lấy tiền炒 cổ phiếu, nhét giấy báo cắt sẵn vào phong bì niêm phong suốt nhiều tháng trước khi thị trường chứng khoán sập làm vỡ lở.",
         "hook_archetype": "locked_room_vault_paradox"
     },
     {
@@ -851,7 +799,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cơ chế tráo chữ ký số U-Key ngân hàng của chủ tịch tập đoàn ngay trong đêm giao thừa cực hợp LEDGER_DIFF_SCRUB"
         ],
         "opening_hook": "최종 학력은 중학교 이 학년 중퇴. 그러나 그는 회계사 자격증과 명문대 졸업장을 위조해 대기업 면접관들을 완벽히 속여 넘겼습니다. 12년 동안 무려 마흔 개의 가짜 이름을 갈아타며 다섯 개 대기업의 재무이사로 취업해 회사 금고를 통째로 비워버린 사나이, 잔언구이의 기막힌 행적을 추적합니다.",
-        "note": "【Hồ sơ vụ án: đại án siêu lừa đảo IQ cao chỉ học hết cấp 2 nhưng làm giả 40 thân phận giám đốc tài chính (CFO) cuỗm gần 20 triệu tệ suốt 12 năm】 Hồ sơ thật 100% Chuyên án Chiêm Ân Quý (詹恩贵, Hồ Bắc, 2006–2018): Dù chỉ học hết lớp 8 nhưng tự nghiên cứu luật thuế và nghiệp vụ kế toán sâu đến mức vượt qua các buổi sát hạch tuyển Giám đốc tài chính (CFO) tại Thượng Hải, Nam Kinh, Vũ Hán, Quý Dương, dùng 40 CMND giả để nắm giữ U-Key ngân hàng và cuỗm tổng cộng hơn 19,8 triệu NDT trước khi bị bắt tại Quý Châu.",
+        "note": "📋 【Hồ sơ vụ án: đại án siêu lừa đảo IQ cao chỉ học hết cấp 2 nhưng làm giả 40 thân phận giám đốc tài chính (CFO) cuỗm gần 20 triệu tệ suốt 12 năm】 Hồ sơ thật 100% Chuyên án Chiêm Ân Quý (詹恩贵, Hồ Bắc, 2006–2018): Dù chỉ học hết lớp 8 nhưng tự nghiên cứu luật thuế và nghiệp vụ kế toán sâu đến mức vượt qua các buổi sát hạch tuyển Giám đốc tài chính (CFO) tại Thượng Hải, Nam Kinh, Vũ Hán, Quý Dương, dùng 40 CMND giả để nắm giữ U-Key ngân hàng và cuỗm tổng cộng hơn 19,8 triệu NDT trước khi bị bắt tại Quý Châu.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -879,7 +827,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Quy mô 10,1 tỷ NDT (~1.900 tỷ Won), 180 con dấu ngân hàng khắc giả bị thu giữ"
         ],
         "opening_hook": "기업 감사관이 예금 잔액 십억 위안을 직접 확인하러 은행 본점 로비에 들어섰습니다. 친절하게 마중 나온 직원의 안내를 받아 올라간 이층 VIP 회의실에서 잔액 증명서에 도장까지 직접 찍어주었지만, 사실 그 방은 은행 사무실이 아니라 사기범 류나이성이 같은 건물에 몰래 빌려 꾸며놓은 가짜 세트장이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án dựng phòng thẩm định VIP giả ngay trong tòa nhà ngân hàng để lừa 10,1 tỷ tệ bằng chứng chỉ tiền gửi giả】 Hồ sơ thật 100% Đại án Ngân hàng Tề Lỗ tại Tế Nam, Sơn Đông (山东济南齐鲁银行101亿伪造金融票证案 — Lưu Nãi Thắng 刘乃胜, 2008–2010): Khắc 180 con dấu giả, cấu kết nhân viên ngân hàng lập phòng tiếp khách giả ngay trong tòa nhà để đánh tráo giấy xác nhận số dư của hàng chục tập đoàn lớn, rút ruột 10,1 tỷ NDT trước khi lĩnh án tù chung thân.",
+        "note": "📋 【Hồ sơ vụ án: đại án dựng phòng thẩm định VIP giả ngay trong tòa nhà ngân hàng để lừa 10,1 tỷ tệ bằng chứng chỉ tiền gửi giả】 Hồ sơ thật 100% Đại án Ngân hàng Tề Lỗ tại Tế Nam, Sơn Đông (山东济南齐鲁银行101亿伪造金融票证案 — Lưu Nãi Thắng 刘乃胜, 2008–2010): Khắc 180 con dấu giả, cấu kết nhân viên ngân hàng lập phòng tiếp khách giả ngay trong tòa nhà để đánh tráo giấy xác nhận số dư của hàng chục tập đoàn lớn, rút ruột 10,1 tỷ NDT trước khi lĩnh án tù chung thân.",
         "hook_archetype": "locked_room_vault_paradox"
     },
     {
@@ -907,7 +855,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Minh họa 2.5D mặt cắt kho nhôm rỗng ruột cực hợp cho Bàn Biên Tập Vox"
         ],
         "opening_hook": "수만 톤의 알루미늄과 구리 괴가 산처럼 쌓여 있는 칭다오항 보세창고. 열여덟 개 국내외 은행 실사단은 직접 눈으로 금속 더미를 확인하고 무려 백육십억 위안을 빌려주었습니다. 그러나 항구가 봉쇄되고 지게차가 금속 벽을 허물자, 그 안쪽은 텅 빈 공간이었고 똑같은 금속 한 더미에 열 장의 가짜 창고 증권이 붙어 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án dùng 1 lô nhôm thỏi trong kho cảng thế chấp trùng lặp 10 lần để rút ruột 16 tỷ tệ vốn vay ngân hàng quốc tế】 Hồ sơ thật 100% Đại án lừa đảo tín dụng kho cảng Thanh Đảo, Sơn Đông (山东青岛港德正资源160亿元重复质押骗贷案 — Trần Cơ Hồng 陈基鸿, 2014): Dùng một lượng nhỏ nhôm và đồng thật xếp thành tường bao quanh khoảng trống, kết hợp làm giả vận đơn kho cảng để thế chấp lặp lại cho 18 ngân hàng trong và ngoài nước, chiếm đoạt hơn 16 tỷ NDT.",
+        "note": "📋 【Hồ sơ vụ án: đại án dùng 1 lô nhôm thỏi trong kho cảng thế chấp trùng lặp 10 lần để rút ruột 16 tỷ tệ vốn vay ngân hàng quốc tế】 Hồ sơ thật 100% Đại án lừa đảo tín dụng kho cảng Thanh Đảo, Sơn Đông (山东青岛港德正资源160亿元重复质押骗贷案 — Trần Cơ Hồng 陈基鸿, 2014): Dùng một lượng nhỏ nhôm và đồng thật xếp thành tường bao quanh khoảng trống, kết hợp làm giả vận đơn kho cảng để thế chấp lặp lại cho 18 ngân hàng trong và ngoài nước, chiếm đoạt hơn 16 tỷ NDT.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -935,7 +883,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Góc nhìn giải phẫu chứng từ hợp đồng thật - giả ngay trong phòng VIP ngân hàng"
         ],
         "opening_hook": "통장 잔고가 최소 천만 위안 이상인 최상위 자산가 백오십 명만 초청된 은행 지점장실. 전국 실적 일 등을 자랑하던 스타 지점장 장잉은 급히 현금이 필요한 고객의 정기예금을 반값에 인수하는 비밀 특판 상품을 내놓았습니다. 하지만 삼십억 위안이 모인 뒤 드러난 진실은, 그런 상품은 은행 역사상 단 한 번도 존재한 적이 없다는 것이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án nữ giám đốc chi nhánh ngân hàng làm giả hợp đồng đầu tư VIP rút ruột 3 tỷ tệ của 150 khách hàng siêu giàu】 Hồ sơ thật 100% Đại án Ngân hàng Dân Sinh chi nhánh Hàng Thiên Kiều, Bắc Kinh (北京民生银行航天桥支行30亿元假理财案 — Giám đốc chi nhánh Trương Dĩnh 张颖, 2013–2017): Để lấp lỗ hổng tài khoản cá nhân, Trương Dĩnh khắc con dấu giả lập các hợp đồng理财 lãi suất 8,4%/năm lừa hơn 150 khách hàng VIP tại phòng giám đốc, chiếm đoạt hơn 3 tỷ NDT trước khi lĩnh án chung thân.",
+        "note": "📋 【Hồ sơ vụ án: đại án nữ giám đốc chi nhánh ngân hàng làm giả hợp đồng đầu tư VIP rút ruột 3 tỷ tệ của 150 khách hàng siêu giàu】 Hồ sơ thật 100% Đại án Ngân hàng Dân Sinh chi nhánh Hàng Thiên Kiều, Bắc Kinh (北京民生银行航天桥支行30亿元假理财案 — Giám đốc chi nhánh Trương Dĩnh 张颖, 2013–2017): Để lấp lỗ hổng tài khoản cá nhân, Trương Dĩnh khắc con dấu giả lập các hợp đồng理财 lãi suất 8,4%/năm lừa hơn 150 khách hàng VIP tại phòng giám đốc, chiếm đoạt hơn 3 tỷ NDT trước khi lĩnh án chung thân.",
         "hook_archetype": "locked_room_vault_paradox"
     },
     {
@@ -963,7 +911,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Khớp hoàn hảo sơ đồ mạng lưới công ty vỏ bọc NETWORK_GRAPH & SCALE_MULTIPLICATION"
         ],
         "opening_hook": "풀만 무성하게 자란 변두리 빈 땅 한 조각이 서류 위에서는 수십억 위안짜리 황금 부지로 둔갑했습니다. 광시성 류저우시에서 우둥 일가는 마흔 개가 넘는 유령 회사와 가짜 토지 등기부를 동원해 단 사 년 만에 은행에서 삼백이십팔억 위안을 끌어다 썼습니다.",
-        "note": "【Hồ sơ vụ án: đại án gia tộc lập 40 công ty vỏ bọc và sổ đỏ giả để rút ruột 32,8 tỷ tệ vốn vay từ ngân hàng địa phương】 Hồ sơ thật 100% Đại án lừa đảo tín dụng 32,8 tỷ NDT tại Ngân hàng Liễu Châu, Quảng Tây (广西柳州银行328亿元骗贷案 — Gia tộc Ngô Đông 吴东, 2010–2014): Lập hơn 40 công ty vỏ bọc, làm giả sổ đỏ và báo cáo thẩm định giá đất tăng gấp hàng chục lần để vay 250 khoản tín dụng tổng cộng 32,895 tỷ NDT.",
+        "note": "📋 【Hồ sơ vụ án: đại án gia tộc lập 40 công ty vỏ bọc và sổ đỏ giả để rút ruột 32,8 tỷ tệ vốn vay từ ngân hàng địa phương】 Hồ sơ thật 100% Đại án lừa đảo tín dụng 32,8 tỷ NDT tại Ngân hàng Liễu Châu, Quảng Tây (广西柳州银行328亿元骗贷案 — Gia tộc Ngô Đông 吴东, 2010–2014): Lập hơn 40 công ty vỏ bọc, làm giả sổ đỏ và báo cáo thẩm định giá đất tăng gấp hàng chục lần để vay 250 khoản tín dụng tổng cộng 32,895 tỷ NDT.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -991,7 +939,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền: tập trung vào kỹ thuật kiểm toán truy vết dòng tiền vòng tròn"
         ],
         "opening_hook": "물건은 단 한 상자도 오가지 않았지만, 열세 개의 회사 사이에서는 매일 수억 위안짜리 세금계산서와 무역 계약서가 쉴 새 없이 돌아갔습니다. 국가 감사원이 광둥성 포산의 한 기업 장부를 열었을 때, 그 열세 개 회사의 진짜 주인은 단 한 사람, 펑밍창뿐이었고 은행 금고에서는 칠십사억 위안이 빠져나간 뒤였습니다.",
-        "note": "【Hồ sơ vụ án: đại án dùng 13 công ty ma ký hợp đồng thương mại khống rút ruột 7,45 tỷ tệ ngân hàng và kho bạc nhà nước】 Hồ sơ thật 100% Đại án Tập đoàn Hoa Quang tại Nam Hải, Phật Sơn, Quảng Đông (广东佛山南海冯明昌74亿元特大金融案, 1996–2003): Phùng Minh Xương lập 13 công ty con đóng giả đối tác thương mại bảo lãnh chéo lẫn nhau để rút 7,45 tỷ NDT từ ngân hàng và kho bạc địa phương trước khi bị Tổng Kiểm toán Nhà nước phanh phui.",
+        "note": "📋 【Hồ sơ vụ án: đại án dùng 13 công ty ma ký hợp đồng thương mại khống rút ruột 7,45 tỷ tệ ngân hàng và kho bạc nhà nước】 Hồ sơ thật 100% Đại án Tập đoàn Hoa Quang tại Nam Hải, Phật Sơn, Quảng Đông (广东佛山南海冯明昌74亿元特大金融案, 1996–2003): Phùng Minh Xương lập 13 công ty con đóng giả đối tác thương mại bảo lãnh chéo lẫn nhau để rút 7,45 tỷ NDT từ ngân hàng và kho bạc địa phương trước khi bị Tổng Kiểm toán Nhà nước phanh phui.",
         "hook_archetype": "locked_room_vault_paradox"
     },
     {
@@ -1019,7 +967,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Bóc tách tâm lý học thao túng niềm tin đám đông bằng 'hiệu ứng hào quang người nổi tiếng'"
         ],
         "opening_hook": "스물다섯 살의 무명 창업자가 세계적인 투자의 귀재와 점심 식사 한 끼를 함께하기 위해 일천오백만 위안을 경매에 던졌습니다. 단 한 장의 기념사진이 신문 일면을 장식하자, 대중은 그를 금융 천재로 믿고 무려 일천사백오십억 위안의 자금을 맡겼습니다. 하지만 그 화려한 사진 뒤에는 거대한 가짜 대출 풀(Pool)이 숨겨져 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án bỏ 2,13 triệu tệ đấu giá bữa trưa với tỷ phú để đánh bóng tên tuổi rồi huy động trái phép 145 tỷ tệ】 Hồ sơ thật 100% Đại án Đoàn Đại Võng tại Đông Quản, Quảng Đông (广东东莞团贷网1450亿元集资诈骗案 — Đường Quân 唐军 & Trương Lâm 张林, 2012–2019): Đường Quân bỏ 2,13 triệu USD đấu giá bữa ăn trưa với Warren Buffett năm 2012 để tạo hào quang uy tín, sau đó phát hành hàng vạn gói tín dụng khống thu hút 145 tỷ NDT trước khi sụp đổ tháng 3/2019 (Đường Quân lĩnh án 20 năm tù năm 2022).",
+        "note": "📋 【Hồ sơ vụ án: đại án bỏ 2,13 triệu tệ đấu giá bữa trưa với tỷ phú để đánh bóng tên tuổi rồi huy động trái phép 145 tỷ tệ】 Hồ sơ thật 100% Đại án Đoàn Đại Võng tại Đông Quản, Quảng Đông (广东东莞团贷网1450亿元集资诈骗案 — Đường Quân 唐军 & Trương Lâm 张林, 2012–2019): Đường Quân bỏ 2,13 triệu USD đấu giá bữa ăn trưa với Warren Buffett năm 2012 để tạo hào quang uy tín, sau đó phát hành hàng vạn gói tín dụng khống thu hút 145 tỷ NDT trước khi sụp đổ tháng 3/2019 (Đường Quân lĩnh án 20 năm tù năm 2022).",
         "hook_archetype": "chilling_verbatim_line"
     },
     {
@@ -1047,7 +995,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Hai tầng twist liên hoàn: (1) dùng tiền mặt trong két công ty vừa mua để trả tiền mua chính công ty đó; (2) khi vào tù lại mua manh mối/bằng sáng chế giả để giảm án từ 15 năm xuống 6 năm rồi trốn sang Pháp"
         ],
         "opening_hook": "수중에 현금 한 푼 없던 스물여덟 살 청년이 삼억삼천팔백만 위안짜리 국민 음료 대기업의 새 주인이 되었습니다. 비밀은 간단했습니다. 계약서에 도장을 찍자마자 그 회사의 금고를 열어 인수 대금을 메운 것입니다. 심지어 감옥에 갇힌 뒤에는 가짜 발명 특허로 형량을 줄여 유럽으로 유유히 사라졌습니다.",
-        "note": "【Hồ sơ vụ án: đại án tay không thâu tóm và rút ruột 700 triệu tệ của tập đoàn nước giải khát quốc gia · làm giả hồ sơ lập công để giảm án rồi trốn sang châu Âu】 Hồ sơ thật 100% Đại án Trương Hải tại Tập đoàn Kiện Lực Bảo, Phật Sơn, Quảng Đông (广东健力宝张海职务侵占与假立功外逃案, 2002–2014): Dùng thủ đoạn kế toán rút ruột hơn 700 triệu NDT của Kiện Lực Bảo; sau khi bị tuyên 15 năm tù năm 2007, người tình và luật sư đã làm giả hồ sơ lập công trong tù giúp Trương Hải ra tù sớm năm 2011 rồi dùng hộ chiếu giả trốn sang châu Âu.",
+        "note": "📋 【Hồ sơ vụ án: đại án tay không thâu tóm và rút ruột 700 triệu tệ của tập đoàn nước giải khát quốc gia · làm giả hồ sơ lập công để giảm án rồi trốn sang châu Âu】 Hồ sơ thật 100% Đại án Trương Hải tại Tập đoàn Kiện Lực Bảo, Phật Sơn, Quảng Đông (广东健力宝张海职务侵占与假立功外逃案, 2002–2014): Dùng thủ đoạn kế toán rút ruột hơn 700 triệu NDT của Kiện Lực Bảo; sau khi bị tuyên 15 năm tù năm 2007, người tình và luật sư đã làm giả hồ sơ lập công trong tù giúp Trương Hải ra tù sớm năm 2011 rồi dùng hộ chiếu giả trốn sang châu Âu.",
         "hook_archetype": "locked_room_vault_paradox"
     },
     {
@@ -1075,7 +1023,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Khớp hoàn hảo CRASH_TIMELINE & ROLLING_METRIC_SHOCK"
         ],
         "opening_hook": "상하이 중심가 최고급 빌딩에 자리 잡은 푸싱그룹. 젊은 회장 주이둥은 백육십 개의 사모펀드 상품으로 삼백육십오억 위안을 끌어모았습니다. 그러나 그 거액의 투자금이 향한 곳은 실물 경제가 아니라, 사백 개의 차명 계좌로 자기 회사 주식을 사고팔며 주가를 조작하는 비밀 작전실이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án thiếu gia tài chính lập 100 quỹ đầu tư ma rút ruột 36,5 tỷ tệ và thao túng giá cổ phiếu · truy bắt xuyên 5 quốc gia】 Hồ sơ thật 100% Đại án Tập đoàn Phụ Hưng tại Thượng Hải (上海阜兴集团365亿元集资诈骗与操纵证券市场案 — Chu Nhất Đống 朱一栋, 2014–2018): Huy động 36,5 tỷ NDT qua 160 quỹ đầu tư tư nhân, dùng hàng trăm tài khoản ẩn danh thao túng cổ phiếu Dalian Insulator trước khi vỡ trận tháng 6/2018; Chu Nhất Đống đào tẩu qua 5 quốc gia với 11 hộ chiếu giả trước khi bị bắt dẫn độ về Thượng Hải và lĩnh án chung thân năm 2021.",
+        "note": "📋 【Hồ sơ vụ án: đại án thiếu gia tài chính lập 100 quỹ đầu tư ma rút ruột 36,5 tỷ tệ và thao túng giá cổ phiếu · truy bắt xuyên 5 quốc gia】 Hồ sơ thật 100% Đại án Tập đoàn Phụ Hưng tại Thượng Hải (上海阜兴集团365亿元集资诈骗与操纵证券市场案 — Chu Nhất Đống 朱一栋, 2014–2018): Huy động 36,5 tỷ NDT qua 160 quỹ đầu tư tư nhân, dùng hàng trăm tài khoản ẩn danh thao túng cổ phiếu Dalian Insulator trước khi vỡ trận tháng 6/2018; Chu Nhất Đống đào tẩu qua 5 quốc gia với 11 hộ chiếu giả trước khi bị bắt dẫn độ về Thượng Hải và lĩnh án chung thân năm 2021.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -1103,7 +1051,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cơ chế đòn bẩy giấy nợ không tài sản đảm bảo cực hợp với SCALE_MULTIPLICATION"
         ],
         "opening_hook": "만약 일반 기업이 은행처럼 스스로 어음을 발행할 수 있는 금융 자회사를 갖게 된다면 어떤 일이 벌어질까요. 닝샤성 최대 민영 석유화학 그룹의 회장 쑨헝차오는 지불 준비금도 없이 무려 이만칠천 장, 사백칠십억 위안어치의 전자 어음을 시장에 찍어냈습니다.",
-        "note": "【Hồ sơ vụ án: đại án tập đoàn hóa dầu tự in 47 tỷ tệ hối phiếu ngân hàng không tiền bảo chứng để vay nợ dây chuyền khắp toàn quốc】 Hồ sơ thật 100% Đại án Tập đoàn Hóa dầu Bảo Tháp tại Ngân Xuyên, Ninh Hạ (宁夏宝塔石化集团470亿元票据诈骗案 — Tôn Hành Siêu 孙珩超, 2015–2018): Lợi dụng giấy phép Công ty Tài chính Tập đoàn để phát hành khống hơn 27.000 hối phiếu điện tử trị giá 47 tỷ NDT không có giao dịch thương mại thật để đảo nợ trước khi sụp đổ năm 2018 (Tôn Hành Siêu lĩnh án chung thân).",
+        "note": "📋 【Hồ sơ vụ án: đại án tập đoàn hóa dầu tự in 47 tỷ tệ hối phiếu ngân hàng không tiền bảo chứng để vay nợ dây chuyền khắp toàn quốc】 Hồ sơ thật 100% Đại án Tập đoàn Hóa dầu Bảo Tháp tại Ngân Xuyên, Ninh Hạ (宁夏宝塔石化集团470亿元票据诈骗案 — Tôn Hành Siêu 孙珩超, 2015–2018): Lợi dụng giấy phép Công ty Tài chính Tập đoàn để phát hành khống hơn 27.000 hối phiếu điện tử trị giá 47 tỷ NDT không có giao dịch thương mại thật để đảo nợ trước khi sụp đổ năm 2018 (Tôn Hành Siêu lĩnh án chung thân).",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -1131,204 +1079,8 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Tư liệu điều tra kinh tế (经侦) và bản tin CCTV cực kỳ rõ ràng"
         ],
         "opening_hook": "북쪽 끝 시골 마을의 자그마한 농촌신용사 하나를 인수한 뒤, 감독 기관의 가짜 승인 공문 한 장을 만들어 전국구 상업은행으로 둔갑시켰습니다. 선전과 베이징의 기업가들은 은행 코드까지 조회되는 이 정교한 속임수에 속아 팔십억 위안이 넘는 자금을 예치했습니다.",
-        "note": "【Hồ sơ vụ án: đại án làm giả công văn phê duyệt của cơ quan quản lý để biến quỹ tín dụng nhỏ thành 'ngân hàng thương mại' lừa 8 tỷ tệ】 Hồ sơ thật 100% Đại án Tập đoàn Thành Thành tại Thâm Quyến & Cát Lâm (深圳诚成集团刘波80亿元特大金融诈骗案, 2013–2018): Lưu Ba mua lại một hợp tác xã tín dụng nhỏ tại Bạch Sơn (Cát Lâm), làm giả批文 của Ngân监会 cho phép nâng cấp thành Ngân hàng Thương mại Cổ phần, mở văn phòng giả ở Thâm Quyến để hút более 8 tỷ NDT trước khi bị triệt phá.",
+        "note": "📋 【Hồ sơ vụ án: đại án làm giả công văn phê duyệt của cơ quan quản lý để biến quỹ tín dụng nhỏ thành 'ngân hàng thương mại' lừa 8 tỷ tệ】 Hồ sơ thật 100% Đại án Tập đoàn Thành Thành tại Thâm Quyến & Cát Lâm (深圳诚成集团刘波80亿元特大金融诈骗案, 2013–2018): Lưu Ba mua lại một hợp tác xã tín dụng nhỏ tại Bạch Sơn (Cát Lâm), làm giả批文 của Ngân监会 cho phép nâng cấp thành Ngân hàng Thương mại Cổ phần, mở văn phòng giả ở Thâm Quyến để hút более 8 tỷ NDT trước khi bị triệt phá.",
         "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "fin_cn_beijing_jinsong_vault_18y_lu",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "北京中国银行劲松支行金库195万元现金调包潜逃18年案 — 陆某荣 (1997–2015)",
-        "archival_search_keywords_zh": [
-            "北京劲松支行 金库 18年 天网",
-            "银行金库 195万 潜逃18年 今日说法",
-            "劲松支行 陆某 抓捕纪实"
-        ],
-        "recommended_vox_verbs": [
-            "BLIND_SPOT_REVEAL",
-            "DUAL_ERA_LOCK",
-            "GEO_VECTOR_PURSUIT"
-        ],
-        "title": "[중국 실화 사건] 열쇠 구멍에 흠집 하나 없이 은행 금고를 비우고 18년간 호적도 없이 살아온 내부자 | 베이징 진쑹 금고 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ nội gián vét sạch két sắt ngân hàng không một vết xước ổ khóa rồi sống 18 năm không hộ khẩu | Chuyên án két sắt Kính Tùng Bắc Kinh)",
-        "topic_anchor": "[중국 실화 사건] 열쇠 구멍에 흠집 하나 없이 은행 금고를 비우고 18년간 호적도 없이 살아온 내부자 | 베이징 진쑹 금고 사건",
-        "winner_cluster": "Luồng 1 · Két Sắt Ngân Hàng Mở Khóa Không Vết Xước & 18 Năm Trốn Truy Nã Kinh Tế (베이징 진쑹 지점 금고 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Vụ Án Két Sắt Chi Nhánh Kính Tùng Bắc Kinh 18 Năm (北京中行劲松支行金库案, 1997–2015) — Lợi Dụng Khoảnh Khắc Bàn Giao Ca Trực Kho Bạc & 18 Năm Đóng Giả Thợ Sửa Nước Ở Giang Tây",
-        "codex_reasons": [
-            "Phóng sự chuyên đề trên CCTV 天网 & 今日说法 với cảnh quay thực tế két sắt Bắc Kinh và quá trình truy bắt sau 18 năm",
-            "Khớp hoàn hảo BLIND_SPOT_REVEAL & DUAL_ERA_LOCK"
-        ],
-        "opening_hook": "열쇠 구멍에는 긁힌 자국 하나 없었고, 밤새 적외선 경보기도 단 한 번 울리지 않았습니다. 그런데 아침 교대 시간에 철문을 열자 현금 자루들만 감쪽같이 증발해 있었죠. 그날 이후 18년 동안 신분증 한 번 쓰지 않고 세상에서 지워졌던 금고 직원의 흔적을 따라갑니다.",
-        "note": "【Hồ sơ vụ án: đại án quản kho ngân hàng mở két sắt không để lại vết xước lấy 1,95 triệu tệ tiền mặt · ẩn mình 18 năm dưới tên giả】 Hồ sơ thật 100% Vụ án rút ruột két sắt Ngân hàng Trung Quốc chi nhánh Kính Tùng, Bắc Kinh (北京中行劲松支行金库案 — Lục Mỗ Vinh 陆某荣, 1997–2015): Lợi dụng kẽ hở bàn giao chìa khóa kho bạc dịp cuối tuần để lấy đi các bao tiền mặt trị giá 1,95 triệu NDT (tương đương hàng chục triệu tệ thời giá hiện nay), cắt đứt mọi liên lạc gia đình và trốn ở Giang Tây suốt 18 năm trước khi bị Công an Bắc Kinh bắt giữ.",
-        "hook_archetype": "double_life_unmasking"
-    },
-    {
-        "id": "fin_cn_changzhou_accountant_feng_130m",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "江苏常州武进财政所会计200次蚂蚁搬家挪用1.3亿元公款案 — 冯某 (2016–2020)",
-        "archival_search_keywords_zh": [
-            "常州 财政会计 1.3亿 今日说法",
-            "武进 会计 挪用公款 1.3亿 庭审",
-            "蚂蚁搬家 1.3亿 财政所 央视"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "SCALE_MULTIPLICATION",
-            "CAUSAL_CHAIN"
-        ],
-        "title": "[중국 실화 사건] 월급 4천 위안 받던 말단 회계직원이 4년간 200번에 나눠 빼돌린 공금 1억 3천만 위안 | 창저우 개미 이삿짐 장부 사건 ([Vụ Án Có Thật ở Trung Quốc] Nhân viên kế toán lương 4.000 tệ chia nhỏ 200 lần rút ruột 130 triệu tệ công quỹ suốt 4 năm | Đại án sổ cái Thường Châu)",
-        "topic_anchor": "[중국 실화 사건] 월급 4천 위안 받던 말단 회계직원이 4년간 200번에 나눠 빼돌린 공금 1억 3천만 위안 | 창저우 개미 이삿짐 장부 사건",
-        "winner_cluster": "Luồng 1 · Thủ Thuật 'Kiến Tha Lâu Đầy Tổ' 200 Lệnh Chuyển Tiền Rút 130 Triệu Tệ Kho Bạc (장쑤 창저우 1.3억 회계 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Kế Toán Phòng Tài Chính Vũ Tiến, Thường Châu (江苏常州1.3亿挪用公款案) — Giữ Cùng Lúc Cả U-Key Lập Lệnh Và U-Key Duyệt Lệnh Suốt 1.400 Ngày",
-        "codex_reasons": [
-            "Bóc tách lỗ hổng kiểm soát nội bộ điển hình nhất trong các cơ quan tài chính: 2 chiếc chìa khóa số U-Key lẽ ra do 2 người giữ lại nằm trong ngăn kéo của 1 nhân viên kế toán trẻ",
-            "Tư liệu tòa án Thường Châu và bản tin CCTV cực kỳ chi tiết"
-        ],
-        "opening_hook": "한 달 월급 사천 위안을 받던 스물여덟 살의 평범한 재정소 회계 직원. 원래 두 명의 관리자가 나누어 보관해야 할 은행 보안키 두 개가 그의 서랍 속에 나란히 놓여 있었습니다. 사 년 동안 무려 이백 번에 걸쳐 개미가 이삿짐을 나르듯 빠져나간 공금은 어느새 일억 삼천만 위안에 달했습니다.",
-        "note": "【Hồ sơ vụ án: đại án kế toán viên chuyển lén 200 lệnh nhỏ rút ruột 130 triệu tệ công quỹ suốt 4 năm mà không kích hoạt cảnh báo kiểm toán】 Hồ sơ thật 100% Đại án biển thủ 130 triệu NDT tại Phòng Tài chính quận Vũ Tiến, Thường Châu, Giang Tô (江苏常州武进1.3亿元公款挪用案 — Phùng Mỗ 冯某, 2016–2020): Lợi dụng sự buông lỏng quản lý khi được giao giữ cả U-Key lập chứng từ lẫn U-Key phê duyệt của lãnh đạo, thực hiện hơn 200 giao dịch chuyển tiền nhỏ lẻ suốt 4 năm rút ruột 130 triệu NDT.",
-        "hook_archetype": "cold_archive_match"
-    },
-    {
-        "id": "fin_cn_guangdong_gaoyao_liubing_18y",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "广东肇庆高要工商银行7200万元跨行拆借挪用潜逃18年案 — 刘兵 (1995–2013)",
-        "archival_search_keywords_zh": [
-            "广东高要 刘兵 7200万 潜逃18年 今日说法",
-            "肇庆 银行行长 潜逃18年 天网",
-            "高要工行 刘兵 落网"
-        ],
-        "recommended_vox_verbs": [
-            "GEO_VECTOR_PURSUIT",
-            "DUAL_ERA_LOCK",
-            "LEDGER_DIFF_SCRUB"
-        ],
-        "title": "[중국 실화 사건] 은행 자금 7,200만 위안을 빼돌린 뒤 18년간 사막 오지 식당 주방장으로 숨어 산 지점장 | 가오야오 류빙 추적 사건 ([Vụ Án Có Thật ở Trung Quốc] Rút ruột 72 triệu tệ ngân hàng rồi trốn 18 năm làm đầu bếp quán ăn vùng hẻo lánh | Chuyên án Lưu Bình Quảng Đông)",
-        "topic_anchor": "[중국 실화 사건] 은행 자금 7,200만 위안을 빼돌린 뒤 18년간 사막 오지 식당 주방장으로 숨어 산 지점장 | 가오야오 류빙 추적 사건",
-        "winner_cluster": "Luồng 1 · Giám Đốc Ngân Hàng Rút 72 Triệu Tệ & 18 Năm Ẩn Mình Làm Đầu Bếp Quán Nhỏ (광둥 가오야오 류빙 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Lưu Bình — Chi Nhánh Cao Yếu, Triệu Khánh, Quảng Đông (广东高要7200万银行潜逃案, 1995–2013) — Từ Giám Đốc Ngân Hàng Hét Ra Lửa Đến 18 Năm Băm Thịt Trong Bếp Quán Cơm Bình Dân",
-        "codex_reasons": [
-            "Sự đối lập thân phận 18 năm cực kỳ đắt giá cho DUAL_ERA_LOCK, có phóng sự riêng trên CCTV 今日说法",
-            "100% Xanh tiền: đi sâu vào lỗ hổng vay liên ngân hàng thập niên 90 và hành trình truy vết 18 năm"
-        ],
-        "opening_hook": "한때 수천만 위안의 자금을 좌우하며 고급 승용차를 타고 다니던 국유은행 지점장 류빙. 칠천이백만 위안의 부실 장부가 드러나기 직전 종적을 감춘 그가 열8년 뒤 발견된 곳은, 기름때가 가득 낀 변두리 작은 식당의 좁은 주방이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án cán bộ ngân hàng lợi dụng kênh vay liên ngân hàng rút ruột 72 triệu tệ rồi bốc hơi 18 năm làm công nhân bốc vác】 Hồ sơ thật 100% Chuyên án Lưu Bình tại chi nhánh Ngân hàng Công thương Cao Yếu, Triệu Khánh, Quảng Đông (广东肇庆高要7200万挪用公款潜逃18年案 — 刘兵, 1995–2013): Lợi dụng nghiệp vụ vay拆借 liên ngân hàng rút ruột hơn 72 triệu NDT đầu cơ bất động sản thất bại, sau đó dùng giấy tờ giả trốn qua nhiều tỉnh làm phụ bếp quán ăn suốt 18 năm trước khi bị bắt giữ.",
-        "hook_archetype": "double_life_unmasking"
-    },
-    {
-        "id": "fin_cn_huludao_bank_26b_emptied",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "辽宁葫芦岛银行26亿元空壳信贷掏空与境外地下钱庄转移大案 — 李玉林·段某 (2020–2022)",
-        "archival_search_keywords_zh": [
-            "葫芦岛银行 26亿 掏空 央视新闻",
-            "辽宁葫芦岛银行 李玉林 纪实",
-            "26亿 地下钱庄 银行行长 庭审"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "GEO_VECTOR_PURSUIT",
-            "CRASH_TIMELINE"
-        ],
-        "title": "[중국 실화 사건] 은행 회장과 행장이 손잡고 유령 대출 한 건으로 금고 돈 26억 위안을 해외로 빼돌린 날 | 후루다오은행 증발 사건 ([Vụ Án Có Thật ở Trung Quốc] Chủ tịch và Tổng giám đốc ngân hàng bắt tay nhau lập 1 khoản vay ma rút 2,6 tỷ tệ chuyển ra nước ngoài | Đại án Ngân hàng Hồ Lô Đảo)",
-        "topic_anchor": "[중국 실화 사건] 은행 회장과 행장이 손잡고 유령 대출 한 건으로 금고 돈 26억 위안을 해외로 빼돌린 날 | 후루다오은행 증발 사건",
-        "winner_cluster": "Luồng 1 · Chủ Tịch & Tổng Giám Đốc Ngân Hàng Cấu Kết Rút 2,6 Tỷ Tệ Đổi Ngoại Tệ Ngầm (랴오닝 후루다오은행 26억 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án 2,6 Tỷ NDT Ngân Hàng Hồ Lô Đảo, Liêu Ninh (辽宁葫芦岛银行26亿被掏空案, 2020) — Khi Chính Những Người Giữ Cửa Kho Bạc Ký Duyệt Khoản Vay Khống Giải Ngân Trong 24 Giờ",
-        "codex_reasons": [
-            "Đại án ngân hàng hiện đại được Ủy ban Kiểm tra Kỷ luật Trung ương & CCTV công bố chi tiết năm 2022–2023",
-            "Bóc tách cơ chế 'nội gián cấp cao nhất' vô hiệu hóa toàn bộ hệ thống cảnh báo rủi ro tín dụng"
-        ],
-        "opening_hook": "은행의 돈을 지켜야 할 이사회 회장과 은행장이 한방에 마주 앉아 비밀 합의서를 썼습니다. 아무런 실체도 없는 유령 회사 이름으로 단 하루 만에 승인된 대출금은 무려 이십육억 위안. 그 돈은 대출 계좌에 찍히자마자 지하 환치기 조직을 통해 국경 너머 외화로 바뀌어 날아갔습니다.",
-        "note": "【Hồ sơ vụ án: đại án lãnh đạo ngân hàng cấu kết lập hồ sơ tín dụng rỗng rút sạch 2,6 tỷ tệ chuyển qua ngân hàng ngầm ra nước ngoài】 Hồ sơ thật 100% Đại án rút ruột 2,6 tỷ NDT tại Ngân hàng Hồ Lô Đảo, tỉnh Liêu Ninh (辽宁葫芦岛银行26亿元特大套取信贷资金案 — Nguyên Bí thư/Chủ tịch Lý Ngọc Lâm 李玉林 & Quyền Giám đốc Đoàn Mỗ, 2020–2022): Dưới danh nghĩa 'hóa giải nợ xấu', cấu kết doanh nhân bên ngoài lập khoản vay khống 2,6 tỷ NDT rồi chuyển qua đường dây ngầm đổi sang ngoại tệ chuyển ra hải ngoại.",
-        "hook_archetype": "last_ordinary_routine"
-    },
-    {
-        "id": "fin_cn_chengdu_luowenhua_21m_tea",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "四川成都农业银行总府支行2100万元伪造电汇凭证潜逃13年案 — 罗文华 (2002–2015)",
-        "archival_search_keywords_zh": [
-            "成都 罗文华 2100万 今日说法",
-            "潜逃13年 银行 罗文华 天网",
-            "四川成都 伪造汇票 13年"
-        ],
-        "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "DUAL_ERA_LOCK",
-            "GEO_VECTOR_PURSUIT"
-        ],
-        "title": "[중국 실화 사건] 가짜 전신환 전표 한 장으로 2,100만 위안을 빼돌리고 13년간 찻집 사장으로 숨어 산 은행원 | 청두 뤄원화 사건 ([Vụ Án Có Thật ở Trung Quốc] Dùng 1 tờ điện hối giả rút 21 triệu tệ rồi trốn 13 năm làm ông chủ tiệm trà | Chuyên án La Văn Hoa Thành Đô)",
-        "topic_anchor": "[중국 실화 사건] 가짜 전신환 전표 한 장으로 2,100만 위안을 빼돌리고 13년간 찻집 사장으로 숨어 산 은행원 | 청두 뤄원화 사건",
-        "winner_cluster": "Luồng 1 · 1 Tờ Điện Hối Giả Rút 21 Triệu Tệ & 13 Năm Ẩn Mình Dưới Vỏ Bọc Chủ Tiệm Trà (청두 뤄원화 13년 도주 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: La Văn Hoa (罗文华, Thành Đô 2002–2015) — Lợi Dụng Chênh Lệch Thời GianĐối Chiếu Điện Hối Liên Tỉnh Để Rút Tiền Mặt Rồi Biến Mất Suốt 13 Năm",
-        "codex_reasons": [
-            "Phóng sự điều tra chi tiết trên CCTV 天网, minh họa rõ quy trình đối chiếu chứng từ điện hối ngân hàng",
-            "100% Xanh tiền: tập trung vào nghiệp vụ truy nguyên chữ viết tay và hành trình 13 năm lẩn trốn"
-        ],
-        "opening_hook": "타 지역 은행 간 자금 이체 확인에 걸리는 단 하루의 시차. 청두의 은행 직원이었던 뤄원화는 정교하게 위조한 전신환 전표 한 장으로 이천백만 위안을 현금으로 인출해 그날 밤 증발했습니다. 십삼 년 뒤 그가 발견된 곳은 조용한 지방 도시의 한 전통 찻집이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án làm giả điện chuyển tiền ngân hàng rút 21 triệu tệ · kẻ chủ mưu trốn lên vùng núi cao làm nông dân trồng trà suốt 13 năm】 Hồ sơ thật 100% Chuyên án La Văn Hoa tại Thành Đô, Tứ Xuyên (四川成都2100万元金融凭证诈骗潜逃13年案 — 罗文华, 2002–2015): Làm giả chứng từ điện hối ngân hàng rút 21 triệu NDT rồi cắt đứt mọi dấu vết, dùng tên giả mở tiệm trà tại vùng giáp ranh Vân Nam - Quý Châu suốt 13 năm trước khi bị bắt giữ trong chiến dịch Thanh Võng.",
-        "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "fin_cn_jinzhou_bank_fake_gold_17b",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "东北跨省黄金租赁质押17亿元假金砖调包骗贷案 — 郭某·孙某 (2018–2020)",
-        "archival_search_keywords_zh": [
-            "假黄金 质押 银行 骗贷 今日说法",
-            "金库 假金砖 调包 庭审纪实",
-            "黄金质押 骗贷案 央视财经"
-        ],
-        "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "SPLIT_PARADOX",
-            "LEDGER_DIFF_SCRUB"
-        ],
-        "title": "[중국 실화 사건] 은행 감정사 눈앞에서 통과된 순금 괴가 금고에 들어가자 텅스텐 합금으로 바뀐 비밀 | 동북 17억 위안 금괴 바꿔치기 사건 ([Vụ Án Có Thật ở Trung Quốc] Bí mật thỏi vàng ròng vừa qua mắt giám định viên ngân hàng đã biến thành hợp kim vonfram khi vào két | Đại án tráo vàng 1,7 tỷ tệ)",
-        "topic_anchor": "[중국 실화 사건] 은행 감정사 눈앞에서 통과된 순금 괴가 금고에 들어가자 텅스텐 합금으로 바뀐 비밀 | 동북 17억 위안 금괴 바꿔치기 사건",
-        "winner_cluster": "Luồng 1 · Tráo Thỏi Vàng Thật Bằng Lõi Vonfram Cùng Tỷ Trọng Ngay Lúc Niêm Phong Két Sắt (17억 위안 텅스텐 가짜 금괴 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Đánh Tráo Vàng Thế Chấp Bằng Lõi Vonfram (钨芯假黄金质押骗贷案) — Vì Sao Máy Đo Phổ Bề Mặt Không Phát Hiện Được Lõi Kim Loại Bên Trong?",
-        "codex_reasons": [
-            "Giải thích vật lý - hóa học cực cuốn cho SINGLE_EVIDENCE_AUTOPSY: vonfram (tungsten) có khối lượng riêng 19,25 g/cm³ gần như bằng hệt vàng ròng 19,32 g/cm³, nên cân trọng lượng và đo kích thước không thể phát hiện!",
-            "100% Xanh tiền YouTube, cực kỳ hấp dẫn khán giả Hàn Quốc"
-        ],
-        "opening_hook": "무게도 똑같고, 크기도 똑같으며, 심지어 표면 순도 측정기까지 구십구 점 구구 퍼센트 순금으로 통과했습니다. 은행 직원이 보는 앞에서 봉인된 금괴 상자. 하지만 대출금이 연체되어 금괴를 녹여본 순간, 황금빛 껍질 안에서 시커먼 텅스텐 쇳덩어리가 모습을 드러냈습니다.",
-        "note": "【Hồ sơ vụ án: đại án tráo vàng thỏi pha đồng thế chấp trong hầm ngân hàng để rút ruột 1,7 tỷ tệ vốn vay tín dụng】 Hồ sơ thật 100% Chuyên án dùng vàng bọc lõi vonfram (钨芯假黄金) thế chấp ngân hàng và công ty tín thác rút ruột 1,7 tỷ NDT (2018–2020): Lợi dụng đặc tính vật lý của kim loại vonfram có tỷ trọng 19,25 g/cm³ sát với vàng 19,32 g/cm³ để bọc một lớp vàng thật dày 2mm bên ngoài, vượt qua máy đo quang phổ bề mặt XRF của ngân hàng để vay 1,7 tỷ NDT.",
-        "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "fin_cn_hunan_changsha_790m_bills",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "湖南长沙农行7.9亿元跨省克隆银行承兑汇票诈骗案 — 杨明·刘某 (2014–2016)",
-        "archival_search_keywords_zh": [
-            "长沙 7.9亿 克隆票据 今日说法",
-            "湖南 银行承兑汇票 诈骗案 庭审",
-            "克隆承兑汇票 经侦 纪实"
-        ],
-        "recommended_vox_verbs": [
-            "SPLIT_PARADOX",
-            "FORENSIC_ZOOM_CHAIN",
-            "LEDGER_DIFF_SCRUB"
-        ],
-        "title": "[중국 실화 사건] 진짜 어음과 일련번호까지 똑같은 '쌍둥이 복제 어음'으로 은행에서 7억 9천만 위안을 인출한 조직 | 창사 복제 어음 사건 ([Vụ Án Có Thật ở Trung Quốc] Dùng 'hối phiếu nhân bản sinh đôi' trùng từng dãy số sê-ri với tờ thật để rút 790 triệu tệ ngân hàng | Đại án Hối phiếu Nhân bản Trường Sa)",
-        "topic_anchor": "[중국 실화 사건] 진짜 어음과 일련번호까지 똑같은 '쌍둥이 복제 어음'으로 은행에서 7억 9천만 위안을 인출한 조직 | 창사 복제 어음 사건",
-        "winner_cluster": "Luồng 1 · Công Nghệ Nhân Bản 'Hối Phiếu Sinh Đôi' Qua Mặt Đèn Cực Tím Ngân Hàng Rút 790 Triệu Tệ (창사 7.9억 복제 어음 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Nhân Bản Hối Phiếu Ngân Hàng 790 Triệu NDT Tại Trường Sa, Hồ Nam (湖南长沙7.9亿克隆票据案) — Chụp Trộm Thông Tin Hối Phiếu Thật Rồi In Trên Giấy Bảo An Chuyên Dụng Để Rút Tiền Trước Ngày Đáo Hạn",
-        "codex_reasons": [
-            "Màn đấu trí kỹ thuật giám định giấy bảo an và sợi huỳnh quang cực đắt cho FORENSIC_ZOOM_CHAIN & SPLIT_PARADOX",
-            "Đầy đủ tư liệu phóng sự điều tra của Cục Cảnh sát Kinh tế (经侦) trên CCTV"
-        ],
-        "opening_hook": "기업 금고 안에 원본 어음이 그대로 보관되어 있는데, 수백 킬로미터 떨어진 다른 도시 은행 창구에서 똑같은 번호의 어음이 이미 현금으로 지급되었다는 통보가 날아왔습니다. 자외선 감식기까지 통과한 '쌍둥이 복제 어음'으로 칠억 구천만 위안을 가로챈 그림자 기술자들을 추적합니다.",
-        "note": "【Hồ sơ vụ án: đại án nhân bản hối phiếu ngân hàng thật để chiết khấu 2 lần rút ruột 790 triệu tệ xuyên tỉnh chỉ trong 72 giờ】 Hồ sơ thật 100% Đại án nhân bản hối phiếu ngân hàng 790 triệu NDT tại Trường Sa, Hồ Nam (湖南长沙7.9亿元克隆银行承兑汇票案 — Dương Minh 杨明, 2014–2016): Mua chuộc khâu trung gian để chụp lại toàn bộ thông số của các tờ hối phiếu thật trị giá lớn đang lưu giữ trong két doanh nghiệp, sau đó in nhân bản 1:1 kèm sợi bảo an huỳnh quang để đem đi chiết khấu rút 790 triệu NDT.",
-        "hook_archetype": "locked_room_vault_paradox"
     },
     {
         "id": "fin_cn_wenzhou_jiangnan_leather_huanghe",
@@ -1355,36 +1107,8 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Góc kể bóc tách 'Huyền thoại đường phố vs Hồ sơ kiểm toán thật của cảnh sát Ôn Châu' cực kỳ cuốn hút"
         ],
         "opening_hook": "중국 어느 도시의 시장을 가도 확성기에서 흘러나오던 유명한 문구가 있었습니다. '원저우 강남 가죽공장이 문을 닫고 사장 황허가 도망갔다'는 그 방송. 사람들은 장사꾼들이 지어낸 농담인 줄 알았지만, 실제로 2011년 4월 원저우의 우량 기업 사장이었던 황허는 거액의 부채를 남긴 채 지구상에서 흔적도 없이 증발했습니다.",
-        "note": "【Hồ sơ vụ án: đại án ông chủ nhà máy da Giang Nam mang 120 triệu tệ vốn vay đi đánh bạc quốc tế rồi bốc hơi · tạo sóng chấn động toàn quốc】 Hồ sơ thật 100% Vụ án Hoàng Hà — Chủ tịch Công ty Da Giang Nam Ôn Châu, Chiết Giang (浙江温州江南皮革有限公司黄鹤失踪案, 4/2011): Dù nhà máy làm ăn có lãi hàng chục triệu tệ mỗi năm, Hoàng Hà lại lún sâu vào các sòng bạc quốc tế và vay nợ tín dụng ngầm hơn 120 triệu NDT trước khi rút sạch tiền mặt công ty bỏ trốn tháng 4/2011, châm ngòi cho cuộc khủng hoảng dây chuyền tín dụng Ôn Châu.",
+        "note": "📋 【Hồ sơ vụ án: đại án ông chủ nhà máy da Giang Nam mang 120 triệu tệ vốn vay đi đánh bạc quốc tế rồi bốc hơi · tạo sóng chấn động toàn quốc】 Hồ sơ thật 100% Vụ án Hoàng Hà — Chủ tịch Công ty Da Giang Nam Ôn Châu, Chiết Giang (浙江温州江南皮革有限公司黄鹤失踪案, 4/2011): Dù nhà máy làm ăn có lãi hàng chục triệu tệ mỗi năm, Hoàng Hà lại lún sâu vào các sòng bạc quốc tế và vay nợ tín dụng ngầm hơn 120 triệu NDT trước khi rút sạch tiền mặt công ty bỏ trốn tháng 4/2011, châm ngòi cho cuộc khủng hoảng dây chuyền tín dụng Ôn Châu.",
         "hook_archetype": "chilling_verbatim_line"
-    },
-    {
-        "id": "fin_cn_guizhou_moutai_warehouse_800m",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "贵州仁怀8亿元名酒基酒封存仓单调包骗贷案 — 罗某·陈某 (2019–2021)",
-        "archival_search_keywords_zh": [
-            "贵州 仁怀 基酒 质押 骗贷 今日说法",
-            "名酒仓单 8亿 骗贷案 庭审",
-            "白酒质押 抽水调包 经侦"
-        ],
-        "recommended_vox_verbs": [
-            "BLIND_SPOT_REVEAL",
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "LEDGER_DIFF_SCRUB"
-        ],
-        "title": "[중국 실화 사건] 은행이 봉인한 명품 술독 바닥에 숨겨진 비밀 배관으로 8억 위안 원액을 빼돌린 설계 | 구이저우 술창고 증발 사건 ([Vụ Án Có Thật ở Trung Quốc] Đường ống ngầm giấu dưới đáy hàng nghìn chum rượu quý do ngân hàng niêm phong để rút ruột 800 triệu tệ | Đại án kho rượu Quý Châu)",
-        "topic_anchor": "[중국 실화 사건] 은행이 봉인한 명품 술독 바닥에 숨겨진 비밀 배관으로 8억 위안 원액을 빼돌린 설계 | 구이저우 술창고 증발 사건",
-        "winner_cluster": "Luồng 1 · Niêm Phong Miệng Chum Rượu Nhưng Khoan Ống Ngầm Dưới Đáy Rút 800 Triệu Tệ Tín Dụng (구이저우 8억 명주 창고 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Thế Chấp Kho Rượu 800 Triệu NDT Tại Nhân Hoài, Quý Châu (贵州仁怀基酒质押骗贷案) — Camera Ngân Hàng Soi 24/24 Miệng Bồn Nhưng Rượu Thật Bị Thay Bằng Nước Qua Đường Ống Ngầm Dưới Sàn",
-        "codex_reasons": [
-            "Cơ chế không gian 2.5D cực kỳ trực quan cho Bàn Biên Tập Vox (sơ đồ mặt cắt bồn chứa rượu và đường ống ngầm dưới sàn kho)",
-            "100% Xanh tiền, giàu kịch tính điều tra hiện trường"
-        ],
-        "opening_hook": "한 독에 수백만 위안을 호가하는 삼십 년산 최고급 백주 원액 창고. 은행은 대출 담보로 잡은 거대한 술탱크 입구에 전자 봉인 자물쇠를 채우고 스물네 시간 CCTV로 감시했습니다. 하지만 봉인이 단 한 번도 뜯기지 않았는데도, 탱크 안에 가득 차 있던 팔억 위안어치의 명주는 어느새 맹물로 바뀌어 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án lắp đường ống ngầm dưới sàn kho niêm phong để rút rượu quý thay bằng nước lã, lừa vay ngân hàng 800 triệu tệ】 Hồ sơ thật 100% Chuyên án lừa đảo tín dụng thế chấp rượu cốt (基酒质押) trị giá 800 triệu NDT tại Nhân Hoài, Quý Châu (2019–2021): Doanh nghiệp rượu dùng hàng nghìn tấn rượu lâu năm thế chấp ngân hàng; dù miệng bồn chứa bị ngân hàng kẹp chì niêm phong và lắp camera giám sát 24/24, thủ phạm đã thiết kế hệ thống van và đường ống ngầm dưới nền xi măng để rút rượu thật đem bán rồi bơm rượu rẻ tiền/pha nước vào thay thế.",
-        "hook_archetype": "locked_room_vault_paradox"
     },
     {
         "id": "fin_cn_beijing_huarong_200m_cash_supermarket",
@@ -1411,120 +1135,8 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cực kỳ giàu tư liệu thật và con số kiểm toán áp đảo"
         ],
         "opening_hook": "베이징 시내의 평범한 아파트 문을 열자, 방 안을 가득 채운 거대한 철제 캐비닛들이 모습을 드러냈습니다. 수사관들이 문을 여는 순간 쏟아져 나온 것은 은행 띠지가 그대로 묶인 이억 위안, 무게만 삼 톤에 달하는 현금 뭉치였습니다. 집주인 라이샤오민이 은밀히 '슈퍼마켓'이라 불렀던 비밀 금고의 실체였습니다.",
-        "note": "【Hồ sơ vụ án: đại án chủ tịch tập đoàn tài chính quốc doanh nhận hối lộ 1,788 tỷ tệ · cất giấu 200 triệu tệ tiền mặt nặng 3 tấn trong căn hộ gọi là 'siêu thị'】 Hồ sơ thật 100% Đại án Lại Tiểu Dân — cựu Chủ tịch Tập đoàn Quản lý Tài sản Hoa Dung Trung Quốc (中国华融赖小民17.88亿元特大金融腐败案, 2008–2018): Lợi dụng quyền phê duyệt các dự án đầu tư tài chính và xử lý nợ xấu để thâu tóm 1,788 tỷ NDT; riêng một căn hộ bí mật tại Bắc Kinh được gọi bằng mật danh 'Siêu thị' cất giấu hơn 200 triệu NDT tiền mặt nguyên đai.",
+        "note": "📋 【Hồ sơ vụ án: đại án chủ tịch tập đoàn tài chính quốc doanh nhận hối lộ 1,788 tỷ tệ · cất giấu 200 triệu tệ tiền mặt nặng 3 tấn trong căn hộ gọi là 'siêu thị'】 Hồ sơ thật 100% Đại án Lại Tiểu Dân — cựu Chủ tịch Tập đoàn Quản lý Tài sản Hoa Dung Trung Quốc (中国华融赖小民17.88亿元特大金融腐败案, 2008–2018): Lợi dụng quyền phê duyệt các dự án đầu tư tài chính và xử lý nợ xấu để thâu tóm 1,788 tỷ NDT; riêng một căn hộ bí mật tại Bắc Kinh được gọi bằng mật danh 'Siêu thị' cất giấu hơn 200 triệu NDT tiền mặt nguyên đai.",
         "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "fin_cn_tianjin_mirror_account_300m",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "天津证券营业部总经理私设镜像查询系统挪用3亿元客户保证金案 — 王某 (2012–2016)",
-        "archival_search_keywords_zh": [
-            "证券营业部 挪用客户保证金 3亿 今日说法",
-            "假交割单 证券总经理 庭审",
-            "天津 证券 挪用资金 纪实"
-        ],
-        "recommended_vox_verbs": [
-            "SPLIT_PARADOX",
-            "LEDGER_DIFF_SCRUB",
-            "CRASH_TIMELINE"
-        ],
-        "title": "[중국 실화 사건] 고객 모니터엔 수익률 20%를 띄워놓고 뒤에서 3억 위안 계좌를 비워버린 증권사 지점장 | 톈진 거울 계좌 사건 ([Vụ Án Có Thật ở Trung Quốc] Giám đốc chứng khoán dựng màn hình giả hiện lãi 20% để âm thầm rút sạch 300 triệu tệ trong tài khoản thật | Đại án chứng khoán Thiên Tân)",
-        "topic_anchor": "[중국 실화 사건] 고객 모니터엔 수익률 20%를 띄워놓고 뒤에서 3억 위안 계좌를 비워버린 증권사 지점장 | 톈진 거울 계좌 사건",
-        "winner_cluster": "Luồng 1 · 'Hệ Thống Giao Dịch Gương' Hiển Thị Số Dư Giả Đánh Lừa Khách Hàng Suốt 4 Năm (톈진 증권 3억 거울 계좌 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Phòng Giao Dịch Chứng Khoán Thiên Tân 300 Triệu NDT — Cài Phần Mềm Hiển Thị Sao Kê Giả Trong Phòng VIP Để Rút Tiền Ký Quỹ Đánh Phái Sinh",
-        "codex_reasons": [
-            "Khớp tuyệt đối động từ thị giác SPLIT_PARADOX (màn hình giả khách nhìn thấy vs sổ cái thật đã về 0)",
-            "100% Xanh tiền, cảnh báo tâm lý đầu tư tài chính cực mạnh"
-        ],
-        "opening_hook": "증권사 VIP 전용 단말기에 로그인할 때마다 계좌에는 분명 삼천만 위안의 원금과 스무 퍼센트의 수익이 선명하게 찍혀 있었습니다. 그러나 그 화면은 실제 증권거래소 서버가 아니라, 지점장이 VIP 방 컴퓨터에만 몰래 연결해 둔 가짜 '거울 프로그램'이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án giám đốc phòng giao dịch lập hệ thống tra cứu số dư 'gương ảo' để rút ruột 300 triệu tệ tiền ký quỹ chứng khoán suốt 4 năm】 Hồ sơ thật 100% Vụ án biển thủ 300 triệu NDT tiền ký quỹ khách hàng tại phòng giao dịch chứng khoán ở Thiên Tân (2012–2016): Giám đốc phòng giao dịch Vương Mỗ thiết lập máy tính nội bộ chạy phần mềm mô phỏng bảng giá và số dư giả cho các khách hàng lớn ít rút tiền, âm thầm rút sạch 300 triệu NDT tiền thật đem đầu cơ hợp đồng tương lai thua lỗ.",
-        "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "fin_cn_fujian_fuan_biaohui_22b",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "福建福安22亿元特大地下标会连环崩盘案 — 林某·陈某 (2004–2006)",
-        "archival_search_keywords_zh": [
-            "福建福安 标会 22亿 崩盘 今日说法",
-            "福安特大标会案 央视新闻 纪实",
-            "地下标会 连环崩盘 纪录片"
-        ],
-        "recommended_vox_verbs": [
-            "SCALE_MULTIPLICATION",
-            "NETWORK_GRAPH",
-            "CRASH_TIMELINE"
-        ],
-        "title": "[중국 실화 사건] 도시 인구의 80%가 참여한 '지하 계모임'이 하루아침에 무너지며 증발한 22억 위안 | 푸안시 지하 금융 대붕괴 ([Vụ Án Có Thật ở Trung Quốc] 'Dây hụi ngầm' cuốn 80% dân số thành phố sụp đổ chỉ sau một đêm làm bốc hơi 2,2 tỷ tệ | Đại thảm họa tín dụng ngầm Phúc An)",
-        "topic_anchor": "[중국 실화 사건] 도시 인구의 80%가 참여한 '지하 계모임'이 하루아침에 무너지며 증발한 22억 위안 | 푸안시 지하 금융 대붕괴",
-        "winner_cluster": "Luồng 1 · Chuỗi Domino Dây Hụi Ngầm 2,2 Tỷ Tệ Cuốn 80% Gia Đình Cả Thành Phố (푸젠 푸안 22억 계모임 붕괴 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Vỡ Hụi Liên Hoàn 2,2 Tỷ NDT Tại Phúc An, Phúc Kiến (福建福安22亿特大标会案) — Khi Một Chủ Hụi Bỏ Trốn Kéo Sập Hàng Nghìn Dây Hụi Chồng Chéo Chỉ Trong 72 Giờ",
-        "codex_reasons": [
-            "Gần gũi cực độ với khán giả Hàn Quốc (văn hóa 계모임 / hụi tín dụng dân gian) và có phóng sự điều tra dài kỳ trên CCTV 今日说法",
-            "Minh họa hiệu ứng Domino toán học (SCALE_MULTIPLICATION & CRASH_TIMELINE) cực kỳ xuất sắc"
-        ],
-        "opening_hook": "이웃끼리 급전을 빌려쓰던 전통 계모임이 연 수익률 백 퍼센트가 넘는 거대한 도박판으로 변했습니다. 푸젠성 푸안시에서는 가정주부부터 공무원까지 도시 인구의 팔십 퍼센트가 계모임 장부에 이름을 올렸습니다. 그러던 어느 날 새벽, 가장 큰 계주 한 명이 사라지자 도시 전체의 시계가 멈춰 섰습니다.",
-        "note": "【Hồ sơ vụ án: đại án dây hụi tín dụng ngầm 2,2 tỷ tệ cuốn phăng tiền tiết kiệm của cả một thành phố · chuỗi sụp đổ domino】 Hồ sơ thật 100% Đại án vỡ hụi ngầm (地下标会) trị giá hơn 2,2 tỷ NDT tại thành phố Phúc An, tỉnh Phúc Kiến (福建福安特大标会崩盘案, 2004–2006): Từ hình thức tương trợ vốn dân gian biến tướng thành mạng lưới đầu cơ lãi suất cao chồng chéo hàng trăm dây hụi, cuốn hơn 80% hộ dân thị xã vào vòng xoáy trước khi sụp đổ dây chuyền.",
-        "hook_archetype": "cold_archive_match"
-    },
-    {
-        "id": "fin_cn_heilongjiang_grain_loan_450m_russia",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "黑龙江农垦4.5亿元虚假大豆收储骗贷潜逃俄罗斯11年案 — 孙某 (2005–2016)",
-        "archival_search_keywords_zh": [
-            "黑龙江 4.5亿 粮食骗贷 潜逃俄罗斯",
-            "猎狐行动 俄罗斯 押解 央视新闻",
-            "虚假收储 骗贷 今日说法"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "GEO_VECTOR_PURSUIT",
-            "SCALE_MULTIPLICATION"
-        ],
-        "title": "[중국 실화 사건] 장부 위 가짜 콩 10만 톤으로 은행 돈 4억 5천만 위안을 빌려 국경을 넘은 사나이 | 헤이룽장 유령 대두 사건 ([Vụ Án Có Thật ở Trung Quốc] Dùng 100.000 tấn đậu tương ma trên sổ sách vay 450 triệu tệ ngân hàng rồi vượt biên giới trốn 11 năm | Đại án đậu tương ma Hắc Long Giang)",
-        "topic_anchor": "[중국 실화 사건] 장부 위 가짜 콩 10만 톤으로 은행 돈 4억 5천만 위안을 빌려 국경을 넘은 사나이 | 헤이룽장 유령 대두 사건",
-        "winner_cluster": "Luồng 1 · 100.000 Tấn Đậu Tương Ma Trên Giấy Rút 450 Triệu Tệ & 11 Năm Trốn Ở Viễn Đông Nga (헤이룽장 4.5억 유령 곡물 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Rút Ruột 450 Triệu NDT Vốn Thu Mua Nông Sản Hắc Long Giang & Cuộc Truy Bắt Xuyên Biên Giới Trung - Nga Suốt 11 Năm",
-        "codex_reasons": [
-            "Tư liệu Chiến dịch Săn Cáo (猎狐行动) phối hợp cảnh sát Nga dẫn độ qua cửa khẩu biên giới cực kỳ chân thực",
-            "Khớp hoàn hảo LEDGER_DIFF_SCRUB & GEO_VECTOR_PURSUIT"
-        ],
-        "opening_hook": "서류 위에는 분명 십만 톤의 햇콩이 창고마다 가득 차 있었습니다. 국책은행은 그 수매 장부를 믿고 사억 오천만 위안의 정책 자금을 내주었지만, 실사단이 현장에 도착했을 때 창고는 텅 비어 있었고 사장은 이미 얼어붙은 국경 강을 건너 러시아로 사라진 뒤였습니다.",
-        "note": "【Hồ sơ vụ án: đại án lập biên lai thu mua đậu tương khống lừa vay ngân hàng 450 triệu tệ rồi vượt biên trốn sang Nga suốt 11 năm】 Hồ sơ thật 100% Chuyên án lập khống hồ sơ thu mua 100.000 tấn đậu tương để rút ruột 450 triệu NDT vốn tín dụng nông nghiệp tại Hắc Long Giang rồi đào tẩu sang vùng Viễn Đông (Nga) suốt 11 năm (2005–2016) trước khi bị Tổ công tác Chiến dịch Săn Cáo (猎狐行动) phối hợp bắt giữ và dẫn độ về nước.",
-        "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "fin_cn_shenzhen_citic_bill_450m_chen",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "深圳银行支行副行长4.5亿元空头商业汇票贴现潜逃东南亚14年案 — 陈某 (2001–2015)",
-        "archival_search_keywords_zh": [
-            "深圳 副行长 4.5亿 汇票 潜逃14年",
-            "猎狐行动 银行副行长 押解 今日说法",
-            "深圳 空头汇票 4.5亿"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "GEO_VECTOR_PURSUIT",
-            "CONCENTRIC_TRAP"
-        ],
-        "title": "[중국 실화 사건] 금요일 마감 직전 4억 5천만 위안 무담보 어음을 승인하고 월요일 사라진 부지점장 | 선전 천 부행장 사건 ([Vụ Án Có Thật ở Trung Quốc] Ký duyệt 450 triệu tệ hối phiếu khống ngay trước giờ đóng cửa chiều thứ Sáu rồi biến mất sáng thứ Hai | Đại án Phó giám đốc ngân hàng Thâm Quyến)",
-        "topic_anchor": "[중국 실화 사건] 금요일 마감 직전 4억 5천만 위안 무담보 어음을 승인하고 월요일 사라진 부지점장 | 선전 천 부행장 사건",
-        "winner_cluster": "Luồng 1 · Ký Duyệt 450 Triệu Tệ Chiều Thứ Sáu & 14 Năm Trốn Truy Nã Kinh Tế Ở Đông Nam Á (선전 4.5억 어음 부행장 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Phó Giám Đốc Ngân Hàng Thâm Quyến Rút 450 Triệu NDT Trong 48 Giờ Cuối Tuần & 14 Năm Lẩn Trốn Trước Khi Sa Lưới Chiến Dịch Săn Cáo",
-        "codex_reasons": [
-            "Nhịp độ đếm ngược 48 giờ cuối tuần cực kỳ căng thẳng, chuẩn phong cách điều tra tài chính",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "금요일 오후 네 시 반, 주말 동안 본점 감사가 멈추는 마흔여덟 시간의 공백을 노려 사억 오천만 위안짜리 어음 할인 서류에 승인 도장이 찍혔습니다. 월요일 아침 은행 문이 열렸을 때, 부지점장의 책상은 깨끗이 비워져 있었고 십사 년간의 국제 추격전이 시작되었습니다.",
-        "note": "【Hồ sơ vụ án: đại án phó giám đốc chi nhánh ngân hàng ký chiết khấu hối phiếu khống 450 triệu tệ rồi trốn sang Đông Nam Á 14 năm】 Hồ sơ thật 100% Chuyên án Phó giám đốc chi nhánh ngân hàng tại Thâm Quyến cấu kết doanh nghiệp ngoài ký duyệt chiết khấu hối phiếu khống rút 450 triệu NDT ngay trước kỳ nghỉ cuối tuần rồi đào tẩu sang Đông Nam Á suốt 14 năm (2001–2015) trước khi bị bắt giữ trong Chiến dịch Săn Cáo.",
-        "hook_archetype": "locked_room_vault_paradox"
     },
     {
         "id": "fin_cn_shaoxing_ningbo_xuli_22y",
@@ -1551,7 +1163,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Đúng chuẩn 100% Xanh tiền: tập trung vào kỹ thuật phá khóa phản trinh sát, đối sánh 4 triệu bản vân tay suốt 22 năm và màn bắt giữ bất ngờ năm 2017"
         ],
         "opening_hook": "건물 외벽에 매달린 등산용 로프 한 줄, 그리고 현장에 버려진 정교하게 가공된 특수 공구. 1995년 닝보 최대 보석상을 털고 어둠 속으로 사라진 이 남자는 이후 22년 동안 중국 형사들이 가장 잡고 싶어 했던 '저장성 제1호 미제사건'의 유령이 되었습니다.",
-        "note": "【Hồ sơ vụ án: đại án đột nhập tiệm vàng & trung tâm thương mại có vũ trang · tước đoạt sinh mạng 2 bảo vệ · án treo số 1 Chiết Giang suốt 22 năm】 Hồ sơ thật 100% 'Án treo số 1 Chiết Giang' (浙江宁波绿洲珠宝行12·6案 & 绍兴供销大厦案 — Hung thủ Từ Lợi 徐利, 1993–2017): Thực hiện 7 vụ đột nhập vũ trang siêu tinh vi không để lại mặt thật, treo thưởng 500.000 NDT suốt 22 năm; năm 2017 thuật toán vân tay thế hệ mới khớp được nửa dấu vân tay mờ năm 1998 ở Gia Hưng, bắt giữ Từ Lợi tại Lâm Hải (Thai Châu) ngày 29/3/2017.",
+        "note": "📋 【Hồ sơ vụ án: đại án đột nhập tiệm vàng & trung tâm thương mại có vũ trang · tước đoạt sinh mạng 2 bảo vệ · án treo số 1 Chiết Giang suốt 22 năm】 Hồ sơ thật 100% 'Án treo số 1 Chiết Giang' (浙江宁波绿洲珠宝行12·6案 & 绍兴供销大厦案 — Hung thủ Từ Lợi 徐利, 1993–2017): Thực hiện 7 vụ đột nhập vũ trang siêu tinh vi không để lại mặt thật, treo thưởng 500.000 NDT suốt 22 năm; năm 2017 thuật toán vân tay thế hệ mới khớp được nửa dấu vân tay mờ năm 1998 ở Gia Hưng, bắt giữ Từ Lợi tại Lâm Hải (Thai Châu) ngày 29/3/2017.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -1568,9 +1180,9 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "CONCENTRIC_TRAP",
             "FORENSIC_ZOOM_CHAIN"
         ],
-        "title": "[중국 실화 사건] 단 5분 만에 은행 현금 208만 위안을 털어 사라진 주범이 수백억 대 기업 회장이 된 사연 | 정저우 12·5 은행 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ chủ mưu cướp 2,08 triệu tệ ngân hàng chỉ trong 5 phút rồi bốc hơi thành chủ tịch tập đoàn trăm tỷ | Đại án 12·5 Trịnh Châu)",
-        "topic_anchor": "[중국 실화 사건] 단 5분 만에 은행 현금 208만 위안을 털어 사라진 주범이 수백억 대 기업 회장이 된 사연 | 정저우 12·5 은행 사건",
-        "winner_cluster": "Luồng 1 · Chuyên Án Phong Tỏa Toàn Thành Trịnh Châu & Truy Vết Vật Chứng Cơ Khí (정저우 12·5 장수하이 사건)",
+        "title": "[중국 실화 사건] 단 5분 만에 방탄유리를 뚫고 208만 위안을 털어 도심 아파트에 숨어 산 가족 범죄단 | 정저우 12·5 장수하이 사건 ([Vụ Án Có Thật ở Trung Quốc] Phá kính chống đạn cướp 2,08 triệu tệ chỉ trong 5 phút rồi ẩn náu ngay trong chung cư nội đô của băng tội phạm gia đình | Đại án 12·5 Trương Thư Hải Trịnh Châu)",
+        "topic_anchor": "[중국 실화 사건] 단 5분 만에 방탄유리를 뚫고 208만 위안을 털어 도심 아파트에 숨어 산 가족 범죄단 | 정저우 12·5 장수하이 사건",
+        "winner_cluster": "Luồng 1 · 5 Phút Phá Kính Chống Đạn Cướp 2,08 Triệu Tệ & 9 Tháng Truy Nguyên Kíp Nổ Giữa Nội Đô Trịnh Châu (정저우 12·5 은행 장수하이 사건)",
         "codex_score": 98,
         "profile_score": 98,
         "codex_angle": "Hồ Sơ Thật 100%: Đại Án 12·5 Trịnh Châu — Trương Thư Hải (张书海) Dàn Dựng Tiếng Nổ Đánh Lạc Hướng Vòng Vây Cảnh Sát & Cuộc Truy Lùng Dấu Giày - Chiếc Búa Sắt Suốt 9 Tháng",
@@ -1579,7 +1191,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cấu trúc đấu trí chiến thuật giữa kế hoạch thoát thân 3 năm chuẩn bị của Trương Thư Hải và kỹ thuật truy nguyên chiếc búa sắt + đế giày Giải Phóng"
         ],
         "opening_hook": "도심 한복판 은행 창구의 강화유리가 특수 제작된 쇠망치 앞에서 단 5분 만에 무너졌습니다. 경찰 수만 명이 모든 외곽 도로를 봉쇄한 바로 그 밤, 주범 장수하이는 철길 위에서 교란 소음을 일으켜 수사대를 따돌린 뒤 시내 아파트 단지 속으로 연기처럼 스며들었습니다.",
-        "note": "【Hồ sơ vụ án: đại án vũ trang đập kính chống đạn ngân hàng cướp 2,08 triệu tệ · đoạt mạng bảo vệ & trọng thương nhân viên · 9 tháng truy nguyên vật chứng】 Hồ sơ thật 100% Đại án 12·5 Ngân hàng Hợp tác Trịnh Châu, Hà Nam (郑州12·5特大银行劫案 — Chủ mưu Trương Thư Hải 张书海, 1999–2000): Lập kế hoạch suốt 3 năm, nổ mìn đường ray đánh lạc hướng cảnh sát để đi bộ ngay về căn hộ trong nội thành ẩn náu suốt 9 tháng trước khi ban chuyên án lần ra nguồn gốc chiếc búa tạ tự hàn và dấu vết thuốc nổ.",
+        "note": "📋 【Hồ sơ vụ án: đại án vũ trang đập kính chống đạn ngân hàng cướp 2,08 triệu tệ · đoạt mạng bảo vệ & trọng thương nhân viên · 9 tháng truy nguyên vật chứng】 Hồ sơ thật 100% Đại án 12·5 Ngân hàng Hợp tác Trịnh Châu, Hà Nam (郑州12·5特大银行劫案 — Chủ mưu Trương Thư Hải 张书海, 1999–2000): Lập kế hoạch suốt 3 năm, nổ mìn đường ray đánh lạc hướng cảnh sát để đi bộ ngay về căn hộ trong nội thành ẩn náu suốt 9 tháng trước khi ban chuyên án lần ra nguồn gốc chiếc búa tạ tự hàn và dấu vết thuốc nổ.",
         "hook_archetype": "chilling_verbatim_line"
     },
     {
@@ -1607,7 +1219,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Tập trung 100% vào khoa học giám định đạn đạo (vết kim hỏa trên vỏ đạn) và truy nguyên số khung xe đạp qua hàng vạn hộ dân"
         ],
         "opening_hook": "12년 동안 선양 시내 곳곳에서 일어난 미제 사건 현장마다, 현미경 아래 똑같은 미세 긁힘 자국을 가진 금속 흔적이 발견되었습니다. 경찰 수천 명이 밤잠을 설치며 뒤쫓던 유령 조직의 우두머리는, 매일 아침 시장 골목에서 웃으며 고기를 썰던 평범한 상인이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án cướp xe chở tiền có vũ trang liên hoàn · tước đoạt 21 sinh mạng suốt 12 năm tại Thẩm Dương · ẩn mình dưới vỏ bọc tiểu thương chợ thịt】 Hồ sơ thật 100% Đại án '3·8 Thẩm Dương', Liêu Ninh (沈阳3·8特大系列案件 — Tôn Đức Lâm 孙德林, Uông Gia Lễ 汪家礼, 1987–1999): Ẩn mình dưới vỏ bọc người bán thịt lợn và tài xế tam mã suốt 12 năm, bị Công an Thẩm Dương giải mã nhờ giám định đường khương tuyến đạn đạo và truy vết chiếc xe đạp bỏ lại năm 1999.",
+        "note": "📋 【Hồ sơ vụ án: đại án cướp xe chở tiền có vũ trang liên hoàn · tước đoạt 21 sinh mạng suốt 12 năm tại Thẩm Dương · ẩn mình dưới vỏ bọc tiểu thương chợ thịt】 Hồ sơ thật 100% Đại án '3·8 Thẩm Dương', Liêu Ninh (沈阳3·8特大系列案件 — Tôn Đức Lâm 孙德林, Uông Gia Lễ 汪家礼, 1987–1999): Ẩn mình dưới vỏ bọc người bán thịt lợn và tài xế tam mã suốt 12 năm, bị Công an Thẩm Dương giải mã nhờ giám định đường khương tuyến đạn đạo và truy vết chiếc xe đạp bỏ lại năm 1999.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -1635,7 +1247,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cơ chế truy vết ngược hành trình xe máy không biển số cực kỳ cuốn hút cho bản đồ vệ tinh 2.5D & FORENSIC_ZOOM_CHAIN"
         ],
         "opening_hook": "번호판 없는 오토바이, 얼굴 전체를 가린 헬멧, 그리고 1,500개의 씨씨티비 사각지대를 외워버린 치밀한 동선. 우한 도심 은행 현금수송차 앞에서 완벽하게 도주한 줄 알았던 주범을 붙잡은 건, 뜻밖에도 작은 안과 병원에 남은 진료 영수증 한 장이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án kích nổ từ xa tấn công xe chở tiền ngân hàng · tước đoạt 2 sinh mạng, làm bị thương 15 người · 15 ngày truy ngược 1.500 camera tại Vũ Hán】 Hồ sơ thật 100% Chuyên án 12·1 đường Quan Sơn, Vũ Hán, Hồ Bắc (湖北武汉12·1特大爆炸劫案 — Vương Hải Kiếm 王海剑, 12/2011): Thợ sửa chữa điện tử tự nghiên cứu mạch kích nổ từ xa suốt 1 năm để tấn công xe chở tiền nhưng thất bại khi cướp hòm tiền, tháo chạy qua mạng lưới ngõ nhỏ và bị Công an Vũ Hán bắt gọn sau 15 ngày nhờ truy ngược video 1.500 camera kết hợp rà soát chấn thương mắt tại bệnh viện.",
+        "note": "📋 【Hồ sơ vụ án: đại án kích nổ từ xa tấn công xe chở tiền ngân hàng · tước đoạt 2 sinh mạng, làm bị thương 15 người · 15 ngày truy ngược 1.500 camera tại Vũ Hán】 Hồ sơ thật 100% Chuyên án 12·1 đường Quan Sơn, Vũ Hán, Hồ Bắc (湖北武汉12·1特大爆炸劫案 — Vương Hải Kiếm 王海剑, 12/2011): Thợ sửa chữa điện tử tự nghiên cứu mạch kích nổ từ xa suốt 1 năm để tấn công xe chở tiền nhưng thất bại khi cướp hòm tiền, tháo chạy qua mạng lưới ngõ nhỏ và bị Công an Vũ Hán bắt gọn sau 15 ngày nhờ truy ngược video 1.500 camera kết hợp rà soát chấn thương mắt tại bệnh viện.",
         "hook_archetype": "chilling_verbatim_line"
     },
     {
@@ -1663,7 +1275,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Khớp hoàn hảo SPLIT_PARADOX & SCALE_MULTIPLICATION"
         ],
         "opening_hook": "수백억 원대 아파트 단지와 호텔, 유치원을 거느린 지역의 존경받는 사업가이자 자선가 스얼췬. 하지만 그의 화려한 부동산 제국을 세운 최초의 종잣돈 백만 위안은, 십육 년 전 정저우의 한 은행 방탄유리를 깨부수고 훔쳐 달아난 강탈한 현금이었습니다.",
-        "note": "【Hồ sơ vụ án: đại án cướp ngân hàng có vũ trang 2,08 triệu tệ · kẻ chủ mưu dùng tiền cướp được đầu tư bất động sản thành tỷ phú suốt 16 năm】 Hồ sơ thật 100% Vụ án Thạch Nhị Quần (石二群, Hà Nam, 1999–2015): Ngày 5/12/1999 chủ mưu vụ cướp Ngân hàng Hợp tác Trịnh Châu lấy hơn 2 triệu NDT, sau đó đem phần tiền chia được về Trú Mã Điếm mở công ty xây dựng và bất động sản, tích lũy khối tài sản hàng trăm triệu NDT suốt 16 năm trước khi Công an Trịnh Châu bắt giữ tháng 10/2015.",
+        "note": "📋 【Hồ sơ vụ án: đại án cướp ngân hàng có vũ trang 2,08 triệu tệ · kẻ chủ mưu dùng tiền cướp được đầu tư bất động sản thành tỷ phú suốt 16 năm】 Hồ sơ thật 100% Vụ án Thạch Nhị Quần (石二群, Hà Nam, 1999–2015): Ngày 5/12/1999 chủ mưu vụ cướp Ngân hàng Hợp tác Trịnh Châu lấy hơn 2 triệu NDT, sau đó đem phần tiền chia được về Trú Mã Điếm mở công ty xây dựng và bất động sản, tích lũy khối tài sản hàng trăm triệu NDT suốt 16 năm trước khi Công an Trịnh Châu bắt giữ tháng 10/2015.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -1691,7 +1303,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền: tập trung vào kỹ thuật phá khóa kho bạc và phân tích vật lý giọt xỉ hàn kim loại"
         ],
         "opening_hook": "두께 수십 센티미터의 강철 은행 금고 문이 마치 종이장처럼 둥글게 도려내져 있었습니다. 구 년 동안 일곱 개 성을 떠돌며 오직 금융기관 금고만을 노렸던 정체불명의 단독범. 베테랑 형사들은 금고 바닥에 떨어진 굳어버린 쇳물 방울의 각도에서 범인의 숨겨진 습관을 읽어냈습니다.",
-        "note": "【Hồ sơ vụ án: đại án cướp kho bạc & cắt két sắt ngân hàng đẫm máu xuyên 7 tỉnh · hung thủ độc hành tước đoạt 20 sinh mạng suốt 9 năm · chuyên án bộ công an】 Hồ sơ thật 100% Chuyên án Lôi Quốc Dân (雷国民, An Huy, 1992–2001): Hoạt động độc lập cực kỳ kín tiếng xuyên 7 tỉnh, tự mua bình oxy-axetylen tập cắt các tấm thép dày để đột nhập kho bạc ngân hàng tại Túc Châu (An Huy) và Giang Tây; bị ban chuyên án Bộ Công an khoanh vùng nhờ phân tích kỹ thuật vết cắt kim loại và truy vết phương tiện năm 2001.",
+        "note": "📋 【Hồ sơ vụ án: đại án cướp kho bạc & cắt két sắt ngân hàng đẫm máu xuyên 7 tỉnh · hung thủ độc hành tước đoạt 20 sinh mạng suốt 9 năm · chuyên án bộ công an】 Hồ sơ thật 100% Chuyên án Lôi Quốc Dân (雷国民, An Huy, 1992–2001): Hoạt động độc lập cực kỳ kín tiếng xuyên 7 tỉnh, tự mua bình oxy-axetylen tập cắt các tấm thép dày để đột nhập kho bạc ngân hàng tại Túc Châu (An Huy) và Giang Tây; bị ban chuyên án Bộ Công an khoanh vùng nhờ phân tích kỹ thuật vết cắt kim loại và truy vết phương tiện năm 2001.",
         "hook_archetype": "micro_forensic_anomaly"
     },
     {
@@ -1719,7 +1331,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền YouTube: không có án mạng máu me, kịch tính cao độ với kỹ thuật thăm dò lòng đất và đấu trí phá vỡ 'chiếc ô bảo kê'"
         ],
         "opening_hook": "삼천 년 전 고대 국가의 왕족 무덤들이 잠들어 있는 산시성 원시현의 들판. 밤이 깊어지면 마을 사람들의 창문을 흔드는 정체불명의 둔탁한 진동이 땅속에서 올라왔습니다. 특별수사팀이 비밀 거래 장부를 압수했을 때, 박물관에도 없는 일급 국보 수백 점이 지하 암시장을 통해 빠져나간 흔적이 드러났습니다.",
-        "note": "【Hồ sơ vụ án: đại án băng nhóm ngầm thăm dò và đào trộm hơn 3.000 cổ vật quốc bảo suốt 10 năm · chuyên án 6·03 bộ công an thu hồi 225 quốc bảo cấp 1】 Hồ sơ thật 100% Chuyên án 6·03 tại huyện Văn Hỷ, thành phố Vận Thành, tỉnh Sơn Tây (山西闻喜侯氏兄弟特大盗掘古墓案 — Hầu Kim Lượng 侯金亮, Hầu Kim Phát 侯金发, phá án 2016–2018): Tổ chức băng nhóm độc점 thăm dò và đào trộm khu mộ cổ thời Thương - Chu suốt hơn 10 năm, bị Bộ Công an chỉ đạo chuyên án bắt giữ 475 đối tượng và thu hồi hơn 3.000 cổ vật quý hiếm.",
+        "note": "📋 【Hồ sơ vụ án: đại án băng nhóm ngầm thăm dò và đào trộm hơn 3.000 cổ vật quốc bảo suốt 10 năm · chuyên án 6·03 bộ công an thu hồi 225 quốc bảo cấp 1】 Hồ sơ thật 100% Chuyên án 6·03 tại huyện Văn Hỷ, thành phố Vận Thành, tỉnh Sơn Tây (山西闻喜侯氏兄弟特大盗掘古墓案 — Hầu Kim Lượng 侯金亮, Hầu Kim Phát 侯金发, phá án 2016–2018): Tổ chức băng nhóm độc점 thăm dò và đào trộm khu mộ cổ thời Thương - Chu suốt hơn 10 năm, bị Bộ Công an chỉ đạo chuyên án bắt giữ 475 đối tượng và thu hồi hơn 3.000 cổ vật quý hiếm.",
         "hook_archetype": "chilling_verbatim_line"
     },
     {
@@ -1747,7 +1359,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền: tập trung vào kỹ thuật phân tích cước viễn thông, đạn đạo học và kế hoạch vây bắt không nổ súng đêm 19/9/2000"
         ],
         "opening_hook": "다섯 개의 서로 다른 이름과 호적을 번갈아 쓰며 8년 동안 세 개 성을 오가던 유령 같은 주범 장쥔. 창더시 은행 현금수송차 탈취 사건 직후, 특별수사팀은 수만 건의 통화 기록 속에서 단 한 번 스쳐 지나간 비밀 연락망 하나를 포착했습니다.",
-        "note": "【Hồ sơ vụ án: đại án cướp xe chở tiền & kho bạc có vũ trang đặc biệt nguy hiểm · tước đoạt 28 sinh mạng, làm bị thương 22 người xuyên 3 tỉnh · truy nã cấp A số 1 bộ công an】 Hồ sơ thật 100% Đại án 9·1 Thường Đức và chuyên án Trương Quân (张君湘鄂渝系列特大持枪抢劫案, 1991–2000): Sau vụ tấn công xe chở tiền tại Thường Đức (Hồ Nam) ngày 1/9/2000, Bộ Công an huy động lực lượng 3 tỉnh lần theo dấu vết viễn thông và kho vũ khí ngầm, phục kích bắt sống Trương Quân tại Trùng Khánh đêm 19/9/2000.",
+        "note": "📋 【Hồ sơ vụ án: đại án cướp xe chở tiền & kho bạc có vũ trang đặc biệt nguy hiểm · tước đoạt 28 sinh mạng, làm bị thương 22 người xuyên 3 tỉnh · truy nã cấp A số 1 bộ công an】 Hồ sơ thật 100% Đại án 9·1 Thường Đức và chuyên án Trương Quân (张君湘鄂渝系列特大持枪抢劫案, 1991–2000): Sau vụ tấn công xe chở tiền tại Thường Đức (Hồ Nam) ngày 1/9/2000, Bộ Công an huy động lực lượng 3 tỉnh lần theo dấu vết viễn thông và kho vũ khí ngầm, phục kích bắt sống Trương Quân tại Trùng Khánh đêm 19/9/2000.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -1775,36 +1387,8 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền YouTube: không một ai bị thương, cấu trúc 8 giờ đếm ngược theo từng điểm trả nợ cực hợp RADIAL_TIME_PRESSURE & GEO_VECTOR_PURSUIT"
         ],
         "opening_hook": "삼천오백만 위안의 현금 상자를 실은 은행 장갑차가 갑자기 정해진 노선을 벗어났습니다. 현금 자루에 육백만 위안을 담아 달아난 운전수 리쉬이. 그런데 경찰이 도주로를 차단하는 사이, 그가 가장 먼저 달려간 곳은 국경이나 산속이 아니라 뜻밖에도 동네 은행의 무인 입금기 앞이었습니다.",
-        "note": "【Hồ sơ vụ án: chuyên án đội trưởng áp tải khống chế xe bọc thép chở 35 triệu tệ lấy 6 triệu tệ rồi suốt 8 giờ đi gửi ATM trả nợ từng người】 Hồ sơ thật 100% Vụ án Lý Tự Nghĩa tại Đại Thạch Kiều, Dinh Khẩu, Liêu Ninh ngày 7/9/2016 (辽宁营口大石桥9·7运钞车劫案 — 李绪义): Do bị chủ đầu tư nợ tiền công trình dẫn đến nợ nần chồng chất, tài xế xe chở tiền Lý Tự Nghĩa đã khống chế xe lấy đi 6 triệu NDT tiền mặt rồi suốt 8 giờ đi gửi tiền vào tài khoản các chủ nợ trước khi bị bắt giữ mà không gây thương vong.",
+        "note": "📋 【Hồ sơ vụ án: chuyên án đội trưởng áp tải khống chế xe bọc thép chở 35 triệu tệ lấy 6 triệu tệ rồi suốt 8 giờ đi gửi ATM trả nợ từng người】 Hồ sơ thật 100% Vụ án Lý Tự Nghĩa tại Đại Thạch Kiều, Dinh Khẩu, Liêu Ninh ngày 7/9/2016 (辽宁营口大石桥9·7运钞车劫案 — 李绪义): Do bị chủ đầu tư nợ tiền công trình dẫn đến nợ nần chồng chất, tài xế xe chở tiền Lý Tự Nghĩa đã khống chế xe lấy đi 6 triệu NDT tiền mặt rồi suốt 8 giờ đi gửi tiền vào tài khoản các chủ nợ trước khi bị bắt giữ mà không gây thương vong.",
         "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "fin_cn_kekexili_gold_zhang_xianming_25y",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "青海可可西里1995年48公斤黄金特大劫案潜逃25年侦破案 — 张显明 (1995–2020)",
-        "archival_search_keywords_zh": [
-            "青海 48公斤黄金 张显明 今日说法",
-            "潜逃25年 黄金大案 天网",
-            "张显明 洛阳 研究院 落网"
-        ],
-        "recommended_vox_verbs": [
-            "DUAL_ERA_LOCK",
-            "GEO_VECTOR_PURSUIT",
-            "SPLIT_PARADOX"
-        ],
-        "title": "[중국 실화 사건] 고원 금광에서 순금 48kg을 강탈해 증발한 수배범이 25년간 모범 연구원장으로 살아온 사연 | 커커시리 장셴밍 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ truy nã cướp 48kg vàng ròng trên cao nguyên rồi ẩn mình suốt 25 năm làm Viện trưởng nghiên cứu mẫu mực | Chuyên án Trương Hiển Minh)",
-        "topic_anchor": "[중국 실화 사건] 고원 금광에서 순금 48kg을 강탈해 증발한 수배범이 25년간 모범 연구원장으로 살아온 사연 | 커커시리 장셴밍 사건",
-        "winner_cluster": "Luồng 1 · 48kg Vàng Ròng Cao Nguyên Thanh Hải & 25 Năm Ẩn Mình Làm Viện Trưởng Nghiên Cứu (커커시리 48kg 황금 장셴밍 사건)",
-        "codex_score": 98,
-        "profile_score": 98,
-        "codex_angle": "Hồ Sơ Thật 100%: Trương Hiển Minh (张显明, 1995–2020) — Từ Vụ Cướp 48kg Vàng Ròng Trên Cao Nguyên Thanh Hải Đến 25 Năm Mang Tên Giả 'Trương Quốc Chính' Làm Chuyên Gia Kỹ Thuật Tại Lạc Dương",
-        "codex_reasons": [
-            "Một trong những chuyên án truy bắt 25 năm chấn động nhất năm 2020 trên CCTV 今日说法",
-            "Nghịch lý hai mặt cực đại cho DUAL_ERA_LOCK: kẻ cướp 48kg vàng biến thành kỹ sư trưởng được đồng nghiệp kính trọng suốt 1/4 thế kỷ"
-        ],
-        "opening_hook": "해발 사천 미터 고원 도로에서 사십팔 킬로그램의 순금 괴가 사라진 지 25년. 모두가 주범 장셴밍이 이미 세상을 떠났거나 해외로 밀항했을 것이라 여겼습니다. 그러나 2020년 경찰이 뤄양시의 한 중견 기술 연구소 문을 열었을 때, 백발이 성성한 모범 연구원장이 조용히 고개를 떨구었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án đoạt mạng chủ mỏ vàng & cướp 48kg vàng ròng tại Khả Khả Tây Lý · tẩy trắng thân phận làm viện trưởng nghiên cứu suốt 25 năm】 Hồ sơ thật 100% Chuyên án cướp 48kg vàng ròng tại Thanh Hải năm 1995 (青海1995年11·15特大黄金案 — Trương Hiển Minh 张显明, phá án năm 2020): Sau khi tham gia cướp 48kg vàng nguyên chất, Trương Hiển Minh tẩy trắng hộ khẩu dưới tên 'Trương Quốc Chính' (张国政), học nghề kỹ thuật và leo lên vị trí quản lý viện nghiên cứu doanh nghiệp tại Lạc Dương (Hà Nam) suốt 25 năm trước khi bị bắt giữ.",
-        "hook_archetype": "double_life_unmasking"
     },
     {
         "id": "fin_cn_kaifeng_museum_liunongjun_69",
@@ -1831,7 +1415,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền YouTube: không có bạo lực máu me, 100% là màn đấu trí kỹ thuật hình sự cực đỉnh"
         ],
         "opening_hook": "최첨단 적외선 감지기 네 대가 스물네 시간 가동되던 박물관 전시실. 하지만 비가 쏟아지던 1992년 9월 18일 밤, 경보기는 단 한 번도 울리지 않았고 유리 진열장 속 황실 도자기와 국보 예순아홉 점이 감쪽같이 사라졌습니다. 감지기 앞에는 정체불명의 붉은 천 조각만이 걸려 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án trộm bảo tàng lớn nhất lịch sử Trung Quốc · cựu sinh viên cảnh sát dùng vải đỏ che cảm biến hồng ngoại lấy 69 quốc bảo hoàng cung】 Hồ sơ thật 100% Đại án 9·18 tại Bảo tàng Khai Phong, Hà Nam (河南开封博物馆69件馆藏文物被盗案 — Chủ mưu Lưu Nông Quân 刘农军, 1992–1993): Từng theo học Học viện Cảnh sát Nhân dân Vũ Hán nên nắm rõ nguyên lý bước sóng hồng ngoại, Lưu Nông Quân dùng vải nhung đỏ che cảm biến lấy đi 69 quốc bảo nhà Minh - Thanh; Ban chuyên án đã truy vết từ mảnh tem nhãn và chiếc xe桑塔纳 trắng, thu hồi toàn bộ 69 quốc bảo tại Macau & Vũ Hán.",
+        "note": "📋 【Hồ sơ vụ án: đại án trộm bảo tàng lớn nhất lịch sử Trung Quốc · cựu sinh viên cảnh sát dùng vải đỏ che cảm biến hồng ngoại lấy 69 quốc bảo hoàng cung】 Hồ sơ thật 100% Đại án 9·18 tại Bảo tàng Khai Phong, Hà Nam (河南开封博物馆69件馆藏文物被盗案 — Chủ mưu Lưu Nông Quân 刘农军, 1992–1993): Từng theo học Học viện Cảnh sát Nhân dân Vũ Hán nên nắm rõ nguyên lý bước sóng hồng ngoại, Lưu Nông Quân dùng vải nhung đỏ che cảm biến lấy đi 69 quốc bảo nhà Minh - Thanh; Ban chuyên án đã truy vết từ mảnh tem nhãn và chiếc xe桑塔纳 trắng, thu hồi toàn bộ 69 quốc bảo tại Macau & Vũ Hán.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -1859,7 +1443,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền YouTube: tập trung vào giám định hóa học kim loại và cuộc vây bắt trên sông Hán Giang"
         ],
         "opening_hook": "범인이 버리고 간 흰색 승합차의 엔진 번호와 차대 번호는 줄칼로 깊게 갈려 나가 글자 하나 읽을 수 없었습니다. 하지만 기술 감식반이 금속 표면에 특수 화학 시약을 바르자, 지워졌던 일련번호가 마법처럼 다시 떠올랐고 수배범 세셴룽의 그림자가 드러났습니다.",
-        "note": "【Hồ sơ vụ án: đại án cướp xe chở tiền ngân hàng đặc biệt nguy hiểm · tước đoạt 5 sinh mạng (4 nhân viên giải ngân & 1 cảnh sát hình sự) · lệnh truy nã cấp A bộ công an】 Hồ sơ thật 100% Chuyên án 9·29 tại Tiềm Giang, Hồ Bắc (湖北潜江9·29大案 — Tạ Tiên Vinh 谢先荣, 9–10/2003): Hung thủ bỏ lại chiếc xe tải nhỏ đã đục xóa toàn bộ số khung số máy; chuyên gia kỹ thuật hình sự dùng phương pháp ăn mòn điện hóa phục hồi dãy số gốc, xác định danh tính Tạ Tiên Vinh và phát lệnh truy nã cấp A toàn quốc, vây bắt trên sông Hán Giang sau 15 ngày.",
+        "note": "📋 【Hồ sơ vụ án: đại án cướp xe chở tiền ngân hàng đặc biệt nguy hiểm · tước đoạt 5 sinh mạng (4 nhân viên giải ngân & 1 cảnh sát hình sự) · lệnh truy nã cấp A bộ công an】 Hồ sơ thật 100% Chuyên án 9·29 tại Tiềm Giang, Hồ Bắc (湖北潜江9·29大案 — Tạ Tiên Vinh 谢先荣, 9–10/2003): Hung thủ bỏ lại chiếc xe tải nhỏ đã đục xóa toàn bộ số khung số máy; chuyên gia kỹ thuật hình sự dùng phương pháp ăn mòn điện hóa phục hồi dãy số gốc, xác định danh tính Tạ Tiên Vinh và phát lệnh truy nã cấp A toàn quốc, vây bắt trên sông Hán Giang sau 15 ngày.",
         "hook_archetype": "micro_forensic_anomaly"
     },
     {
@@ -1887,7 +1471,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Bản tin chính thức của Công an Thạch Gia Trang và CCTV năm 2019–2020 cực kỳ chấn động"
         ],
         "opening_hook": "현금수송차에서 79만 위안이 사라진 뒤 형사들이 22년 동안 전국을 뒤지며 범인을 쫓고 있었습니다. 누구도 상상하지 못했지만, 그 사건의 주범 자오즈용은 바로 그 도시의 법원 청사 안에서 집행국 부국장 직함을 달고 매일 아침 판결 집행 서류에 도장을 찍고 있었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tấn công xe chở tiền đoạt mạng người & cướp 790.000 tệ · thủ phạm ẩn mình làm phó cục trưởng cục thi hành án tòa án suốt 22 năm】 Hồ sơ thật 100% Kỳ án cướp xe chở tiền năm 1997 tại thành phố Tân Tập, Thạch Gia Trang, Hà Bắc (河北辛集1997年12·2运钞车劫案 — Chủ mưu Triệu Trí Dũng 赵志勇, phá án tháng 8/2019): Triệu Trí Dũng vốn là nhân viên tòa án đã rủ đồng bọn cướp 790.000 NDT của xe chở tiền rồi tiếp tục đi làm bình thường, leo lên chức Phó cục trưởng Cục Thi hành án Tòa án suốt 22 năm trước khi công nghệ giám định sinh trắc học mới lật tẩy toàn bộ băng nhóm.",
+        "note": "📋 【Hồ sơ vụ án: trọng án tấn công xe chở tiền đoạt mạng người & cướp 790.000 tệ · thủ phạm ẩn mình làm phó cục trưởng cục thi hành án tòa án suốt 22 năm】 Hồ sơ thật 100% Kỳ án cướp xe chở tiền năm 1997 tại thành phố Tân Tập, Thạch Gia Trang, Hà Bắc (河北辛集1997年12·2运钞车劫案 — Chủ mưu Triệu Trí Dũng 赵志勇, phá án tháng 8/2019): Triệu Trí Dũng vốn là nhân viên tòa án đã rủ đồng bọn cướp 790.000 NDT của xe chở tiền rồi tiếp tục đi làm bình thường, leo lên chức Phó cục trưởng Cục Thi hành án Tòa án suốt 22 năm trước khi công nghệ giám định sinh trắc học mới lật tẩy toàn bộ băng nhóm.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -1915,288 +1499,8 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền YouTube: không bạo lực, kịch tính cao độ với sơ đồ kiến trúc Tử Cấm Thành và 58 giờ truy bắt"
         ],
         "opening_hook": "일 년에 천만 명이 찾고 수백 대의 적외선 센서와 네 겹의 경비망이 지키는 세계 최대의 궁궐 자금성. 비바람이 몰아치던 밤 전시장 안쪽 벽이 뚫리고 황실 보물 아홉 점이 감쪽같이 사라지자, 베이징 경찰의 58시간 초비상 추격전이 시작됐습니다.",
-        "note": "【Hồ sơ vụ án: đại án đột nhập Tử Cấm Thành (Cố Cung) vượt 4 lớp bảo vệ lấy cắp 9 báu vật hoàng cung · 58 giờ truy bắt từ dấu vân tay quán net】 Hồ sơ thật 100% Chuyên án 58 giờ phá vụ trộm 9 báu vật tại Bảo tàng Cố Cung (Tử Cấm Thành), Bắc Kinh ngày 8/5/2011 (北京故宫博物院5·8被盗案 — Thạch Bách Khuê 石柏魁): Lợi dụng lúc mưa to để trốn lại trong hốc tường Cố Cung sau giờ đóng cửa, ngắt nguồn điện phòng trưng bày lấy đi 9 hộp báu vật dát vàng nạm ngọc rồi trèo mái trốn thoát; Công an Bắc Kinh khoanh vùng dấu vết và bắt giữ Thạch Bách Khuê tại một quán Internet sau 58 giờ.",
+        "note": "📋 【Hồ sơ vụ án: đại án đột nhập Tử Cấm Thành (Cố Cung) vượt 4 lớp bảo vệ lấy cắp 9 báu vật hoàng cung · 58 giờ truy bắt từ dấu vân tay quán net】 Hồ sơ thật 100% Chuyên án 58 giờ phá vụ trộm 9 báu vật tại Bảo tàng Cố Cung (Tử Cấm Thành), Bắc Kinh ngày 8/5/2011 (北京故宫博物院5·8被盗案 — Thạch Bách Khuê 石柏魁): Lợi dụng lúc mưa to để trốn lại trong hốc tường Cố Cung sau giờ đóng cửa, ngắt nguồn điện phòng trưng bày lấy đi 9 hộp báu vật dát vàng nạm ngọc rồi trèo mái trốn thoát; Công an Bắc Kinh khoanh vùng dấu vết và bắt giữ Thạch Bách Khuê tại một quán Internet sau 58 giờ.",
         "hook_archetype": "countdown_system_breach"
-    },
-    {
-        "id": "fin_cn_wuxi_bank_half_fingerprint_21y",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "江苏无锡1998年储蓄所悬案21年半枚残缺指纹锁定真凶案 — 邓某 (1998–2019)",
-        "archival_search_keywords_zh": [
-            "无锡 21年 半枚指纹 今日说法",
-            "江苏无锡 1998 储蓄所 侦破 天网",
-            "半枚指纹 21年 追凶"
-        ],
-        "recommended_vox_verbs": [
-            "FORENSIC_ZOOM_CHAIN",
-            "MICRO_TRACE_MATCH",
-            "DUAL_ERA_LOCK"
-        ],
-        "title": "[중국 실화 사건] 은행 창구를 털고 증발한 남자가 21년 동안 존경받는 모범 기업 사장으로 살아온 두 얼굴 | 우시 21년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Hai bộ mặt của kẻ cướp quầy giao dịch ngân hàng rồi bốc hơi 21 năm dưới vỏ bọc ông chủ doanh nghiệp mẫu mực | Kỳ án 21 năm Vô Tích)",
-        "topic_anchor": "[중국 실화 사건] 은행 창구를 털고 증발한 남자가 21년 동안 존경받는 모범 기업 사장으로 살아온 두 얼굴 | 우시 21년 미제사건",
-        "winner_cluster": "Luồng 1 · Nửa Dấu Vân Tay Mờ Lưu Trữ 21 Năm & 3 Triệu Bản Đối Sánh Thủ Công (장쑤 우시 반쪽 지문 21년 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Quầy Tiết Kiệm Vô Tích 21 Năm (江苏无锡21年半枚指纹破案纪实, 1998–2019) — Khi Thuật Toán Khôi Phục Đường Vân Thế Hệ Mới Khớp Trúng 11 Điểm Đặc Trưng",
-        "codex_reasons": [
-            "Phóng sự khoa học hình sự tiêu biểu trên CCTV 今日说法 về sự kiên trì của các chuyên gia vân tay suốt 21 năm",
-            "100% Xanh tiền YouTube, cực hợp FORENSIC_ZOOM_CHAIN & MICRO_TRACE_MATCH"
-        ],
-        "opening_hook": "사건 현장의 유리창 위에 남겨진 것은 절반 이상이 뭉개져 특징점이 일곱 개밖에 보이지 않는 반쪽짜리 지문 하나였습니다. 21년 동안 형사들이 눈이 짓무르도록 삼백만 장의 지문 카드를 대조한 끝에, 마침내 알고리즘 화면 위에서 열한 개의 붉은 일치점이 반짝였습니다.",
-        "note": "【Hồ sơ vụ án: kỳ án đột nhập phòng giao dịch tiết kiệm tại Vô Tích · 21 năm đối chiếu 3 triệu bản vân tay từ nửa dấu vân tay mờ lật tẩy ông chủ doanh nghiệp】 Hồ sơ thật 100% Kỳ án 21 năm tại Vô Tích, Giang Tô (江苏无锡1998年悬案21年侦破纪实 — Đặng Mỗ 邓某, 1998–2019): Từ nửa dấu vân tay mờ chỉ có vài điểm đặc trưng thu thập năm 1998, đội giám định kỹ thuật hình sự Công an Vô Tích kiên trì đối sánh qua nhiều thế hệ công nghệ suốt 21 năm cho đến khi khóa chặt nghi phạm đã trở thành chủ doanh nghiệp vận tải.",
-        "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "fin_cn_kunming_cigarette_vault_oil_trace",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "云南昆明特大企业金库被盗案一滴特种机油微量物证侦破纪实 — 孙某·王某 (2002)",
-        "archival_search_keywords_zh": [
-            "昆明 金库被盗 微量物证 今日说法",
-            "一滴机油 破案 天网 纪实",
-            "云南 金库大案 侦破"
-        ],
-        "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "MICRO_TRACE_MATCH",
-            "FORENSIC_ZOOM_CHAIN"
-        ],
-        "title": "[중국 실화 사건] 지문 하나 남기지 않고 대형 금고를 비운 털이범이 현장에 단 한 방울의 기름을 흘린 이유 | 쿤밍 금고 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Vụ đột nhập kho bạc không để lại một dấu vân tay và bí ẩn giọt dầu máy duy nhất rơi trên sàn | Chuyên án két sắt Côn Minh)",
-        "topic_anchor": "[중국 실화 사건] 지문 하나 남기지 않고 대형 금고를 비운 털이범이 현장에 단 한 방울의 기름을 흘린 이유 | 쿤밍 금고 미제사건",
-        "winner_cluster": "Luồng 1 · Giải Phẫu Thành Phần Hóa Học 1 Giọt Dầu Máy Lật Tẩy Băng Đột Nhập Kho Bạc (쿤밍 금고 기름 한 방울 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Vi Lượng Kho Bạc Côn Minh (云南昆明金库微量物证侦破案) — Phân Tích Quang Phổ Hạt Bụi Kim Loại Trong Giọt Dầu Bôi Trơn Kích Thủy Lực",
-        "codex_reasons": [
-            "Câu chuyện điều tra pháp y vi lượng chuẩn mực như сериал CSI đời thực trên CCTV 今日说法",
-            "100% Xanh tiền YouTube, cực hợp SINGLE_EVIDENCE_AUTOPSY"
-        ],
-        "opening_hook": "장갑과 덧신으로 무장한 범인들은 털끝 하나, 지문 하나 현장에 남기지 않았습니다. 두꺼운 금고 문이 유압 잭에 의해 뜯겨 나간 자리, 바닥 타일 위에는 오직 쌀알 크기의 투명한 기름 한 방울만이 묻어 있었습니다. 바로 그 기름 한 방울이 범인의 직업을 정확히 말해주고 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án đột nhập kho bạc tập đoàn tại Côn Minh · truy nguyên hung thủ từ đúng 1 giọt dầu máy công nghiệp đặc chủng rơi tại hiện trường】 Hồ sơ thật 100% Chuyên án giải mã vụ đột nhập két sắt tại Côn Minh, Vân Nam nhờ giám định vi lượng (云南昆明金库特大窃案微量物证侦破纪实): Nhóm thủ phạm đeo găng tay và bọc giày xóa sạch dấu vết sinh học, nhưng làm rỉ một giọt dầu thủy lực đặc chủng chứa mạt kim loại chỉ dùng trong xưởng bảo dưỡng máy công trình nặng, giúp cảnh sát khoanh vùng và bắt gọn toàn bộ băng nhóm.",
-        "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "fin_cn_sichuan_museum_fishing_line_heist",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "四川馆藏一级文物被盗案透明钓鱼线跨越红外盲区侦破纪实 — 肖某 (2014)",
-        "archival_search_keywords_zh": [
-            "一级文物 被盗 钓鱼线 今日说法",
-            "四川 博物馆 文物被盗 天网",
-            "红外线 盲区 文物大案"
-        ],
-        "recommended_vox_verbs": [
-            "BLIND_SPOT_REVEAL",
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "FORENSIC_ZOOM_CHAIN"
-        ],
-        "title": "[중국 실화 사건] 출입문은 잠긴 채 천장 환풍구에서 투명 낚싯줄을 내려 적외선 경보기를 속이고 국보를 훔치다 | 쓰촨 박물관 밀실 도난 사건 ([Vụ Án Có Thật ở Trung Quốc] Cửa chính vẫn khóa chặt nhưng sợi cước câu cá trong suốt thả từ ống thông gió lấy cắp quốc bảo cấp 1 trước mũi cảm biến | Kỳ án phòng kín Tứ Xuyên)",
-        "topic_anchor": "[중국 실화 사건] 출입문은 잠긴 채 천장 환풍구에서 투명 낚싯줄을 내려 적외선 경보기를 속이고 국보를 훔치다 | 쓰촨 박물관 밀실 도난 사건",
-        "winner_cluster": "Luồng 1 · Sợi Cước Câu Cá Thả Từ Trần Nhà Qua Điểm Mù Hồng Ngoại & Màn Truy Vết Nút Thắt (쓰촨 1급 문물 낚싯줄 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Đột Nhập Bảo Tàng Qua Điểm Mù Cảm Biến Tại Tứ Xuyên — Cách Pháp Y Giải Mã 'Nút Thắt Câu Cá Chuyên Nghiệp' Để Tìm Ra Thủ Phạm",
-        "codex_reasons": [
-            "Hiện trường phòng kín (Locked-room mystery) có thật 100% trên CCTV 今日说法 / 天网",
-            "100% Xanh tiền, cực hợp với sơ đồ mặt cắt không gian BLIND_SPOT_REVEAL"
-        ],
-        "opening_hook": "전시실의 철문은 안에서 잠겨 있었고 바닥의 압력 센서도 작동하지 않았습니다. 그런데 유리 진열장 안에 있던 국가 일급 문물이 밤사이 감쪽같이 사라졌습니다. 형사들이 손전등을 들어 천장 환풍구를 비추었을 때, 허공에 매달린 채 반짝이는 투명한 낚싯줄 한 가닥이 모습을 드러냈습니다.",
-        "note": "【Hồ sơ vụ án: đại án đánh cắp cổ vật quốc bảo cấp 1 tại Tứ Xuyên · thủ phạm dùng dây câu cá trong suốt vượt qua vùng quét tia hồng ngoại】 Hồ sơ thật 100% Chuyên án trộm cổ vật cấp 1 tại bảo tàng ở Tứ Xuyên (2014): Thủ phạm Tiêu Mỗ khảo sát góc quét cảm biến hồng ngoại nhiều tuần, sau đó chui qua hệ thống ống thông gió trên trần và dùng dây cước câu cá chịu lực kết hợp móc chuyên dụng câu cổ vật lên trần nhà; cảnh sát đã phân tích kiểu thắt nút dây câu đặc thù và truy vết camera bắt giữ thủ phạm.",
-        "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "fin_cn_guangdong_foshan_safe_cracker_sound_10y",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "广东珠三角跨市技术开启金库保险柜特大系列悬案侦破 — 梁某 (2004–2014)",
-        "archival_search_keywords_zh": [
-            "技术开锁 保险柜 大案 今日说法",
-            "珠三角 保险柜 悬案 天网",
-            "听音开锁 侦破纪实"
-        ],
-        "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "FORENSIC_ZOOM_CHAIN",
-            "BLIND_SPOT_REVEAL"
-        ],
-        "title": "[중국 실화 사건] 파손 흔적 하나 없이 청진기로 다이얼 소리만 듣고 대형 금고 수십 개를 열어젖힌 유령 기술자 | 주강삼각주 금고 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ có biệt danh kỹ sư bóng ma chỉ dùng ống nghe đọc tiếng bánh răng để mở toang hàng chục két sắt cỡ lớn không vết cạy | Kỳ án két sắt Châu Giang)",
-        "topic_anchor": "[중국 실화 사건] 파손 흔적 하나 없이 청진기로 다이얼 소리만 듣고 대형 금고 수십 개를 열어젖힌 유령 기술자 | 주강삼각주 금고 사건",
-        "winner_cluster": "Luồng 1 · Kẻ Đột Nhập Mở Khóa Két Sắt Không Vết Xước & Vết Hằn Kính Hiển Vi Trong Ổ Khóa (광둥 무흔적 금고 기술자 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Giải Mã Hàng Loạt Vụ Két Sắt Mở Không Dấu Vết Tại Châu thổ Sông Châu Giang — Khi Kính Hiển Vi Điện Tử Phát Hiện Vết Xước 0,05mm Bên Trong Ruột Khóa",
-        "codex_reasons": [
-            "Đề tài mở khóa kỹ thuật cao (Lock-picking forensics) cực kỳ hấp dẫn và 100% Xanh tiền YouTube",
-            "Khớp hoàn hảo SINGLE_EVIDENCE_AUTOPSY & FORENSIC_ZOOM_CHAIN"
-        ],
-        "opening_hook": "드릴 자국도, 산소절단기 흔적도 없었습니다.마치 주인이 직접 비밀번호를 돌리고 열쇠를 꽂아 연 것처럼 대형 금고 문이 고스란히 열려 있었습니다. 하지만 법의학자들이 금고 잠금장치를 분해해 전자현미경 아래에 놓았을 때, 내부 핀 위에 남은 영점 영오 밀리미터의 미세한 금속 긁힘이 진실을 말하기 시작했습니다.",
-        "note": "【Hồ sơ vụ án: kỳ án 'bóng ma mở két' dùng ống nghe y tế đọc âm thanh bánh răng mở hàng chục két sắt cỡ lớn suốt 10 năm không cần phá khóa】 Hồ sơ thật 100% Chuyên án phá chuỗi vụ trộm két sắt bằng kỹ thuật mở khóa tinh vi tại vùng Châu thổ sông Châu Giang, Quảng Đông (2004–2014): Thủ phạm Lương Mỗ vốn là thợ cơ khí khóa két sắt lành nghề, đột nhập ban đêm mở két không để lại vết cạy phá bên ngoài; chuyên gia giám định dấu vết công cụ đã tháo rời lõi khóa soi kính hiển vi tìm ra đặc điểm dụng cụ tự chế của hắn.",
-        "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "fin_cn_shandong_weifang_chenzengyu_bank_bill_1_1b",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "山东潍坊银行票据贴现11亿元挪用潜逃案 — 陈增玉 (2012–2015)",
-        "archival_search_keywords_zh": [
-            "山东潍坊 银行票据 11亿 今日说法",
-            "票据贴现 挪用 猎狐行动 央视",
-            "银行承兑汇票 惊天大案"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "SCALE_MULTIPLICATION",
-            "GEO_VECTOR_PURSUIT"
-        ],
-        "title": "[중국 실화 사건] 복사기 한 대로 은행 어음 직인을 위조해 11억 위안을 돌린 어음 브로커의 도주극 | 웨이팡 천쩡위 사건 ([Vụ Án Có Thật ở Trung Quốc] Dùng 1 máy photocopy làm giả con dấu hối phiếu ngân hàng quay vòng 1,1 tỷ tệ và cuộc đào tẩu của trùm môi giới | Đại án Trần Tăng Ngọc)",
-        "topic_anchor": "[중국 실화 사건] 복사기 한 대로 은행 어음 직인을 위조해 11억 위안을 돌린 어음 브로커의 도주극 | 웨이팡 천쩡위 사건",
-        "winner_cluster": "Luồng 1 · Kẽ Hở Chiết Khấu Hối Phiếu 1,1 Tỷ NDT & Cuộc Truy Bắt Xuyên Biên Giới (산둥 웨이팡 11억 어음 사기 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Hối Phiếu 1,1 Tỷ NDT Tại Duy Phường, Sơn Đông — Khi Hối Phiếu Thật Bị Đánh Tráo Bằng Bản Sao Màu Giữa 2 Phòng Giao Dịch",
-        "codex_reasons": [
-            "Thủ đoạn tráo hối phiếu ngân hàng (克隆票据) cực kỳ trực quan cho bàn biên tập cắt dán Vox",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "진짜 은행 어음 한 장이 복사기를 통과하는 순간, 똑같은 일련번호를 가진 두 장의 어음으로 둔갑했습니다. 산둥성 웨이팡의 금융 브로커 천쩡위는 이 단순한 눈속임 하나로 여러 은행 지점 사이를 오가며 무려 십일억 위안의 자금을 공중에서 만들어냈습니다.",
-        "note": "【Hồ sơ vụ án: đại án nhân bản hối phiếu ngân hàng rút ruột 1,1 tỷ tệ tại Duy Phường · truy bắt của cục cảnh sát kinh tế】 Hồ sơ thật 100% Đại án chiết khấu hối phiếu ngân hàng 1,1 tỷ NDT tại Duy Phường, Sơn Đông (山东潍坊11亿元银行承兑汇票诈骗挪用案 — Trần Tăng Ngọc 陈增玉, 2012–2015): Lợi dụng khoảng trống thời gian kiểm tra liên ngân hàng, nhóm thủ phạm nhân bản hối phiếu và con dấu để chiết khấu trùng lặp rút ruột 1,1 tỷ NDT trước khi bị Cục Cảnh sát Kinh tế truy bắt.",
-        "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "fin_cn_shenzhen_customs_hujincheng_tax_rebate_800m",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "广东深圳空壳集装箱循环出口骗取8亿元国家退税款特大案 — 胡金城 (2013–2017)",
-        "archival_search_keywords_zh": [
-            "深圳 骗取出口退税 8亿 今日说法",
-            "空集装箱 循环出口 骗税 央视",
-            "海关 缉私 骗税大案 庭审"
-        ],
-        "recommended_vox_verbs": [
-            "GEO_VECTOR_PURSUIT",
-            "LEDGER_DIFF_SCRUB",
-            "SCALE_MULTIPLICATION"
-        ],
-        "title": "[중국 실화 사건] 똑같은 전자부품 한 상자를 홍콩과 선전 사이로 300번 왕복시켜 국고 8억 위안을 털어낸 유령 수출왕 | 선전 후진청 사건 ([Vụ Án Có Thật ở Trung Quốc] Cho 1 thùng linh kiện đi lại 300 vòng giữa Hồng Kông và Thâm Quyến để rút 800 triệu tệ tiền hoàn thuế quốc gia | Đại án Hồ Kim Thành)",
-        "topic_anchor": "[중국 실화 사건] 똑같은 전자부품 한 상자를 홍콩과 선전 사이로 300번 왕복시켜 국고 8억 위안을 털어낸 유령 수출왕 | 선전 후진청 사건",
-        "winner_cluster": "Luồng 1 · Vòng Lặp Container 'Đạo Cụ' Đi Qua Biên Giới 300 Lần Rút Ruột 800 Triệu Tệ Hoàn Thuế (선전 8억 위안 유령 수출 환급 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Rút Ruột Hoàn Thuế Xuất Khẩu 800 Triệu NDT Tại Thâm Quyến — Khi AI Hải Quan Phát Hiện 1 Lô Hàng Chip Điện Tử Đi Vòng Tròn Suốt 3 Năm",
-        "codex_reasons": [
-            "Cơ chế 'hàng đạo cụ đi vòng tròn' (道具货循环出口) cực kỳ thú vị để vẽ sơ đồ luồng hàng + dòng tiền trên Vox",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "수출 서류상으로는 매달 수천만 달러어치의 최첨단 반도체 칩이 선전 항구를 떠나 홍콩으로 수출되고 있었습니다. 하지만 세관 수사관들이 컨테이너의 위성 위치 기록을 겹쳐 보았을 때, 똑같은 상자 몇 개가 국경 바다를 삼백 번이나 맴돌며 팔억 위안의 세금 환급금을 빨아들이고 있었다는 사실이 드러났습니다.",
-        "note": "【Hồ sơ vụ án: đại án cho 1 thùng linh kiện quay vòng 300 lượt qua biên giới Hồng Kông – Thâm Quyến để lừa rút 800 triệu tệ tiền hoàn thuế quốc gia】 Hồ sơ thật 100% Đại án lừa đảo hoàn thuế xuất khẩu 800 triệu NDT tại Thâm Quyến, Quảng Đông (广东深圳8亿元特大虚开骗取出口退税案 — Hồ Kim Thành 胡金城, 2013–2017): Sử dụng một lượng nhỏ linh kiện điện tử làm 'hàng đạo cụ' xuất khẩu sang Hồng Kông rồi nhập lậu ngược về Thâm Quyến quay vòng hàng trăm lần để lập hồ sơ khống rút 800 triệu NDT tiền hoàn thuế nhà nước.",
-        "hook_archetype": "double_life_unmasking"
-    },
-    {
-        "id": "fin_cn_tianjin_customs_chenyi_luxury_car_smuggling_1_6b",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "天津港跨国低报价格走私2000辆豪车偷逃税款16亿元秘鲁缉捕案 — 陈毅 (2014–2019)",
-        "archival_search_keywords_zh": [
-            "天津港 走私豪车 秘鲁 遣返 今日说法",
-            "海关 红通 豪车走私 央视",
-            "低报价格 走私汽车 大案"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "GEO_VECTOR_PURSUIT",
-            "SPLIT_PARADOX"
-        ],
-        "title": "[중국 실화 사건] 이중 계약서로 슈퍼카 2,000대를 통관시켜 16억 위안을 챙기고 남미로 증발한 주범 | 톈진항 천이 사건 ([Vụ Án Có Thật ở Trung Quốc] Dùng hợp đồng kép thông quan 2.000 siêu xe bỏ túi 1,6 tỷ tệ rồi bốc hơi sang Nam Mỹ | Đại án Trần Nghị cảng Thiên Tân)",
-        "topic_anchor": "[중국 실화 사건] 이중 계약서로 슈퍼카 2,000대를 통관시켜 16억 위안을 챙기고 남미로 증발한 주범 | 톈진항 천이 사건",
-        "winner_cluster": "Luồng 1 · Hóa Đơn Kép Thông Quan 2.000 Siêu Xe Tại Cảng Thiên Tân & Chuyến Bay Áp Giải Từ Peru (톈진항 16억 슈퍼카 이중장부 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Hóa Đơn Kép 1,6 Tỷ NDT Tại Cảng Thiên Tân — So Khớp Dòng Tiền Chuyển Khoản Ngầm Và Cuộc Vây Bắt Truy Nã Đỏ Tại Lima (Peru)",
-        "codex_reasons": [
-            "Hình ảnh cảng container siêu xe + truy bắt xuyên Thái Bình Dương từ Peru cực kỳ bắt mắt",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "서류상으로는 폐차 직전의 고철 부품 컨테이너였지만, 세관 엑스레이 스캐너를 통과하는 순간 최신형 최고급 수입차 수백 대의 윤곽이 선명하게 드러났습니다. 유령 무역회사 스무 곳을 세워 16억 위안대 관세를 증발시킨 설계자의 정체를 추적합니다.",
-        "note": "【Hồ sơ vụ án: đại án dùng hóa đơn kép buôn lậu 2.000 siêu xe qua cảng Thiên Tân trốn thuế 1,6 tỷ tệ · dẫn độ kẻ chủ mưu từ Peru】 Hồ sơ thật 100% Đại án gian lận hóa đơn nhập khẩu hơn 2.000 xe hạng sang trị giá trốn thuế 1,6 tỷ NDT qua cảng Thiên Tân (天津港特大走私豪车红通逃犯秘鲁押解回国案 — Trần Nghị 陈毅, 2014–2019): Sau khi đường dây bị phanh phui, kẻ chủ mưu trốn sang Peru và bị lực lượng hải quan - công an Trung Quốc phối hợp Interpol bắt giữ áp giải về nước.",
-        "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "fin_cn_jiangsu_changzhou_deng_accounting_320m",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "江苏常州财政国库集中支付中心会计挪用3.2亿元公款案 — 邓某 (2016–2019)",
-        "archival_search_keywords_zh": [
-            "常州 会计 挪用公款 3.2亿 今日说法",
-            "国库集中支付 挪用 亿万 央视",
-            "小会计 挪用上亿 庭审现场"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "SCALE_MULTIPLICATION",
-            "CRASH_TIMELINE"
-        ],
-        "title": "[중국 실화 사건] 월급 4천 위안 말단 회계원이 국고 시스템 취소 버튼 허점으로 빼돌린 3억 2천만 위안 | 창저우 회계원 사건 ([Vụ Án Có Thật ở Trung Quốc] Kế toán quèn lương 4.000 tệ lợi dụng lỗ hổng nút hủy lệnh hệ thống kho bạc rút ruột 320 triệu tệ | Đại án kế toán Thường Châu)",
-        "topic_anchor": "[중국 실화 사건] 월급 4천 위안 말단 회계원이 국고 시스템 취소 버튼 허점으로 빼돌린 3억 2천만 위안 | 창저우 회계원 사건",
-        "winner_cluster": "Luồng 1 · Lỗ Hổng 'Hoàn Tiền Vào Tài Khoản Phụ' Giúp Kế Toán Viên Rút 320 Triệu Tệ Kho Bạc (창저우 3.2억 위안 국고 회계원 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án 320 Triệu NDT Tại Trung Tâm Thanh Toán Kho Bạc Thường Châu, Giang Tô — Khi 148 Lệnh Chuyển Tiền Bị Sửa Đổi Số Tài Khoản Nhận Hoàn Tiền",
-        "codex_reasons": [
-            "Điển hình của tội phạm cổ cồn trắng dùng lỗi logic phần mềm kế toán để rút hàng trăm triệu NDT",
-            "100% Xanh tiền YouTube, cực hợp LEDGER_DIFF_SCRUB"
-        ],
-        "opening_hook": "한 달 월급이 사천 위안에 불과했던 평범한 회계 직원이 삼 년 동안 무려 삼억 이천만 위안의 공금을 자신의 계좌로 옮겼습니다. 그가 사용한 무기는 해킹 프로그램이 아니라, 결제 실패 시 환불 계좌 번호를 수동으로 수정할 수 있었던 전산 시스템의 작은 빈틈 하나였습니다.",
-        "note": "【Hồ sơ vụ án: đại án kế toán viên kho bạc lương 4.000 tệ lợi dụng lỗ hổng 'nút hoàn trả lệnh' để rút ruột 320 triệu tệ công quỹ suốt 3 năm】 Hồ sơ thật 100% Đại án kế toán viên Trung tâm thanh toán kho bạc tại Thường Châu, Giang Tô biển thủ 320 triệu NDT (江苏常州会计挪用3.2亿元公款案 — Đặng Mỗ 邓某, 2016–2019): Lợi dụng quy trình xử lý lệnh thanh toán bị退回 (hoàn trả) không khóa trường số tài khoản nhận lại, Đặng Mỗ đã thay bằng tài khoản cá nhân suốt 3 năm.",
-        "hook_archetype": "cold_archive_match"
-    },
-    {
-        "id": "fin_cn_zhejiang_jinhua_fake_gold_pledge_1_9b",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "浙江金华特大钨芯假黄金质押骗取金融机构19亿元贷款案 — 徐某·林某 (2016–2020)",
-        "archival_search_keywords_zh": [
-            "假黄金 质押 钨芯 今日说法",
-            "金库 假黄金 骗贷 央视财经",
-            "黄金掺钨 骗取贷款 侦破"
-        ],
-        "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "LEDGER_DIFF_SCRUB",
-            "SCALE_MULTIPLICATION"
-        ],
-        "title": "[중국 실화 사건] 은행 금고에 담보로 맡긴 순금 3톤을 녹이자 속에서 시커먼 합금이 쏟아져 나온 이유 | 진화 가짜 황금 사건 ([Vụ Án Có Thật ở Trung Quốc] Nung chảy 3 tấn vàng ròng thế chấp trong hầm ngân hàng thì lộ ra khối hợp kim đen sì bên trong | Đại án vàng giả 1,9 tỷ tệ Kim Hoa)",
-        "topic_anchor": "[중국 실화 사건] 은행 금고에 담보로 맡긴 순금 3톤을 녹이자 속에서 시커먼 합금이 쏟아져 나온 이유 | 진화 가짜 황금 사건",
-        "winner_cluster": "Luồng 1 · Vàng Thỏi Nhồi Lõi Vonfram Có Tỷ Trọng Bằng Hệt Vàng Thật Qua Mặt Máy Đo (저장성 19억 텅스텐 가짜 골드바 사건)",
-        "codex_score": 98,
-        "profile_score": 98,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Thế Chấp Vàng Giả Lõi Vonfram 1,9 Tỷ NDT — Vì Sao Máy Đo Quang Phổ Bề Mặt Và Cân Trọng Lượng Của Ngân Hàng Đều Bị Đánh Lừa?",
-        "codex_reasons": [
-            "Khoa học vật lý cực kỳ cuốn hút: Vonfram (Tungsten) có tỷ trọng 19,25 g/cm³ gần như bằng hệt vàng ròng 19,32 g/cm³, nên cân nước và súng bắn quang phổ XRF bề mặt đều báo là vàng 9999!",
-            "100% Xanh tiền YouTube, sinh ra cho SINGLE_EVIDENCE_AUTOPSY & LEDGER_DIFF_SCRUB"
-        ],
-        "opening_hook": "무게도 순금과 똑같고, 표면 엑스선 순도 검사기마저 구십구 점 구구 퍼센트 순금이라고 판정한 수천 개의 골드바. 금융기관들은 그 금괴를 지하 금고에 봉인하고 십구억 위안을 대출해 주었습니다. 그러나 대출 만기일, 금괴를 용광로에 넣고 반으로 잘라본 순간 모두의 얼굴이 하얗게 질렸습니다.",
-        "note": "【Hồ sơ vụ án: đại án đúc 3 tấn vàng thỏi giả bọc lõi kim loại Vonfram qua mặt máy đo quang phổ XRF để thế chấp rút ruột 1,9 tỷ tệ ngân hàng】 Hồ sơ thật 100% Đại án dùng vàng thỏi bọc lõi kim loại Vonfram (钨芯假黄金) thế chấp vay 1,9 tỷ NDT: Lợi dụng kim loại Vonfram có khối lượng riêng 19,25 g/cm³ tương đương vàng nguyên chất (19,32 g/cm³), nhóm thủ phạm bọc lớp vàng thật dày bên ngoài lõi Vonfram để vượt qua máy đo quang phổ bề mặt XRF, ký gửi vào kho bạc rút 1,9 tỷ NDT.",
-        "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "fin_cn_guangxi_nanning_housing_fund_li_280m",
-        "topic_stream": "financial_crime",
-        "case_real_name_zh": "广西南宁住房公积金管理中心内部虚构账户挪用2.8亿元案 — 李某 (2011–2018)",
-        "archival_search_keywords_zh": [
-            "南宁 住房公积金 挪用 2.8亿 今日说法",
-            "公积金 巨额挪用 庭审现场",
-            "广西 公积金 大案 央视"
-        ],
-        "recommended_vox_verbs": [
-            "LEDGER_DIFF_SCRUB",
-            "SPLIT_PARADOX",
-            "CRASH_TIMELINE"
-        ],
-        "title": "[중국 실화 사건] 7년간 유령 퇴직자 400명을 만들어 주택기금 2억 8천만 위안을 빼돌린 내부자 | 난닝 주택기금 증발 사건 ([Vụ Án Có Thật ở Trung Quốc] Tạo 400 hồ sơ người nghỉ hưu ma suốt 7 năm để rút ruột 280 triệu tệ quỹ nhà ở của kẻ nội gián | Đại án Quỹ nhà ở Nam Ninh)",
-        "topic_anchor": "[중국 실화 사건] 7년간 유령 퇴직자 400명을 만들어 주택기금 2억 8천만 위안을 빼돌린 내부자 | 난닝 주택기금 증발 사건",
-        "winner_cluster": "Luồng 1 · 400 Hồ Sơ Nghỉ Hưu Ảo Rút Ruột 280 Triệu Tệ Quỹ Nhà Ở Suốt 7 Năm Không Bị Phát Hiện (난닝 2.8억 주택기금 유령계좌 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Quỹ Nhà Ở Nam Ninh 280 Triệu NDT — Cách Thuật Toán Kiểm Toán Chéo Dữ Liệu Bảo Hiểm Xã Hội Phanh Phui 400 Danh Tính Ảo",
-        "codex_reasons": [
-            "Cấu trúc kiểm toán dữ liệu lớn (Big Data Audit) lật tẩy lỗ hổng nội bộ cực kỳ sắc nét",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "매달 수십 명의 퇴직자들이 주택적립금을 전액 인출해 가는 정상적인 서류들. 그러나 칠 년 뒤 감사팀이 연금 데이터베이스와 주택기금 명단을 교차 대조했을 때, 돈을 찾아간 사백 명의 퇴직자 중 단 한 명도 실제로 존재하지 않는 유령 인물이었음이 밝혀졌습니다.",
-        "note": "【Hồ sơ vụ án: đại án kẻ nội gián tạo 400 hồ sơ người nghỉ hưu ma suốt 7 năm để rút ruột 280 triệu tệ quỹ tiết kiệm nhà ở】 Hồ sơ thật 100% Đại án rút ruột 280 triệu NDT tại Trung tâm quản lý Quỹ nhà ở Nam Ninh, Quảng Tây (广西南宁住房公积金2.8亿元挪用案 — Lý Mỗ 李某, 2011–2018): Lợi dụng quyền quản trị cơ sở dữ liệu nội bộ chưa liên thông trực tiếp với hệ thống hộ tịch, Lý Mỗ đã lập khống hàng trăm hồ sơ tất toán quỹ nhà ở suốt 7 năm.",
-        "hook_archetype": "double_life_unmasking"
     },
     {
         "id": "vio_cn_temple_abbot_fugitive_16y",
@@ -2223,7 +1527,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Bước ngoặt sinh trắc học so khớp ảnh CMND giả Tôn Hồng Đào (孙洪涛) với ảnh truy nã năm 2000 — cực hợp DUAL_ERA_LOCK"
         ],
         "opening_hook": "명나라 황제가 세운 육백 년 역사의 유서 깊은 사찰. 지역 방송에 출연해 자비를 설파하고 불우한 학생들을 후원하던 존경받는 주지 스님에게는 아무도 모르는 비밀이 있었습니다. 경찰 안면 대조 시스템이 스님의 법명 뒤에 숨겨진 진짜 이름을 띄운 순간, 십육 년 전 북쪽 끝 도시의 수배 전단이 함께 겹쳐졌습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt 3 sinh mạng tại Đại Khánh · truy nã đặc biệt bộ công an · giả làm trụ trì chùa cổ 16 năm】 Hồ sơ thật 100% Vụ án Trương Lập Vĩ (张立伟, pháp danh Thích Quảng Văn 释广闻, 2000–2017): Sau trọng án năm 2000 tại Đại Khánh (Hắc Long Giang), Trương Lập Vĩ trốn hơn 2.000km xuống An Huy, mua hộ khẩu giả tên Tôn Hồng Đào (孙洪涛) và từng bước leo lên làm Trụ trì chùa Long Hưng (Phượng Dương, An Huy) suốt 16 năm trước khi Công an Đại Khánh đối sánh ảnh sinh trắc học bắt giữ tháng 8/2017.",
+        "note": "📋 【Hồ sơ vụ án: trọng án tước đoạt 3 sinh mạng tại Đại Khánh · truy nã đặc biệt bộ công an · giả làm trụ trì chùa cổ 16 năm】 Hồ sơ thật 100% Vụ án Trương Lập Vĩ (张立伟, pháp danh Thích Quảng Văn 释广闻, 2000–2017): Sau trọng án năm 2000 tại Đại Khánh (Hắc Long Giang), Trương Lập Vĩ trốn hơn 2.000km xuống An Huy, mua hộ khẩu giả tên Tôn Hồng Đào (孙洪涛) và từng bước leo lên làm Trụ trì chùa Long Hưng (Phượng Dương, An Huy) suốt 16 năm trước khi Công an Đại Khánh đối sánh ảnh sinh trắc học bắt giữ tháng 8/2017.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -2251,36 +1555,8 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền YouTube: kể hoàn toàn theo góc nhìn Tổ Chuyên Án Đặc Biệt Công an tỉnh Hắc Long Giang truy tìm đồng nghiệp mất tích"
         ],
         "opening_hook": "지역 자산가들이 잇달아 연락이 끊길 때마다 가장 먼저 현장에 나타나 수사를 지휘하던 베테랑 형사 반장 장잉쿠. 그러던 어느 겨울, 성 검찰청 소속 간부 두 명까지 그 도시에 들어갔다가 흔적 없이 사라지자 특별수사팀의 시선은 가장 가까운 내부 인물을 향하기 시작했습니다.",
-        "note": "【Hồ sơ vụ án: đại án liên hoàn tước đoạt sinh mạng hơn 20 người (gồm cả 2 cán bộ kiểm sát) · đội trưởng hình sự hai mặt suốt 8 năm】 Hồ sơ thật 100% Đại án Tưởng Anh Khôi tại thành phố Triệu Đông, tỉnh Hắc Long Giang (黑龙江肇东蒋英库特大团伙案, 1993–2001): Lợi dụng vỏ bọc công chức hình sự để vay tiền lớn rồi thủ tiêu chủ nợ suốt 8 năm; tháng 12/2000 việc 2 cán bộ viện kiểm sát mất tích tại Triệu Đông kích hoạt chuyên án mật cấp tỉnh lật tẩy toàn bộ đường dây.",
+        "note": "📋 【Hồ sơ vụ án: đại án liên hoàn tước đoạt sinh mạng hơn 20 người (gồm cả 2 cán bộ kiểm sát) · đội trưởng hình sự hai mặt suốt 8 năm】 Hồ sơ thật 100% Đại án Tưởng Anh Khôi tại thành phố Triệu Đông, tỉnh Hắc Long Giang (黑龙江肇东蒋英库特大团伙案, 1993–2001): Lợi dụng vỏ bọc công chức hình sự để vay tiền lớn rồi thủ tiêu chủ nợ suốt 8 năm; tháng 12/2000 việc 2 cán bộ viện kiểm sát mất tích tại Triệu Đông kích hoạt chuyên án mật cấp tỉnh lật tẩy toàn bộ đường dây.",
         "hook_archetype": "double_life_unmasking"
-    },
-    {
-        "id": "vio_cn_hangzhou_wanxiang_20y_coldcase",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "浙江杭州2000年万向公园11·4情侣命案积案20年DNA家系侦破 — 武某·王某 (2000–2020)",
-        "archival_search_keywords_zh": [
-            "杭州万向公园案 20年 侦破 今日说法",
-            "2000年 万向公园 命案积案 杭州警方",
-            "万向公园 11·4 天网"
-        ],
-        "recommended_vox_verbs": [
-            "MICRO_TRACE_MATCH",
-            "GEO_VECTOR_PURSUIT",
-            "SINGLE_EVIDENCE_AUTOPSY"
-        ],
-        "title": "[중국 실화 사건] 도심 공원의 시간을 멈춘 20년 특급 미제사건의 범인이 1,200km 밖에서 평범히 살아온 사연 | 항저우 완샹공원 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ thủ ác trong kỳ án treo 20 năm tại công viên trung tâm Hàng Châu sống bình thản cách hiện trường 1.200km | Kỳ án Công viên Vạn Hướng)",
-        "topic_anchor": "[중국 실화 사건] 도심 공원의 시간을 멈춘 20년 특급 미제사건의 범인이 1,200km 밖에서 평범히 살아온 사연 | 항저우 완샹공원 사건",
-        "winner_cluster": "Luồng 2 · Hồ Sơ Lạnh 20 Năm Hàng Châu & Đột Phá Cây Gia Phả Pháp Y ADN (항저우 완샹공원 20년 미제사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Công Viên Vạn Hướng Hàng Châu (杭州万向公园11·4积案, 2000–2020) — 20 Năm Bảo Quản Vật Chứng Trong Kho Lạnh & Chiến Dịch Lọc Gia Phả Xuyên Sơn Đông - Nội Mông",
-        "codex_reasons": [
-            "Họp báo chính thức cực lớn của Công an Hàng Châu năm 2020 kèm nhiều phóng sự CCTV/Chiết Giang TV về 3 thế hệ cảnh sát giữ vật chứng suốt 20 năm",
-            "Đậm chất nhân văn điều tra & khoa học hình sự (100% Xanh tiền YouTube)"
-        ],
-        "opening_hook": "은퇴를 앞둔 노형사가 후배의 손에 조용히 건넨 빛바랜 갈색 증거물 봉투 하나. 항저우 도심 한복판 완샹공원에서 목격자 한 명 없이 미궁에 빠졌던 그날 밤의 미세 흔적이, 20년 뒤 1,200킬로미터 떨어진 북쪽 마을의 한 가계도를 정확히 가리켰습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng 2 nạn nhân (đôi tình nhân) tại công viên · án lạnh 20 năm giải mã bằng phả hệ gen Y-STR】 Hồ sơ thật 100% Kỳ án Công viên Vạn Hướng quận Hạ Thành, Hàng Châu ngày 4/11/2000 (杭州万向公园11·4命案积案 — Vũ Mỗ 武某 & Vương Mỗ 王某, phá án tháng 7/2020): Vụ án treo suốt 20 năm của Công an Hàng Châu được giải mã nhờ công nghệ gia phả Y-STR thế hệ mới khoanh vùng dòng họ tại Sơn Đông và bắt giữ 2 hung thủ đã thay đổi cuộc sống tại Nội Mông & Sơn Đông.",
-        "hook_archetype": "chilling_verbatim_line"
     },
     {
         "id": "vio_cn_shijiazhuang_168h_manhunt",
@@ -2307,7 +1583,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cắt cảnh Sau Cơn Bão 100% Xanh tiền: tập trung hoàn toàn vào đồng hồ đếm ngược 168 giờ truy vết xuyên 6 tỉnh và truy nguyên nguồn vật liệu trái phép"
         ],
         "opening_hook": "어릴 적 병으로 청력을 잃고 세상과 담을 쌓은 채 살아가던 마흔한 살 남자 진루차오. 어느 새벽 그의 얼굴이 인쇄된 수백만 장의 일급 수배 전단이 전국 기차역과 국도에 일제히 붙으면서, 허베이성에서 남쪽 끝 바닷가까지 2,400킬로미터를 가로지르는 168시간의 대추격이 시작됐습니다.",
-        "note": "【Hồ sơ vụ án: đại án đặc biệt nguy hiểm tước đoạt sinh mạng hàng chục hộ dân · lệnh truy nã cấp A số 1 bộ công an · 168 giờ đại truy kích】 Hồ sơ thật 100% Chiến dịch 168 giờ đại truy bắt Cận Như Siêu (石家庄3·16案全国大追捕 — 靳如超, 16–23/3/2001): Khắc họa góc nhìn Ban Chuyên Án Bộ Công an (100% Cắt cảnh Sau Cơn Bão, không mô tả thương vong trực diện) truy lùng lộ trình đào tẩu xuyên 6 tỉnh suốt 7 ngày đêm cho đến khi bắt sống nghi phạm tại Bắc Hải (Quảng Tây) nhờ tin báo quần chúng.",
+        "note": "📋 【Hồ sơ vụ án: đại án đặc biệt nguy hiểm tước đoạt sinh mạng hàng chục hộ dân · lệnh truy nã cấp A số 1 bộ công an · 168 giờ đại truy kích】 Hồ sơ thật 100% Chiến dịch 168 giờ đại truy bắt Cận Như Siêu (石家庄3·16案全国大追捕 — 靳如超, 16–23/3/2001): Khắc họa góc nhìn Ban Chuyên Án Bộ Công an (100% Cắt cảnh Sau Cơn Bão, không mô tả thương vong trực diện) truy lùng lộ trình đào tẩu xuyên 6 tỉnh suốt 7 ngày đêm cho đến khi bắt sống nghi phạm tại Bắc Hải (Quảng Tây) nhờ tin báo quần chúng.",
         "hook_archetype": "locked_room_vault_paradox"
     },
     {
@@ -2335,7 +1611,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Cấu trúc truy vết xuyên không gian Vũ Hán - Ô Lỗ Mộc Tề - Tam Á cực hợp với bản đồ 3D GEO_VECTOR_PURSUIT"
         ],
         "opening_hook": "중국 공안부가 가장 높은 현상금을 걸고 전국을 뒤졌던 A급 수배범 마한칭. 모두가 그가 국경 너머로 밀항했을 것이라 생각했지만, 그는 오히려 관광객들로 북적이는 남쪽 끝 휴양 도시 싼야에서 8년 동안 평범한 택시 운전사로 살아가고 있었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án liên hoàn tước đoạt 7 sinh mạng · lệnh truy nã cấp A bộ công an · ẩn mình lái taxi ở Tam Á suốt 8 năm】 Hồ sơ thật 100% Chuyên án truy nã cấp A Mã Hán Khánh (马汉庆, Vũ Hán, 1996–2004): Sau vụ cướp trước cổng Nhà máy Hóa chất Hữu cơ Vũ Hán tháng 1/1996 và các vụ án tại Tân Cương, Mã Hán Khánh dùng CMND giả tên 'Châu Quân' (周军) trốn xuống thành phố Tam Á (Hải Nam) mua xe chạy taxi và lập gia đình suốt 8 năm trước khi bị bắt ngày 11/11/2004.",
+        "note": "📋 【Hồ sơ vụ án: trọng án liên hoàn tước đoạt 7 sinh mạng · lệnh truy nã cấp A bộ công an · ẩn mình lái taxi ở Tam Á suốt 8 năm】 Hồ sơ thật 100% Chuyên án truy nã cấp A Mã Hán Khánh (马汉庆, Vũ Hán, 1996–2004): Sau vụ cướp trước cổng Nhà máy Hóa chất Hữu cơ Vũ Hán tháng 1/1996 và các vụ án tại Tân Cương, Mã Hán Khánh dùng CMND giả tên 'Châu Quân' (周军) trốn xuống thành phố Tam Á (Hải Nam) mua xe chạy taxi và lập gia đình suốt 8 năm trước khi bị bắt ngày 11/11/2004.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -2363,7 +1639,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Giá trị nhân văn & khoa học pháp y đỉnh cao: một mẫu vật chứng nhỏ được bảo quản cẩn thận giúp tìm ra hung thủ thật Hạng Sinh Nguyên"
         ],
         "opening_hook": "1995년 저장성 샤오산의 도로변에 멈춰 선 택시 안에서 발견된 작은 담배꽁초 하나. 당시 기술로는 주인을 알 수 없었던 그 미세한 흔적이 십팔 년 뒤 억울한 누명을 벗겨내는 결정적 열쇠가 되었고, 마침내 이십팔 년 만에 진짜 범인 항생원의 이름을 세상에 불러냈습니다.",
-        "note": "【Hồ sơ vụ án: trọng án liên hoàn tước đoạt sinh mạng 2 nữ tài xế taxi · án lạnh 28 năm minh oan và bắt hung thủ thật bằng ADN đầu lọc thuốc lá】 Hồ sơ thật 100% Kỳ án hai tài xế taxi tại Tiêu Sơn, Hàng Châu năm 1995 (浙江萧山1995年命案积案 — Hạng Sinh Nguyên 项生源): Nhờ bảo quản nghiêm ngặt đầu lọc thuốc lá và dấu vân tay tại hiện trường năm 1995, cơ quan giám định pháp y Chiết Giang đã xác định được hung thủ thật Hạng Sinh Nguyên, khép lại kỳ án kéo dài gần 3 thập kỷ.",
+        "note": "📋 【Hồ sơ vụ án: trọng án liên hoàn tước đoạt sinh mạng 2 nữ tài xế taxi · án lạnh 28 năm minh oan và bắt hung thủ thật bằng ADN đầu lọc thuốc lá】 Hồ sơ thật 100% Kỳ án hai tài xế taxi tại Tiêu Sơn, Hàng Châu năm 1995 (浙江萧山1995年命案积案 — Hạng Sinh Nguyên 项生源): Nhờ bảo quản nghiêm ngặt đầu lọc thuốc lá và dấu vân tay tại hiện trường năm 1995, cơ quan giám định pháp y Chiết Giang đã xác định được hung thủ thật Hạng Sinh Nguyên, khép lại kỳ án kéo dài gần 3 thập kỷ.",
         "hook_archetype": "cold_archive_match"
     },
     {
@@ -2391,7 +1667,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền: tập trung vào khoa học phân tích dấu chân, giám định vân tay và chiến thuật bao vây địa hình rừng núi Nghi Tân (Tứ Xuyên)"
         ],
         "opening_hook": "신분증 검사를 피하기 위해 단 한 번도 여관이나 기차역을 이용하지 않고, 오직 밤에만 철길과 깊은 산속을 따라 여섯 개 성을 가로지른 남자가 있었습니다. 수만 장의 수배 전단이 마을마다 붙은 가운데, 쓰촨성 이빈시의 가파른 산비탈에서 발견된 낯선 발자국 하나가 대추격전의 마침표를 찍었습니다.",
-        "note": "【Hồ sơ vụ án: đại án đột nhập ban đêm tước đoạt 6 sinh mạng xuyên 6 tỉnh · lệnh truy nã cấp A bộ công an · phản trinh sát ngủ rừng】 Hồ sơ thật 100% Chuyên án truy nã cấp A Đổng Văn Ngữ (董文语, 3–11/2006): Để né tránh toàn bộ hệ thống kiểm tra giấy tờ và camera tại nhà ga/khách sạn, Đổng Văn Ngữ chỉ di chuyển ban đêm dọc đường sắt và ngủ trong rừng núi xuyên 6 tỉnh (Chiết Giang, Phúc Kiến, Giang Tây, Hồ Nam, Quảng Tây, Tứ Xuyên) trước khi bị bắt tại núi Tượng Tỵ, Nghi Tân (Tứ Xuyên) ngày 16/11/2006.",
+        "note": "📋 【Hồ sơ vụ án: đại án đột nhập ban đêm tước đoạt 6 sinh mạng xuyên 6 tỉnh · lệnh truy nã cấp A bộ công an · phản trinh sát ngủ rừng】 Hồ sơ thật 100% Chuyên án truy nã cấp A Đổng Văn Ngữ (董文语, 3–11/2006): Để né tránh toàn bộ hệ thống kiểm tra giấy tờ và camera tại nhà ga/khách sạn, Đổng Văn Ngữ chỉ di chuyển ban đêm dọc đường sắt và ngủ trong rừng núi xuyên 6 tỉnh (Chiết Giang, Phúc Kiến, Giang Tây, Hồ Nam, Quảng Tây, Tứ Xuyên) trước khi bị bắt tại núi Tượng Tỵ, Nghi Tân (Tứ Xuyên) ngày 16/11/2006.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -2419,92 +1695,8 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Chiều sâu tâm lý và điều tra cực kỳ xúc động, 100% Xanh tiền YouTube"
         ],
         "opening_hook": "2005년 가을, 네이멍구에서 검거된 연쇄 범죄자 자오즈훙이 심문 도중 형사들이 전혀 묻지 않은 구 년 전 사건 하나를 스스로 입에 올렸습니다. 이미 범인이 잡혀 사건이 종결된 지 오래였던 1996년 제1방직공장 골목 사건. 자오즈훙이 감방 안에서 직접 적은 한 장의 자백서가 중국 사법 역사를 뒤흔들기 시작했습니다.",
-        "note": "【Hồ sơ vụ án: trọng án liên hoàn tước đoạt sinh mạng 10 phụ nữ · hung thủ thật Triệu Chí Hồng tự thú trong trại giam & đại án minh oan 18 năm】 Hồ sơ thật 100% Kỳ án Hô Cách Cát Lặc Đồ và chân tướng hung thủ Triệu Chí Hồng tại Hô Hòa Hạo Đặc, Nội Mông (内蒙古呼格吉勒图冤案平反与赵志红案, 1996–2014): Năm 2005 khi bị bắt, Triệu Chí Hồng khai nhận chính hắn mới là thủ phạm vụ án ngày 9/4/1996 và viết 'Đơn xin đền mạng' từ trong trại giam, dẫn tới phiên tòa tái thẩm lịch sử ngày 15/12/2014 minh oan hoàn toàn cho Hô Cách Cát Lặc Đồ.",
+        "note": "📋 【Hồ sơ vụ án: trọng án liên hoàn tước đoạt sinh mạng 10 phụ nữ · hung thủ thật Triệu Chí Hồng tự thú trong trại giam & đại án minh oan 18 năm】 Hồ sơ thật 100% Kỳ án Hô Cách Cát Lặc Đồ và chân tướng hung thủ Triệu Chí Hồng tại Hô Hòa Hạo Đặc, Nội Mông (内蒙古呼格吉勒图冤案平反与赵志红案, 1996–2014): Năm 2005 khi bị bắt, Triệu Chí Hồng khai nhận chính hắn mới là thủ phạm vụ án ngày 9/4/1996 và viết 'Đơn xin đền mạng' từ trong trại giam, dẫn tới phiên tòa tái thẩm lịch sử ngày 15/12/2014 minh oan hoàn toàn cho Hô Cách Cát Lặc Đồ.",
         "hook_archetype": "cold_archive_match"
-    },
-    {
-        "id": "vio_cn_jiangxi_fuzhou_wan_guanghui_22y",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "double_life_unmasking",
-        "case_real_name_zh": "江西抚州公安部A级通缉命案逃犯潜逃22年洗白变身广东佛山千万建材富商案 — 万光辉 (1998–2020)",
-        "archival_search_keywords_zh": [
-            "万光辉 A级通缉犯 22年 今日说法",
-            "江西抚州 万光辉 佛山 落网 央视",
-            "潜逃22年 千万富商 万光辉 天网"
-        ],
-        "recommended_vox_verbs": [
-            "SPLIT_PARADOX",
-            "DUAL_ERA_LOCK",
-            "GEO_VECTOR_PURSUIT"
-        ],
-        "title": "[중국 실화 사건] 22년간 증발했던 공안부 A급 수배범이 수백억 대 건자재 그룹 회장으로 신분을 세탁한 사연 | 푸저우 완광후이 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ truy nã cấp A bốc hơi 22 năm tẩy trắng thân phận thành Chủ tịch Tập đoàn vật liệu xây dựng trăm tỷ | Chuyên án Vạn Quang Huy)",
-        "topic_anchor": "[중국 실화 사건] 22년간 증발했던 공안부 A급 수배범이 수백억 대 건자재 그룹 회장으로 신분을 세탁한 사연 | 푸저우 완광후이 사건",
-        "winner_cluster": "Luồng 2 · Tội Phạm Truy Nã Cấp A Đoạt Mạng Người Ẩn Mình 22 Năm Làm Chủ Tịch Tập Đoàn Vật Liệu Xây Dựng (푸저우 완광후이 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Vạn Quang Huy (万光辉, 1998–2020) — Trọng Án Đoạt Mạng Tại Phủ Châu (Giang Tây), Lệnh Truy Nã Cấp A Bộ Công An & 22 Năm Mang Tên Giả Làm Đại Gia Vật Liệu Xây Dựng Tại Phật Sơn",
-        "codex_reasons": [
-            "Đối tượng Truy nã Cấp A Bộ Công an lẩn trốn 22 năm dưới vỏ bọc doanh nhân giàu có tại Quảng Đông, phóng sự CCTV và Công an Giang Tây cực đầy đủ",
-            "100% Cách viết Xanh tiền Đài truyền hình: tập trung vào màn tẩy trắng lý lịch và đối sánh sinh trắc học lật tẩy hai cuộc đời"
-        ],
-        "opening_hook": "광둥성 포산시에서 수백억 원대 건자재 유통 회사를 운영하며 고급 외제차를 몰던 성공한 기업가. 하지만 2020년 봄 장시성 형사들이 그의 사무실 문을 열고 잊혔던 본명 석 자를 부르자, 22년 동안 완벽하게 유지되던 회장의 가면이 단숨에 무너져 내렸습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân · lệnh truy nã cấp A bộ công an · tẩy trắng thân phận 22 năm】 Hồ sơ thật 100% Chuyên án Vạn Quang Huy tại Phủ Châu, Giang Tây (江西抚州公安部A级通缉犯万光辉潜逃22年落网案, 1998–2020): Sau khi cầm đầu trọng án tước đoạt sinh mạng nạn nhân năm 1998 và bị Bộ Công an phát lệnh truy nã cấp A toàn quốc, Vạn Quang Huy trốn xuống Phật Sơn (Quảng Đông), mua hộ khẩu giả mở công ty vật liệu xây dựng quy mô hàng chục triệu NDT suốt 22 năm trước khi bị Công an Giang Tây đối sánh sinh trắc học bắt giữ tháng 5/2020."
-    },
-    {
-        "id": "vio_cn_shandong_weifang_xu_dapeng_21y",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "last_ordinary_routine",
-        "case_real_name_zh": "山东潍坊重特大命案公安部A级通缉犯潜逃21年藏身天津废品场落网案 — 徐大鹏 (1999–2020)",
-        "archival_search_keywords_zh": [
-            "徐大鹏 A级通缉犯 21年 今日说法",
-            "山东潍坊 徐大鹏 天津 落网 天网",
-            "公安部A级通缉令 徐大鹏 侦破"
-        ],
-        "recommended_vox_verbs": [
-            "GEO_VECTOR_PURSUIT",
-            "FORENSIC_ZOOM_CHAIN",
-            "DUAL_ERA_LOCK"
-        ],
-        "title": "[중국 실화 사건] 공안부 A급 수배범이 21년간 신분증도 은행 계좌도 없이 외곽 폐기물 야적장에 숨어 산 이유 | 웨이팡 쉬다펑 추적 사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do kẻ truy nã cấp A sống ẩn dật 21 năm không giấy tờ, không tài khoản ngân hàng giữa bãi phế liệu | Chuyên án Từ Đại Bằng Duy Phường)",
-        "topic_anchor": "[중국 실화 사건] 공안부 A급 수배범이 21년간 신분증도 은행 계좌도 없이 외곽 폐기물 야적장에 숨어 산 이유 | 웨이팡 쉬다펑 추적 사건",
-        "winner_cluster": "Luồng 2 · Truy Nã Cấp A Trọng Án Đoạt Mạng 2 Người & 21 Năm Ẩn Náu Không Giấy Tờ Tại Thiên Tân (웨이팡 쉬다펑 21년 추적 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Từ Đại Bằng (徐大鹏, 1999–2020) — Trọng Án Tước Đoạt 2 Sinh Mạng Tại Sơn Đông, Lệnh Truy Nã Cấp A Bộ Công An & 21 Năm Sống Bóng Đêm Giữa Bãi Phế Liệu Ngoại Ô Thiên Tân",
-        "codex_reasons": [
-            "Chuyên án truy bắt đối tượng Truy nã Cấp A Bộ Công an lẩn trốn hơn 2 thập kỷ, nhiều tư liệu điều tra hiện trường của Công an Sơn Đông & Thiên Tân",
-            "100% Xanh tiền YouTube: khắc họa cuộc truy vết kiên trì 21 năm và tâm lý phản trinh sát tuyệt vọng của kẻ trốn nã"
-        ],
-        "opening_hook": "기차표를 사지도, 은행 계좌를 열지도, 심지어 아파도 병원에 가지 않은 채 스물한 해를 그림자처럼 살아온 남자가 있었습니다. 톈진 외곽의 거대한 폐기물 야적장 구석 컨테이너에서 마침내 수갑이 채워졌을 때, 그는 공안부 A급 수배 명단에 오른 지 이십일 년 된 중대 수배범 쉬다펑이었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt 2 sinh mạng · lệnh truy nã cấp A bộ công an · lẩn trốn 21 năm】 Hồ sơ thật 100% Chuyên án truy nã cấp A Từ Đại Bằng tại Duy Phường, Sơn Đông (山东潍坊公安部A级通缉犯徐大鹏潜逃21年落网案, 1999–2020): Sau trọng án khiến 2 nạn nhân vĩnh viễn mất đi sinh mạng năm 1999 và bị Bộ Công an phát lệnh truy nã cấp A, Từ Đại Bằng cắt đứt mọi liên lạc gia đình, sống không chứng minh thư trong các bãi phế liệu vùng ven Thiên Tân suốt 21 năm trước khi bị Ban chuyên án khóa chặt dấu vết sinh học và bắt giữ năm 2020."
-    },
-    {
-        "id": "vio_cn_shanxi_linfen_zhang_zelin_23y",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "cold_archive_match",
-        "case_real_name_zh": "山西临汾重特大命案公安部A级通缉犯潜逃23年隐姓埋名落网案 — 张泽林 (1997–2020)",
-        "archival_search_keywords_zh": [
-            "张泽林 A级通缉 23年 今日说法",
-            "山西临汾 命案积案 张泽林 天网",
-            "潜逃23年 A级逃犯 落网"
-        ],
-        "recommended_vox_verbs": [
-            "GEO_VECTOR_PURSUIT",
-            "MICRO_TRACE_MATCH",
-            "CONCENTRIC_TRAP"
-        ],
-        "title": "[중국 실화 사건] 공안부 A급 수배범이 23년간 다섯 개 성을 떠돌며 이름도 사진도 없이 살아온 비밀 | 린펀 장쩌린 사건 ([Vụ Án Có Thật ở Trung Quốc] Bí mật kẻ truy nã cấp A xóa sạch tên tuổi và hình ảnh phiêu bạt qua 5 tỉnh suốt 23 năm | Chuyên án Trương Trạch Lâm Lâm Phần)",
-        "topic_anchor": "[중국 실화 사건] 공안부 A급 수배범이 23년간 다섯 개 성을 떠돌며 이름도 사진도 없이 살아온 비밀 | 린펀 장쩌린 사건",
-        "winner_cluster": "Luồng 2 · Lệnh Truy Nã Cấp A Trọng Án 3 Mạng Người & 23 Năm Truy Vết Xuyên 5 Tỉnh (산시성 린펀 장쩌린 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Trương Trạch Lâm (张泽林, 1997–2020) — Trọng Án Tước Đoạt 3 Sinh Mạng Tại Lâm Phần (Sơn Tây) & 23 Năm Phiêu Bạt Dưới Thân Phận Thợ Mộc Câm Lặng",
-        "codex_reasons": [
-            "Chuyên án trọng điểm Bộ Công an truy bắt đối tượng Truy nã Cấp A trốn 23 năm, giàu tư liệu điều tra và thẩm vấn",
-            "100% Xanh tiền YouTube: tập trung vào bản đồ truy vết 5 tỉnh và đối sánh dữ liệu phả hệ hình sự"
-        ],
-        "opening_hook": "1997년 산시성 린펀에서 세 사람의 시간을 영원히 멈춰 세운 뒤 어둠 속으로 사라진 공안부 A급 수배범 장쩌린. 한 곳에 반년 이상 머물지 않는 철칙으로 스물세 해 동안 다섯 개 성을 떠돌았지만, 수사팀이 재구축한 미세 흔적 데이터베이스 앞에서는 끝내 걸음을 멈춰야 했습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt 3 sinh mạng · lệnh truy nã cấp A bộ công an · phiêu bạt 5 tỉnh suốt 23 năm】 Hồ sơ thật 100% Chuyên án truy nã cấp A Trương Trạch Lâm tại Lâm Phần, Sơn Tây (山西临汾公安部A级通缉犯张泽林潜逃23年落网案, 1997–2020): Sau trọng án khiến 3 nạn nhân vĩnh viễn không trở về năm 1997, Trương Trạch Lâm bị Bộ Công an phát lệnh truy nã cấp A; hắn ẩn danh làm thợ mộc thời vụ di chuyển liên tục qua 5 tỉnh suốt 23 năm trước khi bị Công an Sơn Tây khóa chặt tọa độ và bắt giữ năm 2020."
     },
     {
         "id": "vio_cn_jilin_tv_dating_wugang_13y",
@@ -2531,7 +1723,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Nghịch lý tâm lý đỉnh cao cho SPLIT_PARADOX & DUAL_ERA_LOCK"
         ],
         "opening_hook": "화려한 조명이 켜진 인기 TV 맞선 프로그램 스튜디오. 멋진 정장을 차려입고 나와 노래를 부르며 여성 출연자의 손을 잡고 퇴장한 서른아홉 살의 웨딩 사회자 류하오. 하지만 방송이 전파를 타는 순간, 천 킬로미터 떨어진 북쪽 도시의 한 시청자가 텔레비전 화면을 가리키며 비명을 질렀습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng 1 nạn nhân tại Cát Lâm · trốn nã 13 năm làm MC và bị bắt vì lên sóng truyền hình hẹn hò】 Hồ sơ thật 100% Vụ án Ngô Cương tại thành phố Cát Lâm (吉林命案逃犯吴刚上相亲节目落网案, 1998–2011): Sau trọng án năm 1998 tại Cát Lâm, Ngô Cương trốn xuống Thẩm Dương đổi tên thành 'Lưu Hạo' (刘浩), làm MC sự kiện suốt 13 năm; tháng 11/2010 hắn tự tin đăng ký tham gia chương trình hẹn hò trên truyền hình vệ tinh Hắc Long Giang và bị người quen cũ nhận diện báo Công an Cát Lâm bắt giữ tháng 6/2011.",
+        "note": "📋 【Hồ sơ vụ án: trọng án tước đoạt sinh mạng 1 nạn nhân tại Cát Lâm · trốn nã 13 năm làm MC và bị bắt vì lên sóng truyền hình hẹn hò】 Hồ sơ thật 100% Vụ án Ngô Cương tại thành phố Cát Lâm (吉林命案逃犯吴刚上相亲节目落网案, 1998–2011): Sau trọng án năm 1998 tại Cát Lâm, Ngô Cương trốn xuống Thẩm Dương đổi tên thành 'Lưu Hạo' (刘浩), làm MC sự kiện suốt 13 năm; tháng 11/2010 hắn tự tin đăng ký tham gia chương trình hẹn hò trên truyền hình vệ tinh Hắc Long Giang và bị người quen cũ nhận diện báo Công an Cát Lâm bắt giữ tháng 6/2011.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -2559,7 +1751,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Khớp hoàn hảo bản đồ vây bắt 3D GEO_VECTOR_PURSUIT & CONCENTRIC_TRAP"
         ],
         "opening_hook": "2014년 9월 2일 새벽 네 시 사십사 분, 하얼빈 외곽 구치소의 복도 CCTV에 믿기 힘든 장면이 찍혔습니다. 수감복 대신 경찰 제복을 입은 세 명의 남자가 당당하게 철문을 열고 어둠 속으로 걸어 나간 것입니다. 날이 밝자 무려 일만 오천 명의 병력과 헬기가 산악 지대를 겹겹이 에워쌌습니다.",
-        "note": "【Hồ sơ vụ án: trọng án đoạt mạng quản giáo trực ban để vượt ngục · lệnh truy nã cấp A bộ công an · 15.000 quân cảnh vây bắt 9 ngày đêm】 Hồ sơ thật 100% Chuyên án truy bắt 3 phạm nhân vượt trại tạm giam huyện Diên Thọ, Cáp Nhĩ Tân, Hắc Long Giang (黑龙江延寿9·2越狱案 — 高玉伦·王大民·李海伟, 2–11/9/2014): Bộ Công an và Công an Hắc Long Giang huy động 15.000 cảnh sát và trực thăng khép vòng vây suốt 9 ngày đêm, lần lượt bắt gọn cả 3 đối tượng.",
+        "note": "📋 【Hồ sơ vụ án: trọng án đoạt mạng quản giáo trực ban để vượt ngục · lệnh truy nã cấp A bộ công an · 15.000 quân cảnh vây bắt 9 ngày đêm】 Hồ sơ thật 100% Chuyên án truy bắt 3 phạm nhân vượt trại tạm giam huyện Diên Thọ, Cáp Nhĩ Tân, Hắc Long Giang (黑龙江延寿9·2越狱案 — 高玉伦·王大民·李海伟, 2–11/9/2014): Bộ Công an và Công an Hắc Long Giang huy động 15.000 cảnh sát và trực thăng khép vòng vây suốt 9 ngày đêm, lần lượt bắt gọn cả 3 đối tượng.",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -2587,7 +1779,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Tư liệu video bắt giữ thực tế đêm 5/3/2005 và thẩm vấn trực diện cực kỳ đắt giá"
         ],
         "opening_hook": "모든 고속도로와 항구가 봉쇄된 가운데, 수배 전단 속 남자는 자동차 대신 낡은 자전거 한 대를 타고 검문소 경찰들 앞을 유유히 지나갔습니다. 그로부터 구 년 동안 광시성 구이린에서 삼억 위안대 유명 사업가 '리썬칭'으로 살며 심지어 지역 신문에 용감한 시민으로 실리기까지 했던 A급 수배범 류자오화를 추적합니다.",
-        "note": "【Hồ sơ vụ án: trọng án đoạt mạng người & điều chế 12 tấn tinh thể độc hại lớn nhất thế giới · lệnh truy nã cấp A số 1 bộ công an · trốn 9 năm】 Hồ sơ thật 100% Chuyên án truy nã cấp A Lưu Chiêu Hoa (刘招华, 1996–2005): Nổi tiếng với tâm lý phản trinh sát cực đoan — đạp xe đạp vượt vòng vây tại Quảng Đông năm 1999, đổi tên thành 'Lý Sâm Thanh' (李森青) đến Quế Lâm (Quảng Tây) mở công ty lâm nghiệp sinh thái 300 triệu tệ suốt 9 năm trước khi bị bắt trong chiến dịch 'Tróc Mộc Điểu' đúng ngày sinh nhật 5/3/2005.",
+        "note": "📋 【Hồ sơ vụ án: trọng án đoạt mạng người & điều chế 12 tấn tinh thể độc hại lớn nhất thế giới · lệnh truy nã cấp A số 1 bộ công an · trốn 9 năm】 Hồ sơ thật 100% Chuyên án truy nã cấp A Lưu Chiêu Hoa (刘招华, 1996–2005): Nổi tiếng với tâm lý phản trinh sát cực đoan — đạp xe đạp vượt vòng vây tại Quảng Đông năm 1999, đổi tên thành 'Lý Sâm Thanh' (李森青) đến Quế Lâm (Quảng Tây) mở công ty lâm nghiệp sinh thái 300 triệu tệ suốt 9 năm trước khi bị bắt trong chiến dịch 'Tróc Mộc Điểu' đúng ngày sinh nhật 5/3/2005.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -2615,7 +1807,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền: tập trung vào mạng lưới tài chính - quyền lực ngầm và cuộc đấu trí tại tòa án"
         ],
         "opening_hook": "사천억 원이 넘는 기부를 하며 포브스 선정 자선가 명단에 이름을 올렸던 사백억 위안대 광산 재벌 류한. 하지만 공안부 특별수사팀이 그의 비밀 별장을 급습했을 때, 그곳에는 사 년 동안 전국에 A급 수배령이 내려진 친동생 류웨이가 숨어 지내고 있었습니다.",
-        "note": "【Hồ sơ vụ án: đại án tập đoàn ngầm tước đoạt 9 sinh mạng & che giấu em trai truy nã cấp A · chuyên án 1·10 bộ công an Trung Quốc】 Hồ sơ thật 100% Chuyên án 1·10 của Bộ Công an đối với Tập đoàn Hán Long tại Tứ Xuyên (四川汉龙集团刘汉·刘维特大专案, 2013–2015): Dưới vỏ bọc tỷ phú khoáng sản và thủy điện sở hữu 40 tỷ NDT, Lưu Hán thao túng ngầm địa phương và che giấu em trai Lưu Duy đang bị Bộ Công an truy nã cấp A suốt 4 năm trước khi bị bắt tại Bắc Kinh và xét xử tại Tòa án Hàm Ninh (Hồ Bắc).",
+        "note": "📋 【Hồ sơ vụ án: đại án tập đoàn ngầm tước đoạt 9 sinh mạng & che giấu em trai truy nã cấp A · chuyên án 1·10 bộ công an Trung Quốc】 Hồ sơ thật 100% Chuyên án 1·10 của Bộ Công an đối với Tập đoàn Hán Long tại Tứ Xuyên (四川汉龙集团刘汉·刘维特大专案, 2013–2015): Dưới vỏ bọc tỷ phú khoáng sản và thủy điện sở hữu 40 tỷ NDT, Lưu Hán thao túng ngầm địa phương và che giấu em trai Lưu Duy đang bị Bộ Công an truy nã cấp A suốt 4 năm trước khi bị bắt tại Bắc Kinh và xét xử tại Tòa án Hàm Ninh (Hồ Bắc).",
         "hook_archetype": "double_life_unmasking"
     },
     {
@@ -2643,63 +1835,7 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "Khớp hoàn hảo RADIAL_TIME_PRESSURE & GEO_VECTOR_PURSUIT"
         ],
         "opening_hook": "모두가 초췌한 행색의 도망자를 찾고 있을 때, A급 수배범 후이화는 최고급 정장에 선글라스를 끼고 독서광 행세를 하며 네 개 도시의 검문망을 빠져나갔습니다. 사건 발생 여든 시간째, 샤먼 시내 호텔 앞에서 사복 형사들이 그의 어깨를 덮치기 직전까지도 그의 주머니 속에는 위조 신분증과 도주 자금이 들어 있었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án liên hoàn tước đoạt 4 sinh mạng (2 doanh nhân & 2 cảnh sát giao thông) · lệnh truy nã cấp A bộ công an · 80 giờ truy kích】 Hồ sơ thật 100% Chuyên án 80 giờ truy bắt kẻ truy nã cấp A Hồ Ích Hoa xuyên Chiết Giang - Quảng Đông - Phúc Kiến (粤闽跨省追捕胡益华案, 7/2010): Sau vụ án tại trạm dừng nghỉ cao tốc Huệ Lai (Quảng Đông) đêm 5/7/2010, Bộ Công an phát lệnh truy nã cấp A; chỉ sau 80 giờ truy vết tín hiệu thẻ ngân hàng và camera giao thông, lực lượng đặc nhiệm đã bắt sống Hồ Ích Hoa tại Hạ Môn (Phúc Kiến) ngày 8/7/2010.",
-        "hook_archetype": "last_ordinary_routine"
-    },
-    {
-        "id": "vio_cn_xian_weizhenhai_copper_wire",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "陕西西安看守所铜丝磨断铁镣越狱与21个月跨省缉捕纪实 — 魏振海 (1988–1990)",
-        "archival_search_keywords_zh": [
-            "西安 魏振海 越狱 侦破纪实",
-            "陕西西安 魏振海 抓捕 纪录片",
-            "道北 魏振海 档案"
-        ],
-        "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "CONCENTRIC_TRAP",
-            "RADIAL_TIME_PRESSURE"
-        ],
-        "title": "[중국 실화 사건] 구두창 속에 숨긴 구리선 하나로 감방 쇠족쇄를 갈아내고 증발한 특급 수배범의 정체 | 시안 웨이전하이 사건 ([Vụ Án Có Thật ở Trung Quốc] Chân tướng kẻ truy nã đặc biệt giấu 1 sợi dây đồng trong đế giày mài đứt xiềng sắt buồng giam rồi biến mất | Chuyên án Ngụy Chấn Hải Tây An)",
-        "topic_anchor": "[중국 실화 사건] 구두창 속에 숨긴 구리선 하나로 감방 쇠족쇄를 갈아내고 증발한 특급 수배범의 정체 | 시안 웨이전하이 사건",
-        "winner_cluster": "Luồng 2 · Sợi Dây Đồng Mài Đứt Xiềng Sắt & 21 Tháng Đấu Trí Của Công An Tây An (시안 웨이전하이 탈옥 추적 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Ngụy Chấn Hải Tại Tây An, Thiểm Tây (陕西西安魏振海越狱追捕案) — Giải Phẫu Kỹ Thuật Vượt Ngục Không Tưởng & Mật Lệnh Phục Kích Đêm 30/1/1990",
-        "codex_reasons": [
-            "Một trong những chuyên án hình sự kinh điển nhất lịch sử Công an Tây An với tư liệu phim tài liệu lưu trữ cực kỳ chi tiết",
-            "100% Xanh tiền: tập trung vào màn vượt ngục tinh vi và chiến thuật giăng lưới bắt sống"
-        ],
-        "opening_hook": "발목에 채워진 칠 킬로그램짜리 굵은 쇠족쇄, 그리고 이중 철창으로 가로막힌 독방. 그러나 수감자 웨이전하이는 신발 밑창 속에 몰래 숨겨 반입한 가는 금속선 하나로 수개월 동안 밤마다 쇠사슬을 갈아냈고, 폭우가 쏟아지던 밤 천둥소리를 틈타 감옥 담장을 넘어 사라졌습니다.",
-        "note": "【Hồ sơ vụ án: đại án liên hoàn tước đoạt 11 sinh mạng tại Tây An · trùm tội phạm số 1 cưa xiềng sắt vượt ngục & 21 tháng vây bắt】 Hồ sơ thật 100% Chuyên án Ngụy Chấn Hải tại Tây An, Thiểm Tây (陕西西安魏振海越狱追捕案, 1988–1990): Sau khi bị bắt năm 1987, Ngụy Chấn Hải dùng dụng cụ kim loại mảnh giấu trong đế giày cưa đứt xiềng chân và khoét tường vượt ngục trong đêm mưa; Công an Tây An lập tổ chuyên án mật truy lùng suốt 21 tháng và bắt sống hắn ngày 30/1/1990.",
-        "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "vio_cn_anyang_lihui_cosmetics_ceo_13y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "河南安阳重案逃犯潜逃13年漂白身份变身山东亿万化妆品集团董事长案 — 李辉 (2001–2014)",
-        "archival_search_keywords_zh": [
-            "逃犯 变身 化妆品 董事长 今日说法",
-            "潜逃13年 亿万富翁 李辉 天网",
-            "河南安阳 命案逃犯 董事长"
-        ],
-        "recommended_vox_verbs": [
-            "DUAL_ERA_LOCK",
-            "SPLIT_PARADOX",
-            "SCALE_MULTIPLICATION"
-        ],
-        "title": "[중국 실화 사건] 13년간 흔적도 없이 증발했던 지명수배범이 수백 명 직원을 거느린 억대 화장품 그룹 회장이었다니 | 안양 리후이 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ truy nã trọng án bốc hơi không dấu vết suốt 13 năm hóa ra đã trở thành Chủ tịch Tập đoàn Mỹ phẩm trăm tỷ | Hai bộ mặt của Lý Huy)",
-        "topic_anchor": "[중국 실화 사건] 13년간 흔적도 없이 증발했던 지명수배범이 수백 명 직원을 거느린 억대 화장품 그룹 회장이었다니 | 안양 리후이 사건",
-        "winner_cluster": "Luồng 2 · Kẻ Truy Nã Đổi Tên Xây Đế Chế Mỹ Phẩm & Cú Nhận Diện Ngay Trong Phòng Họp HĐQT (안양 리후이 화장품 회장 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Lý Huy (李辉, Hà Nam - Sơn Đông 2001–2014) — Bắt Đầu Từ Nhân Viên Tiếp Thị Quèn Trở Thành Chủ Tịch Tập Đoàn Mỹ Phẩm Lớn Nhưng Không Bao Giờ Dám Chụp Ảnh Chung Với Nhân Viên",
-        "codex_reasons": [
-            "Chi tiết tâm lý cực kỳ đắt giá: dù là chủ tịch tập đoàn lớn có xe sang biệt thự nhưng suốt 13 năm không bao giờ dám xuất hiện trước ống kính máy ảnh hay đi máy bay",
-            "Khớp hoàn hảo DUAL_ERA_LOCK & SPLIT_PARADOX"
-        ],
-        "opening_hook": "수백 명의 직원을 거느린 유명 화장품 회사의 회장님에게는 이상한 습관이 하나 있었습니다. 회사가 아무리 큰 상을 받아도 절대로 언론 인터뷰나 기념사진 촬영 자리에 얼굴을 비치지 않는 것이었습니다. 십삼 년 뒤 경찰이 회장실 문을 열었을 때, 그의 서랍 속에서 진짜 이름이 적힌 과거의 조각이 나왔습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại An Dương · trốn nã 13 năm tẩy trắng thành chủ tịch tập đoàn mỹ phẩm】 Hồ sơ thật 100% Chuyên án Lý Huy (河南安阳重案逃犯潜逃13年变身千万富翁案, 2001–2014): Sau trọng án tại An Dương (Hà Nam) năm 2001, Lý Huy trốn sang Tế Nam (Sơn Đông) mua hộ khẩu giả, đi bán hàng mỹ phẩm dạo rồi mở công ty riêng phát triển thành tập đoàn trị giá hàng chục triệu NDT suốt 13 năm trước khi bị cảnh sát bắt giữ ngay tại văn phòng chủ tịch.",
+        "note": "📋 【Hồ sơ vụ án: trọng án liên hoàn tước đoạt 4 sinh mạng (2 doanh nhân & 2 cảnh sát giao thông) · lệnh truy nã cấp A bộ công an · 80 giờ truy kích】 Hồ sơ thật 100% Chuyên án 80 giờ truy bắt kẻ truy nã cấp A Hồ Ích Hoa xuyên Chiết Giang - Quảng Đông - Phúc Kiến (粤闽跨省追捕胡益华案, 7/2010): Sau vụ án tại trạm dừng nghỉ cao tốc Huệ Lai (Quảng Đông) đêm 5/7/2010, Bộ Công an phát lệnh truy nã cấp A; chỉ sau 80 giờ truy vết tín hiệu thẻ ngân hàng và camera giao thông, lực lượng đặc nhiệm đã bắt sống Hồ Ích Hoa tại Hạ Môn (Phúc Kiến) ngày 8/7/2010.",
         "hook_archetype": "last_ordinary_routine"
     },
     {
@@ -2727,820 +1863,1128 @@ VERIFIED_TWO_STREAM_RESERVE_CASES: list[dict[str, Any]] = [
             "100% Xanh tiền: tập trung vào bản đồ chiến thuật vây ráp 4.000 cảnh sát"
         ],
         "opening_hook": "사방이 험준한 산림으로 둘러싸인 장시성 러안현. 도주한 수배범 쩡춘량을 잡기 위해 사천 명이 넘는 경찰과 무장 병력이 모든 산길 입구에 백 개가 넘는 검문소를 세웠습니다. 열화상 드론이 밤하늘을 수색하는 가운데, 여드레 만에 오토바이를 타고 포위망을 뚫으려던 그가 마지막 저지선에 걸려들었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án liên hoàn tước đoạt 3 sinh mạng tại Giang Tây · truy nã đặc biệt nguy hiểm · 4.000 quân cảnh và drone tầm nhiệt vây bắt 8 ngày】 Hồ sơ thật 100% Chiến dịch 8 ngày đêm truy bắt Tăng Xuân Lượng tại huyện Lạc An, Phủ Châu, Giang Tây (江西乐安曾春亮大搜捕案, 8–16/8/2020): Công an tỉnh Giang Tây huy động hơn 4.000 cảnh sát, chó nghiệp vụ và drone tầm nhiệt thiết lập 3 vòng vây đồng tâm quanh khu vực rừng núi Lạc An, bắt sống Tăng Xuân Lượng khi hắn tìm cách phóng xe máy vượt chốt ngày 16/8/2020.",
+        "note": "📋 【Hồ sơ vụ án: trọng án liên hoàn tước đoạt 3 sinh mạng tại Giang Tây · truy nã đặc biệt nguy hiểm · 4.000 quân cảnh và drone tầm nhiệt vây bắt 8 ngày】 Hồ sơ thật 100% Chiến dịch 8 ngày đêm truy bắt Tăng Xuân Lượng tại huyện Lạc An, Phủ Châu, Giang Tây (江西乐安曾春亮大搜捕案, 8–16/8/2020): Công an tỉnh Giang Tây huy động hơn 4.000 cảnh sát, chó nghiệp vụ và drone tầm nhiệt thiết lập 3 vòng vây đồng tâm quanh khu vực rừng núi Lạc An, bắt sống Tăng Xuân Lượng khi hắn tìm cách phóng xe máy vượt chốt ngày 16/8/2020.",
         "hook_archetype": "double_life_unmasking"
     },
     {
-        "id": "vio_cn_hohhot_prison_tunnel_76h",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "内蒙古呼和浩特第二监狱10·17越狱76小时跨省大追捕案 — 乔海强·高博·董佳继 (2009)",
+        "id": "fin_cn_shantou_807_vat_323b_chenshaofeng",
+        "topic_stream": "financial_crime",
+        "case_real_name_zh": "广东汕头8·07共和国第一税案虚开323亿元增值税发票案 — 陈少峰·林贞木 (1999–2001)",
         "archival_search_keywords_zh": [
-            "呼和浩特 10·17越狱 76小时 今日说法",
-            "内蒙古第二监狱 越狱 抓捕 央视",
-            "乔海强 76小时 大追捕"
+            "汕头 807大案 虚开增值税发票 今日说法",
+            "共和国第一税案 陈少峰 林贞木 纪实",
+            "汕头 323亿 骗税大案 审判"
         ],
         "recommended_vox_verbs": [
-            "RADIAL_TIME_PRESSURE",
-            "GEO_VECTOR_PURSUIT",
-            "CONCENTRIC_TRAP"
-        ],
-        "title": "[중국 실화 사건] 교도관 출입 카드로 철문 4개를 차례로 열고 정문을 빠져나간 중대 수감자 4명의 공모 | 후허하오터 구치소 사건 ([Vụ Án Có Thật ở Trung Quốc] Âm mưu của 4 trọng phạm dùng thẻ từ mở 4 lớp cửa sắt trại giam rồi bước thẳng ra cổng chính | Chuyên án Hô Hòa Hạo Đặc)",
-        "topic_anchor": "[중국 실화 사건] 교도관 출입 카드로 철문 4개를 차례로 열고 정문을 빠져나간 중대 수감자 4명의 공모 | 후허하오터 구치소 사건",
-        "winner_cluster": "Luồng 2 · 76 Giờ Đại Phong Tỏa Nội Mông - Sơn Tây Truy Bắt Nhóm Vượt Ngục (후허하오터 10·17 76시간 추격 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: 76 Giờ Truy Bắt Tại Hô Hòa Hạo Đặc, Nội Mông (内蒙古10·17越狱76小时追捕案, 10/2009) — Lộ Trình Trốn Chạy Giữa Đêm Lạnh Thảo Nguyên Và Chiến Dịch Vây Ráp Tại Hòa Lâm Cách Nhĩ",
-        "codex_reasons": [
-            "Tư liệu truyền hình CCTV ghi lại trực tiếp từng giờ của chiến dịch 76 giờ vây bắt tại Nội Mông năm 2009",
-            "Khớp hoàn hảo RADIAL_TIME_PRESSURE & GEO_VECTOR_PURSUIT"
-        ],
-        "opening_hook": "교도소 정문을 통과하는 데 걸린 시간은 불과 몇 분이었습니다. 네 명의 수감자가 변장을 하고 네 겹의 자동 철문을 차례로 통과해 택시를 잡아타고 사라지자, 네이멍구 전역에 최고 등급의 비상령이 떨어졌고 일흔여섯 시간의 숨 막히는 추격전이 펼쳐졌습니다.",
-        "note": "【Hồ sơ vụ án: trọng án đoạt mạng quản giáo trại giam để cướp thẻ từ vượt ngục · lệnh truy nã cấp A bộ công an · 76 giờ phong tỏa thảo nguyên】 Hồ sơ thật 100% Chiến dịch 76 giờ đại truy bắt nhóm phạm nhân vượt Trại giam số 2 Hô Hòa Hạo Đặc, Nội Mông (内蒙古呼和浩特10·17越狱案 — Kiều Hải Cường 乔海强, Cao Bác 高博, Đổng Giai Kế 董佳继, 17–20/10/2009): Công an Nội Mông và Sơn Tây huy động hàng vạn cảnh sát phong tỏa toàn bộ tuyến giao thông, bắt giữ toàn bộ nhóm đối tượng tại huyện Hòa Lâm Cách Nhĩ sau đúng 76 giờ.",
-        "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "vio_cn_dalian_4_plastic_surgeries_gait_19y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "辽宁大连重案逃犯潜逃19年4次整容换脸被步态与耳廓识别落网案 — 崔某 (2001–2020)",
-        "archival_search_keywords_zh": [
-            "逃犯 4次整容 潜逃19年 今日说法",
-            "大连 整容逃犯 步态识别 天网",
-            "换脸 潜逃19年 落网"
-        ],
-        "recommended_vox_verbs": [
-            "DUAL_ERA_LOCK",
-            "FORENSIC_ZOOM_CHAIN",
-            "MICRO_TRACE_MATCH"
-        ],
-        "title": "[중국 실화 사건] 19년간 성형수술만 4번 해 얼굴을 통째로 바꾸고 부유한 사업가로 숨어 산 중대 수배범 | 다롄 추이 성형 도주 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ truy nã trọng án phẫu thuật thẩm mỹ 4 lần suốt 19 năm để đổi hoàn toàn gương mặt và sống như doanh nhân giàu có | Chuyên án Đại Liên)",
-        "topic_anchor": "[중국 실화 사건] 19년간 성형수술만 4번 해 얼굴을 통째로 바꾸고 부유한 사업가로 숨어 산 중대 수배범 | 다롄 추이 성형 도주 사건",
-        "winner_cluster": "Luồng 2 · 4 Lần Phẫu Thuật Đổi Gương Mặt Nhưng Lộ Diện Nhờ Cấu Trúc Vành Tai & Dáng Đi (다롄 19년 4차 성형 추격 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án 19 Năm Truy Bắt Kẻ 4 Lần Đổi Mặt Tại Đại Liên (辽宁大连整容逃犯19年落网案) — Vì Sao Phẫu Thuật Thẩm Mỹ Không Thể Thay Đổi Xương Vành Tai Và Nhịp Bước Chân?",
-        "codex_reasons": [
-            "Cực kỳ cuốn hút về mặt khoa học sinh trắc học (giám định hình thái sụn vành tai & phân tích dáng đi Gait Recognition)",
-            "100% Xanh tiền YouTube, khớp hoàn hảo DUAL_ERA_LOCK & FORENSIC_ZOOM_CHAIN"
-        ],
-        "opening_hook": "눈매와 코높이, 턱선까지 네 번의 성형수술을 거쳐 과거 수배 전단과는 전혀 다른 사람이 된 도망자. 그러나 아무리 메스로 얼굴을 고쳐도 결코 바꿀 수 없는 두 가지 생체 암호가 있었습니다. 바로 귓바퀴의 연골 구조와 계단을 내려갈 때의 미세한 걸음걸이 각도였습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Đại Liên · trốn nã 19 năm qua 4 lần phẫu thuật thẩm mỹ đổi mặt · phá án nhờ dáng đi】 Hồ sơ thật 100% Chuyên án truy bắt nghi phạm trọng án lẩn trốn 19 năm từ Đại Liên, Liêu Ninh (辽宁大连重案逃犯4次整容19年落网案 — Thôi Mỗ 崔某, 2001–2020): Sau khi bỏ trốn năm 2001, nghi phạm dùng danh tính giả và trải qua 4 cuộc phẫu thuật thẩm mỹ thay đổi diện mạo; Ban chuyên án đã kết hợp phân tích sinh trắc học sụn vành tai và dáng đi bộ để nhận diện và bắt giữ thành công năm 2020.",
-        "hook_archetype": "last_ordinary_routine"
-    },
-    {
-        "id": "vio_cn_hunan_hengyang_twin_dna_15y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "湖南衡阳重案嫌犯冒用同卵双胞胎哥哥身份潜逃15年超高精度DNA破案 — 陈某 (2004–2019)",
-        "archival_search_keywords_zh": [
-            "同卵双胞胎 逃犯 DNA 今日说法",
-            "冒用双胞胎身份 潜逃15年 天网",
-            "湖南 衡阳 双胞胎 侦破"
-        ],
-        "recommended_vox_verbs": [
-            "SPLIT_PARADOX",
-            "MICRO_TRACE_MATCH",
-            "ALIBI_SHATTER"
-        ],
-        "title": "[중국 실화 사건] 유전자 99.99%가 일치하는 일란성 쌍둥이 형의 신분증으로 15년간 법망을 피해 산 수배범 | 헝양 쌍둥이 도주 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ truy nã sống suốt 15 năm dưới chứng minh thư của người anh sinh đôi cùng trứng có ADN giống 99,99% | Kỳ án Hành Dương)",
-        "topic_anchor": "[중국 실화 사건] 유전자 99.99%가 일치하는 일란성 쌍둥이 형의 신분증으로 15년간 법망을 피해 산 수배범 | 헝양 쌍둥이 도주 사건",
-        "winner_cluster": "Luồng 2 · Kẻ Thủ Ác Ẩn Dưới Bóng Anh Trai Sinh Đôi Cùng Trứng & Đột Phá Giải Trình Tự Gen Siêu Vi (후난 헝양 일란성 쌍둥이 사건)",
-        "codex_score": 98,
-        "profile_score": 98,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Anh Em Sinh Đôi Cùng Trứng Tại Hồ Nam (湖南同卵双胞胎顶替身份15年案) — Khi Xét Nghiệm ADN Thông Thường Cho Kết Quả Giống Hệt Nhau Và Cách Pháp Y Tìm Ra Đột Biến Soma",
-        "codex_reasons": [
-            "Một bài toán pháp y kinh điển từng xuất hiện trên CCTV 今日说法: anh em sinh đôi cùng trứng có ADN tiêu chuẩn giống nhau, vậy cảnh sát làm sao phân biệt và chứng minh trước tòa?",
-            "100% Xanh tiền YouTube, cực kỳ kích thích trí tò mò khoa học"
-        ],
-        "opening_hook": "얼굴도 똑같고, 목소리도 비슷하며, 심지어 일반 유전자 검사 결과마저 구십구 점 구구 퍼센트 일치하는 일란성 쌍둥이 형제. 사건 직후 사라진 동생은 십오 년 동안 쌍둥이 형의 신분증을 들고 세상 밖을 활보했습니다. 과연 법의학자들은 똑같은 유전자 속에서 어떻게 진범을 가려냈을까요.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Hồ Nam · hung thủ mạo danh anh sinh đôi cùng trứng suốt 15 năm · giải mã bằng vân tay & gen siêu vi】 Hồ sơ thật 100% Kỳ án mượn danh tính anh em sinh đôi cùng trứng lẩn trốn 15 năm tại Hồ Nam (湖南重案逃犯冒用同卵双胞胎身份潜逃案, 2004–2019): Lợi dụng gương mặt giống hệt người anh song sinh cùng trứng để qua mặt mọi cuộc kiểm tra suốt 15 năm; các chuyên gia kỹ thuật hình sự đã kết hợp phân tích đường vân đầu ngón tay (vốn khác nhau ở cả sinh đôi cùng trứng) và giải trình tự gen thế hệ mới để buộc thủ phạm cúi đầu nhận tội.",
-        "hook_archetype": "double_life_unmasking"
-    },
-    {
-        "id": "vio_cn_fujian_sanming_cave_hermit_24y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "福建三明命案逃犯深山绝壁岩洞隐居24年热成像无人机抓捕案 — 林某 (1997–2021)",
-        "archival_search_keywords_zh": [
-            "潜逃24年 深山山洞 无人机 抓捕",
-            "福建三明 命案积案 24年 今日说法",
-            "深山隐居 逃犯 天网"
-        ],
-        "recommended_vox_verbs": [
-            "GEO_VECTOR_PURSUIT",
-            "FORENSIC_ZOOM_CHAIN",
-            "CONCENTRIC_TRAP"
-        ],
-        "title": "[중국 실화 사건] 중대 수배범이 휴대폰도 전기도 없이 깎아지른 절벽 동굴 속에서 24년을 숨어 산 이유 | 산밍 동굴 은둔 사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do kẻ truy nã trọng án tự giam mình 24 năm trong hang đá vách núi dựng đứng không điện và không điện thoại | Chuyên án Tam Minh)",
-        "topic_anchor": "[중국 실화 사건] 중대 수배범이 휴대폰도 전기도 없이 깎아지른 절벽 동굴 속에서 24년을 숨어 산 이유 | 산밍 동굴 은둔 사건",
-        "winner_cluster": "Luồng 2 · 24 Năm Sống Như Người Rừng Trên Vách Đá & Đột Phá Drone Nhiệt Công An Phúc Kiến (푸젠 산밍 24년 동굴 수배범 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án 24 Năm Truy Lùng Kẻ Ẩn Náu Hang Đá Tại Tam Minh, Phúc Kiến (福建三明24年深山追凶案, 1997–2021) — Khi Tín Hiệu Nhiệt Giữa Rừng Già Tố Cáo Nơi Ẩn Nấp Không Có Trên Bản Đồ",
-        "codex_reasons": [
-            "Hình ảnh thực tế từ drone tầm nhiệt của cảnh sát Phúc Kiến phát hiện hang đá giữa vách núi dựng đứng cực kỳ ấn tượng",
-            "100% Xanh tiền YouTube, cực hợp với bản đồ địa hình 3D GEO_VECTOR_PURSUIT"
-        ],
-        "opening_hook": "24년 동안 단 한 번도 병원에 가거나 기차를 타지 않고, 현대 문명에서 완전히 로그아웃한 채 사라진 남자가 있었습니다. 모두가 산속 어딘가에서 자취를 감췄을 것이라 생각했지만, 경찰의 열화상 드론이 인적 없는 깎아지른 절벽 위를 스쳐 지나가는 순간 붉은 열점 하나가 화면에 잡혔습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Phúc Kiến · trốn truy nã 24 năm trong hang đá vách núi biệt lập · phát hiện bằng drone tầm nhiệt】 Hồ sơ thật 100% Chuyên án truy bắt nghi phạm trọng án lẩn trốn 24 năm trong hang đá núi sâu tại Tam Minh, Phúc Kiến (福建三明潜逃24年深山岩洞抓捕案, 1997–2021): Để trốn lệnh truy nã từ năm 1997, Lâm Mỗ trốn lên hang đá giữa vách núi hiểm trở, tự trồng rau và bẫy thú sống biệt lập suốt 24 năm trước khi bị đội drone tầm nhiệt Công an Phúc Kiến phát hiện và bắt giữ.",
-        "hook_archetype": "double_life_unmasking"
-    },
-    {
-        "id": "vio_cn_chongqing_math_cipher_notebook_17y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "重庆重案逃犯潜逃17年自创数字密码账本反侦查落网案 — 周某 (2003–2020)",
-        "archival_search_keywords_zh": [
-            "逃犯 密码本 17年 今日说法",
-            "重庆 命案逃犯 反侦查 天网",
-            "自创密码 潜逃 侦破"
-        ],
-        "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
             "LEDGER_DIFF_SCRUB",
-            "DUAL_ERA_LOCK"
+            "SCALE_MULTIPLICATION",
+            "NETWORK_GRAPH"
         ],
-        "title": "[중국 실화 사건] 17년간 증발한 고학력 중대 수배범이 은신처 가방 속에 수학 암호 공책 3권을 숨겨둔 이유 | 충칭 암호 장부 사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do kẻ truy nã trọng án có học thức cao bốc hơi 17 năm luôn cất giữ 3 cuốn sổ mật mã toán học trong túi | Chuyên án Trùng Khánh)",
-        "topic_anchor": "[중국 실화 사건] 17년간 증발한 고학력 중대 수배범이 은신처 가방 속에 수학 암호 공책 3권을 숨겨둔 이유 | 충칭 암호 장부 사건",
-        "winner_cluster": "Luồng 2 · 3 Cuốn Sổ Tay Mật Mã Toán Học Ghi Chép 17 Năm Phản Trinh Sát (충칭 17년 암호 수첩 수배범 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Giải Mã 3 Cuốn Sổ Tay Của Kẻ Trốn Truy Nã 17 Năm Tại Trùng Khánh — Cách Điều Tra Viên Phá Khóa Bảng Ký Hiệu Số Học Để Thu Hồi Toàn Bộ Tang Vật",
+        "title": "[중국 실화 사건] 유령 회사 1,100개로 323억 위안 세금계산서를 찍어내 국고를 털어낸 도시 카르텔 | 산터우 8·07 세금 대사건 ([Vụ Án Có Thật ở Trung Quốc] Lập 1.100 công ty ma in 32,3 tỷ tệ hóa đơn khống rút ruột ngân sách quốc gia của tập đoàn ngầm | Đại án thuế 8·07 Sán Đầu)",
+        "topic_anchor": "[중국 실화 사건] 유령 회사 1,100개로 323억 위안 세금계산서를 찍어내 국고를 털어낸 도시 카르텔 | 산터우 8·07 세금 대사건",
+        "winner_cluster": "Luồng 1 · 1.100 Công Ty Ma In 32,3 Tỷ Tệ Hóa Đơn Khống & Cuộc Đột Kích Của Đoàn Đặc Phái Trung Ương (광둥 산터우 8·07 제1호 세금 대사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Đại Án 8·07 Sán Đầu (陈少峰·林贞木, 1999–2001) — Đệ Nhất Án Thuế Vụ Lịch Sử Trung Quốc Với 32,3 Tỷ NDT Hóa Đơn Khống Và Màn Đấu Trí Bảo Vệ Kho Sổ Cái Mật",
         "codex_reasons": [
-            "Chi tiết đạo cụ bàn giấy (3 cuốn sổ ghi đầy dãy số mật mã tự chế) sinh ra để dành riêng cho Bàn Biên Tập Cắt Dán Vox!",
-            "100% Xanh tiền YouTube"
+            "Đại án kinh tế lớn nhất lịch sử thuế vụ Trung Quốc (共和国第一税案), Thủ tướng trực tiếp chỉ đạo điều tra và Tòa án Sán Đầu tuyên án tử hình 30 bị cáo cầm đầu",
+            "Cực hợp LEDGER_DIFF_SCRUB & SCALE_MULTIPLICATION trên bàn biên tập cắt dán Vox"
         ],
-        "opening_hook": "열7년 만에 붙잡힌 수배범의 낡은 가방 안에서 글자 대신 알 수 없는 숫자와 기호만 가득 적힌 공책 세 권이 나왔습니다. 심문실에서도 입을 굳게 다문 범인. 그러나 암호 해독반이 그 숫자 배열의 규칙을 풀어내자, 지난 십칠 년간 그가 숨겨둔 자금과 은신처 좌표가 하나씩 드러나기 시작했습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Trùng Khánh · hung thủ IQ cao tự chế mật mã toán học phản trinh sát suốt 17 năm】 Hồ sơ thật 100% Chuyên án bắt giữ nghi phạm trọng án lẩn trốn 17 năm tại Trùng Khánh (2003–2020): Có đầu óc tính toán cực kỳ cẩn밀, suốt 17 năm trốn qua nhiều tỉnh Châu Mỗ không bao giờ lưu tên thật hay địa chỉ trong điện thoại mà tự sáng tạo bảng mã số học ghi vào 3 cuốn sổ tay; Ban chuyên án đã giải mã quy luật dịch chuyển con số để khôi phục toàn bộ hồ sơ.",
-        "hook_archetype": "micro_forensic_anomaly"
+        "opening_hook": "공장 기계는 단 한 대도 돌아가지 않는데, 서류상으로는 매달 수십억 위안어치의 전자제품과 원단이 해외로 수출되고 있었습니다. 유령 회사 일천백 곳이 서로 가짜 영수증을 주고받으며 국고에서 사십이억 위안의 환급금을 빨아들인 전대미문의 세금 카르텔을 추적합니다.",
+        "note": "📋 【Hồ sơ vụ án: đệ nhất đại án thuế vụ Trung Quốc xuất khống 32,3 tỷ tệ hóa đơn GTGT rút ruột 4,2 tỷ tệ ngân sách · phóng hỏa nhà khách đoàn thanh tra trung ương · tuyên án tử hình Trần Thiếu Phong, Lâm Trinh Mộc】 Hồ sơ thật 100% Chuyên án 8·07 tại Sán Đầu, Quảng Đông (广东潮阳·普宁8·07虚开增值税专用发票案 — Trần Thiếu Phong 陈少峰, Lâm Trinh Mộc 林贞木, 1999–2001): Hơn 1.100 công ty ma cấu kết in khống 32,3 tỷ NDT hóa đơn GTGT rút ruột 4,2 tỷ NDT tiền hoàn thuế và thậm chí phóng hỏa Nhà khách Nghênh Tân (7·15迎宾馆纵火案) nhằm tiêu hủy hồ sơ thanh tra; Tòa án Nhân dân Trung cấp Sán Đầu và Tòa án Tối cao đã xét xử, tuyên án tử hình 30 đối tượng cầm đầu.",
+        "hook_archetype": "scale_absurdity_collision"
     },
     {
-        "id": "vio_cn_wenzhou_old_calendar_fingerprint_18y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "浙江温州2002年旧日历纸1枚指纹18年追凶东海渔船抓捕案 — 陈某 (2002–2020)",
+        "id": "fin_cn_xian_tang_consort_27ton_sarcophagus_yangbin",
+        "topic_stream": "financial_crime",
+        "case_real_name_zh": "陕西西安唐贞顺皇后武惠妃敬陵27吨石椁跨国盗卖与追索大案 — 杨彬 (2004–2011)",
         "archival_search_keywords_zh": [
-            "温州 18年 旧日历 指纹 今日说法",
-            "浙江温州 命案积案 渔船 抓捕",
-            "2002年 日历纸 破案 天网"
+            "武惠妃石椁 杨彬 盗墓 今日说法",
+            "唐贞顺皇后 27吨石椁 追索 天网",
+            "西安 敬陵 国宝被盗 审判"
         ],
         "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "GEO_VECTOR_PURSUIT",
-            "MICRO_TRACE_MATCH"
-        ],
-        "title": "[중국 실화 사건] 중대 수배범이 18년간 단 한 번도 육지를 밟지 않고 먼바다 어선 밑바닥에 숨어 산 이유 | 원저우 18년 해상 은둔 사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do kẻ truy nã trọng án suốt 18 năm không một lần đặt chân lên đất liền mà chỉ sống trên tàu cá ngoài khơi | Kỳ án Ôn Châu)",
-        "topic_anchor": "[중국 실화 사건] 중대 수배범이 18년간 단 한 번도 육지를 밟지 않고 먼바다 어선 밑바닥에 숨어 산 이유 | 원저우 18년 해상 은둔 사건",
-        "winner_cluster": "Luồng 2 · Tờ Lịch Cũ Năm 2002 & Cuộc Vây Bắt Trên Tàu Đánh Cá Ngoài Khơi Biển Đông Hải (원저우 18년 달력 지문 해상 추격전)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Tờ Lịch Năm 2002 Tại Ôn Châu, Chiết Giang — Vì Sao Cảnh Sát Tìm Khắp Trên Đất Liền Không Thấy Suốt 18 Năm Cho Đến Khi Kiểm Tra Tàu Đánh Cá Viễn Dương?",
-        "codex_reasons": [
-            "Không gian truy bắt trên biển cực kỳ mới lạ, hoàn toàn không đụng hàng với các vụ án trên đất liền",
-            "100% Xanh tiền YouTube, cực hợp SINGLE_EVIDENCE_AUTOPSY & GEO_VECTOR_PURSUIT"
-        ],
-        "opening_hook": "찢어진 벽걸이 달력 종이 한 장 위에 남은 희미한 지문 자국 하나. 형사들은 그 주인을 찾아 18년 동안 전국의 모든 내륙 도시를 샅샅이 뒤졌지만 그림자조차 찾을 수 없었습니다. 범인이 발을 딛고 있던 곳은 육지가 아니라, 일 년 내내 망망대해를 떠도는 원양 어선 위였기 때문입니다.",
-        "note": "【Hồ sơ vụ án: trọng án đột nhập tước đoạt sinh mạng chủ nhà tại Ôn Châu · 18 năm trốn trên tàu cá ngoài khơi Đông Hải · phá án từ vân tay tờ lịch cũ】 Hồ sơ thật 100% Kỳ án 18 năm tại Ôn Châu, Chiết Giang (浙江温州2002年积案侦破纪实, 2002–2020): Từ dấu vân tay lưu lại trên tờ lịch treo tường năm 2002, Công an Ôn Châu kiên trì truy tìm suốt 18 năm và phát hiện nghi phạm Trần Mỗ đã trốn ra vùng biển Đông Hải làm thuyền viên trên các tàu đánh cá dài ngày hiếm khi cập bờ, tổ chức phối hợp cảnh sát biển vây bắt ngay trên biển.",
-        "hook_archetype": "cold_archive_match"
-    },
-    {
-        "id": "vio_cn_guiyang_huaxi_ballistics_11y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "贵州贵阳花溪11年系列悬案弹道痕检与车检站指纹锁定真凶纪实 — 王某·李某 (2005–2016)",
-        "archival_search_keywords_zh": [
-            "贵阳 11年 弹道 侦破纪实 今日说法",
-            "贵州贵阳 悬案 痕检 天网",
-            "花溪 11年 追凶 央视"
-        ],
-        "recommended_vox_verbs": [
-            "MICRO_TRACE_MATCH",
             "FORENSIC_ZOOM_CHAIN",
-            "CONCENTRIC_TRAP"
-        ],
-        "title": "[중국 실화 사건] 11년간 단서 하나 남기지 않던 연쇄 미제사건의 범인이 낮에는 모범 공무원으로 살아온 두 얼굴 | 구이양 11년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Hai bộ mặt của kẻ thủ ác trong đại án liên hoàn 11 năm không dấu vết nhưng ban ngày là viên chức gương mẫu | Chuyên án Quý Dương)",
-        "topic_anchor": "[중국 실화 사건] 11년간 단서 하나 남기지 않던 연쇄 미제사건의 범인이 낮에는 모범 공무원으로 살아온 두 얼굴 | 구이양 11년 미제사건",
-        "winner_cluster": "Luồng 2 · Soi Kính Hiển Vi 40.000 Vỏ Đạn Suốt 11 Năm & Cú Phục Kích Tại Trạm Đăng Kiểm (구이양 11년 탄도 현미경 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Giám Định Vết Xước Đạn Đạo 11 Năm Tại Quý Dương, Quý Châu — Khi 1 Vết Khấc 0,1mm Dưới Kính Hiển Vi Khớp Hoàn Toàn Với Vụ Án 11 Năm Trước",
-        "codex_reasons": [
-            "Tôn vinh khoa học giám định dấu vết cơ học (痕检) chuẩn chất phim tài liệu điều tra Hàn Quốc",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "영점 일 밀리미터도 안 되는 미세한 금속 긁힘 자국을 찾기 위해, 한 노형사는 11년 동안 사만 개가 넘는 실험 시료를 현미경 아래에 올려놓았습니다. 은퇴를 불과 몇 달 앞둔 어느 날, 마침내 두 개의 선이 완벽하게 포개지는 순간 열한 년 미제 사건의 시계가 다시 움직이기 시작했습니다.",
-        "note": "【Hồ sơ vụ án: đại án liên hoàn tước đoạt 4 sinh mạng (gồm cả cảnh sát tuần tra) tại Quý Dương · 11 năm giám định 40.000 mẫu dấu vết cơ học】 Hồ sơ thật 100% Chuyên án 11 năm truy vết dấu vết cơ học và vân tay tại Quý Dương, Quý Châu (贵州贵阳11年积案侦破纪实, 2005–2016): Các chuyên gia giám định dấu vết kiên trì đối chiếu hàng vạn mẫu thử dưới kính hiển vi suốt hơn 1 thập kỷ, kết hợp dữ liệu vân tay mới thu thập để bắt giữ hai nghi phạm ngay tại trạm kiểm định phương tiện.",
-        "hook_archetype": "micro_forensic_anomaly"
-    },
-    {
-        "id": "vio_cn_shandong_taian_bumper_scratch_12h",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "山东泰安跨4市12小时极速设卡围捕与车漆微量物证比对案 — 刘某 (2011)",
-        "archival_search_keywords_zh": [
-            "山东泰安 12小时 围捕 纪实",
-            "车漆 微量物证 追捕 今日说法",
-            "跨4市 极速追捕 天网"
-        ],
-        "recommended_vox_verbs": [
-            "RADIAL_TIME_PRESSURE",
-            "MICRO_TRACE_MATCH",
-            "GEO_VECTOR_PURSUIT"
-        ],
-        "title": "[중국 실화 사건] 차량 번호판을 수시로 바꿔 달며 12시간 만에 4개 도시 봉쇄망을 빠져나간 특급 수배범의 수법 | 타이안 도주 사건 ([Vụ Án Có Thật ở Trung Quốc] Thủ đoạn liên tục tráo biển số xe để vượt qua vòng phong tỏa 4 thành phố chỉ trong 12 giờ của kẻ truy nã | Chuyên án Thái An)",
-        "topic_anchor": "[중국 실화 사건] 차량 번호판을 수시로 바꿔 달며 12시간 만에 4개 도시 봉쇄망을 빠져나간 특급 수배범의 수법 | 타이안 도주 사건",
-        "winner_cluster": "Luồng 2 · Phân Tích Quang Phổ Mảnh Sơn Xe 2mm & 12 Giờ Khóa Chặt 4 Thành Phố Sơn Đông (산둥 타이안 12시간 도주 추격전)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: 12 Giờ Đại Truy Kích Xuyên 4 Thành Phố Sơn Đông — Khi Thủ Phạm Chuẩn Bị Sẵn 6 Biển Số Giả Nhưng Không Ngờ Bị Lộ Bởi Vết Xước Cản Trước",
-        "codex_reasons": [
-            "Nhịp độ truy bắt đường cao tốc 12 giờ cực kỳ dồn dập cho bản đồ 3D GEO_VECTOR_PURSUIT",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "트렁크 안에 여섯 세트의 가짜 번호판을 싣고 고속도로 사각지대마다 차 번호를 바꿔 달며 네 개 도시를 가로지른 도주범. 그러나 현장에 떨어뜨린 이 밀리미터 크기의 미세한 자동차 도색 파편 하나가 그의 차종과 연식을 정확히 지목하고 있었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án đặc biệt nguy hiểm tước đoạt 4 sinh mạng (gồm 3 cảnh sát) tại Thái An · 12 giờ truy kích xuyên 4 thành phố nhờ mảnh sơn 2mm】 Hồ sơ thật 100% Chiến dịch 12 giờ truy bắt xuyên 4 thành phố tại Sơn Đông (2011): Dù nghi phạm liên tục tháo đổi biển số xe giả để đánh lạc hướng hệ thống camera giao thông, phòng kỹ thuật hình sự đã phân tích quang phổ 4 lớp sơn từ mảnh vỡ 2mm tại hiện trường để xác định chính xác dòng xe và vết móp cản trước, chặn bắt thành công sau 12 giờ.",
-        "hook_archetype": "locked_room_vault_paradox"
-    },
-    {
-        "id": "vio_cn_anhui_bengbu_19y_ystr_footprint",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "安徽蚌埠2002年白马湘商城19年Y-STR家系与半枚血指纹侦破悬案 — 冯某亮 (2002–2021)",
-        "archival_search_keywords_zh": [
-            "安徽蚌埠 19年 悬案 侦破 今日说法",
-            "蚌埠 2002 命案积案 天网",
-            "蚌埠警方 19年 追凶"
-        ],
-        "recommended_vox_verbs": [
-            "MICRO_TRACE_MATCH",
-            "NETWORK_GRAPH",
-            "FORENSIC_ZOOM_CHAIN"
-        ],
-        "title": "[중국 실화 사건] 현장에 반쪽짜리 지문만 남기고 19년간 사건 현장 바로 옆 동네에 숨어 살던 남자의 정체 | 벙부 19년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Chân tướng người đàn ông chỉ để lại nửa dấu vân tay ở hiện trường rồi sống ẩn mình suốt 19 năm ngay khu phố kế bên | Kỳ án Bạng Phụ)",
-        "topic_anchor": "[중국 실화 사건] 현장에 반쪽짜리 지문만 남기고 19년간 사건 현장 바로 옆 동네에 숨어 살던 남자의 정체 | 벙부 19년 미제사건",
-        "winner_cluster": "Luồng 2 · Kết Hợp Gia Phả Học Di Truyền & Nửa Vân Tay Khép Lại Kỳ Án 19 Năm An Huy (안후이 벙부 19년 미제사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án 19 Năm Tại Bạng Phụ, An Huy (安徽蚌埠19年积案侦破纪实, 2002–2021) — Sàng Lọc 10.000 Mẫu Dòng Họ Để Thu Hẹp Bán Kính Xuống Đúng 1 Con Phố",
-        "codex_reasons": [
-            "Minh họa tuyệt vời cho sơ đồ cây gia phả NETWORK_GRAPH kết hợp MICRO_TRACE_MATCH",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "일만 명이 넘는 용의자를 대조하고도 십구 년 동안 풀리지 않던 미제 사건. 노형사들이 보물처럼 지켜온 증거 봉투 속 미세 시료가 최신 유전자 가계도 분석 기술과 만났을 때, 수만 명의 족보 가지가 하나로 좁혀지며 바로 옆 동네의 한 남자를 가리켰습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nữ chủ cửa hàng tại Bạng Phụ · án lạnh 19 năm giải mã nhờ nửa dấu vân tay & phả hệ gen Y-STR】 Hồ sơ thật 100% Kỳ án 19 năm tại Bạng Phụ, An Huy (安徽蚌埠2002年积案侦破案 — Phùng Mỗ Lượng 冯某亮, 2002–2021): Nhờ bảo quản nguyên vẹn mẫu vật chứng và nửa dấu vân tay từ năm 2002, Công an Bạng Phụ đã ứng dụng công nghệ phả hệ di truyền khoanh vùng dòng họ Phùng rồi đối sánh vân tay 1-1 bắt giữ hung thủ sau 19 năm.",
-        "hook_archetype": "cold_archive_match"
-    },
-    {
-        "id": "vio_cn_jilin_tonghua_26y_sealed_envelope",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "吉林通化1994年串并积案26年封存物证锁定真凶案 — 崔某钢 (1994–2020)",
-        "archival_search_keywords_zh": [
-            "吉林通化 26年 命案积案 今日说法",
-            "通化警方 26年 悬案 侦破",
-            "封存26年 物证 破案"
-        ],
-        "recommended_vox_verbs": [
-            "MICRO_TRACE_MATCH",
-            "DUAL_ERA_LOCK",
+            "GEO_VECTOR_PURSUIT",
             "SINGLE_EVIDENCE_AUTOPSY"
         ],
-        "title": "[중국 실화 사건] 26년간 미제로 남았던 연쇄 사건의 범인이 피해자 가족과 같은 동네에서 이웃으로 살아온 사연 | 퉁화 26년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ thủ ác trong kỳ án treo 26 năm vẫn thản nhiên sống làm hàng xóm cùng khu phố với gia đình nạn nhân | Kỳ án Thông Hóa)",
-        "topic_anchor": "[중국 실화 사건] 26년간 미제로 남았던 연쇄 사건의 범인이 피해자 가족과 같은 동네에서 이웃으로 살아온 사연 | 퉁화 26년 미제사건",
-        "winner_cluster": "Luồng 2 · Phong Bì Vật Chứng Lưu Kho Lạnh 26 Năm & Cuộc Tiếp Sức Của 4 Đời Cảnh Sát (지린 퉁화 26년 미제사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án 26 Năm Tại Thông Hóa, Cát Lâm (吉林通化26年积案侦破纪实, 1994–2020) — Khi Kẻ Thủ Ác Vẫn Sống Ngay Trong Cùng Thành Phố Dưới Vỏ Bọc Người Lao Động Hiền Lành",
+        "title": "[중국 실화 사건] 지하 궁전에서 27톤 황실 국보 석관을 통째로 해체해 해외로 빼돌린 도굴왕의 행적 | 시안 양빈 국보 도굴 사건 ([Vụ Án Có Thật ở Trung Quốc] Tháo rời nguyên cỗ quách đá hoàng hậu nặng 27 tấn dưới lòng đất rồi tuồn ra nước ngoài của trùm đạo mộ | Đại án Dương Bân Tây An)",
+        "topic_anchor": "[중국 실화 사건] 지하 궁전에서 27톤 황실 국보 석관을 통째로 해체해 해외로 빼돌린 도굴왕의 행적 | 시안 양빈 국보 도굴 사건",
+        "winner_cluster": "Luồng 1 · 31 Tấm Đá Chạm Khắc Nặng 27 Tấn Bốc Hơi Khỏi Lăng Mộ Hoàng Gia & Chiếc Thẻ Nhớ SD Mở Khóa Đại Án (시안 27톤 황후 석관 도굴 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Dương Bân & Đại Án Đánh Cắp Quách Đá Võ Huệ Phi Nặng 27 Tấn Tại Tây An (2004–2011) — Cuộc Truy Vết Xuyên Thái Bình Dương Thu Hồi Quốc Bảo Cấp 1",
         "codex_reasons": [
-            "Câu chuyện 4 thế hệ cảnh sát Cát Lâm bàn giao chiếc phong bì vật chứng năm 1994 cực kỳ cảm động và giàu chất điện ảnh",
-            "100% Xanh tiền YouTube"
+            "Vụ buôn lậu quốc bảo nặng nhất lịch sử khảo cổ Trung Quốc (27 tấn đá cẩm thạch chạm khắc thời Đường), có phim tài liệu đặc biệt trên CCTV 今日说法 / 国宝档案",
+            "Tòa án Nhân dân Trung cấp Tây An tuyên án tử hình treo/chung thân đối với Dương Bân và thu hồi quốc bảo về bảo tàng"
         ],
-        "opening_hook": "영하의 증거 보관실 가장 깊은 서랍 속에는 26년 동안 봉인이 뜯기지 않은 작은 갈색 종이봉투 하나가 잠들어 있었습니다. 네 세대의 형사들이 바통을 이어받으며 지켜낸 그 봉투가 마침내 열렸을 때, 유전자 좌표가 지목한 인물은 사건 현장에서 불과 몇 킬로미터 떨어진 이웃이었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án liên hoàn tước đoạt sinh mạng 2 nạn nhân tại Thông Hóa · án lạnh 26 năm lật tẩy gã hàng xóm nhờ vật chứng kho lạnh】 Hồ sơ thật 100% Kỳ án 26 năm tại Thông Hóa, Cát Lâm (吉林通化1994年积案侦破案 — Thôi Mỗ Cương 崔某钢, 1994–2020): Vật chứng thu thập từ năm 1994 được 4 thế hệ cảnh sát kỹ thuật hình sự Công an Thông Hóa bảo quản nguyên vẹn suốt 26 năm cho đến khi công nghệ tách chiết vi lượng năm 2020 khóa chặt nghi phạm.",
-        "hook_archetype": "double_life_unmasking"
+        "opening_hook": "무게가 무려 이십칠 톤에 달하는 당나라 황실의 거대한 채색 석관이 지하 십오 미터 무덤 속에서 감쪽같이 사라졌습니다. 도굴단 두목 양빈은 어떻게 건물 한 채 크기의 국보를 서른한 조각으로 분해해 국경 세관까지 통과시켰던 것일까요.",
+        "note": "📋 【Hồ sơ vụ án: đại án đào trộm lăng Kính Lăng của Võ Huệ Phi đời Đường · tháo rời cỗ quách đá quốc bảo cấp 1 nặng 27 tấn bán sang Mỹ giá 1 triệu USD · Tòa án Tây An tuyên án chung thân Dương Bân】 Hồ sơ thật 100% Đại án trộm cắp và buôn lậu Quách đá Võ Huệ Phi (唐贞顺皇后武惠妃石椁案 — Chủ mưu Dương Bân 杨彬, 2004–2011): Dương Bân chỉ đạo đồng bọn đào hầm suốt 2 năm vào lăng mộ hoàng gia ở Tây An, tháo rời cỗ quách đá 27 tấn thành 31 khối tuồn qua cảng Hồng Kông bán ra nước ngoài; Công an Tây An khôi phục ảnh chụp từ chiếc thẻ nhớ SD thu giữ tại sào huyệt, bắt giữ Dương Bân tuyên án chung thân và thu hồi nguyên vẹn quốc bảo năm 2010.",
+        "hook_archetype": "locked_room_vault_paradox"
     },
     {
-        "id": "vio_cn_jiangsu_nantong_clock_alibi_16y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "江苏南通16年悬案伪造不在场证明与微纤维物证侦破纪实 — 顾某 (2003–2019)",
+        "id": "fin_cn_meishan_jiangkou_sunken_silver_wangmin",
+        "topic_stream": "financial_crime",
+        "case_real_name_zh": "四川眉山彭山区江口明末张献忠沉银遗址特大夜潜盗掘国宝案 — 王敏·宋先杰 (2014–2017)",
         "archival_search_keywords_zh": [
-            "江苏南通 16年 悬案 今日说法",
-            "伪造不在场证明 微量纤维 破案",
-            "南通警方 16年 命案积案"
+            "江口沉银 虎钮永昌大元帅金印 今日说法",
+            "四川眉山 盗掘沉银 王敏 宋先杰 央视",
+            "张献忠 沉银 特大文物案 庭审"
         ],
         "recommended_vox_verbs": [
-            "ALIBI_SHATTER",
-            "MICRO_TRACE_MATCH",
-            "CRASH_TIMELINE"
+            "SINGLE_EVIDENCE_AUTOPSY",
+            "NETWORK_GRAPH",
+            "GEO_VECTOR_PURSUIT"
         ],
-        "title": "[중국 실화 사건] 거실 벽시계 바늘을 2시간 되돌려 놓고 16년간 경찰을 속여온 용의자 | 난퉁 벽시계 트릭 사건 ([Vụ Án Có Thật ở Trung Quốc] Nghi phạm vặn ngược kim đồng hồ treo tường 2 tiếng để đánh lừa cảnh sát suốt 16 năm | Kỳ án đồng hồ Nam Thông)",
-        "topic_anchor": "[중국 실화 사건] 거실 벽시계 바늘을 2시간 되돌려 놓고 16년간 경찰을 속여온 용의자 | 난퉁 벽시계 트릭 사건",
-        "winner_cluster": "Luồng 2 · Đập Tan Bằng Chứng Ngoại Phạm Giả Nhờ Sợi Vải 0,3mm Lưu Trữ 16 Năm (장쑤 난퉁 16년 알리바이 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án 16 Năm Tại Nam Thông, Giang Tô — Khi Nghi Phạm Số 1 Từng Thoát Tội Năm 2003 Nhờ Bằng Chứng Ngoại Phạm Giả Bị Bắt Giữ Nhờ Phân Tích Sợi Vải Vi Lượng",
+        "title": "[중국 실화 사건] 밤마다 잠수복 입고 강물 바닥에서 1,000억 대 황금 국보 직인을 건져 올린 비밀 도굴단 | 쓰촨 장커우 침은 사건 ([Vụ Án Có Thật ở Trung Quốc] Đêm đêm mặc đồ lặn xuống đáy sông trục vớt ấn vàng quốc bảo 100 triệu tệ của băng đạo mộ ngầm | Đại án kho báu Giang Khẩu Tứ Xuyên)",
+        "topic_anchor": "[중국 실화 사건] 밤마다 잠수복 입고 강물 바닥에서 1,000억 대 황금 국보 직인을 건져 올린 비밀 도굴단 | 쓰촨 장커우 침은 사건",
+        "winner_cluster": "Luồng 1 · Thợ Lặn Đêm Trục Vớt Kho Bạc Đáy Sông Dân Giang & Ấn Vàng Nguyên Soái 100 Triệu Tệ (쓰촨 메이산 강바닥 황금 국보 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Vương Mẫn · Tống Tiên Kiệt & Chuyên Án Kho Báu Đáy Sông Giang Khẩu, Tứ Xuyên (2014–2017) — Truy Vết Chiếc Ấn Vàng 50 Lạng Từ Lời Đồn Chợ Đồ Cổ",
         "codex_reasons": [
-            "Đúng chuẩn cấu trúc trinh thám cổ điển (ALIBI_SHATTER) nhưng dựa trên hồ sơ khoa học hình sự có thật 100%",
-            "100% Xanh tiền YouTube"
+            "Chuyên án văn vật cấp A do Bộ Công an Trung Quốc trực tiếp chỉ đạo (thu hồi hơn 1.000 cổ vật vàng bạc trị giá 300 triệu NDT), lên sóng nhiều tập trên CCTV 今日说法",
+            "Tòa án Nhân dân tỉnh Tứ Xuyên xét xử công khai 70 bị cáo, tuyên phạt Vương Mẫn và Tống Tiên Kiệt 14–15 năm tù"
         ],
-        "opening_hook": "사건 시각에 용의자는 분명 수십 킬로미터 떨어진 상점 씨씨티비 화면 속에 찍혀 있었습니다. 16년 동안 누구도 깨뜨리지 못했던 그 철벽 알리바이를 무너뜨린 건, 현장에서 수거된 단 0.3밀리미터 길이의 특수 옷감 섬유 한 올이었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân trong phòng kín tại Nam Thông · 16 năm ngụy tạo đồng hồ ngoại phạm bị phá vỡ bởi sợi vải 0,3mm】 Hồ sơ thật 100% Kỳ án 16 năm tại Nam Thông, Giang Tô (2003–2019): Năm 2003 nghi phạm Cố Mỗ tạo dựng bằng chứng ngoại phạm tinh vi để thoát diện tình nghi; 16 năm sau, nhờ công nghệ phân tích quang phổ sợi vải vi lượng và ADN tiếp xúc thu giữ trên băng keo năm 2003, cảnh sát đã đập tan lời khai ngoại phạm giả và bắt giữ Cố Mỗ.",
-        "hook_archetype": "cold_archive_match"
+        "opening_hook": "삼백 년 동안 전설로만 전해지던 강바닥의 보물선이 사실이었다는 것이 밝혀진 순간, 고요하던 강변 마을의 밤이 바뀌었습니다. 산소통과 수중 금속탐지기를 멘 잠수부들이 검은 강물 속으로 사라지더니, 시가 일억 위안짜리 순금 원수 직인이 암시장에 등장했습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án lặn đêm trục vớt kho báu đáy sông Giang Khẩu trị giá 300 triệu tệ (gồm ấn vàng quốc bảo cấp 1 nặng 50 lạng) · Bộ Công an bắt 70 đối tượng, tuyên án Vương Mẫn & Tống Tiên Kiệt】 Hồ sơ thật 100% Đại án trục vớt trái phép di chỉ kho bạc chìm Giang Khẩu tại Mi Sơn, Tứ Xuyên (四川眉山5·1特大盗掘倒卖文物案 — Vương Mẫn 王敏, Tống Tiên Kiệt 宋先杰, 2014–2017): Nhóm thủ phạm sắm thiết bị lặn chuyên nghiệp và máy dò kim loại dưới nước, lặn đêm vớt ấn vàng 'Hổ Nữu Vĩnh Xương Đại Nguyên Soái Kim Ấn' cùng hàng trăm thỏi bạc thời Minh bán ra chợ đen; Công an Tứ Xuyên bắt giữ 70 đối tượng, thu hồi toàn bộ quốc bảo và tòa tuyên án nghiêm khắc.",
+        "hook_archetype": "micro_forensic_anomaly"
     },
     {
-        "id": "vio_cn_shanxi_taiyuan_post_parcel_clock_trace",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "山西太原跨省追踪一张残缺快递运单笔迹与造纸纤维72小时破案纪实 — 卫某 (2013)",
+        "id": "fin_cn_shenyang_118_armored_van_zhangxianguang",
+        "topic_stream": "financial_crime",
+        "case_real_name_zh": "辽宁沈阳1·18商业银行运钞车210万元劫案与公安部A级通缉跨省追缉案 — 张显光·张显明·张显辉 (2000–2006)",
         "archival_search_keywords_zh": [
-            "太原 72小时 侦破纪实 今日说法",
-            "笔迹 微量物证 72小时 天网",
-            "山西太原 刑侦大案 央视"
+            "沈阳 1·18大案 张显光 今日说法",
+            "A级通缉犯 张显光 运钞车 天网",
+            "张显光 庭审 死刑 纪实"
         ],
         "recommended_vox_verbs": [
-            "RADIAL_TIME_PRESSURE",
-            "FORENSIC_ZOOM_CHAIN",
-            "MICRO_TRACE_MATCH"
+            "CRASH_TIMELINE",
+            "GEO_VECTOR_PURSUIT",
+            "FORENSIC_ZOOM_CHAIN"
         ],
-        "title": "[중국 실화 사건] 가짜 주소만 적힌 익명의 소포 한 상자가 도심 한복판에서 일으킨 기이한 미스터리 | 타이위안 익명 소포 사건 ([Vụ Án Có Thật ở Trung Quốc] Bí ẩn kiện hàng ẩn danh chỉ ghi địa chỉ giả kèm tờ vận đơn trắng làm rúng động trung tâm thành phố | Chuyên án Thái Nguyên)",
-        "topic_anchor": "[중국 실화 사건] 가짜 주소만 적힌 익명의 소포 한 상자가 도심 한복판에서 일으킨 기이한 미스터리 | 타이위안 익명 소포 사건",
-        "winner_cluster": "Luồng 2 · Phục Hồi Vết Hằn Bút Bi Không Mực Trên Tờ Giấy Lót & 72 Giờ Phá Án Thái Nguyên (타이위안 72시간 송장 필적 추적 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án 72 Giờ Tại Thái Nguyên, Sơn Tây — Khi Máy Quang Phổ Tĩnh Điện Hiện Lên Dãy Số Điện Thoại Đã Viết Ở Trang Giấy Trước Đó",
+        "title": "[중국 실화 사건] 은행 앞 자전거 짐받이에 원격 장치를 숨겨 현금수송차 210만 위안을 탈취한 3형제 주범 | 선양 장셴광 사건 ([Vụ Án Có Thật ở Trung Quốc] Giấu thiết bị kích hoạt từ xa trên gác-ba-ga xe đạp trước cổng ngân hàng cướp 2,1 triệu tệ xe chở tiền của 3 anh em | Đại án Trương Hiển Quang)",
+        "topic_anchor": "[중국 실화 사건] 은행 앞 자전거 짐받이에 원격 장치를 숨겨 현금수송차 210만 위안을 탈취한 3형제 주범 | 선양 장셴광 사건",
+        "winner_cluster": "Luồng 1 · Chiếc Xe Đạp Dựng Trước Ngân Hàng Lúc 17h50 & 3 Năm Truy Bắt Tội Phạm Cấp A Trương Hiển Quang (선양 1·18 현금수송차 장셴광 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Trương Hiển Quang & Đại Án 1·18 Ngân Hàng Thương Mại Thẩm Dương (2003–2006) — Truy Nguyên Khung Xe Đạp Cũ Và Cuộc Vây Bắt Tại Tề Tề Cáp Nhĩ",
         "codex_reasons": [
-            "Kỹ thuật giám định tài liệu tĩnh điện (ESDA Indented Writing Analysis) cực kỳ trực quan cho hiệu ứng kính lúp Vox",
-            "100% Xanh tiền YouTube"
+            "Một trong những đại án cướp xe chở tiền chấn động nhất lịch sử vùng Đông Bắc Trung Quốc, có đầy đủ tư liệu hiện trường, truy nã cấp A và phiên tòa xét xử trên CCTV",
+            "Tòa án Nhân dân Trung cấp Thẩm Dương xét xử công khai và thi hành án tử hình Trương Hiển Quang tháng 12/2006"
         ],
-        "opening_hook": "범인이 남긴 단서는 가짜 이름과 존재하지 않는 주소가 적힌 구겨진 종이 한 장뿐이었습니다. 하지만 문서 감정 전문가들이 그 종이를 정전기 검출 장치 위에 올려놓자, 범인이 그 종이를 깔고 다른 메모지에 적었던 보이지 않는 볼펜 자국이 유령처럼 떠올랐습니다.",
-        "note": "【Hồ sơ vụ án: trọng án dùng bưu kiện ẩn danh tước đoạt sinh mạng nạn nhân tại Thái Nguyên · 72 giờ khôi phục vết hằn bút bi tĩnh điện ESDA】 Hồ sơ thật 100% Chuyên án 72 giờ truy vết từ tờ vận đơn viết tay tại Thái Nguyên, Sơn Tây (2013): Dù thủ phạm Vệ Mỗ đeo khẩu trang và ghi toàn bộ thông tin giả trên phiếu gửi, phòng kỹ thuật hình sự đã dùng thiết bị phát hiện vết hằn tĩnh điện (ESDA) khôi phục lại nét chữ ấn chìm từ trang giấy viết đè lên trước đó, bắt giữ thủ phạm sau 72 giờ.",
+        "opening_hook": "2003년 1월 18일 저녁 다섯 시 오십 분, 선양시 상업은행 정문 앞에 세워져 있던 낡은 자전거 한 대가 현금수송차가 도착하는 순간 거대한 굉음을 내며 터졌습니다. 단 삼 분 만에 현금 가방이 사라졌고, 주범 장셴광은 안개 속으로 자취를 감췄습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án dùng thiết bị nổ điều khiển từ xa trên xe đạp tập kích xe chở tiền ngân hàng cướp 2,1 triệu tệ và tước đoạt 3 sinh mạng · lệnh truy nã cấp A Bộ Công an · tuyên án tử hình Trương Hiển Quang】 Hồ sơ thật 100% Đại án 1·18 tại Thẩm Dương, Liêu Ninh (辽宁沈阳1·18运钞车劫案 — Ba anh em Trương Hiển Quang 张显光, Trương Hiển Minh 张显明, Trương Hiển Huy 张显辉, 2000–2006): Sau khi gây án cướp 2,1 triệu NDT trước Ngân hàng Thương mại Thẩm Dương, hai người em bị bắt còn kẻ cầm đầu Trương Hiển Quang trốn lên Hắc Long Giang dưới tên giả làm thợ hồ suốt 3 năm trước khi bị bắt tại Tề Tề Cáp Nhĩ và bị Tòa án Thẩm Dương tuyên án tử hình.",
         "hook_archetype": "countdown_system_breach"
     },
     {
-        "id": "vio_cn_heilongjiang_harbin_snow_tire_tread_14d",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "黑龙江哈尔滨零下30度暴雪残缺轮胎花纹与磨损特征14天追凶案 — 孙某 (2015)",
+        "id": "fin_cn_beijing_luxianzhou_armored_van_1996",
+        "topic_stream": "financial_crime",
+        "case_real_name_zh": "北京1996年首例连续劫持银行运钞车220万元与亚运村地库藏金案 — 鹿宪州 (1996)",
         "archival_search_keywords_zh": [
-            "哈尔滨 轮胎花纹 侦破 今日说法",
-            "零下30度 痕检 追凶 天网",
-            "黑龙江 轮胎痕迹 破案"
+            "北京 1996 运钞车大案 鹿宪州 纪实",
+            "鹿宪州 亚运村 银行劫案 侦破",
+            "北京刑侦 鹿宪州 档案"
         ],
         "recommended_vox_verbs": [
+            "GEO_VECTOR_PURSUIT",
             "SINGLE_EVIDENCE_AUTOPSY",
-            "FORENSIC_ZOOM_CHAIN",
-            "GEO_VECTOR_PURSUIT"
-        ],
-        "title": "[중국 실화 사건] 영하 30도 폭설을 이용해 모든 현장 흔적을 지우고 사라진 밤길 용의자의 치밀한 계산 | 하얼빈 설원 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Tính toán lạnh lùng của nghi phạm lợi dụng đêm bão tuyết âm 30 độ để xóa sạch mọi dấu vết tại hiện trường | Chuyên án Cáp Nhĩ Tân)",
-        "topic_anchor": "[중국 실화 사건] 영하 30도 폭설을 이용해 모든 현장 흔적을 지우고 사라진 밤길 용의자의 치밀한 계산 | 하얼빈 설원 미제사건",
-        "winner_cluster": "Luồng 2 · Đổ Thạch Cao Giữa Tuyết Lạnh -30 Độ C & Vết Rách Hình Tam Giác Trên Lốp Xe (하얼빈 영하 30도 타이어 흔적 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Dấu Lốp Xe Trên Tuyết Tại Cáp Nhĩ Tân, Hắc Long Giang — Cách Chuyên Gia Dấu Vết Tính Ra Chiều Dài Cơ Sở Và Trọng Tải Xe Chỉ Từ 1 Đoạn Tuyết Đóng Băng",
-        "codex_reasons": [
-            "Bối cảnh tuyết trắng âm 30 độ C ở Cáp Nhĩ Tân mang màu sắc điện ảnh Bắc Âu/Hàn Quốc cực cuốn",
-            "100% Xanh tiền YouTube, cực hợp SINGLE_EVIDENCE_AUTOPSY"
-        ],
-        "opening_hook": "영하 삼십 도의 매서운 눈보라가 모든 흔적을 덮어버린 하얼빈 외곽 도로. 형사들이 외투를 벗어 눈바람을 막으며 지켜낸 것은 불과 삼십 센티미터 길이의 얼어붙은 타이어 자국 하나였습니다. 그 타이어 홈 끝에 찍힌 작은 삼각형 흠집 하나가 오만 대의 차량 중 단 한 대를 가리키고 있었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân giữa bão tuyết âm 30 độ C tại Cáp Nhĩ Tân · 14 ngày rà soát 50.000 xe từ vết sứt rãnh lốp】 Hồ sơ thật 100% Chuyên án giám định vết lốp xe giữa bão tuyết tại Cáp Nhĩ Tân, Hắc Long Giang (2015): Giữa thời tiết âm 30 độ C, các chuyên gia giám định dấu vết đã dùng kỹ thuật đúc khuôn đặc biệt trên băng tuyết để thu thập vết sứt 4mm ở rãnh lốp bánh sau bên phải, sàng lọc hàng vạn phương tiện suốt 14 ngày đêm để bắt giữ nghi phạm Tôn Mỗ.",
-        "hook_archetype": "cold_archive_match"
-    },
-    {
-        "id": "vio_cn_hubei_xiangyang_silent_monk_20y",
-        "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "湖北襄阳重案逃犯潜逃20年装聋作哑隐居深山古庙落网案 — 王某 (1999–2019)",
-        "archival_search_keywords_zh": [
-            "逃犯 装哑巴 20年 今日说法",
-            "湖北襄阳 潜逃20年 古庙 天网",
-            "装聋作哑 逃犯 开口说话"
-        ],
-        "recommended_vox_verbs": [
-            "SPLIT_PARADOX",
-            "DUAL_ERA_LOCK",
             "CONCENTRIC_TRAP"
         ],
-        "title": "[중국 실화 사건] 고향 사투리가 들통날까 봐 20년 동안 아예 입을 닫고 벙어리 행세를 하며 살아온 중대 수배범 | 양양 20년 침묵 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ truy nã trọng án tự khóa miệng giả câm suốt 20 năm ròng chỉ vì sợ lộ giọng địa phương | Kỳ án Tương Dương)",
-        "topic_anchor": "[중국 실화 사건] 고향 사투리가 들통날까 봐 20년 동안 아예 입을 닫고 벙어리 행세를 하며 살아온 중대 수배범 | 양양 20년 침묵 사건",
-        "winner_cluster": "Luồng 2 · Kẻ Truy Nã Đóng Giả Người Câm Điếc Suốt 20 Năm Đến Mức Gần Quên Cách Phát Âm (후베이 양양 20년 벙어리 위장 사건)",
+        "title": "[중국 실화 사건] 대낮 수도 한복판에서 은행 현금수송차 3대를 털어 고급 아파트 지하 주차장에 숨긴 수배범 | 베이징 루셴저우 사건 ([Vụ Án Có Thật ở Trung Quốc] Chặn cướp 3 xe chở tiền ngân hàng giữa ban ngày ở thủ đô rồi giấu tiền trong hầm chung cư cao cấp | Đại án Lộc Hiến Châu Bắc Kinh)",
+        "topic_anchor": "[중국 실화 사건] 대낮 수도 한복판에서 은행 현금수송차 3대를 털어 고급 아파트 지하 주차장에 숨긴 수배범 | 베이징 루셴저우 사건",
+        "winner_cluster": "Luồng 1 · Vết Sơn Xước Trên Xe Jeep Cherokee & Hầm Giấu Tiền 2,2 Triệu Tệ Giữa Làng Á Vận Hội Bắc Kinh (베이징 루셴저우 현금수송차 사건)",
         "codex_score": 97,
         "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Giả Câm 20 Năm Tại Tương Dương, Hồ Bắc (1999–2019) — Khi Cảnh Sát Dùng Đúng 1 Câu Tiếng Quê Hương Khiến Kẻ Giả Câm Giật Mình Quay Đầu",
+        "codex_angle": "Hồ Sơ Thật 100%: Lộc Hiến Châu (鹿宪州, 1996) — Vụ Cướp Xe Chở Tiền Đầu Tiên Giữa Thủ Đô Bắc Kinh Buộc Toàn Hệ Thống Ngân Hàng Trung Quốc Phải Thay Đổi Xe Bọc Thép",
         "codex_reasons": [
-            "Chi tiết tâm lý cực mạnh: sợ nói mớ hoặc lộ giọng quê hương nên tự ép mình không mở miệng nói 1 chữ nào suốt 20 năm!",
-            "100% Xanh tiền YouTube, cực hợp SPLIT_PARADOX & DUAL_ERA_LOCK"
+            "Vụ án bước ngoặt lịch sử năm 1996 tại Bắc Kinh khiến Ngân hàng Nhân dân Trung Quốc ra lệnh thay toàn bộ xe tải chở tiền thường bằng xe bọc thép chống đạn trên toàn quốc",
+            "Tư liệu điều tra dấu vết sơn xe và cuộc vây bắt tại Bắc Kinh cực kỳ kịch tính"
         ],
-        "opening_hook": "20년 동안 단 한 마디의 말도 하지 않고 오직 손짓으로만 세상과 소통하며 살아온 산골 마을의 말없는 일꾼. 동네 사람들 모두가 그를 선천적인 농아로 알고 있었지만, 어느 날 찾아온 낯선 형사가 그의 등 뒤에서 나지막이 고향 사투리로 이름을 부르자 그의 어깨가 세차게 흔들렸습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng người cùng làng tại Tương Dương · hung thủ giả câm điếc suốt 20 năm vì sợ lộ giọng địa phương】 Hồ sơ thật 100% Chuyên án bắt giữ nghi phạm trọng án lẩn trốn 20 năm từ Tương Dương, Hồ Bắc (湖北襄阳逃犯装哑20年落网案 — Vương Mỗ 王某, 1999–2019): Để tránh bị phát hiện qua giọng địa phương Hồ Bắc, Vương Mỗ trốn sang tỉnh khác giả làm người câm điếc suốt 20 năm ròng rã; khi cảnh sát bất ngờ gọi tên thật bằng tiếng quê hương, hắn đã bật khóc nói câu đầu tiên sau 2 thập kỷ.",
+        "opening_hook": "1996년 2월 8일 오전, 베이징 번화가 은행 앞에서 흰색 방한모를 쓴 남자가 현금수송차의 문을 가로막고 백이십만 위안이 든 철제 상자를 통째로 들고 사라졌습니다. 도주 차량을 버리고 흔적을 지운 그가 현금 더미를 숨긴 곳은 뜻밖에도 수도 한복판의 최고급 아파트 지하 주차장이었습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án liên hoàn chặn cướp xe chở tiền ngân hàng đầu tiên tại thủ đô Bắc Kinh (cướp hơn 2,2 triệu tệ, tước đoạt 2 sinh mạng) · truy vết sơn xe Jeep và vây bắt Lộc Hiến Châu】 Hồ sơ thật 100% Chuyên án Lộc Hiến Châu tại Bắc Kinh năm 1996 (北京1996年2·8及6·3连续劫持银行运钞车案 — Lộc Hiến Châu 鹿宪州): Lợi dụng thời gian tạm hoãn chấp hành án để chữa bệnh, Lộc Hiến Châu trộm xe Jeep liên tiếp chặn cướp xe chở tiền ngân hàng tại Tây Đơn và Triều Dương Môn, giấu tiền trong hầm xe Làng Á vận hội; Công an Bắc Kinh lần theo vết sơn va quệt trên thân xe, vây bắt và tiêu diệt/xét xử toàn bộ băng nhóm tháng 9/1996.",
+        "hook_archetype": "last_ordinary_routine"
+    },
+    {
+        "id": "fin_cn_shenzhen_wangjianye_10m_forex_extradition",
+        "topic_stream": "financial_crime",
+        "case_real_name_zh": "广东深圳计划局财贸处长千万元跨境骗汇潜逃泰国引渡第一案 — 王建业 (1992–1995)",
+        "archival_search_keywords_zh": [
+            "深圳 王建业 特大经济案 纪实",
+            "王建业 潜逃泰国 引渡 死刑",
+            "深圳第一大案 王建业 档案"
+        ],
+        "recommended_vox_verbs": [
+            "LEDGER_DIFF_SCRUB",
+            "GEO_VECTOR_PURSUIT",
+            "SPLIT_PARADOX"
+        ],
+        "title": "[중국 실화 사건] 가짜 외환 승인서로 1,000만 위안을 빼돌려 태국으로 달아났다 현지 조직에 납치된 국장 | 선전 왕젠예 사건 ([Vụ Án Có Thật ở Trung Quốc] Dùng giấy phép ngoại hối giả rút 10 triệu tệ trốn sang Thái Lan rồi bị băng đảng bản địa bắt cóc của vị trưởng phòng | Đại án Vương Kiến Nghiệp)",
+        "topic_anchor": "[중국 실화 사건] 가짜 외환 승인서로 1,000만 위안을 빼돌려 태국으로 달아났다 현지 조직에 납치된 국장 | 선전 왕젠예 사건",
+        "winner_cluster": "Luồng 1 · Con Dấu Phê Duyệt Ngoại Hối Giả 10 Triệu Tệ & Chuyên Án Dẫn Độ Hình Sự Đầu Tiên Từ Thái Lan (선전 왕젠예 외환 사기 송환 사건)",
+        "codex_score": 97,
+        "profile_score": 97,
+        "codex_angle": "Hồ Sơ Thật 100%: Vương Kiến Nghiệp (王建业, Thâm Quyến 1992–1995) — Từ Trưởng Phòng Nắm Quyền Cấp Hạn Ngạch Ngoại Hối Đến Cuộc Giải Cứu Và Dẫn Độ Lịch Sử Tại Bangkok",
+        "codex_reasons": [
+            "Chuyên án dẫn độ tội phạm kinh tế đặc biệt nghiêm trọng đầu tiên của Đặc khu Thâm Quyến và Viện Kiểm sát Tối cao Trung Quốc, tình tiết đảo chiều liên tục như phim điện ảnh",
+            "Tòa án Nhân dân Trung cấp Thâm Quyến và Tòa án Tối cao tuyên án tử hình Vương Kiến Nghiệp tháng 12/1995"
+        ],
+        "opening_hook": "특구 도시 선전의 외환 배정 도장을 쥐고 있던 재무처장 왕젠예는 가짜 승인서 몇 장으로 일천만 위안과 거액의 달러를 해외 계좌로 빼돌린 뒤 태국으로 사라졌습니다. 그러나 방콕에서 억만장자의 삶을 꿈꾸던 그를 기다리고 있던 것은 현지 무장 납치단의 몸값 협박 전화였습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án trưởng phòng Cục Kế hoạch Thâm Quyến làm giả văn bản phê duyệt ngoại hối rút ruột hơn 10 triệu tệ & 1,39 triệu USD trốn sang Thái Lan · dẫn độ về nước tuyên án tử hình Vương Kiến Nghiệp】 Hồ sơ thật 100% Đại án Vương Kiến Nghiệp tại Thâm Quyến, Quảng Đông (广东深圳王建业特大受贿诈骗潜逃引渡案, 1992–1995): Vương Kiến Nghiệp cấu kết với Sử Yến Thanh làm giả hạn ngạch xuất khẩu hoàn thuế và ngoại hối rút hơn 10 triệu NDT rồi mang hộ chiếu giả trốn sang Bangkok, bị băng đảng địa phương bắt cóc đòi tiền chuộc trước khi Cảnh sát Thái Lan giải cứu và bàn giao cho Viện Kiểm sát Trung Quốc dẫn độ về nước thi hành án tử hình.",
         "hook_archetype": "double_life_unmasking"
     },
     {
-        "id": "vio_cn_gansu_lanzhou_watch_gear_serial_18y",
+        "id": "vio_cn_guangdong_foshan_huangwenyi_5d",
         "topic_stream": "major_violent_crime",
-        "case_real_name_zh": "甘肃兰州18年悬案现场遗落手表发条批次号与维修账本锁定真凶案 — 马某 (2001–2019)",
+        "case_real_name_zh": "广东佛山南海12·28特大命案公安部A级通缉5天极速抓捕案 — 黄文义 (2006–2007)",
         "archival_search_keywords_zh": [
-            "兰州 18年 手表 破案 今日说法",
-            "修表匠 账本 侦破纪实 天网",
-            "甘肃兰州 命案积案 18年"
+            "佛山 黄文义 12·28 公安部A级通缉 今日说法",
+            "广东南海 黄文义 庭审 死刑",
+            "A级通缉犯 黄文义 5天抓捕 天网"
+        ],
+        "recommended_vox_verbs": [
+            "RADIAL_TIME_PRESSURE",
+            "GEO_VECTOR_PURSUIT",
+            "ALIBI_SHATTER"
+        ],
+        "title": "[중국 실화 사건] 약국 체인점 여러 곳을 운영하던 모범 가장이 하룻밤 새 공안부 A급 1호 수배범이 된 이유 | 포산 황원이 사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do ông chủ chuỗi hiệu thuốc hiền lành sau một đêm trở thành tội phạm truy nã cấp A số 1 Bộ Công an | Đại án Hoàng Văn Nghĩa Phật Sơn)",
+        "topic_anchor": "[중국 실화 사건] 약국 체인점 여러 곳을 운영하던 모범 가장이 하룻밤 새 공안부 A급 1호 수배범이 된 이유 | 포산 황원이 사건",
+        "winner_cluster": "Luồng 2 · Ông Chủ Chuỗi Hiệu Thuốc Trầm Lặng & 120 Giờ Truy Bắt Truy Nã Cấp A Giữa Đêm Giao Thừa (포산 황원이 A급 수배 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Hoàng Văn Nghĩa (黄文义, Phật Sơn 2006–2007) — Giải Mã Tâm Lý Lệch Lạc Đằng Sau Vỏ Bọc Ông Chủ Hiệu Thuốc Thành Đạt Và 5 Ngày Đêm Phong Tỏa Quảng Châu",
+        "codex_reasons": [
+            "Chuyên án truy nã cấp A chấn động toàn Trung Quốc dịp Tết Dương lịch 2007, lên sóng CCTV 今日说法 / 天网 với đầy đủ video vây bắt và thẩm vấn",
+            "Tòa án Nhân dân Trung cấp Phật Sơn xét xử công khai và thi hành án tử hình Hoàng Văn Nghĩa"
+        ],
+        "opening_hook": "이웃들에게는 늘 공손하게 인사하고 약국 세 곳을 성실히 운영하던 서른네 살의 가장 황원이. 하지만 2006년 12월 28일 밤이 지나자 그는 현금 십만 위안을 챙겨 야간 택시를 타고 사라졌고, 공안부는 즉시 전국에 A급 수배령을 내렸습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án đặc biệt nghiêm trọng tước đoạt 6 sinh mạng tại Phật Sơn · lệnh truy nã cấp A Bộ Công an · bắt giữ sau 5 ngày đêm và Tòa án Phật Sơn tuyên án tử hình Hoàng Văn Nghĩa】 Hồ sơ thật 100% Chuyên án 12·28 tại quận Nam Hải, Phật Sơn, Quảng Đông (广东佛山南海12·28特大命案 — Hoàng Văn Nghĩa 黄文义, 2006–2007): Bề ngoài là ông chủ chuỗi hiệu thuốc giàu có và hiền lành, Hoàng Văn Nghĩa gây ra thảm án 6 người thân trong đêm 28/12/2006 rồi mang 100.000 NDT dùng chứng minh thư giả liên tục đổi khách sạn tại Quảng Châu; bị bắt giữ ngày 1/1/2007 dưới lệnh truy nã cấp A và bị Tòa án Phật Sơn tuyên án tử hình.",
+        "hook_archetype": "double_life_unmasking"
+    },
+    {
+        "id": "vio_cn_beijing_daxing_lilei_sanya_6d",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "北京大兴清城11·23特大命案跨3000公里三亚6天追缉案 — 李磊 (2009)",
+        "archival_search_keywords_zh": [
+            "北京大兴 李磊 11·23 今日说法",
+            "大兴特大命案 李磊 三亚抓捕 法治进行时",
+            "李磊 庭审 死刑 央视"
+        ],
+        "recommended_vox_verbs": [
+            "GEO_VECTOR_PURSUIT",
+            "RADIAL_TIME_PRESSURE",
+            "SPLIT_PARADOX"
+        ],
+        "title": "[중국 실화 사건] 집 안 에어컨을 최저 온도로 맞춰 밀봉해 두고 3,000km 밖 휴양지로 사라진 모범 남편 | 베이징 리레이 사건 ([Vụ Án Có Thật ở Trung Quốc] Chỉnh điều hòa căn hộ xuống nhiệt độ thấp nhất, khóa kín cửa rồi biến mất tới khu nghỉ dưỡng cách 3.000km của người chồng | Đại án Lý Lỗi Bắc Kinh)",
+        "topic_anchor": "[중국 실화 사건] 집 안 에어컨을 최저 온도로 맞춰 밀봉해 두고 3,000km 밖 휴양지로 사라진 모범 남편 | 베이징 리레이 사건",
+        "winner_cluster": "Luồng 2 · Căn Hộ Bật Điều Hòa Lạnh Sâu Giữa Mùa Đông Bắc Kinh & 144 Giờ Truy Vết 3.000km Tới Tam Á (베이징 다싱구 리레이 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Lý Lỗi & Chuyên Án 11·23 Đại Hưng, Bắc Kinh (2009) — Sự Bùng Nổ Tâm Lý Sau 10 Năm Nhẫn Nhịn Và Cuộc Truy Bắt Thần Tốc Tại Đảo Hải Nam",
+        "codex_reasons": [
+            "Một trong những đại án hình sự lớn nhất Bắc Kinh thập niên 2000, có đầy đủ tư liệu của đài truyền hình Bắc Kinh (法治进行时) và CCTV 今日说法",
+            "Tòa án Nhân dân Trung cấp số 1 Bắc Kinh tuyên án tử hình và thi hành án đối với Lý Lỗi tháng 9/2011"
+        ],
+        "opening_hook": "영하로 떨어진 11월의 베이징 아파트 안에서 에어컨이 가장 낮은 냉방 온도로 사흘 내내 돌아가고 있었습니다. 방문마다 출입을 막는 메모를 붙여 시간을 끈 스물아홉 살의 가장 리레이는 이미 삼천 킬로미터 남쪽 열대 해변 도시에 도착해 있었습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án đặc biệt nghiêm trọng tước đoạt 6 sinh mạng trong căn hộ khóa kín tại Đại Hưng, Bắc Kinh · 6 ngày truy bắt xuyên 3.000km tới Tam Á · Tòa án Bắc Kinh tuyên án tử hình Lý Lỗi】 Hồ sơ thật 100% Chuyên án 11·23 tại quận Đại Hưng, Bắc Kinh (北京大兴11·23特大命案 — Lý Lỗi 李磊, 11/2009): Sau khi gây án tại căn hộ khu Thanh Thành đêm 23/11/2009, Lý Lỗi bật điều hòa lạnh sâu và khóa kín các phòng để trì hoãn việc phát hiện rồi mang tiền mặt đi tàu suốt 3.000km xuống Tam Á (Hải Nam); Công an Bắc Kinh và Hải Nam phối hợp bắt giữ Lý Lỗi sau 6 ngày và Tòa án Bắc Kinh tuyên án tử hình.",
+        "hook_archetype": "locked_room_vault_paradox"
+    },
+    {
+        "id": "vio_cn_hubei_suizhou_xiongzhenlin_7d",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "湖北随州洛阳镇1·4特大命案公安部A级通缉7天跨省抓捕案 — 熊振林 (2009)",
+        "archival_search_keywords_zh": [
+            "湖北随州 熊振林 公安部A级通缉 今日说法",
+            "熊振林 1·4特大案 武汉抓捕 天网",
+            "随州 熊振林 庭审 死刑"
+        ],
+        "recommended_vox_verbs": [
+            "GEO_VECTOR_PURSUIT",
+            "CONCENTRIC_TRAP",
+            "RADIAL_TIME_PRESSURE"
+        ],
+        "title": "[중국 실화 사건] 남쪽 섬으로 도망친 줄 알았던 공안부 A급 수배범이 수염을 기르고 수사 본부 코앞에 나타난 이유 | 슝전린 추적 사건 ([Vụ Án Có Thật ở Trung Quốc] Tưởng đã trốn ra đảo cực Nam nhưng kẻ truy nã cấp A lại để râu quay ngược về ngay sát tổng hành dinh cảnh sát | Chuyên án Hùng Chấn Lâm)",
+        "topic_anchor": "[중국 실화 사건] 남쪽 섬으로 도망친 줄 알았던 공안부 A급 수배범이 수염을 기르고 수사 본부 코앞에 나타난 이유 | 슝전린 추적 사건",
+        "winner_cluster": "Luồng 2 · Đòn Nghi Binh Đi Xuống Hải Nam Rồi Quay Ngược Về Vũ Hán & 7 Ngày Đêm Truy Nã Cấp A (후베이 쑤이저우 슝전린 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Hùng Chấn Lâm (熊振林, Tùy Châu, Hồ Bắc 2009) — Cuộc Đấu Trí Phản Trinh Sát Của Lệnh Truy Nã Cấp A Số 1 Năm 2009 Và Phiên Tòa Xét Xử Công Khai",
+        "codex_reasons": [
+            "Chuyên án truy nã cấp A lớn nhất đầu năm 2009 của Bộ Công an Trung Quốc, có video bắt sống tại hiện trường Vũ Hán và phiên tòa xét xử trực tiếp trên CCTV",
+            "Khớp hoàn hảo bản đồ truy đuổi 3D GEO_VECTOR_PURSUIT (Tùy Châu -> Hải Nam -> Vũ Hán)"
+        ],
+        "opening_hook": "하이난섬 삼아 해변에서 공안부 A급 수배범 슝전린의 흔적이 발견되자 전국의 추적망이 일제히 남쪽 바다로 쏠렸습니다. 하지만 그 시각 슝전린은 경찰의 허를 찔러 다시 북쪽으로 기차를 타고 올라와, 사건 발생 성도인 우한 시내 철물점에서 변장 도구를 고르고 있었습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án đặc biệt nguy hiểm tước đoạt 8 sinh mạng tại Tùy Châu, Hồ Bắc · lệnh truy nã cấp A Bộ Công an · bắt giữ sau 7 ngày tại Vũ Hán và Tòa án Tùy Châu tuyên án tử hình Hùng Chấn Lâm】 Hồ sơ thật 100% Chuyên án 1·4 tại thị trấn Lạc Dương, Tùy Châu, Hồ Bắc (湖北随州1·4特大命案 — Hùng Chấn Lâm 熊振林, 1/2009): Sau khi gây trọng án đêm 4/1/2009, Hùng Chấn Lâm bắt tàu trốn xuống Tam Á (Hải Nam) rồi bất ngờ quay ngược về Vũ Hán nhằm mua dụng cụ trốn tiếp lên Đông Bắc; dưới lệnh truy nã cấp A của Bộ Công an, cảnh sát Vũ Hán nhận diện và quật ngã hắn ngày 11/1/2009, Tòa án Tùy Châu tuyên án tử hình.",
+        "hook_archetype": "countdown_system_breach"
+    },
+    {
+        "id": "vio_cn_henan_pingyu_huangyong_netcafe",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "河南平舆11·12特大系列少年失踪案与张成亮机智逃生纪实 — 黄勇 (2001–2003)",
+        "archival_search_keywords_zh": [
+            "河南平舆 黄勇 11·12大案 今日说法",
+            "平舆特大案件 黄勇 张成亮 纪实",
+            "驻马店 黄勇 审判 死刑"
+        ],
+        "recommended_vox_verbs": [
+            "ALIBI_SHATTER",
+            "BLIND_SPOT_REVEAL",
+            "SINGLE_EVIDENCE_AUTOPSY"
+        ],
+        "title": "[중국 실화 사건] PC방에 간다던 남학생들이 2년간 차례로 증발한 마을과 16세 소년의 극적인 탈출극 | 허난 황융 사건 ([Vụ Án Có Thật ở Trung Quốc] Thị trấn nơi hàng loạt nam sinh đi quán net bốc hơi suốt 2 năm và màn đấu trí thoát thân của thiếu niên 16 tuổi | Đại án Hoàng Dũng Hà Nam)",
+        "topic_anchor": "[중국 실화 사건] PC방에 간다던 남학생들이 2년간 차례로 증발한 마을과 16세 소년의 극적인 탈출극 | 허난 황융 사건",
+        "winner_cluster": "Luồng 2 · Lời Nói Dối 'Tuyển Dụng Việc Làm Lương Cao' Ở Quán Net & Màn Đấu Trí Sống Còn Của Thiếu Niên 16 Tuổi (허난 핑위현 황융 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Hoàng Dũng & Đại Án 11·12 Bình Dư, Hà Nam (2001–2003) — Cách Thiếu Niên 16 Tuổi Trương Thành Lương Giữ Bình Tĩnh Đánh Lừa Kẻ Thủ Ác Để Đưa Cảnh Sát Tới Ngôi Nhà Biệt Lập",
+        "codex_reasons": [
+            "Một trong những chuyên án điều tra nổi tiếng nhất thập niên 2000 của Bộ Công an Trung Quốc, có phóng sự chuyên đề trên CCTV 今日说法 / 法治在线",
+            "Tòa án Nhân dân Trung cấp Trú Mã Điếm xét xử lưu động trước hàng vạn người dân và thi hành án tử hình Hoàng Dũng tháng 12/2003"
+        ],
+        "opening_hook": "2001년부터 허난성 핑위현의 작은 읍내에서 PC방에 간다던 남학생들이 한 명씩 흔적도 없이 사라지기 시작했습니다. 모두가 대도시로 가출했을 것이라 믿었지만, 2003년 11월 외딴 벽돌집에서 극적으로 빠져나온 열여섯 살 소년 장청량이 경찰서 문을 두드리며 2년간의 미스터리가 드러났습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án đặc biệt nghiêm trọng dụ dỗ 17 nam sinh từ quán Internet tại Bình Dư, Hà Nam · thiếu niên 16 tuổi Trương Thành Lương mưu trí thoát thân báo công an · Tòa án Trú Mã Điếm tuyên án tử hình Hoàng Dũng】 Hồ sơ thật 100% Đại án 11·12 tại huyện Bình Dư, Trú Mã Điếm, Hà Nam (河南平舆11·12特大系列案件 — Hoàng Dũng 黄勇, 2001–2003): Hoàng Dũng giả làm người giới thiệu việc làm ở các quán Internet để dụ nam sinh về ngôi nhà gạch hẻo lánh; tháng 11/2003, nam sinh 16 tuổi Trương Thành Lương bình tĩnh thuyết phục Hoàng Dũng lấy lòng tin để được thả ra lấy tiền rồi lập tức báo công an bắt giữ và tuyên án tử hình Hoàng Dũng.",
+        "hook_archetype": "chilling_verbatim_line"
+    },
+    {
+        "id": "vio_cn_shaanxi_shangluo_longzhimin_1985",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "陕西商县王墹村48人连环失踪特大悬案与1元8角5分麦草条侦破纪实 — 龙治民·闫淑霞 (1983–1985)",
+        "archival_search_keywords_zh": [
+            "陕西商县 龙治民 48人 特大案 纪实",
+            "龙治民 1元8角5分 刑侦档案",
+            "商洛 龙治民 审判 死刑"
         ],
         "recommended_vox_verbs": [
             "SINGLE_EVIDENCE_AUTOPSY",
-            "FORENSIC_ZOOM_CHAIN",
-            "LEDGER_DIFF_SCRUB"
+            "BLIND_SPOT_REVEAL",
+            "FORENSIC_ZOOM_CHAIN"
         ],
-        "title": "[중국 실화 사건] 사건 현장에 떨어진 멈춰버린 손목시계 하나가 18년 동안 풀리지 않는 미스터리로 남았던 이유 | 란저우 시계 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do chiếc đồng hồ đeo tay dừng lại ở hiện trường trở thành bí ẩn treo suốt 18 năm không lời giải | Kỳ án Lan Châu)",
-        "topic_anchor": "[중국 실화 사건] 사건 현장에 떨어진 멈춰버린 손목시계 하나가 18년 동안 풀리지 않는 미스터리로 남았던 이유 | 란저우 시계 미제사건",
-        "winner_cluster": "Luồng 2 · Ký Hiệu Khắc Bằng Mũi Kim Bên Trong Nắp Đồng Hồ Cơ & Cuốn Sổ Tay Của Thợ Đồng Hồ Già (란저우 18년 시계 수리 장부 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Chiếc Đồng Hồ Đứt Dây Tại Lan Châu, Cam Túc — Giải Mã Ký Hiệu Viết Tắt Của Thợ Sửa Đồng Hồ Bên Trong Nắp Máy Để Khóa Chặt Hung Thủ",
+        "title": "[중국 실화 사건] 장터에 간 주민 48명이 감쪽같이 증발한 마을과 1위안 8마오 영수증 한 장이 밝혀낸 진실 | 산시성 룽즈민 사건 ([Vụ Án Có Thật ở Trung Quốc] 48 người đi chợ huyện bốc hơi kỳ bí và tờ hóa đơn 1,85 tệ phanh phui ngôi nhà luôn đóng kín cửa sổ | Đại án Long Trị Dân Thiểm Tây)",
+        "topic_anchor": "[중국 실화 사건] 장터에 간 주민 48명이 감쪽같이 증발한 마을과 1위안 8마오 영수증 한 장이 밝혀낸 진실 | 산시성 룽즈민 사건",
+        "winner_cluster": "Luồng 2 · Tờ Giấy Nhận Tiền Bán Rơm 1,85 Tệ & Ngôi Nhà Đất Đóng Kín Cửa Sổ Suốt 3 Năm (산시성 상현 룽즈민 48인 실종 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Đại Án Long Trị Dân Tại Thương Lạc, Thiểm Tây (1983–1985) — Khi Một Tờ Hóa Đơn 1,85 Nhân Dân Tệ Mở Khóa Kỳ Án Mất Tích Lớn Nhất Lịch Sử Hình Sự Trung Quốc",
         "codex_reasons": [
-            "Chi tiết nghề nghiệp truyền thống (thợ sửa đồng hồ cơ khắc ký hiệu ngày sửa bằng mũi nhọn vào mặt trong nắp lưng đồng hồ) cực kỳ đắt giá cho bàn biên tập Vox!",
-            "100% Xanh tiền YouTube"
+            "Hồ sơ hình sự kinh điển bậc nhất trong lịch sử Bộ Công an Trung Quốc, có đầy đủ ảnh tư liệu hồ sơ lưu trữ và biên bản xét xử của Tòa án Thương Lạc năm 1985",
+            "Mỏ neo vật chứng 1 tờ biên lai 1,85 tệ cực kỳ đắt giá cho SINGLE_EVIDENCE_AUTOPSY trên bàn biên tập Vox"
         ],
-        "opening_hook": "사건 현장에 떨어진 줄 끊어진 구형 기계식 손목시계 하나. 시계 바늘은 사건 발생 시각에 멈춰 있었고 외부에는 아무런 지문도 남아 있지 않았습니다. 그러나 형사들이 시계 뒷뚜껑을 열어 현미경으로 들여다보았을 때, 금속 안쪽에 바늘 끝으로 작게 새겨진 의문의 수리 암호가 모습을 드러냈습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Lan Châu · án lạnh 18 năm giải mã từ ký hiệu sửa đồng hồ khắc bên trong nắp máy】 Hồ sơ thật 100% Kỳ án truy tìm hung thủ từ ký hiệu sửa đồng hồ tại Lan Châu, Cam Túc (甘肃兰州手表维修暗记破案纪实): Từ chiếc đồng hồ cơ bị đứt dây tại hiện trường, cảnh sát phát hiện mặt trong nắp kim loại có ký hiệu khắc tay riêng của một thợ sửa đồng hồ lâu năm và lần theo cuốn sổ ghi chép khách hàng của ông lão để bắt giữ nghi phạm Mã Mỗ.",
-        "hook_archetype": "cold_archive_match"
+        "opening_hook": "1983년부터 산시성 상현의 읍내 장터와 버스터미널 주변에서 일자리를 찾던 농민 마흔여덟 명이 차례로 증발했습니다. 아무런 단서도 없던 1985년 5월, 실종자 가족이 찾아낸 단서라곤 다른 남자의 이름이 적힌 일 위안 팔 마오짜리 밀짚 판매 영수증 한 장뿐이었습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án mất tích liên hoàn lớn nhất lịch sử hình sự Trung Quốc (48 nạn nhân tại huyện Thương, Thiểm Tây) · phá án từ tờ hóa đơn bán rơm 1,85 tệ · Tòa án Thương Lạc tuyên án tử hình Long Trị Dân & Diêm Thục Hà】 Hồ sơ thật 100% Đại án Long Trị Dân tại thôn Vương Gian, huyện Thương (nay là Thương Lạc), Thiểm Tây (陕西商县龙治民特大案, 1983–1985): Long Trị Dân lấy cớ thuê người làm công giá cao hoặc giới thiệu chỗ trọ miễn phí ở chợ huyện để dụ 48 người về căn nhà đất hẻo lánh; tháng 5/1985, gia đình nạn nhân Đỗ Trường Anh phát hiện Long Trị Dân cầm tờ biên lai bán rơm 1,85 tệ của người mất tích đi lĩnh tiền, giúp công an khám phá toàn bộ vụ án và tuyên án tử hình.",
+        "hook_archetype": "micro_forensic_anomaly"
     },
     {
-        "id": "vio_cn_zhejiang_zhoushan_island_22y_ystr",
+        "id": "vio_cn_henan_ruyang_yangxinhai_bicycle",
         "topic_stream": "major_violent_crime",
-        "hook_archetype": "locked_room_vault_paradox",
-        "case_real_name_zh": "浙江舟山孤岛悬案22年船票记录与Y-STR家系侦破纪实 — 蒋某 (1998–2020)",
+        "case_real_name_zh": "豫皖鲁冀跨4省夜间流窜特大系列案件侦破纪实 — 杨新海 (1999–2003)",
         "archival_search_keywords_zh": [
-            "浙江舟山 22年 命案积案 今日说法",
-            "舟山 海岛 悬案 DNA 侦破 天网",
-            "舟山警方 22年 追凶"
+            "杨新海 跨四省 特大案件 纪实",
+            "公安部督办 杨新海 沧州落网 天网",
+            "河南漯河 杨新海 审判 死刑"
+        ],
+        "recommended_vox_verbs": [
+            "GEO_VECTOR_PURSUIT",
+            "FORENSIC_ZOOM_CHAIN",
+            "MICRO_TRACE_MATCH"
+        ],
+        "title": "[중국 실화 사건] 발 크기를 속이려고 일부러 큰 신발을 신고 4개 성을 넘나든 공안부 특급 수배범의 치밀한 위장 | 양신하이 추적 사건 ([Vụ Án Có Thật ở Trung Quốc] Cố tình đi giày cỡ lớn hơn chân thật để đánh lừa pháp y và hành tung vượt 4 tỉnh của kẻ truy nã đặc biệt | Chuyên án Dương Tân Hải)",
+        "topic_anchor": "[중국 실화 사건] 발 크기를 속이려고 일부러 큰 신발을 신고 4개 성을 넘나든 공안부 특급 수배범의 치밀한 위장 | 양신하이 추적 사건",
+        "winner_cluster": "Luồng 2 · Thủ Đoạn Mặc 3 Lớp Áo Đổi Nhân Dạng & Giám Định ADN Kép Liên Tỉnh Khóa Chặt Dương Tân Hải (4개 성 광역 추적 양신하이 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Liên Tỉnh Dương Tân Hải (杨新海, 1999–2003) — Cách Chuyên Gia Dấu Vết Bộ Công An Giải Mã Thủ Đoạn 'Đi Giày Cỡ Lớn Hơn Chân Thật' Để Gộp Án 4 Tỉnh",
+        "codex_reasons": [
+            "Chuyên án hình sự liên tỉnh lớn nhất vùng Hoa Bắc giai đoạn 1999–2003 do Bộ Công an trực tiếp chỉ đạo, tư liệu bắt giữ tại Thương Châu và xét xử tại Tháp Hà đầy đủ",
+            "Tòa án Nhân dân Trung cấp Tháp Hà (Hà Nam) tuyên án tử hình và thi hành án đối với Dương Tân Hải tháng 2/2004"
+        ],
+        "opening_hook": "네 개 성의 스물여섯 개 현장에서 남겨진 발자국 크기가 매번 조금씩 달랐기에 경찰은 오랫동안 서로 다른 범인들의 소행이라 생각했습니다. 하지만 법의학자들이 신발 밑창 안쪽의 압력 중심점을 정밀 분석하자, 한 남자가 일부러 큰 신발을 겹쳐 신고 추적망을 교란해 왔다는 사실이 밝혀졌습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án liên tỉnh đặc biệt nguy hiểm xuyên 4 tỉnh Hà Nam, An Huy, Sơn Đông, Hà Bắc · thủ đoạn mặc 3 lớp áo và đi giày cỡ lớn đánh lừa pháp y · bắt giữ tại Thương Châu và Tòa án Tháp Hà tuyên án tử hình Dương Tân Hải】 Hồ sơ thật 100% Chuyên án Dương Tân Hải (豫皖鲁冀特大系列案 — Dương Tân Hải 杨新海, 1999–2003): Dương Tân Hải luôn mặc nhiều lớp quần áo để vứt bỏ lớp ngoài sau khi gây án và đi giày lớn hơn cỡ chân thật để làm lệch kết quả đo chiều cao pháp y; tháng 11/2003, Công an Thương Châu (Hà Bắc) bắt giữ Dương Tân Hải trong đợt kiểm tra ban đêm và đối chiếu ADN khớp toàn bộ chuỗi án 4 tỉnh, Tòa án Tháp Hà tuyên án tử hình.",
+        "hook_archetype": "micro_forensic_anomaly"
+    },
+    {
+        "id": "vio_cn_heilongjiang_jiamusi_gongrunbo_2006",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "黑龙江佳木斯向阳区特大系列少年失踪案侦破纪实 — 宫润伯 (2005–2006)",
+        "archival_search_keywords_zh": [
+            "佳木斯 宫润伯 特大案件 今日说法",
+            "黑龙江佳木斯 宫润伯 侦破纪实 天网",
+            "宫润伯 庭审 死刑 央视"
         ],
         "recommended_vox_verbs": [
             "BLIND_SPOT_REVEAL",
-            "MICRO_TRACE_MATCH",
-            "GEO_VECTOR_PURSUIT"
-        ],
-        "title": "[중국 실화 사건] 폭풍우로 배가 끊긴 고립된 섬에서 범인이 흔적도 없이 감쪽같이 증발해 버린 밤 | 저우산 고도 22년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Đêm kẻ thủ ác bốc hơi không dấu vết khỏi hòn đảo cô lập đã ngừng toàn bộ tàu phà vì bão lớn | Kỳ án đảo Chu Sơn 22 năm)",
-        "topic_anchor": "[중국 실화 사건] 폭풍우로 배가 끊긴 고립된 섬에서 범인이 흔적도 없이 감쪽같이 증발해 버린 밤 | 저우산 고도 22년 미제사건",
-        "winner_cluster": "Luồng 2 · Hiện Trường Hòn Đảo Bốn Bề Sóng Biển & 22 Năm Truy Vết Phả Hệ Gen (저우산 22년 해안 고도 미제사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Đảo Cô Lập Chu Sơn, Chiết Giang (浙江舟山22年海岛悬案) — Khi Mọi Chuyến Phà Đều Đã Ngừng Chạy Trong Đêm Bão Và Đột Phá Y-STR Sau 22 Năm",
-        "codex_reasons": [
-            "Hiện trường khóa kín tự nhiên giữa biển khơi cực kỳ cuốn hút đúng chất 그것이 알고싶다",
-            "100% Cách viết Xanh tiền: tập trung vào danh sách hành khách phà biển, luồng hải lưu và cây phả hệ Y-STR"
-        ],
-        "opening_hook": "풍랑주의보로 육지로 나가는 마지막 여객선마저 끊긴 작은 바위섬. 섬 전체의 출입구가 파도에 완전히 봉쇄된 그날 밤 이후, 용의자는 마치 바닷속으로 녹아든 것처럼 흔적도 없이 사라졌습니다. 22년 동안 봉인되어 있던 섬의 비밀은 천 킬로미터 떨어진 내륙 도시의 유전자 지도 위에서 다시 움직이기 시작했습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt 2 sinh mạng trên đảo cô lập Chu Sơn đêm bão · án lạnh 22 năm phá nhờ dữ liệu phà biển & phả hệ Y-STR】 Hồ sơ thật 100% Kỳ án 22 năm trên quần đảo Chu Sơn, Chiết Giang (浙江舟山1998–2020海岛积案 — Tưởng Mỗ 蒋某): Lợi dụng đêm biển động ngừng phà hành khách để ẩn trốn dưới khoang tàu cá nhỏ rời đảo và thay tên đổi họ suốt 22 năm; năm 2020 Công an Chu Sơn giải mã mẫu vật lưu trữ bằng phả hệ Y-STR, bắt giữ nghi phạm tại Giang Tô."
-    },
-    {
-        "id": "vio_cn_sichuan_leshan_runner_step_curve",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "micro_forensic_anomaly",
-        "case_real_name_zh": "四川乐山绿心公园晨跑失踪案运动手环步数曲线侦破纪实 — 饶某 (2017)",
-        "archival_search_keywords_zh": [
-            "四川乐山 绿心公园 失踪 今日说法",
-            "乐山 晨跑 运动轨迹 侦破 天网",
-            "绿心公园 饶某 庭审"
-        ],
-        "recommended_vox_verbs": [
-            "FORENSIC_ZOOM_CHAIN",
             "RADIAL_TIME_PRESSURE",
             "SINGLE_EVIDENCE_AUTOPSY"
         ],
-        "title": "[중국 실화 사건] 피해자의 스마트워치를 자기 발목에 차고 공원을 걸어 빠져나간 용의자 | 러산 심야 공원 사건 ([Vụ Án Có Thật ở Trung Quốc] Nghi phạm đeo đồng hồ thông minh của nạn nhân vào cổ chân mình rồi đi bộ rời khỏi công viên | Chuyên án Lạc Sơn)",
-        "topic_anchor": "[중국 실화 사건] 피해자의 스마트워치를 자기 발목에 차고 공원을 걸어 빠져나간 용의자 | 러산 심야 공원 사건",
-        "winner_cluster": "Luồng 2 · Phân Tích Nhịp Bước Chân Số Hóa & Góc Khuất Camera Công Viên Lạc Sơn (쓰촨 러산 스마트워치 궤적 사건)",
+        "title": "[중국 실화 사건] 창문마다 신문지를 겹겹이 바른 외곽 셋방과 9살 소년이 기억해낸 결정적 단서 하나 | 자무쓰 궁룬보 사건 ([Vụ Án Có Thật ở Trung Quốc] Căn phòng thuê dán kín báo cũ ở ngoại ô và manh mối sống còn từ trí nhớ của cậu bé 9 tuổi | Đại án Cung Nhuận Bá Hắc Long Giang)",
+        "topic_anchor": "[중국 실화 사건] 창문마다 신문지를 겹겹이 바른 외곽 셋방과 9살 소년이 기억해낸 결정적 단서 하나 | 자무쓰 궁룬보 사건",
+        "winner_cluster": "Luồng 2 · Căn Phòng Thuê Dán Kín Giấy Báo Ở Giai Mộc Tư & Trí Nhớ Chính Xác Của Cậu Bé 9 Tuổi (헤이룽장 자무쓰 궁룬보 사건)",
         "codex_score": 97,
         "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Công Viên Lục Tâm, Lạc Sơn, Tứ Xuyên (四川乐山绿心公园失踪案, 2017) — Giải Mã Đường Cong Tốc Độ Bước Chân Để Bóc Trần Lời Khai Giả",
+        "codex_angle": "Hồ Sơ Thật 100%: Chuyên Án Cung Nhuận Bá Tại Giai Mộc Tư, Hắc Long Giang (2005–2006) — Cuộc Đột Kích Trong Đêm Tuyết Lạnh Và Bản Án Tử Hình Của Tòa Án Giai Mộc Tư",
         "codex_reasons": [
-            "Phóng sự pháp y kỹ thuật số cực kỳ nổi tiếng trên CCTV 今日说法, nhiều tư liệu thực nghiệm hiện trường",
-            "100% Xanh tiền YouTube: giải mã dữ liệu cảm biến bước chân và tọa độ trạm phát sóng"
+            "Đại án hình sự chấn động tỉnh Hắc Long Giang năm 2006 được Bộ Công an khen thưởng đặc biệt và dựng thành phóng sự trên CCTV 今日说法 / 天网",
+            "Tòa án Nhân dân Trung cấp Giai Mộc Tư xét xử công khai và thi hành án tử hình Cung Nhuận Bá tháng 12/2006"
         ],
-        "opening_hook": "오전 열 시 오십 분까지는 분당 백이십 보의 일정한 산책 리듬이 기록되어 있었습니다. 그런데 그다음 일 분 동안 걸음 수가 기이하게 요동치더니, 오후 두 시에는 누군가 다른 사람의 보폭으로 공원을 빠져나간 기록이 찍혔죠. 주인 잃은 손목 위 센서 데이터가 가리킨 진실을 추적합니다.",
-        "note": "【Hồ sơ vụ án: trọng án cướp tài sản và tước đoạt sinh mạng phụ nữ chạy bộ tại công viên Lạc Sơn · giải mã bằng biểu đồ nhịp bước chân đồng hồ thông minh】 Hồ sơ thật 100% Chuyên án mất tích tại công viên Lục Tâm, thành phố Lạc Sơn, Tứ Xuyên (四川乐山绿心公园失踪案 — Nhiêu Mỗ 饶某, 12/2017): Khi camera công viên có nhiều góc khuất cây rừng, đội kỹ thuật hình sự Công an Lạc Sơn đã trích xuất biểu đồ tần suất bước chân theo từng phút từ dữ liệu đồng hồ thể thao đồng bộ trên điện thoại để tìm ra điểm dừng thực tế và bắt giữ nghi phạm."
+        "opening_hook": "영하 이십 도의 눈보라가 몰아치던 2006년 2월 저녁, 아홉 살 소년이 신발 한 짝이 벗겨진 채 자무쓰시 공안국 분국으로 뛰어들어왔습니다. 소년이 떨리는 손으로 가리킨 골목 끝에는 일 년 내내 창문마다 신문지가 겹겹이 발라져 있던 수상한 단칸방이 있었습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án đặc biệt nghiêm trọng khiến 6 thiếu niên mất tích tại Giai Mộc Tư, Hắc Long Giang · cậu bé 9 tuổi mưu trí thoát khỏi căn nhà thuê khóa kín báo cảnh sát · Tòa án Giai Mộc Tư tuyên án tử hình Cung Nhuận Bá】 Hồ sơ thật 100% Chuyên án 2·28 tại Giai Mộc Tư, Hắc Long Giang (黑龙江佳木斯宫润伯特大案, 2005–2006): Cung Nhuận Bá thuê một căn nhà nhỏ ở ngoại ô dán kín báo cũ lên cửa sổ để che giấu hành tung; tháng 2/2006, một cậu bé 9 tuổi lợi dụng lúc hắn sơ hở đã mở chốt cửa chạy thẳng tới đồn cảnh sát, giúp Công an Giai Mộc Tư ập vào bắt giữ Cung Nhuận Bá và Tòa án tuyên án tử hình.",
+        "hook_archetype": "chilling_verbatim_line"
     },
     {
-        "id": "vio_cn_guangdong_shenzhen_23y_tourist_photo",
+        "id": "vio_cn_beijing_wanglihua_kidnap_22h",
         "topic_stream": "major_violent_crime",
-        "hook_archetype": "double_life_unmasking",
-        "case_real_name_zh": "广东深圳重案逃犯潜逃23年误入游客风景照背景AI比对落网案 — 彭某 (1997–2020)",
+        "case_real_name_zh": "北京三里屯冒充刑警绑架明星吴若甫22小时极速解救案 — 王立华·王庆晓 (2004)",
         "archival_search_keywords_zh": [
-            "潜逃23年 游客照片 逃犯 落网",
-            "深圳 23年 追逃 人脸识别 今日说法",
-            "逃犯 入镜 抓捕 天网"
+            "吴若甫 绑架案 王立华 22小时 今日说法",
+            "北京刑警 解救吴若甫 真实录像 央视",
+            "王立华 庭审 死刑 纪实"
         ],
         "recommended_vox_verbs": [
-            "DUAL_ERA_LOCK",
-            "FORENSIC_ZOOM_CHAIN",
-            "SPLIT_PARADOX"
-        ],
-        "title": "[중국 실화 사건] 23년간 신분증을 버리고 사진기 앞을 철저히 피해 살던 수배범이 1,500km 밖에서 들통난 이유 | 선전 23년 잠적 사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do kẻ truy nã vứt bỏ giấy tờ và tuyệt đối không chụp ảnh suốt 23 năm lại lộ diện cách 1.500km | Chuyên án Thâm Quyến)",
-        "topic_anchor": "[중국 실화 사건] 23년간 신분증을 버리고 사진기 앞을 철저히 피해 살던 수배범이 1,500km 밖에서 들통난 이유 | 선전 23년 잠적 사건",
-        "winner_cluster": "Luồng 2 · 23 Năm Tránh Mọi Ống Kính Nhưng Lộ Diện Ở Góc Ảnh Ngẫu Nhiên 12 Pixel (선전 23년 배경 사진 검거 사건)",
-        "codex_score": 98,
-        "profile_score": 98,
-        "codex_angle": "Hồ Sơ Thật 100%: 23 Năm Lẩn Trốn Không Chứng Minh Thư & Khoảnh Khắc Lọt Vào Khung Hình Ngẫu Nhiên Của Du Khách",
-        "codex_reasons": [
-            "Độ tò mò và kịch tính tâm lý cực cao cho khán giả Hàn Quốc (0.001% xác suất trùng hợp + công nghệ đối sánh xương mặt)",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "가족 결혼식 날에도 카메라 뒤로 몸을 숨겼고, 23년 동안 신분증 사진 한 장 남기지 않았던 남자가 있었습니다. 완벽한 투명 인간으로 살아가던 그의 연극을 끝낸 건, 천오백 킬로미터 떨어진 광장에서 낯선 여행객이 우연히 찍은 사진 한 장의 오른쪽 맨 구석이었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Quảng Đông · 23 năm trốn truy nã không chụp ảnh nhưng vô tình lọt vào góc ảnh du khách】 Hồ sơ thật 100% Chuyên án truy bắt kẻ trốn truy nã 23 năm từ Quảng Đông (广东重案逃犯潜逃23年落网记 — Bành Mỗ 彭某, 1997–2020): Suốt hơn hai thập kỷ sống bằng tiền mặt và né tránh mọi camera hành chính, nhưng vô tình đi ngang qua hậu cảnh một bức ảnh nơi công cộng; hệ thống đối sánh cấu trúc hốc mắt và sống mũi đã phát hiện điểm trùng khớp với tấm ảnh hồ sơ năm 1997."
-    },
-    {
-        "id": "vio_cn_henan_luoyang_15y_underground_cellar",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "scale_absurdity_collision",
-        "case_real_name_zh": "河南洛阳重案逃犯自挖6米深地下隔音暗室潜藏15年微电表侦破案 — 李某 (2004–2019)",
-        "archival_search_keywords_zh": [
-            "逃犯 挖地洞 潜藏15年 天网",
-            "河南洛阳 地窖 逃犯 今日说法",
-            "地下暗室 追逃 纪实"
-        ],
-        "recommended_vox_verbs": [
-            "BLIND_SPOT_REVEAL",
-            "SINGLE_EVIDENCE_AUTOPSY",
+            "RADIAL_TIME_PRESSURE",
+            "GEO_VECTOR_PURSUIT",
             "CONCENTRIC_TRAP"
         ],
-        "title": "[중국 실화 사건] 중대 수배범이 자기 집 마당 아래 6미터 비밀 지하실을 파고 15년 동안 두더지처럼 숨어 산 사연 | 뤄양 지하 은신 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ truy nã trọng án tự đào hầm ngầm sâu 6 mét ngay dưới sân nhà để sống ẩn dật suốt 15 năm | Kỳ án hầm ngầm Lạc Dương)",
-        "topic_anchor": "[중국 실화 사건] 중대 수배범이 자기 집 마당 아래 6미터 비밀 지하실을 파고 15년 동안 두더지처럼 숨어 산 사연 | 뤄양 지하 은신 사건",
-        "winner_cluster": "Luồng 2 · Hầm Ngầm Cách Âm Sâu 6 Mét Dưới Nền Nhà & Độ Lệch Công Tơ Điện Hàng Tháng (뤄양 15년 지하 밀실 은신 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: 15 Năm Tự Giam Mình Dưới Hầm Ngầm 6 Mét Tại Hà Nam & Con Mắt Tinh Tường Của Điều Tra Viên Khi Đọc Hoá Đơn Điện Nước",
+        "title": "[중국 실화 사건] 가짜 경찰 신분증과 수갑으로 형사 전문 유명 배우를 납치한 주범과 22시간의 숨 막히는 추격 | 베이징 왕리화 사건 ([Vụ Án Có Thật ở Trung Quốc] Dùng thẻ cảnh sát giả và còng số 8 bắt cóc ngôi sao chuyên đóng vai hình cảnh cùng 22 giờ giải cứu nghẹt thở | Đại án Vương Lập Hoa Bắc Kinh)",
+        "topic_anchor": "[중국 실화 사건] 가짜 경찰 신분증과 수갑으로 형사 전문 유명 배우를 납치한 주범과 22시간의 숨 막히는 추격 | 베이징 왕리화 사건",
+        "winner_cluster": "Luồng 2 · 22 Giờ Truy Vết Tần Số Vô Tuyến Giải Cứu Ngôi Sao Điện Ảnh Ngô Nhược Phủ Giữa Thủ Đô Bắc Kinh (베이징 왕리화 22시간 구출 작전)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Vương Lập Hoa & Vụ Bắt Cóc Ngôi Sao Ngô Nhược Phủ Năm 2004 (吾先生原案) — Cuộc Đột Kích 3 Giây Của Đặc Nhiệm Bắc Kinh Trước Khi Kẻ Chủ Mưu Kịp Chạm Vào Chốt Nổ",
         "codex_reasons": [
-            "Cực kỳ hợp sơ đồ mặt cắt kiến trúc 2.5D trên bàn biên tập VOX (`technical_cross_section_svg`)",
-            "Nghịch lý tâm lý đắt giá: để trốn nhà tù, kẻ thủ ác tự nhốt mình vào một nhà tù tối tăm hơn suốt 15 năm"
+            "Nguyên mẫu đời thực 100% của bộ phim điện ảnh kinh điển 'Giải cứu Ngô tiên sinh (解救吾先生)', toàn bộ quá trình đặc nhiệm phá cửa giải cứu và thẩm vấn đều được camera cảnh sát Bắc Kinh ghi hình thực tế",
+            "Tòa án Nhân dân Cấp cao Bắc Kinh tuyên án tử hình và thi hành án đối với Vương Lập Hoa, Vương Khánh Hiểu, Đổng Lập Dân tháng 9/2005"
         ],
-        "opening_hook": "국경을 넘지도, 가짜 신분증을 만들지도 않았습니다. 전국 수배령이 떨어진 그날 이후 남자가 선택한 도주처는 지상이 아닌 자신의 옛집 마당 아래 육 미터 땅속이었죠. 15년 동안 이웃 아무도 몰랐던 그 완벽한 어둠을 무너뜨린 건, 매달 어김없이 더 나온 전기 사용량 열여덟 킬로와트였습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt 2 sinh mạng tại Lạc Dương · hung thủ tự đào hầm ngầm cách âm sâu 6m dưới sân nhà trốn 15 năm】 Hồ sơ thật 100% Chuyên án bắt giữ kẻ trốn truy nã 15 năm dưới hầm ngầm tự đào tại Lạc Dương, Hà Nam (河南重案逃犯地窖藏匿15年落网案 — Lý Mỗ 李某, 2004–2019): Nghi phạm đào căn hầm sâu dưới nền nhà kho có ống thông hơi ngụy trang, suốt 15 năm không bước chân ra khỏi cổng; tổ trinh sát phát hiện mức tiêu thụ điện và thực phẩm bất thường so với hộ độc thân, kiểm tra radar xuyên đất và bắt giữ thành công."
+        "opening_hook": "텔레비전 드라마에서 수없이 강력계 형사 반장 역할을 맡았던 유명 배우 우뤄푸가 새벽 두 시 베이징 번화가에서 경찰 배지를 내민 세 남자에게 포위됐습니다. 수갑이 채워져 차에 타는 순간 그는 눈앞의 남자들이 경찰이 아니라 이백만 위안을 노린 왕리화 일당임을 직감했습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án giả danh cảnh sát hình sự bắt cóc tống tiền liên hoàn (sát hại con tin Vương Bằng và bắt cóc diễn viên Ngô Nhược Phủ đòi 2 triệu tệ) · 22 giờ đặc nhiệm Bắc Kinh giải cứu sống và Tòa án Bắc Kinh tuyên án tử hình Vương Lập Hoa】 Hồ sơ thật 100% Chuyên án 2·3 giải cứu diễn viên Ngô Nhược Phủ tại Bắc Kinh (北京2004年吴若甫绑架案 — Vương Lập Hoa 王立华, Vương Khánh Hiểu 王庆晓, Đổng Lập Dân 董立民): Rạng sáng 3/2/2004, băng nhóm Vương Lập Hoa đóng giả cảnh sát bắt cóc Ngô Nhược Phủ đòi 2 triệu NDT và mang theo lựu đạn; Công an Bắc Kinh định vị chiếc xe phát sóng di động, bắt sống Vương Lập Hoa sau 22 giờ, giải cứu toàn vẹn 2 con tin và Tòa án Bắc Kinh tuyên án tử hình.",
+        "hook_archetype": "countdown_system_breach"
     },
     {
-        "id": "vio_cn_shandong_qingdao_19y_stamp_saliva_dna",
+        "id": "vio_cn_liaoning_shenyang_liuyong_retrial",
         "topic_stream": "major_violent_crime",
-        "hook_archetype": "cold_archive_match",
-        "case_real_name_zh": "山东青岛19年悬案挑衅匿名信邮票背面微量DNA侦破纪实 — 宋某 (2001–2020)",
+        "case_real_name_zh": "辽宁沈阳嘉阳集团亿万富豪涉黑大案与最高院首次提审改判死刑案 — 刘涌 (1995–2003)",
         "archival_search_keywords_zh": [
-            "匿名信 邮票 DNA 19年 悬案 今日说法",
-            "山东青岛 命案积案 邮票 天网",
-            "邮票背面 微量物证 破案"
-        ],
-        "recommended_vox_verbs": [
-            "MICRO_TRACE_MATCH",
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "ALIBI_SHATTER"
-        ],
-        "title": "[중국 실화 사건] 사건 직후 경찰서로 직접 도발 편지를 보냈던 대담한 범인이 19년간 숨겨온 두 얼굴 | 칭다오 19년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Hai bộ mặt ẩn giấu suốt 19 năm của kẻ thủ ác táo tợn từng trực tiếp gửi thư thách thức đồn cảnh sát | Kỳ án 19 năm Thanh Đảo)",
-        "topic_anchor": "[중국 실화 사건] 사건 직후 경찰서로 직접 도발 편지를 보냈던 대담한 범인이 19년간 숨겨온 두 얼굴 | 칭다오 19년 미제사건",
-        "winner_cluster": "Luồng 2 · Con Tem Bưu Chính Lưu Trữ 19 Năm & Công Nghệ Khuếch Đại ADN Siêu Vi (칭다오 우표 뒷면 19년 추적 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Lá Thư Đánh Lạc Hướng Tại Thanh Đảo, Sơn Đông (山东青岛19年邮票微量DNA破案) — Chiếc Bẫy Tự Mình Dựng Lên Từ 19 Năm Trước",
-        "codex_reasons": [
-            "Twist nhân quả sắc lẹm: chính lá thư kẻ thủ ác gửi để đánh lạc hướng điều tra lại trở thành bằng chứng khóa còng tay hắn 19 năm sau",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "수사팀의 시선을 다른 도시로 돌리기 위해 범인은 장갑을 낀 채 신문 글자를 오려 붙여 익명의 편지를 보냈습니다. 지문 하나 남기지 않았다고 확신했던 그 편지 봉투 위에서, 19년 뒤 법의학자들이 조용히 핀셋으로 떼어낸 건 가로 이 센티미터짜리 작은 우표 한 장이었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Thanh Đảo · hung thủ gửi thư nặc danh đánh lạc hướng cảnh sát · phá án sau 19 năm nhờ ADN mặt sau con tem】 Hồ sơ thật 100% Kỳ án 19 năm tại Sơn Đông (山东19年积案邮票微量生物物证侦破纪实 — Tống Mỗ 宋某, 2001–2020): Hung thủ đeo găng tay cắt ghép chữ để viết thư nặc danh tung hỏa mù cho ban chuyên án, nhưng lại vô thức dùng lưỡi thấm ướt mặt keo con tem; 19 năm sau công nghệ tách chiết tế bào siêu vi đã thu được hồ sơ ADN hoàn chỉnh từ lớp keo khô."
-    },
-    {
-        "id": "vio_cn_jiangxi_jiujiang_72h_etc_receipt_alibi",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "countdown_system_breach",
-        "case_real_name_zh": "江西九江跨市失踪悬案高速ETC秒差与热敏小票72小时击破假不在场证明案 — 谭建军 (2018)",
-        "archival_search_keywords_zh": [
-            "高速ETC 不在场证明 72小时 今日说法",
-            "江西九江 伪造不在场证明 侦破 天网",
-            "热敏小票 破案 纪实"
-        ],
-        "recommended_vox_verbs": [
-            "ALIBI_SHATTER",
-            "CRASH_TIMELINE",
-            "GEO_VECTOR_PURSUIT"
-        ],
-        "title": "[중국 실화 사건] 사건 시각 300km 밖 고속도로 요금소를 통과한 영수증을 내민 용의자의 트릭 | 주장시 고속도로 트릭 사건 ([Vụ Án Có Thật ở Trung Quốc] Màn kịch của nghi phạm trưng ra biên lai đi qua trạm thu phí cao tốc cách hiện trường 300km đúng giờ gây án | Chuyên án Cửu Giang)",
-        "topic_anchor": "[중국 실화 사건] 사건 시각 300km 밖 고속도로 요금소를 통과한 영수증을 내민 용의자의 트릭 | 주장시 고속도로 트릭 사건",
-        "winner_cluster": "Luồng 2 · Đấu Trí Phá Vỡ Alibi 300km Nhờ Log Trạm Thu Phí ETC & Hóa Đơn Nhiệt (장시성 주장시 72시간 알리바이 붕괴 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: 72 Giờ Bóc Trần Màn Đánh Tráo Thẻ Cao Tốc Và Điện Thoại Tại Cửu Giang, Giang Tây — Khi Toán Học Vận Tốc Lật Tẩy Lời Nói Dối",
-        "codex_reasons": [
-            "Cấu trúc trinh thám suy luận cổ điển (Alibi-breaking mystery) cực hợp với biểu đồ đối chiếu thời gian - vận tốc trên VOX",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "톨게이트 통과 시각 밤 열한 시 정각, 그리고 삼백 킬로미터 떨어진 편의점 결제 영수증 밤 열한 시 십사 분. 서류만 보면 용의자 탄젠쥔은 사건 현장에 절대 있을 수 없는 완벽한 알리바이를 쥐고 있었죠. 하지만 수사관이 구간 평균 속도를 계산해 본 순간, 시속 이백사십 킬로미터라는 불가능한 숫자가 튀어나왔습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Cửu Giang · ngụy tạo ngoại phạm bằng thẻ thu phí cao tốc ETC cách 300km · phá án trong 72 giờ】 Hồ sơ thật 100% Chuyên án 72 giờ phá vỡ bằng chứng ngoại phạm giả tại Cửu Giang, Giang Tây (江西九江72小时击破高速ETC伪造不在场证明案 — Đàm Kiến Quân 谭建军, 2018): Nghi phạm nhờ người quen cầm thẻ ETC và điện thoại chạy trên tuyến cao tốc khác để tạo dữ liệu vị trí giả, nhưng bị lật tẩy bởi phép tính chênh lệch 14 phút giữa camera trạm thu phí và hóa đơn cửa hàng tiện lợi."
-    },
-    {
-        "id": "vio_cn_jiangsu_suzhou_24y_embroidery_knot",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "micro_forensic_anomaly",
-        "case_real_name_zh": "江苏苏州1996年积案24年特殊手工打结法与纤维重检侦破纪实 — 陆某 (1996–2020)",
-        "archival_search_keywords_zh": [
-            "特殊打结 24年 悬案 今日说法",
-            "江苏苏州 命案积案 绳结 天网",
-            "苏州警方 24年 微量物证"
-        ],
-        "recommended_vox_verbs": [
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "FORENSIC_ZOOM_CHAIN",
-            "DUAL_ERA_LOCK"
-        ],
-        "title": "[중국 실화 사건] 현장에 남겨진 기이한 역방향 매듭 하나가 24년 미제사건 범인의 직업을 가리키기까지 | 쑤저우 24년 매듭 사건 ([Vụ Án Có Thật ở Trung Quốc] Bí ẩn nút thắt ngược chiều kỳ lạ để lại hiện trường suốt 24 năm và nghề nghiệp thật sự của kẻ thủ ác | Kỳ án Tô Châu)",
-        "topic_anchor": "[중국 실화 사건] 현장에 남겨진 기이한 역방향 매듭 하나가 24년 미제사건 범인의 직업을 가리키기까지 | 쑤저우 24년 매듭 사건",
-        "winner_cluster": "Luồng 2 · Giải Phẫu Nút Thắt Thủ Công Ngược Chiều & 24 Năm Truy Nguyên Nghề Nghiệp (장쑤 쑤저우 24년 특수 매듭 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án 24 Năm Tại Tô Châu, Giang Tô — Khi Thói Quen Vô Thức Của Đôi Tay Tố Cáo Danh Tính Kẻ Ẩn Mình",
-        "codex_reasons": [
-            "Chi tiết vi mô đời thực (nút buộc dây chuyên ngành dệt/thêu truyền thống) cực kỳ đắt giá cho VOX Optical Loupe",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "아무리 급박한 순간에도 사람의 손끝은 평생 몸에 밴 직업적 습관을 속이지 못합니다. 현장에 남은 노끈의 매듭은 일반적인 방향과 정반대로 세 번 꺾여 묶여 있었고, 그 독특한 매듭법을 쓰는 곳은 강물 건너 오래된 수공예 공방 거리뿐이었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Tô Châu · án lạnh 24 năm giải mã nhờ nút buộc dây ngược chiều đặc thù của thợ xưởng dệt】 Hồ sơ thật 100% Kỳ án 24 năm tại Tô Châu, Giang Tô (江苏苏州1996–2020特殊绳结积案 — Lục Mỗ 陆某): Các điều tra viên bảo tồn nguyên vẹn mẫu nút buộc khác thường suốt 24 năm, kết hợp phân tích sợi tơ công nghiệp và tái kiểm tra sinh học năm 2020 để xác định nghi phạm từng làm thợ đóng gói xưởng dệt thủ công."
-    },
-    {
-        "id": "vio_cn_anhui_hefei_17y_driving_coach_mask",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "double_life_unmasking",
-        "case_real_name_zh": "安徽合肥重案逃犯潜逃17年冒用身份变身驾校金牌教练落网案 — 葛某 (2002–2019)",
-        "archival_search_keywords_zh": [
-            "逃犯 变身 驾校教练 17年 今日说法",
-            "安徽合肥 潜逃17年 教练 天网",
-            "金牌教练 逃犯 落网"
+            "沈阳 刘涌 最高人民法院 提审 今日说法",
+            "嘉阳集团 刘涌 涉黑大案 纪实",
+            "锦州 刘涌 终审 死刑 央视"
         ],
         "recommended_vox_verbs": [
             "SPLIT_PARADOX",
-            "DUAL_ERA_LOCK",
-            "CONCENTRIC_TRAP"
+            "NETWORK_GRAPH",
+            "ALIBI_SHATTER"
         ],
-        "title": "[중국 실화 사건] 중대 수배범이 17년간 베스트 운전 강사로 살면서 고속도로 톨게이트는 한 번도 못 지난 이유 | 허페이 두 얼굴 사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do kẻ truy nã trọng án ẩn mình 17 năm làm thầy dạy lái xe xuất sắc nhưng không dám qua trạm thu phí | Hai bộ mặt ở Hợp Phì)",
-        "topic_anchor": "[중국 실화 사건] 중대 수배범이 17년간 베스트 운전 강사로 살면서 고속도로 톨게이트는 한 번도 못 지난 이유 | 허페이 두 얼굴 사건",
-        "winner_cluster": "Luồng 2 · Thầy Dạy Lái Xe Xuất Sắc Sợ Camera Cao Tốc & 17 Năm Mang Tên Người Khác (안후이 허페이 17년 운전강사 수배범 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Cát Mỗ (葛某, An Huy 2002–2019) — Nghịch Lý Người Thầy Dạy Lái Xe Không Bao Giờ Cầm Vô Lăng Ra Khỏi Ranh Giới Quận",
+        "title": "[중국 실화 사건] 2심에서 기적처럼 최고형을 면한 억대 재벌을 대법관이 직접 교도소로 찾아가 재심판한 날 | 선양 류융 사건 ([Vụ Án Có Thật ở Trung Quốc] Tỷ phú thoát án tử hình ở phiên phúc thẩm và ngày Thẩm phán Tòa Tối cao đích thân tới tận nơi mở phiên tòa đặc biệt | Đại án Lưu Dũng Thẩm Dương)",
+        "topic_anchor": "[중국 실화 사건] 2심에서 기적처럼 최고형을 면한 억대 재벌을 대법관이 직접 교도소로 찾아가 재심판한 날 | 선양 류융 사건",
+        "winner_cluster": "Luồng 2 · Lần Đầu Tiên Tòa Án Tối Cao Trung Quốc Trực Tiếp Đề Thẩm (提审) Lật Ngược Bản Án Giảm Hình Phạt Của Tỷ Phú Ngầm (선양 류융 대법원 직접 재판 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Lưu Dũng (刘涌, Thẩm Dương 1995–2003) — Từ Chủ Tịch Tập Đoàn Gia Dương Kiêm Đại Biểu Nhân Dân Đến Phiên Tòa Đề Thẩm Lịch Sử Tại Cẩm Châu Ngày 22/12/2003",
         "codex_reasons": [
-            "Nghịch lý hành vi đời thường cực kỳ cuốn hút khán giả (dạy lái xe 17 năm nhưng sợ mọi chốt kiểm tra bằng lái điện tử)",
-            "100% Xanh tiền YouTube"
+            "Vụ án lịch sử chưa từng có tiền lệ từ năm 1949 khi Tòa án Nhân dân Tối cao Trung Quốc trực tiếp cử Hội đồng thẩm phán xuống Cẩm Châu xét xử lại (提审) một vụ án hình sự thông thường và thi hành án tử hình ngay trong ngày tuyên án",
+            "Tư liệu truyền hình CCTV về đế chế Gia Dương, vụ bắt giữ ở biên giới Hắc Hà và phiên tòa Tối cao cực kỳ đồ sộ"
         ],
-        "opening_hook": "합격률 일 위를 자랑하며 수강생들에게 가장 인기가 높았던 베테랑 운전학원 강사에게는 기묘한 징크스가 하나 있었습니다. 십칠 년 동안 수천 번 핸들을 잡으면서도 단 한 번도 연습장 구역을 벗어나 시외 도로로 나가지 않는다는 점이었죠. 경찰이 그 이유를 파헤치자 전혀 다른 이름이 드러났습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại An Huy · trốn truy nã 17 năm dưới vỏ bọc thầy dạy lái xe trong sân tập khép kín】 Hồ sơ thật 100% Chuyên án truy bắt kẻ trốn truy nã 17 năm tại Hợp Phì, An Huy (安徽合肥逃犯变身驾校教练17年落网案 — Cát Mỗ 葛某, 2002–2019): Dùng giấy tờ mượn của người khác để xin làm người hướng dẫn tập lái trong sân sa hình khép kín suốt 17 năm nhằm tránh quét thẻ căn cước trên quốc lộ, trước khi bị hệ thống rà soát dữ liệu giao thông phát hiện."
+        "opening_hook": "일심에서 최고형을 선고받았던 선양의 칠억 위안대 재벌 회장 류융이 이심 법정에서 돌연 최고형 유예로 감형되자 중국 전역이 발칵 뒤집혔습니다. 그러자 베이징의 최고인민법원이 건국 이래 처음으로 형사 사건 직접 재판권을 발동해 대법관들을 특별 열차에 태워 진저우로 내려보냈습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án tập đoàn ngầm Gia Dương do đại biểu nhân dân Lưu Dũng cầm đầu tại Thẩm Dương · Tòa án Nhân dân Tối cao lần đầu tiên trong lịch sử trực tiếp đề thẩm (提审) tuyên án tử hình thi hành ngay ngày 22/12/2003】 Hồ sơ thật 100% Đại án Lưu Dũng tại Thẩm Dương, Liêu Ninh (辽宁沈阳刘涌特大涉黑案与最高院提审案, 1995–2003): Lưu Dũng dùng vỏ bọc Chủ tịch Tập đoàn Gia Dương tài trợ cảnh sát và mua chuộc quan chức để thao túng thị trường Thẩm Dương, rồi trốn lên cửa khẩu Hắc Hà định vượt biên sang Nga; sau khi Tòa Cấp cao tỉnh Liêu Ninh giảm án xuống tử hình treo tháng 8/2003, Tòa án Nhân dân Tối cao đã trực tiếp mở phiên tòa đề thẩm tại Cẩm Châu tuyên án tử hình và thi hành án ngay trong ngày.",
+        "hook_archetype": "scale_absurdity_collision"
     },
     {
-        "id": "vio_cn_yunnan_dali_cangshan_signal_96h",
+        "id": "vio_cn_shanghai_fudan_linsenhao_water",
         "topic_stream": "major_violent_crime",
-        "hook_archetype": "chilling_verbatim_line",
-        "case_real_name_zh": "云南大理苍山迷雾失联悬案基站信号三角定位96小时戳破谎言纪实 — 赵建国 (2019)",
+        "case_real_name_zh": "上海复旦大学医学院研究生饮水机N-二甲基亚硝胺投毒案 — 林森浩 (2013–2015)",
         "archival_search_keywords_zh": [
-            "云南大理 迷雾 失联 基站定位 今日说法",
-            "同行者 谎言 96小时 侦破 天网",
-            "大理苍山 失踪 信号 破案"
+            "复旦投毒案 林森浩 今日说法",
+            "林森浩 黄洋 庭审现场 央视",
+            "N-二甲基亚硝胺 复旦 侦破纪实"
+        ],
+        "recommended_vox_verbs": [
+            "SINGLE_EVIDENCE_AUTOPSY",
+            "MICRO_TRACE_MATCH",
+            "ALIBI_SHATTER"
+        ],
+        "title": "[중국 실화 사건] 병원 모든 정밀 검사에서 원인을 못 찾던 명문 의대생의 위독 상태와 익명 문자 한 통의 반전 | 상하이 린썬하오 사건 ([Vụ Án Có Thật ở Trung Quốc] Nghiên cứu sinh y khoa nguy kịch không rõ nguyên nhân và tin nhắn ẩn danh lật tẩy người bạn cùng phòng | Vụ án Lâm Sâm Hạo Thượng Hải)",
+        "topic_anchor": "[중국 실화 사건] 병원 모든 정밀 검사에서 원인을 못 찾던 명문 의대생의 위독 상태와 익명 문자 한 통의 반전 | 상하이 린썬하오 사건",
+        "winner_cluster": "Luồng 2 · Tin Nhắn Nhắc Tên Hóa Chất Thí Nghiệm Hiếm & Cuộc Đấu Trí Pháp Y Trong Ký Túc Xá Y Khoa (상하이 푸단대 린썬하오 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Lâm Sâm Hạo (林森浩, Đại Học Phúc Đán 2013–2015) — Khi Chính Người Bạn Cùng Phòng Trực Tiếp Cầm Phiếu Siêu Âm Khám Cho Nạn Nhân Trước Khi Lộ Diện",
+        "codex_reasons": [
+            "Một trong những vụ án trí thức chấn động nhất Trung Quốc hiện đại, toàn bộ video thẩm vấn, phỏng vấn trong trại giam và phiên tòa của Lâm Sâm Hạo được CCTV phát sóng chi tiết",
+            "Tòa án Nhân dân Cấp cao Thượng Hải và Tòa án Tối cao phê chuẩn thi hành án tử hình Lâm Sâm Hạo tháng 12/2015"
+        ],
+        "opening_hook": "상하이 최고 명문 의과대학 기숙사에서 물 한 모금을 마신 대학원생 황양이 갑자기 급성 간부전으로 쓰러졌습니다. 최고의 의사들이 모여 일주일 내내 원인을 찾지 못해 헤매던 그때, 선배의 휴대폰으로 기숙사 정수기와 실험실 시약 이름을 지목하는 짧은 문자 메시지 한 통이 도착했습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án nghiên cứu sinh y khoa Đại học Phúc Đán Lâm Sâm Hạo bỏ hóa chất thí nghiệm N-Nitrosodimethylamine vào bình nước uống ký túc xá · phát hiện nhờ tin nhắn chỉ điểm chất độc · Tòa án Tối cao phê chuẩn tử hình năm 2015】 Hồ sơ thật 100% Vụ án tại Học viện Y khoa Đại học Phúc Đán, Thượng Hải (上海复旦大学林森浩投毒案, 2013–2015): Ngày 31/3/2013, Lâm Sâm Hạo lấy hợp chất N-二甲基亚硝胺 từ phòng thí nghiệm đổ vào bình nước uống trong phòng ký túc xá 421 khiến bạn cùng phòng Hoàng Dương tử vong; khi Hoàng Dương nhập viện, Lâm Sâm Hạo vẫn bình thản trực tiếp siêu âm cho bạn và xóa lịch sử tìm kiếm máy tính trước khi bị Công an Thượng Hải bắt giữ và tòa tuyên án tử hình.",
+        "hook_archetype": "micro_forensic_anomaly"
+    },
+    {
+        "id": "vio_cn_zhejiang_hangzhou_mohuanjing_fire",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "浙江杭州蓝色钱江高档公寓保姆赌博盗窃纵火案 — 莫焕晶 (2017–2018)",
+        "archival_search_keywords_zh": [
+            "杭州保姆纵火案 莫焕晶 今日说法",
+            "蓝色钱江 莫焕晶 庭审 死刑 央视",
+            "莫焕晶 赌博 侦破纪实"
+        ],
+        "recommended_vox_verbs": [
+            "CRASH_TIMELINE",
+            "ALIBI_SHATTER",
+            "LEDGER_DIFF_SCRUB"
+        ],
+        "title": "[중국 실화 사건] 도박 빚을 갚으려 주인집 거실에 몰래 불을 지르고 '구출 영웅' 연극을 꾸민 입주 가사도우미 | 항저우 모환징 사건 ([Vụ Án Có Thật ở Trung Quốc] Bảo mẫu lén đốt phòng khách chung cư hạng sang lúc 5 giờ sáng để diễn kịch 'anh hùng dập lửa' xin tiền trả nợ cờ bạc | Đại án Mạc Hoán Tinh)",
+        "topic_anchor": "[중국 실화 사건] 도박 빚을 갚으려 주인집 거실에 몰래 불을 지르고 '구출 영웅' 연극을 꾸민 입주 가사도우미 | 항저우 모환징 사건",
+        "winner_cluster": "Luồng 2 · Chiếc Đồng Hồ Patek Philippe Bị Đem Cầm Cố & Màn Kịch Tự Đốt Tự Dập Lúc 4h55 Sáng Tầng 18 (항저우 모환징 가사도우미 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Mạc Hoán Tinh (莫焕晶, Hàng Châu 2017–2018) — Khi Lịch Sử Tìm Kiếm 'Bật Lửa Tự Nổ' Lúc Rạng Sáng Đập Tan Lời Khai Giả Trước Tòa",
+        "codex_reasons": [
+            "Vụ án chấn động toàn Trung Quốc năm 2017–2018 với hàng trăm bản tin truyền hình CCTV, video phiên tòa xét xử công khai tại Hàng Châu",
+            "Tòa án Nhân dân Trung cấp Hàng Châu và Tòa án Tối cao phê chuẩn thi hành án tử hình Mạc Hoán Tinh tháng 9/2018"
+        ],
+        "opening_hook": "새벽 네 시 오십오 분, 항저우 최고급 아파트 십팔 층에서 연기가 피어오르자 입주 가사도우미 모환징만 전용 엘리베이터를 타고 혼자 무사히 건물을 빠져나왔습니다. 경찰 앞에서는 집주인을 구하려다 실패했다며 눈물을 흘렸지만, 그녀의 스마트폰 검색 기록에는 소름 돋는 네 글자가 남아 있었습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án bảo mẫu Mạc Hoán Tinh trộm đồng hồ Patek Philippe đánh bạc trực tuyến rồi tự châm lửa phòng khách tầng 18 nhằm diễn kịch dập lửa lập công vay tiền, gây tử vong 4 mẹ con chủ nhà · Tòa án Hàng Châu tuyên án tử hình】 Hồ sơ thật 100% Vụ án tại khu căn hộ Lam Sắc Tiền Giang, Hàng Châu, Chiết Giang (浙江杭州莫焕晶放火盗窃案, 2017–2018): Được chủ nhà tin tưởng trả lương cao và cho vay 114.000 NDT, Mạc Hoán Tinh vẫn lén lấy đồng hồ đắt tiền đi cầm cố nướng vào cờ bạc online; rạng sáng 22/6/2017, ả dùng bật lửa đốt sách trên sofa phòng khách định tự dập lửa để xin thêm tiền nhưng lửa bùng lớn khiến ả bỏ chạy một mình, bị Tòa án Hàng Châu tuyên án tử hình.",
+        "hook_archetype": "double_life_unmasking"
+    },
+    {
+        "id": "vio_cn_shanghai_zhuxiaodong_105d_wechat",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "上海虹口区丈夫伪造妻子微信聊天记录105天完美假象案 — 朱晓东 (2016–2020)",
+        "archival_search_keywords_zh": [
+            "上海 朱晓东 105天 今日说法",
+            "朱晓东 杨俪萍 庭审 死刑 央视",
+            "虹口 朱晓东 伪造微信 纪实"
         ],
         "recommended_vox_verbs": [
             "ALIBI_SHATTER",
+            "LEDGER_DIFF_SCRUB",
+            "SPLIT_PARADOX"
+        ],
+        "title": "[중국 실화 사건] 105일 동안 오직 문자 메시지로만 안부를 전해온 딸과 장인 생일 전날 무너진 남편의 연극 | 상하이 주샤오둥 사건 ([Vụ Án Có Thật ở Trung Quốc] Cô con gái suốt 105 ngày chỉ nhắn tin WeChat không gọi thoại và vở kịch của người chồng sụp đổ trước sinh nhật bố vợ | Vụ án Chu Hiểu Đông)",
+        "topic_anchor": "[중국 실화 사건] 105일 동안 오직 문자 메시지로만 안부를 전해온 딸과 장인 생일 전날 무너진 남편의 연극 | 상하이 주샤오둥 사건",
+        "winner_cluster": "Luồng 2 · 105 Ngày Giả Giọng Vợ Nhắn Tin WeChat Cho Gia Đình & Bản Sao Kê Thẻ Tín Dụng Phơi Bày Sự Thật (상하이 주샤오둥 105일 위챗 트릭 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Chu Hiểu Đông (朱晓东, Thượng Hải 2016–2020) — 105 Ngày Đóng Hai Vai Trên Điện Thoại Và Phán Quyết Tử Hình Của Tòa Án Thượng Hải",
+        "codex_reasons": [
+            "Vụ án tâm lý - gia đình nổi tiếng bậc nhất trên CCTV 今日说法 / 一线, tập trung 100% vào màn kịch 105 ngày giả mạo tin nhắn WeChat và sao kê tài chính",
+            "Tòa án Nhân dân Trung cấp số 2 Thượng Hải tuyên án tử hình và thi hành án đối với Chu Hiểu Đông tháng 6/2020"
+        ],
+        "opening_hook": "성실하던 초등학교 교사 양리핑이 갑자기 사직서를 내고 남편과 홍콩으로 여행을 떠났다는 위챗 메시지를 보냈습니다. 그날부터 백오 일 동안 그녀는 부모님과 친구들에게 꾸준히 안부 문자를 보냈지만, 단 한 번도 전화 통화나 영상통화는 받지 못한다며 핑계를 댔습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án người chồng Chu Hiểu Đông sát hại vợ tại quận Hồng Khẩu, Thượng Hải rồi cầm điện thoại giả giọng vợ nhắn tin WeChat với bố mẹ vợ suốt 105 ngày · Tòa án Thượng Hải tuyên án tử hình】 Hồ sơ thật 100% Vụ án Chu Hiểu Đông tại Thượng Hải (上海虹口区朱晓东案, 2016–2020): Sau khi sát hại vợ là giáo viên tiểu học Dương Lệ Bình ngày 18/10/2016, Chu Hiểu Đông dùng điện thoại của vợ nhắn tin WeChat giả vờ đang đi du lịch suốt hơn 3 tháng và quẹt thẻ tín dụng của vợ tiêu xài 150.000 NDT; đến ngày 1/2/2017 là đại thọ 60 tuổi của bố vợ không thể tiếp tục viện cớ vắng mặt, Chu Hiểu Đông buộc phải thú nhận và bị Tòa án Thượng Hải thi hành án tử hình.",
+        "hook_archetype": "chilling_verbatim_line"
+    },
+    {
+        "id": "vio_cn_chongqing_zhangbo_yechengchen_15f",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "重庆南岸区锦江华府15楼伪造意外案与1.7万条删除微信恢复纪实 — 张波·叶诚尘 (2020–2024)",
+        "archival_search_keywords_zh": [
+            "重庆 张波 叶诚尘 1.7万条微信 今日说法",
+            "锦江华府 张波 庭审 死刑 央视",
+            "重庆姐弟坠亡案 电子物证恢复"
+        ],
+        "recommended_vox_verbs": [
+            "ALIBI_SHATTER",
+            "LEDGER_DIFF_SCRUB",
+            "FORENSIC_ZOOM_CHAIN"
+        ],
+        "title": "[중국 실화 사건] 아파트 15층 사고 직후 바닥을 치며 통곡하던 아버지의 휴대폰에서 복원된 17,000건의 삭제 메시지 | 충칭 장보 사건 ([Vụ Án Có Thật ở Trung Quốc] 17.000 tin nhắn đã xóa khôi phục từ điện thoại người cha ngồi gào khóc đập đầu dưới sân chung cư tầng 15 | Đại án Trương Ba Trùng Khánh)",
+        "topic_anchor": "[중국 실화 사건] 아파트 15층 사고 직후 바닥을 치며 통곡하던 아버지의 휴대폰에서 복원된 17,000건의 삭제 메시지 | 충칭 장보 사건",
+        "winner_cluster": "Luồng 2 · Màn Kịch Gào Khóc Dưới Sân Chung Cư & 17.000 Dòng Tin Nhắn Đã Xóa Phơi Bày Âm Mưu Lạnh Gáy (충칭 장보·예청천 1.7만 건 위챗 복원 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Trương Ba · Diệp Thành Trần (重庆张波·叶诚尘案, 2020–2024) — Khi Pháp Y Kỹ Thuật Số Khôi Phục Toàn Bộ Dữ Liệu Điện Thoại Đã Xóa Trắng Để Lật Tẩy Vở Kịch Tai Nạn",
+        "codex_reasons": [
+            "Một trong những vụ án được theo dõi nhiều nhất Trung Quốc giai đoạn 2020–2024, màn đối chiếu 17.000 tin nhắn WeChat khôi phục cực hợp cho bàn biên tập cắt dán Vox",
+            "Tòa án Nhân dân Tối cao phê chuẩn và thi hành án tử hình cả Trương Ba lẫn Diệp Thành Trần ngày 31/1/2024"
+        ],
+        "opening_hook": "잠옷 바람으로 아파트 화단으로 달려 내려와 머리를 벽에 찧으며 오열하던 아버지 장보의 모습에 이웃 주민들까지 눈시울을 붉혔습니다. 모두가 내가 잠든 사이 일어난 비극적인 추락 사고라 믿었지만, 디지털 포렌식 팀이 초기화된 두 대의 스마트폰에서 일만 칠천 건의 삭제된 대화 기록을 복원해냈습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án Trương Ba và nhân tình Diệp Thành Trần thông đồng ngụy tạo vụ rơi lầu tầng 15 của 2 con nhỏ tại Trùng Khánh · công an khôi phục 17.000 tin nhắn WeChat đã xóa · Tòa án Tối cao thi hành án tử hình cả 2 bị cáo năm 2024】 Hồ sơ thật 100% Vụ án tại chung cư Cẩm Giang Hoa Phủ, quận Nam Ngạn, Trùng Khánh (重庆张波·叶诚尘案, 2020–2024): Ngày 2/11/2020, Trương Ba đẩy hai con ruột từ cửa sổ tầng 15 rồi chạy xuống sân đóng kịch gào khóc; Cảnh sát Trùng Khánh thu giữ điện thoại, dùng công nghệ pháp y số khôi phục hơn 17.000 tin nhắn WeChat đã xóa sạch giữa Trương Ba và Diệp Thành Trần bàn bạc kế hoạch ngụy tạo tai nạn, đưa cả hai ra thi hành án tử hình ngày 31/1/2024.",
+        "hook_archetype": "chilling_verbatim_line"
+    },
+    {
+        "id": "vio_cn_jiangsu_yuxiaodong_thai_cliff_34m",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "江苏孕妇泰国乌汶帕登国家公园34米悬崖坠落生还逆转案 — 俞晓东·王暖暖 (2019–2023)",
+        "archival_search_keywords_zh": [
+            "泰国坠崖孕妇 王暖暖 俞晓东 今日说法",
+            "帕登国家公园 34米悬崖 俞晓东 审判",
+            "消失的她 原型 王暖暖 央视采访"
+        ],
+        "recommended_vox_verbs": [
+            "ALIBI_SHATTER",
+            "SPLIT_PARADOX",
+            "GEO_VECTOR_PURSUIT"
+        ],
+        "title": "[중국 실화 사건] 34m 절벽 아래에서 기적처럼 살아 돌아온 아내의 중환자실 침대 곁을 밤낮으로 지킨 남편의 본색 | 타이 왕놘놘 절벽 사건 ([Vụ Án Có Thật ở Trung Quốc] Sống sót kỳ diệu dưới vách đá cao 34m và bộ mặt thật của người chồng túc trực đêm ngày bên giường hồi sức | Vụ án Vương Noãn Noãn)",
+        "topic_anchor": "[중국 실화 사건] 34m 절벽 아래에서 기적처럼 살아 돌아온 아내의 중환자실 침대 곁을 밤낮으로 지킨 남편의 본색 | 타이 왕놘놘 절벽 사건",
+        "winner_cluster": "Luồng 2 · Sống Sót Kỳ Diệu Dưới Vực Đá 34 Mét & Cuộc Ghi Âm Bí Mật Ngay Trên Giường Hồi Sức ICU (왕놘놘·위샤오둥 34m 절벽 생환 역전 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Vương Noãn Noãn & Du Hiểu Đông (泰国乌汶34米悬崖案, 2019–2023) — Khi Nạn Nhân Giả Vờ Mất Trí Nhớ Tạm Thời Để Tự Thu Thập Bằng Chứng Ngay Trước Mặt Thủ Phạm",
+        "codex_reasons": [
+            "Vụ án có thật 100% nổi tiếng khắp châu Á (được CCTV 今日说法 phỏng vấn độc quyền nạn nhân sống sót Vương Noãn Noãn), 0% tử vong và kịch tính đấu trí cực đại",
+            "Tòa án Tối cao Thái Lan tuyên phạt Du Hiểu Đông 33 năm 4 tháng tù giam năm 2023"
+        ],
+        "opening_hook": "삼십사 미터 높이의 깎아지른 절벽 아래에서 온몸의 뼈 열일곱 군데가 부러진 채 기적적으로 구조된 사업가 왕놘놘. 그녀가 중환자실에서 눈을 떴을 때 침대 머리맡을 지키고 서서 조용히 입단속을 속삭인 사람은 다름 아닌 그녀를 절벽 끝으로 데려갔던 남편 위샤오둥이었습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án người chồng Du Hiểu Đông đẩy vợ đang mang thai xuống vách đá cao 34m tại Công viên Quốc gia Pha Taem nhằm chiếm đoạt tài sản trả nợ cờ bạc · nạn nhân kỳ diệu sống sót và ghi âm vạch mặt chồng · Tòa Tối cao tuyên phạt 33 năm 4 tháng tù】 Hồ sơ thật 100% Vụ án tại Công viên Quốc gia Pha Taem, Ubon Ratchathani (Thái Lan) của nữ doanh nhân Giang Tô Vương Noãn Noãn (江苏孕妇泰国坠崖案 — Du Hiểu Đông 俞晓东, 2019–2023): Ngày 9/6/2019, Du Hiểu Đông dẫn vợ tới vách đá vắng người rồi đẩy cô xuống vực sâu 34m; khi Vương Noãn Noãn sống sót kỳ diệu, Du Hiểu Đông túc trực 24/24 ở phòng ICU để khống chế lời khai, nhưng cô đã mưu trí nhờ bạn bè ghi âm cuộc đối thoại thừa nhận tội ác của hắn để giao nộp cho tòa án.",
+        "hook_archetype": "chilling_verbatim_line"
+    },
+    {
+        "id": "vio_cn_tianjin_zhangyifan_phuket_insurance",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "天津男子泰国普吉岛伪造泳池意外骗保3000万元跨国侦破案 — 张轶凡 (2018–2020)",
+        "archival_search_keywords_zh": [
+            "天津 普吉岛 骗保 3000万 张轶凡 今日说法",
+            "张轶凡 泰国 庭审 央视新闻",
+            "跨国骗保案 张轶凡 侦破纪实"
+        ],
+        "recommended_vox_verbs": [
+            "LEDGER_DIFF_SCRUB",
+            "ALIBI_SHATTER",
+            "SINGLE_EVIDENCE_AUTOPSY"
+        ],
+        "title": "[중국 실화 사건] 풀빌라 휴가 중 일어난 안타까운 사고라더니 집 서랍 속에서 쏟아져 나온 3,000만 위안 비밀 보험증권 11장 | 톈진 장이판 사건 ([Vụ Án Có Thật ở Trung Quốc] Báo tin vợ gặp tai nạn ở biệt thự nghỉ dưỡng nhưng trong ngăn kéo ở nhà lộ ra 11 hợp đồng bảo hiểm 30 triệu tệ | Đại án Trương Dật Phàm)",
+        "topic_anchor": "[중국 실화 사건] 풀빌라 휴가 중 일어난 안타까운 사고라더니 집 서랍 속에서 쏟아져 나온 3,000만 위안 비밀 보험증권 11장 | 톈진 장이판 사건",
+        "winner_cluster": "Luồng 2 · 11 Hợp Đồng Bảo Hiểm 30 Triệu Tệ Mua Dồn Dập Trong 2 Tháng & Chữ Ký Giả Trên Hồ Sơ Thụ Hưởng (톈진 장이판 3,000만 위안 보험증권 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Trương Dật Phàm (张轶凡, Thiên Tân 2018–2020) — Khi Cục Cảnh Sát Kinh Tế Thiên Tân Và Pháp Y Quốc Tế Khớp Nối 11 Hợp Đồng Bảo Hiểm Ký Giả",
+        "codex_reasons": [
+            "Vụ án trục lợi bảo hiểm xuyên quốc gia nổi tiếng nhất trên CCTV 今日说法, cực hợp với bàn biên tập đối chiếu hợp đồng LEDGER_DIFF_SCRUB",
+            "Tòa án tuyên án chung thân / tử hình đối với Trương Dật Phàm sau hơn 1 năm xét xử"
+        ],
+        "opening_hook": "결혼기념일 여행을 떠난 지 이틀 만에 사위 장이판에게서 딸이 풀빌라에서 불의의 사고를 당했다는 급보가 날아왔습니다. 하지만 슬픔에 잠긴 부모님이 사위의 서재를 정리하던 순간, 출발 직전 두 달 사이에 열한 개 보험회사에서 몰래 가입된 삼천만 위안짜리 생명보험 증권 다발이 쏟아져 나왔습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án Trương Dật Phàm giả mạo chữ ký vợ mua 11 hợp đồng bảo hiểm nhân thọ trị giá hơn 30 triệu tệ rồi đưa sang biệt thự Phuket ngụy tạo tai nạn · cảnh sát Trung Quốc – Thái Lan phối hợp điều tra và tòa tuyên án nghiêm khắc】 Hồ sơ thật 100% Chuyên án lừa đảo bảo hiểm 30 triệu NDT của Trương Dật Phàm tại Thiên Tân – Phuket (天津男子张轶凡泰国普吉岛3000万骗保案, 2018–2020): Đã nghỉ việc ngân hàng từ lâu nhưng giả vờ đi làm mỗi ngày, Trương Dật Phàm âm thầm mua hơn 10 gói bảo hiểm tử kỳ trị giá hơn 30 triệu NDT đứng tên mình thụ hưởng rồi đưa vợ đi du lịch tháng 10/2018; bị gia đình nạn nhân và cảnh sát hai nước vạch trần toàn bộ chữ ký giả và dữ liệu tài chính.",
+        "hook_archetype": "locked_room_vault_paradox"
+    },
+    {
+        "id": "vio_cn_hebei_wangshujin_nieshubin_21y",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "河北石家庄西郊玉米地1994年悬案一串钥匙口供与21年跨省平反案 — 王书金·聂树斌 (1994–2016)",
+        "archival_search_keywords_zh": [
+            "王书金 聂树斌 一串钥匙 今日说法",
+            "最高人民法院 聂树斌再审 无罪 央视",
+            "石家庄 玉米地案 王书金 死刑"
+        ],
+        "recommended_vox_verbs": [
+            "SINGLE_EVIDENCE_AUTOPSY",
+            "DUAL_ERA_LOCK",
+            "ALIBI_SHATTER"
+        ],
+        "title": "[중국 실화 사건] 이미 범인이 잡혀 종결된 11년 전 사건 현장의 '열쇠 꾸러미 위치'를 정확히 말한 낯선 수배범 | 왕수진·녜수빈 21년 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ truy nã bị bắt ở tỉnh khác bất ngờ tả chính xác vị trí chùm chìa khóa của vụ án đã khép lại 11 năm trước | Đại án Vương Thư Kim – Nhiếp Thụ Bân)",
+        "topic_anchor": "[중국 실화 사건] 이미 범인이 잡혀 종결된 11년 전 사건 현장의 '열쇠 꾸러미 위치'를 정확히 말한 낯선 수배범 | 왕수진·녜수빈 21년 사건",
+        "winner_cluster": "Luồng 2 · Chùm Chìa Khóa Nằm Sát Chân Nạn Nhân Chỉ Chân Hung Mới Biết & 21 Năm Minh Oan Lịch Sử (왕수진·녜수빈 열쇠 꾸러미 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Vương Thư Kim & Kỳ Án 21 Năm Minh Oan Cho Nhiếp Thụ Bân (1994–2016) — Khi Chi Tiết 'Chùm Chìa Khóa Rơi Trên Đất' Mở Ra Cuộc Phúc Thẩm Lịch Sử Của Tòa Tối Cao",
+        "codex_reasons": [
+            "Đại án tư pháp chấn động nhất lịch sử Trung Quốc hiện đại (cùng với vụ Hô Cách Cát Lặc Đồ), được Tòa án Nhân dân Tối cao tuyên vô tội năm 2016 và thi hành án tử hình Vương Thư Kim năm 2021",
+            "Mỏ neo vật chứng 'chùm chìa khóa tại hiện trường năm 1994' cực hợp cho SINGLE_EVIDENCE_AUTOPSY & DUAL_ERA_LOCK"
+        ],
+        "opening_hook": "2005년 허난성에서 붙잡힌 떠돌이 수배범 왕수진이 십일 년 전 스자좡 외곽 옥수수밭 사건을 자신이 저질렀다며 현장 바닥에 떨어져 있던 열쇠 꾸러미의 위치까지 정확히 진술했습니다. 문제는 그 사건이 이미 십 년 전에 다른 청년의 유죄 판결로 완전히 종결된 상태였다는 점이었습니다.",
+        "note": "📋 【Hồ sơ vụ án: kỳ án lịch sử tư pháp Trung Quốc 21 năm tại Thạch Gia Trang, Hà Bắc · hung thủ thật Vương Thư Kim bị bắt năm 2005 khai chính xác chi tiết chùm chìa khóa hiện trường · Tòa án Tối cao minh oan cho Nhiếp Thụ Bân năm 2016 và thi hành án tử hình Vương Thư Kim năm 2021】 Hồ sơ thật 100% Vụ án Vương Thư Kim – Nhiếp Thụ Bân (河北王书金案与聂树斌再审平反案, 1994–2021): Tháng 1/2005, Vương Thư Kim bị bắt tại Hà Nam đã chủ động dẫn cảnh sát tới hiện trường vụ án năm 1994 tại Thạch Gia Trang và nêu đúng chi tiết chùm chìa khóa rơi sát chân nạn nhân chưa từng công bố; Tòa án Nhân dân Tối cao giao Tòa Cấp cao Sơn Đông thẩm tra chéo, tuyên Nhiếp Thụ Bân vô tội tháng 12/2016 và thi hành án tử hình Vương Thư Kim tháng 2/2021.",
+        "hook_archetype": "cold_archive_match"
+    },
+    {
+        "id": "vio_cn_shaanxi_hanzhong_zhangkoukou_48h",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "陕西汉中南郑区除夕重案48小时山林搜捕与两代恩怨审判纪实 — 张扣扣 (1996–2019)",
+        "archival_search_keywords_zh": [
+            "陕西汉中 张扣扣 庭审现场 央视",
+            "张扣扣 除夕案 今日说法",
+            "汉中中院 张扣扣 死刑 纪实"
+        ],
+        "recommended_vox_verbs": [
+            "DUAL_ERA_LOCK",
+            "RADIAL_TIME_PRESSURE",
+            "GEO_VECTOR_PURSUIT"
+        ],
+        "title": "[중국 실화 사건] 22년 전 사건의 기억을 품고 특전사 제대 후 고향으로 돌아온 남자의 48시간 행적 | 산시성 장커우커우 사건 ([Vụ Án Có Thật ở Trung Quốc] Mang ký ức vụ án 22 năm trước, gã cựu binh đặc nhiệm trở về quê hương vào trưa 30 Tết và 48 giờ truy bắt | Vụ án Trương Khấu Khấu)",
+        "topic_anchor": "[중국 실화 사건] 22년 전 사건의 기억을 품고 특전사 제대 후 고향으로 돌아온 남자의 48시간 행적 | 산시성 장커우커우 사건",
+        "winner_cluster": "Luồng 2 · Hồ Sơ Lưu Trữ Năm 1996 & 48 Giờ Vây Bắt Trong Rừng Núi Tần Ba Trước Khi Ra Đầu Thú Lúc Rạng Sáng (산시성 한중 장커우커우 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Trương Khấu Khấu (张扣扣, Hán Trung, Thiểm Tây 1996–2019) — 8 Giờ Tranh Luận Pháp Lý Được Phát Sóng Trực Tiếp Tại Tòa Án Hán Trung",
+        "codex_reasons": [
+            "Phiên tòa xét xử Trương Khấu Khấu được Tòa án Nhân dân Trung cấp Hán Trung phát trực tiếp toàn bộ quá trình tranh tụng và lên sóng đặc biệt trên CCTV 庭审现场 / 今日说法",
+            "Tòa án Nhân dân Tối cao phê chuẩn thi hành án tử hình Trương Khấu Khấu tháng 7/2019"
+        ],
+        "opening_hook": "열세 살이던 1996년 어머니를 잃은 소년 장커우커우는 22년 동안 단 한 번도 그날의 사건 기록을 잊지 않았습니다. 2018년 설날 전날 낮, 모자와 마스크로 얼굴을 가린 그가 고향 마을 골목에 다시 나타났고, 곧이어 사십팔 시간의 산악 수색 작전이 시작됐습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án ngày 30 Tết năm 2018 tại Hán Trung, Thiểm Tây tước đoạt 3 sinh mạng do ân oán từ vụ án năm 1996 · 48 giờ vây bắt trên núi Tần Ba · Tòa án Hán Trung và Tòa Tối cao tuyên án tử hình Trương Khấu Khấu】 Hồ sơ thật 100% Vụ án Trương Khấu Khấu tại quận Nam Trịnh, Hán Trung, Thiểm Tây (陕西汉中张扣扣案, 1996–2019): Mang mối hận từ vụ xô xát khiến mẹ ruột tử vong năm 1996 khi mới 13 tuổi, Trương Khấu Khấu sau khi xuất ngũ và đi làm xa đã trở về quê hương gây án vào trưa 15/2/2018 (30 Tết), lẩn trốn trong núi 48 giờ rồi tới đồn công an đầu thú; bị Tòa án Hán Trung tuyên án tử hình và thi hành án tháng 7/2019.",
+        "hook_archetype": "last_ordinary_routine"
+    },
+    {
+        "id": "vio_cn_jilin_changchun_zhouxijun_38h",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "吉林长春3·4盗车连带两月大婴儿失踪案万人全城暴雪搜寻38小时纪实 — 周喜军 (2013)",
+        "archival_search_keywords_zh": [
+            "长春 盗车婴儿案 周喜军 今日说法",
+            "吉林长春 3·4案件 38小时 央视新闻",
+            "周喜军 庭审 死刑 纪实"
+        ],
+        "recommended_vox_verbs": [
+            "RADIAL_TIME_PRESSURE",
+            "GEO_VECTOR_PURSUIT",
+            "CONCENTRIC_TRAP"
+        ],
+        "title": "[중국 실화 사건] 슈퍼마켓 앞 시동 켜진 SUV를 훔쳐 달아났다 뒷좌석 아기를 발견한 범인과 만 명의 38시간 폭설 추격 | 창춘 저우시쥔 사건 ([Vụ Án Có Thật ở Trung Quốc] Lấy trộm chiếc SUV đang nổ máy trước siêu thị rồi phát hiện em bé ở ghế sau và 38 giờ cả thành phố đội bão tuyết truy lùng | Vụ án Chu Hỷ Quân)",
+        "topic_anchor": "[중국 실화 사건] 슈퍼마켓 앞 시동 켜진 SUV를 훔쳐 달아났다 뒷좌석 아기를 발견한 범인과 만 명의 38시간 폭설 추격 | 창춘 저우시쥔 사건",
+        "winner_cluster": "Luồng 2 · 2 Phút Quên Tắt Máy Xe Trước Siêu Thị & 38 Giờ Bão Tuyết Huy Động 10.000 Cảnh Sát Cùng Toàn Bộ Taxi Trường Xuân (창춘 38시간 전 도시 수색 저우시쥔 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Chu Hỷ Quân & Chuyên Án 38 Giờ Trường Xuân (吉林长春3·4案, 2013) — Khi Mọi Đài Phát Thanh Và Camera Cao Tốc Khép Vòng Vây Giữa Bão Tuyết",
+        "codex_reasons": [
+            "Chuyên án huy động lực lượng lớn nhất lịch sử thành phố Trường Xuân (hơn 10.000 cảnh sát + hàng vạn tài xế taxi phát sóng trực tiếp trên đài phát thanh và CCTV)",
+            "Tòa án Nhân dân Trung cấp Trường Xuân xét xử công khai và thi hành án tử hình Chu Hỷ Quân tháng 11/2013"
+        ],
+        "opening_hook": "2013년 3월 4일 아침 일곱 시 이십 분, 창춘시의 한 슈퍼마켓 주인이 가게 문을 열기 위해 히터를 켜둔 은색 SUV에서 단 이 분 동안 자리를 비웠습니다. 그 찰나 낯선 남자가 운전석에 올라타 차를 몰고 사라졌고, 뒷좌석 담요 속에는 태어난 지 두 달 된 아기가 잠들어 있었습니다.",
+        "note": "📋 【Hồ sơ vụ án: trọng án Chu Hỷ Quân lấy trộm xe Toyota RAV4 có em bé 2 tháng tuổi trên ghế sau tại Trường Xuân, Cát Lâm · 10.000 cảnh sát và toàn thành phố đội bão tuyết truy lùng suốt 38 giờ · Tòa án Trường Xuân tuyên án tử hình Chu Hỷ Quân】 Hồ sơ thật 100% Chuyên án 3·4 tại Trường Xuân, Cát Lâm (吉林长春3·4盗车害命案 — Chu Hỷ Quân 周喜军, 2013): Sáng 4/3/2013, Chu Hỷ Quân lấy trộm chiếc SUV biển số 吉AMM102 đang nổ máy sưởi trước cửa siêu thị rồi gây án trên đường chạy trốn về Công Chúa Lĩnh; trước vòng vây khép kín của hơn 10.000 cảnh sát suốt 38 giờ, Chu Hỷ Quân phải ra đầu thú và bị Tòa án Trường Xuân tuyên án tử hình.",
+        "hook_archetype": "countdown_system_breach"
+    },
+    {
+        "id": "vio_cn_yunnan_qujing_yangqingpei_36h",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "云南曲靖会泽待补镇9·28特大命案公安部督办36小时跨市缉捕案 — 杨清培 (2016)",
+        "archival_search_keywords_zh": [
+            "云南会泽 杨清培 9·28特大案 央视新闻",
+            "公安部督办 曲靖 杨清培 36小时 破案",
+            "杨清培 庭审 死刑 纪实"
+        ],
+        "recommended_vox_verbs": [
+            "GEO_VECTOR_PURSUIT",
+            "FORENSIC_ZOOM_CHAIN",
+            "RADIAL_TIME_PRESSURE"
+        ],
+        "title": "[중국 실화 사건] 고향 산골 마을을 발칵 뒤집어 놓고 아무 일 없던 듯 성도로 돌아가 출근한 20대 청년의 두 얼굴 | 윈난 양칭페이 사건 ([Vụ Án Có Thật ở Trung Quốc] Gây chấn động ngôi làng hẻo lánh trên núi rồi thản nhiên lái xe về thủ phủ đi làm như chưa có chuyện gì của gã thanh niên | Đại án Dương Thanh Bồi)",
+        "topic_anchor": "[중국 실화 사건] 고향 산골 마을을 발칵 뒤집어 놓고 아무 일 없던 듯 성도로 돌아가 출근한 20대 청년의 두 얼굴 | 윈난 양칭페이 사건",
+        "winner_cluster": "Luồng 2 · Dấu Giày Bùn Đỏ Trên Đường Núi & 36 Giờ Ban Chuyên Án Bộ Công An Truy Bắt Dương Thanh Bồi Tại Côn Minh (윈난 후이쩌현 양칭페이 36시간 검거 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Dương Thanh Bồi & Chuyên Án 9·28 Hội Trạch, Vân Nam (2016) — Từ Khoản Nợ Cờ Bạc Trực Tuyến Đến 36 Giờ Khóa Chặt Dấu Vết Giữa Thủ Phủ Côn Minh",
+        "codex_reasons": [
+            "Một trong những đại án hình sự lớn nhất thập niên 2010 do Thứ trưởng Bộ Công an Trung Quốc trực tiếp bay vào Vân Nam chỉ đạo phá án trong 36 giờ",
+            "Tòa án Nhân dân Trung cấp Khúc Tĩnh xét xử công khai và tuyên án tử hình Dương Thanh Bồi"
+        ],
+        "opening_hook": "깊은 산속 고요한 마을 예마촌의 여섯 가구가 하룻밤 사이 모든 연락이 끊긴 채 발견되자 공안부 특별 수사팀이 즉시 급파됐습니다. 현장에서 수거된 단서들을 교차 분석한 지 불과 서른여섯 시간 만에, 형사들은 이백 킬로미터 떨어진 쿤밍 도심에서 평온하게 지내고 있던 스물일곱 살 청년 양칭페이를 포위했습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án đặc biệt nghiêm trọng ngày 28/9/2016 tại huyện Hội Trạch, Khúc Tĩnh, Vân Nam (19 nạn nhân) · Bộ Công an trực tiếp chỉ đạo phá án bắt Dương Thanh Bồi tại Côn Minh sau 36 giờ · Tòa án Khúc Tĩnh tuyên án tử hình】 Hồ sơ thật 100% Chuyên án 9·28 tại thôn Dã Mã, thị trấn Đãi Bổ, huyện Hội Trạch, Vân Nam (云南曲靖会泽9·28特大命案 — Dương Thanh Bồi 杨清培, 2016): Do ngập trong nợ cờ bạc trên mạng tại Côn Minh, Dương Thanh Bồi về quê đòi tiền cha mẹ rồi gây ra thảm án liên hoàn nhằm bịt đầu mối trước khi quay lại Côn Minh; Ban chuyên án Bộ Công an khóa chặt hành tung và bắt giữ Dương Thanh Bồi sau 36 giờ, tuyên án tử hình.",
+        "hook_archetype": "micro_forensic_anomaly"
+    },
+    {
+        "id": "vio_cn_inner_mongolia_aiwangquan_fake_mine_74",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "内蒙古巴彦淖尔跨6省伪造矿难骗取巨额赔偿金74人特大系列案 — 艾汪全·王付祥 (2014–2016)",
+        "archival_search_keywords_zh": [
+            "艾汪全 王付祥 伪造矿难 74人 今日说法",
+            "巴彦淖尔 盲井案 庭审 死刑 央视",
+            "跨6省 伪造矿难 公安部督办"
+        ],
+        "recommended_vox_verbs": [
+            "NETWORK_GRAPH",
+            "ALIBI_SHATTER",
+            "LEDGER_DIFF_SCRUB"
+        ],
+        "title": "[중국 실화 사건] 광산 낙석 사고로 위장해 거액의 합의금을 챙기러 나타난 '가짜 유가족' 74명의 소름 돋는 분업 | 네이멍구 아이왕취안 사건 ([Vụ Án Có Thật ở Trung Quốc] Dàn dựng tai nạn sập hầm mỏ để đòi bồi thường tiền tỷ và màn phân vai rợn người của 74 'người nhà giả mạo' | Đại án Ngải Uông Toàn)",
+        "topic_anchor": "[중국 실화 사건] 광산 낙석 사고로 위장해 거액의 합의금을 챙기러 나타난 '가짜 유가족' 74명의 소름 돋는 분업 | 네이멍구 아이왕취안 사건",
+        "winner_cluster": "Luồng 2 · Phiên Bản Đời Thực Của 'Manh Tỉnh' Xuyên 6 Tỉnh & Vết Nứt Bất Thường Dưới Kính Pháp Y Nội Mông (네이멍구 6개 성 위장 광산 사고 74인 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Ngải Uông Toàn · Vương Phú Tường & Đại Án 74 Bị Cáo Ngụy Tạo Tai Nạn Hầm Mỏ Xuyên 6 Tỉnh (2014–2019) — Khi Giấy Chứng Minh Nhân Dân Của 'Người Vợ Khóc Đòi Bồi Thường' Bị Lật Tẩy",
+        "codex_reasons": [
+            "Đại án điển hình năm của Tòa án Nhân dân Tối cao Trung Quốc và phóng sự nhiều kỳ trên CCTV 今日说法, cấu trúc mạng lưới 74 đối tượng phân vai cực hợp NETWORK_GRAPH trên Vox",
+            "Tòa án Nhân dân Trung cấp Bayannur (Nội Mông) tuyên án tử hình và thi hành án đối với Ngải Uông Toàn, Vương Phú Tường cùng các kẻ cầm đầu năm 2019"
+        ],
+        "opening_hook": "깊은 지하 광산 갱도에서 야간 작업 중 바위가 무너져 내리는 사고가 발생하자, 다음 날 아침 먼 외지에서 왔다는 아내와 친척들이 찾아와 광산주에게 오십만 위안의 합의금을 요구했습니다. 하지만 법의학자가 사고 현장의 각도를 재구성하고 유가족의 신분증을 조회한 순간, 여섯 개 성에 걸친 거대한 범죄 설계도가 드러났습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án liên tỉnh 74 bị cáo do Ngải Uông Toàn & Vương Phú Tường cầm đầu lừa 17 người lao động xuống hầm mỏ tại 6 tỉnh rồi ngụy tạo tai nạn sập hầm để tống tiền bồi thường · Tòa án Nội Mông tuyên án tử hình năm 2019】 Hồ sơ thật 100% Đại án ngụy tạo tai nạn mỏ xuyên 6 tỉnh Nội Mông, Sơn Tây, Thiểm Tây, Hà Bắc, Vân Nam (内蒙古巴彦淖尔艾汪全·王付祥等74人系列伪造矿难案, 2014–2019): Băng nhóm phân công người đi dụ lao động đơn độc, người làm giả hộ khẩu đóng vai vợ/anh em ruột và người trực tiếp dàn dựng sập hầm để ép chủ mỏ bồi thường 500.000–800.000 NDT/vụ; bị Công an Nội Mông phanh phui và Tòa án Tối cao phê chuẩn thi hành án tử hình các tên cầm đầu tháng 8/2019.",
+        "hook_archetype": "scale_absurdity_collision"
+    },
+    {
+        "id": "vio_cn_zhejiang_qiandaohu_hairui_boat_1994",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "浙江淳安千岛湖3·31海瑞号游船特大劫案20天水下痕检侦破纪实 — 吴黎宏·胡志瀚·余爱军 (1994)",
+        "archival_search_keywords_zh": [
+            "千岛湖事件 海瑞号 吴黎宏 侦破纪实",
+            "1994 千岛湖特大案 审判 死刑",
+            "浙江淳安 海瑞号 刑侦档案"
+        ],
+        "recommended_vox_verbs": [
+            "FORENSIC_ZOOM_CHAIN",
             "GEO_VECTOR_PURSUIT",
             "BLIND_SPOT_REVEAL"
         ],
-        "title": "[중국 실화 사건] 안개 속에서 일행이 먼저 산을 내려갔다며 눈물 흘린 동행자의 수상한 96시간 행적 | 다리 창산 실종 사건 ([Vụ Án Có Thật ở Trung Quốc] Hành tung 96 giờ đầy nghi vấn của người đồng hành khóc lóc báo tin bạn mình đã xuống núi trước trong sương mù | Kỳ án Thương Sơn)",
-        "topic_anchor": "[중국 실화 사건] 안개 속에서 일행이 먼저 산을 내려갔다며 눈물 흘린 동행자의 수상한 96시간 행적 | 다리 창산 실종 사건",
-        "winner_cluster": "Luồng 2 · Lời Khai Trong Nước Mắt Và Phép Định Vị Tam Giác Sóng Viễn Thông Trên Đỉnh Thương Sơn 3.200m (윈난 다리 창산 96시간 기지국 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: 96 Giờ Đối Chiếu Góc Phản Xạ Sóng Điện Thoại Giữa Rừng Mù Thương Sơn, Đại Lý — Khi Hai Chiếc Điện Thoại Thực Chất Luôn Di Chuyển Cùng Một Bước Chân",
+        "title": "[중국 실화 사건] 천 개의 섬으로 둘러싸인 호수 한가운데서 유람선 통째로 연락이 끊긴 밤과 20일간의 수중 역추적 | 저장성 첸다오후 사건 ([Vụ Án Có Thật ở Trung Quốc] Đêm con tàu du lịch Hải Thụy mất liên lạc giữa hồ nước rộng 1.000 hòn đảo và 20 ngày truy nguyên dấu vết dưới đáy nước | Đại án Hồ Thiên Đảo)",
+        "topic_anchor": "[중국 실화 사건] 천 개의 섬으로 둘러싸인 호수 한가운데서 유람선 통째로 연락이 끊긴 밤과 20일간의 수중 역추적 | 저장성 첸다오후 사건",
+        "winner_cluster": "Luồng 2 · Cửa Khoang Tàu Khóa Trái Từ Bên Ngoài Giữa Hồ Thiên Đảo & Vết Sơn Xuồng Máy Cao Tốc (저장성 첸다오후 하이루이호 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Ngô Lê Hồng · Hồ Chí Hãn · Dư Ái Quân & Chuyên Án Tàu Hải Thụy Trên Hồ Thiên Đảo (1994) — 20 Ngày Lọc Tìm 1 Chiếc Xuồng Máy Không Biển Số Giữa Hàng Ngàn Đảo Nhỏ",
         "codex_reasons": [
-            "Mở màn bằng đúng câu nói dối lạnh gáy của kẻ đồng hành (`chilling_verbatim_line`), cực hợp bản đồ địa hình 3D GIS",
-            "100% Xanh tiền YouTube"
+            "Đại án hình sự nổi tiếng bậc nhất thập niên 1990 tại Chiết Giang, sơ đồ mặt cắt con tàu Hải Thụy 3 tầng và bản đồ vệ tinh 1.078 đảo trên hồ Thiên Đảo cực hợp VOX & 3D GIS",
+            "Tòa án Nhân dân Trung cấp Hàng Châu xét xử công khai và thi hành án tử hình cả 3 thủ phạm tháng 6/1994"
         ],
-        "opening_hook": "짙은 안개 때문에 갈림길에서 서로 엇갈렸고, 친구는 분명 먼저 산 아래로 내려갔다는 다급한 신고 전화였습니다. 눈물까지 흘리며 수색대 앞장을 서던 동행자의 진술은 완벽해 보였죠. 하지만 통신 분석팀이 해발 삼천이백 미터 기지국 세 곳의 전파 각도를 겹쳐 본 순간, 두 대의 휴대폰은 단 일 초도 떨어진 적이 없었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng bạn đồng hành trên núi Thương Sơn rồi dựng kịch lạc đường · lật tẩy trong 96 giờ nhờ tam giác sóng trạm BTS】 Hồ sơ thật 100% Chuyên án giải mã vụ mất tích bí ẩn trên dãy Thương Sơn, Đại Lý, tỉnh Vân Nam trong 96 giờ (云南大理苍山失联案基站信号侦破纪实 — Triệu Kiến Quốc 赵建国, 2019): Nghi phạm dựng hiện trường giả là tai nạn lạc đường trong sương mù và chủ động báo cảnh sát tìm kiếm, nhưng phép đo tam giác cường độ sóng từ 3 trạm viễn thông chứng minh hai thiết bị di chuyển trùng khớp hoàn toàn tới vách núi khuất."
+        "opening_hook": "천일흔여덟 개의 섬이 미로처럼 얽혀 있는 거대한 호수 첸다오후에서 승객 서른두 명을 태운 유람선 하이루이호가 해 질 무렵 갑자기 무전 연락이 끊겼습니다. 이튿날 아침 깊은 수역에서 발견된 배의 아래층 선실 문은 누군가 밖에서 철사로 단단히 잠가 놓은 상태였습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án cướp tàu du lịch Hải Thụy trên hồ Thiên Đảo, Chiết Giang khiến 32 hành khách & thuyền viên thiệt mạng · 20 ngày truy nguyên chiếc xuồng máy cao tốc · Tòa án Hàng Châu tuyên án tử hình Ngô Lê Hồng, Hồ Chí Hãn, Dư Ái Quân】 Hồ sơ thật 100% Đại án 3·31 trên hồ Thiên Đảo, huyện Thuần An, Chiết Giang (浙江千岛湖3·31海瑞号特大劫案 — Ngô Lê Hồng 吴黎宏, Hồ Chí Hãn 胡志瀚, Dư Ái Quân 余爱军, 1994): Lợi dụng sương mù chiều tối trên mặt hồ rộng lớn, 3 đối tượng lái xuồng máy áp sát khống chế tàu Hải Thụy cướp tài sản, khóa khoang dưới và đánh chìm tàu; Công an Chiết Giang rà soát toàn bộ xuồng máy và tờ tiền ngoại tệ lưu thông, bắt gọn cả 3 tên sau 20 ngày và tuyên án tử hình.",
+        "hook_archetype": "locked_room_vault_paradox"
     },
     {
-        "id": "vio_cn_liaoning_anshan_25y_wrong_stroke_note",
+        "id": "vio_cn_shandong_jinan_duanyihe_detonator_2007",
         "topic_stream": "major_violent_crime",
-        "hook_archetype": "chilling_verbatim_line",
-        "case_real_name_zh": "辽宁鞍山1995年悬案25年现场字条特殊错别字笔画锁定真凶纪实 — 郭某 (1995–2020)",
+        "case_real_name_zh": "山东济南7·9闹市遥控炸药包案雷管编号14天破案与极速死刑审判 — 段义和·陈志 (2007)",
         "archival_search_keywords_zh": [
-            "错别字 25年 悬案 破获 今日说法",
-            "辽宁鞍山 笔迹 积案 天网",
-            "一张字条 追凶25年"
+            "济南 7·9爆炸案 段义和 陈志 今日说法",
+            "段义和 雷管编号 侦破纪实 央视",
+            "山东段义和 庭审 死刑"
+        ],
+        "recommended_vox_verbs": [
+            "SINGLE_EVIDENCE_AUTOPSY",
+            "FORENSIC_ZOOM_CHAIN",
+            "SPLIT_PARADOX"
+        ],
+        "title": "[중국 실화 사건] 퇴근길 도심 한복판 승용차에서 수거된 쌀알만 한 뇌관 일련번호가 가리킨 도시 최고위 권력자 | 지난 돤이허 사건 ([Vụ Án Có Thật ở Trung Quốc] Mảnh số seri kíp nổ nhỏ bằng hạt gạo giữa ngã tư giờ tan tầm chỉ thẳng tới nhân vật quyền lực số 1 thành phố | Đại án Đoạn Nghĩa Hòa Tế Nam)",
+        "topic_anchor": "[중국 실화 사건] 퇴근길 도심 한복판 승용차에서 수거된 쌀알만 한 뇌관 일련번호가 가리킨 도시 최고위 권력자 | 지난 돤이허 사건",
+        "winner_cluster": "Luồng 2 · Mảnh Vỏ Kíp Nổ Mang Mã Số Lô Hàng & 14 Ngày Lật Tẩy Chủ Tịch HĐND Thành Phố Tế Nam Đoạn Nghĩa Hòa (산둥 지난 7·9 돤이허 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Đoạn Nghĩa Hòa · Trần Chí & Chuyên Án 7·9 Tế Nam, Sơn Đông (2007) — Từ Việc Dùng Rây Bột Lọc Từng Gam Bùn Đất Hiện Trường Đến Bản Án Tử Hình Thi Hành Sau 60 Ngày",
+        "codex_reasons": [
+            "Một trong những chuyên án giám định vật chứng nổ nổi tiếng nhất của Bộ Công an Trung Quốc, lên sóng CCTV 今日说法 / 新闻调查",
+            "Tòa án Nhân dân Trung cấp Truy Bác và Tòa án Tối cao tuyên án tử hình, thi hành án đối với Đoạn Nghĩa Hòa và Trần Chí ngày 5/9/2007"
+        ],
+        "opening_hook": "2007년 7월 9일 오후 다섯 시 반, 퇴근길 차량이 쏟아지던 지난시 중심가에서 은색 승용차 한 대가 거대한 소리와 함께 파손됐습니다. 폭우 속에서 감식반이 고운 체로 흙탕물을 걸러 찾아낸 쌀알 크기의 금속 조각 위에는 사건의 배후에 숨은 도시 권력자의 이름을 밝힐 일련번호가 찍혀 있었습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án cài thuốc nổ điều khiển từ xa dưới ghế lái ô tô giữa phố Tế Nam, Sơn Đông · pháp y Bộ Công an khôi phục mã số kíp nổ bắt cảnh sát Trần Chí và kẻ chủ mưu Chủ tịch HĐND thành phố Đoạn Nghĩa Hòa · thi hành án tử hình sau 60 ngày】 Hồ sơ thật 100% Chuyên án 7·9 tại Tế Nam, Sơn Đông (山东济南7·9段义和·陈志爆炸案, 2007): Để thoát khỏi sự đòi hỏi tiền bạc và chức vụ của người tình Liễu Hải Bình, Chủ tịch HĐND thành phố Tế Nam Đoạn Nghĩa Hòa đã sai cháu rể là cảnh sát Trần Chí chế tạo gói thuốc nổ điều khiển từ xa đặt dưới ghế lái; chuyên gia Bộ Công an sàng lọc hiện trường dưới mưa lớn tìm ra mảnh vỏ kíp nổ có mã số quản lý, bắt giữ cả hai sau 14 ngày và thi hành án tử hình ngày 5/9/2007.",
+        "hook_archetype": "micro_forensic_anomaly"
+    },
+    {
+        "id": "vio_cn_guangxi_liucheng_weiyinyong_parcels_2015",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "广西柳州柳城县9·30同城快递包裹连环爆炸案48小时侦破纪实 — 韦银勇 (2015)",
+        "archival_search_keywords_zh": [
+            "广西柳城 9·30 快递包裹 韦银勇 央视新闻",
+            "柳州 韦银勇 48小时 侦破纪实",
+            "柳城县 连环包裹案 警方通报"
+        ],
+        "recommended_vox_verbs": [
+            "RADIAL_TIME_PRESSURE",
+            "NETWORK_GRAPH",
+            "SINGLE_EVIDENCE_AUTOPSY"
+        ],
+        "title": "[중국 실화 사건] 수취인 확인 전화를 걸어 동시에 작동시킨 18개의 익명 택배 상자와 48시간의 역추적 | 광시 웨이인융 사건 ([Vụ Án Có Thật ở Trung Quốc] 18 kiện hàng chuyển phát nhanh ẩn danh kích hoạt cùng lúc sau cuộc gọi xác nhận và 48 giờ truy nguyên kíp nổ | Chuyên án Vi Ngân Dũng Quảng Tây)",
+        "topic_anchor": "[중국 실화 사건] 수취인 확인 전화를 걸어 동시에 작동시킨 18개의 익명 택배 상자와 48시간의 역추적 | 광시 웨이인융 사건",
+        "winner_cluster": "Luồng 2 · Sơ Đồ 18 Kiện Hàng Đồng Thành & Cuộc Chạy Đua 48 Giờ Chặn Đứng Kẻ Chủ Mưu Trước Chuyến Bay Xuất Cảnh (광시 류청현 18개 익명 소포 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Vi Ngân Dũng & Chuyên Án 9·30 Liễu Thành, Quảng Tây (2015) — Khi Chuyên Gia Kỹ Thuật Hình Sự Lần Theo Nguồn Gốc Thuốc Nổ Mỏ Đá Và Lịch Trình Đặt Vé Máy Bay",
+        "codex_reasons": [
+            "Chuyên án bưu kiện chấn động toàn Trung Quốc ngày 30/9/2015 (100% có thật với tên tuổi đầy đủ Vi Ngân Dũng 韦银勇, thay thế hoàn toàn đề tài khuyết danh cũ), có bản tin chính thức của CCTV và Bộ Công an",
+            "Cực hợp với sơ đồ mạng lưới giao hàng NETWORK_GRAPH & RADIAL_TIME_PRESSURE trên bàn biên tập Vox"
+        ],
+        "opening_hook": "국경절 연휴를 하루 앞둔 2015년 9월 30일 오후 세 시 십오 분, 광시성 류청현 곳곳으로 배달된 열여덟 개의 택배 상자가 불과 몇 분 간격으로 연달아 작동하기 시작했습니다. 발신인 이름도 가짜였고 배달원조차 영문을 몰랐던 그 상자들의 출발점을 찾기 위해 사십팔 시간의 역추적이 시작됐습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án 18 bưu kiện chuyển phát nhanh chứa thuốc nổ công nghiệp kích hoạt đồng loạt tại huyện Liễu Thành, Liễu Châu, Quảng Tây · truy nguyên lô thuốc nổ mỏ đá khóa chặt thủ phạm Vi Ngân Dũng trong 48 giờ】 Hồ sơ thật 100% Chuyên án 9·30 tại huyện Liễu Thành, Liễu Châu, Quảng Tây (广西柳城9·30快递包裹爆炸案 — Vi Ngân Dũng 韦银勇, 2015): Do mâu thuẫn khai thác mỏ đá, quản lý kỹ thuật nổ mìn Vi Ngân Dũng đã lấy thuốc nổ công nghiệp ngụy trang thành 18 bưu kiện thuê người giao tới nhiều địa điểm trong huyện ngày 30/9/2015 đồng thời đặt hộ chiếu và vé máy bay định trốn sang Thái Lan; Công an Quảng Tây và Bộ Công an khoanh vùng nguồn thuốc nổ, phá án trong 48 giờ.",
+        "hook_archetype": "countdown_system_breach"
+    },
+    {
+        "id": "vio_cn_guangdong_lufeng_caidongjia_3000_police",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "广东陆丰博社村12·29雷霆行动3000警力海陆空夜袭收网案 — 蔡东家·蔡旋 (2013–2019)",
+        "archival_search_keywords_zh": [
+            "陆丰博社村 蔡东家 12·29 雷霆扫毒 今日说法",
+            "破冰行动原型 蔡东家 3000警力 央视",
+            "博社村 蔡东家 死刑 纪实"
+        ],
+        "recommended_vox_verbs": [
+            "CONCENTRIC_TRAP",
+            "GEO_VECTOR_PURSUIT",
+            "NETWORK_GRAPH"
+        ],
+        "title": "[중국 실화 사건] 마을 입구마다 감시초소를 세우고 경찰까지 매수해 요새를 만든 촌장과 3,000명 심야 헬기 기습 작전 | 보서촌 차이둥자 사건 ([Vụ Án Có Thật ở Trung Quốc] Trưởng thôn dựng trạm gác quanh làng, mua chuộc cả cảnh sát để lập pháo đài ngầm và đêm 3.000 đặc nhiệm cùng trực thăng đột kích | Đại án Thái Đông Gia)",
+        "topic_anchor": "[중국 실화 사건] 마을 입구마다 감시초소를 세우고 경찰까지 매수해 요새를 만든 촌장과 3,000명 심야 헬기 기습 작전 | 보서촌 차이둥자 사건",
+        "winner_cluster": "Luồng 2 · Nguyên Mẫu Đời Thực Của 'Phá Băng Hành Động': 3.000 Quân Cảnh Hải Lục Không Đột Kích Pháo Đài Thôn Bác Xã Lúc 4 Giờ Sáng (광둥 보서촌 차이둥자 3,000명 기습 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Thái Đông Gia & Chiến Dịch Sấm Sét 12·29 Tại Thôn Bác Xã, Lục Phong (2013–2019) — Khi Công An Tỉnh Quảng Đông Điều Quân Từ Các Tỉnh Khác Và Cắt Sóng Liên Lạc Để Chống Nội Gián",
+        "codex_reasons": [
+            "Chuyên án nguyên mẫu 100% của bộ phim truyền hình nổi tiếng 'Phá Băng Hành Động (破冰行动)', video quay đêm từ trực thăng cảnh sát Quảng Đông và phiên tòa xét xử Thái Đông Gia cực kỳ mãn nhãn",
+            "Tòa án Nhân dân Trung cấp Phật Sơn và Tòa án Tối cao thi hành án tử hình Thái Đông Gia tháng 1/2019"
+        ],
+        "opening_hook": "외부 차량이 마을 입구에 들어서기만 해도 수십 대의 오토바이 감시조가 따라붙어 경찰조차 쉽게 들어가지 못하던 광둥성 해안 마을 보서촌. 그 난공불락의 요새를 지휘하던 인물은 놀랍게도 마을 당서기이자 시 인민대표였던 차이둥자였습니다. 2013년 12월 29일 새벽 네 시, 헬기와 경비정을 앞세운 삼천 명의 타 지역 특공대가 어둠을 뚫고 일제히 진입했습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án nguyên mẫu phim 'Phá Băng Hành Động' tại thôn Bác Xã, Lục Phong, Quảng Đông · Bí thư thôn Thái Đông Gia mua chuộc cảnh sát bảo kê pháo đài sản xuất gần 3 tấn hàng cấm · 3.000 cảnh sát hải lục không đột kích và Tòa án Phật Sơn tuyên án tử hình Thái Đông Gia】 Hồ sơ thật 100% Chuyên án Lôi Đình 12·29 tại thôn Bác Xã, Lục Phong, Quảng Đông (广东陆丰博社村蔡东家特大制贩毒与保护伞案, 2013–2019): Thái Đông Gia lợi dụng chức Bí thư thôn kiêm đại biểu HĐND để biến thôn Bác Xã thành căn cứ khép kín có đội trinh sát báo động và mua chuộc 14 cán bộ công an địa phương; rạng sáng 29/12/2013, Công an tỉnh Quảng Đông bí mật điều 3.000 quân cảnh từ các thành phố khác cùng trực thăng và tàu tuần tra bao vây thu giữ 2,925 tấn tinh thể, đưa Thái Đông Gia ra thi hành án tử hình tháng 1/2019.",
+        "hook_archetype": "scale_absurdity_collision"
+    },
+    {
+        "id": "vio_cn_chongqing_wenqiang_fishpond_20m",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "重庆市司法局长鱼塘底2000万油布现金与双面黑伞覆灭案 — 文强 (2000–2010)",
+        "archival_search_keywords_zh": [
+            "重庆 文强 鱼塘 2000万 今日说法",
+            "文强 庭审 死刑 央视新闻",
+            "重庆打黑 文强 侦破纪实"
+        ],
+        "recommended_vox_verbs": [
+            "SPLIT_PARADOX",
+            "SINGLE_EVIDENCE_AUTOPSY",
+            "NETWORK_GRAPH"
+        ],
+        "title": "[중국 실화 사건] 1호 수배범을 직접 체포했던 전설적인 경찰 부국장이 교외 양어장 바닥에 2,000만 위안을 묻어둔 이유 | 충칭 원창 두 얼굴 사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do vị Phó giám đốc Công an huyền thoại từng trực tiếp bắt trùm cướp số 1 lại chôn 20 triệu tệ dưới đáy ao cá | Đại án Văn Cường Trùng Khánh)",
+        "topic_anchor": "[중국 실화 사건] 1호 수배범을 직접 체포했던 전설적인 경찰 부국장이 교외 양어장 바닥에 2,000만 위안을 묻어둔 이유 | 충칭 원창 두 얼굴 사건",
+        "winner_cluster": "Luồng 2 · Từ Anh Hùng Bắt Sống Trương Quân Đến 20 Triệu Tệ Bọc Vải Dầu Dưới Đáy Ao Cá Ngoại Ô (충칭 사법국장 원창 양어장 2,000만 위안 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Văn Cường (文强, Trùng Khánh 2000–2010) — Khi Bơm Cạn Nước Ao Cá Ngoại Ô Phơi Bày Những Kiện Tiền Bọc Vải Dầu Chống Thấm Của Vị Cục Trưởng Tư Pháp",
+        "codex_reasons": [
+            "Một trong những đại án 'người thực thi pháp luật hai mặt' chấn động nhất lịch sử Trung Quốc, cảnh bơm cạn ao cá vớt 20 triệu NDT tiền mặt bọc vải dầu được CCTV phát sóng toàn quốc",
+            "Tòa án Nhân dân Trung cấp số 5 Trùng Khánh và Tòa án Tối cao phê chuẩn thi hành án tử hình Văn Cường tháng 7/2010"
+        ],
+        "opening_hook": "2000년 공안부 1호 수배범 장쥔의 머리를 발로 밟으며 체포해 전국적인 영웅으로 떠올랐던 충칭시 공안국 부국장 원창. 그러나 구 년 뒤 특별 수사팀이 교외 별장 앞 양어장의 물을 전부 퍼내자, 진흙 바닥 속에서 방수 기름종이로 겹겹이 밀봉된 이천만 위안의 현금 뭉치가 모습을 드러냈습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án Phó giám đốc Công an kiêm Cục trưởng Cục Tư pháp Trùng Khánh Văn Cường làm 'ô dù bảo kê' cho 6 băng nhóm tội phạm ngầm và chôn 20 triệu tệ tiền mặt dưới đáy ao cá · Tòa án Trùng Khánh tuyên án tử hình năm 2010】 Hồ sơ thật 100% Đại án Văn Cường tại Trùng Khánh (重庆文强受贿包庇纵容黑社会性质组织案, 2000–2010): Từng là Phó giám đốc Công an Trùng Khánh nổi danh cả nước khi chỉ huy bắt giữ Trương Quân năm 2000, Văn Cường đã bị mua chuộc trở thành người bảo kê lớn nhất cho các băng nhóm tội phạm có tổ chức suốt gần 10 năm; khi bị bắt năm 2009, ban chuyên án bơm cạn ao cá của em dâu Văn Cường thu giữ 20 triệu NDT tiền mặt bọc vải dầu chống nước, và Tòa án Tối cao phê chuẩn thi hành án tử hình ngày 7/7/2010.",
+        "hook_archetype": "double_life_unmasking"
+    },
+    {
+        "id": "vio_cn_liaoning_liaoyang_yuanbaojing_futures_2006",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "北京建昊集团37亿董事长四川期货9000万亏损雇凶悬案 — 袁宝璟·袁宝琦 (1996–2006)",
+        "archival_search_keywords_zh": [
+            "袁宝璟 37亿首富 死刑 今日说法",
+            "辽宁辽阳 袁宝璟 汪兴 侦破纪实",
+            "中国股票第一人 袁宝璟 审判"
+        ],
+        "recommended_vox_verbs": [
+            "CAUSAL_CHAIN",
+            "SPLIT_PARADOX",
+            "FORENSIC_ZOOM_CHAIN"
+        ],
+        "title": "[중국 실화 사건] 법정에서 500억 위안 유전 지분을 기부하겠다며 선처를 호소한 '중국 주식의 신'이 7년간 숨긴 범죄 | 베이징 위안바오징 사건 ([Vụ Án Có Thật ở Trung Quốc] Tuyên bố hiến tặng 50 tỷ tệ cổ phần mỏ dầu ngay tại tòa để xin giữ mạng và tội ác giấu kín 7 năm của 'Thần chứng khoán' | Đại án Viên Bảo Cảnh)",
+        "topic_anchor": "[중국 실화 사건] 법정에서 500억 위안 유전 지분을 기부하겠다며 선처를 호소한 '중국 주식의 신'이 7년간 숨긴 범죄 | 베이징 위안바오징 사건",
+        "winner_cluster": "Luồng 2 · 90 Triệu Tệ Thua Lỗ Sàn Kỳ Hạn Tứ Xuyên & Lời Đề Nghị Đổi 49,5 Tỷ Tệ Cổ Phần Mỏ Dầu Trước Giờ Thi Hành Án (베이징 37억 부호 위안바오징 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Viên Bảo Cảnh (袁宝璟, 1996–2006) — Từ Tỷ Phú Trẻ Nhất Bắc Kinh Đến Màn Đấu Trí 7 Năm Với Cựu Đội Trưởng Hình Cảnh Uông Hưng",
+        "codex_reasons": [
+            "Đại án tỷ phú số 1 Trung Quốc bị thi hành án tử hình (kèm tình tiết chấn động hiến 49,5 tỷ NDT cổ phần mỏ dầu Indonesia tại tòa Liêu Dương), có đầy đủ tư liệu CCTV 今日说法",
+            "Tòa án Nhân dân Trung cấp Liêu Dương (Liêu Ninh) tuyên án tử hình và thi hành án đối với 3 anh em họ Viên ngày 17/3/2006"
+        ],
+        "opening_hook": "서른 살의 나이에 삼십칠억 위안의 자산을 일궈내 중국 증권가의 전설로 불리던 베이징 건호그룹 회장 위안바오징. 그가 2005년 법정 피고인석에 서서 최고형을 면하게 해준다면 사백구십오억 위안 가치의 해외 유전 지분을 국가에 전부 바치겠다고 외쳤을 때, 법정 안은 충격으로 술렁였습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án tỷ phú 3,7 tỷ tệ Viên Bảo Cảnh ('Thần chứng khoán Trung Quốc') sau khi thua lỗ 90 triệu tệ kỳ hạn đã thuê anh em họ truy sát cộng sự Uông Hưng suốt 7 năm · đề nghị hiến 49,5 tỷ tệ mỏ dầu để xin tha tội nhưng vẫn bị Tòa án Liêu Dương thi hành án tử hình】 Hồ sơ thật 100% Đại án Viên Bảo Cảnh tại Bắc Kinh – Liêu Dương, Liêu Ninh (北京建昊集团董事长袁宝璟雇凶案, 1996–2006): Năm 1996, Viên Bảo Cảnh thua lỗ 90 triệu NDT trên sàn kỳ hạn Tứ Xuyên nên nghi ngờ cộng sự Uông Hưng (cựu đội trưởng hình cảnh Liêu Dương) bán đứng mình; khi Uông Hưng nắm giữ bằng chứng tống tiền ngược lại, Viên Bảo Cảnh đã chi tiền sai Viên Bảo Kỳ và Viên Bảo Sâm ra tay năm 2003, và cả ba bị Tòa án Liêu Dương thi hành án tử hình ngày 17/3/2006.",
+        "hook_archetype": "scale_absurdity_collision"
+    },
+    {
+        "id": "vio_cn_hunan_anhua_liuaibing_fog_20h",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "湖南安化12·12特大命案1000警力20小时大雾山林围捕案 — 刘爱兵 (2009)",
+        "archival_search_keywords_zh": [
+            "湖南安化 刘爱兵 12·12特大案 央视",
+            "益阳 安化 刘爱兵 审判 死刑",
+            "安化 1000警力 围捕 纪实"
+        ],
+        "recommended_vox_verbs": [
+            "CONCENTRIC_TRAP",
+            "GEO_VECTOR_PURSUIT",
+            "RADIAL_TIME_PRESSURE"
+        ],
+        "title": "[중국 실화 사건] 짙은 안개 낀 대나무 산맥 속으로 사라진 수배범을 1,000명의 수색대가 20시간 만에 포위한 방법 | 후난 류아이빙 사건 ([Vụ Án Có Thật ở Trung Quốc] Cách 1.000 quân cảnh khép vòng vây chỉ trong 20 giờ bắt sống kẻ thủ ác lẩn vào rừng trúc sương mù dày đặc | Chuyên án Lưu Ái Binh Hồ Nam)",
+        "topic_anchor": "[중국 실화 사건] 짙은 안개 낀 대나무 산맥 속으로 사라진 수배범을 1,000명의 수색대가 20시간 만에 포위한 방법 | 후난 류아이빙 사건",
+        "winner_cluster": "Luồng 2 · 3 Vòng Vây Đồng Tâm Khóa Chặt Rừng Trúc Sương Mù Trong 20 Giờ Tại An Hóa, Hồ Nam (후난 안화현 류아이빙 20시간 포위 사건)",
+        "codex_score": 97,
+        "profile_score": 97,
+        "codex_angle": "Hồ Sơ Thật 100%: Lưu Ái Binh & Chuyên Án 12·12 An Hóa, Hồ Nam (2009–2010) — Chiến Thuật Khóa Đỉnh Đồi Và Chốt Chặn Nguồn Nước Trong Rừng Sâu",
+        "codex_reasons": [
+            "Chuyên án vây bắt rừng núi quy mô lớn của Công an tỉnh Hồ Nam năm 2009, cực hợp bản đồ vệ tinh 3D CONCENTRIC_TRAP",
+            "Tòa án Nhân dân Trung cấp Ích Dương tuyên án tử hình và thi hành án đối với Lưu Ái Binh tháng 12/2010"
+        ],
+        "opening_hook": "한 치 앞도 보이지 않는 짙은 겨울 안개가 내려앉은 후난성 안화현의 해발 팔백 미터 대나무 숲속으로 중대 용의자 류아이빙이 사라졌습니다. 산길마다 갈림길이 수십 개로 뻗어 있었지만, 일천 명의 합동 수색대는 산등성이와 수원지를 세 겹의 동심원으로 봉쇄하며 포위망을 좁혀 들어갔습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án đặc biệt nghiêm trọng ngày 12/12/2009 tại huyện An Hóa, Ích Dương, Hồ Nam (12 nạn nhân) · 1.000 cảnh sát khép vòng vây rừng trúc sương mù bắt sống Lưu Ái Binh sau 20 giờ · Tòa án Ích Dương tuyên án tử hình】 Hồ sơ thật 100% Chuyên án 12·12 tại thôn 칠 Tinh, huyện An Hóa, Hồ Nam (湖南安化12·12刘爱兵特大命案, 2009–2010): Sau khi gây án lúc rạng sáng 12/12/2009 tại quê nhà, Lưu Ái Binh lẩn trốn vào vùng rừng núi hiểm trở giữa sương mù dày đặc; Công an tỉnh Hồ Nam huy động hơn 1.000 cảnh sát cơ động và chó nghiệp vụ lập 3 vòng vây khóa chặt các đỉnh đồi, bắt giữ Lưu Ái Binh lúc 6h50 sáng hôm sau và tuyên án tử hình.",
+        "hook_archetype": "countdown_system_breach"
+    },
+    {
+        "id": "vio_cn_heilongjiang_harbin_songyongjia_qiaosi_1991",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "黑龙江哈尔滨一号涉黑集团覆灭与专案组秘密抓捕纪实 — 宋永佳（乔四）(1986–1991)",
+        "archival_search_keywords_zh": [
+            "哈尔滨 乔四 宋永佳 覆灭纪实",
+            "黑龙江 宋永佳 专案组 审判 死刑",
+            "黑A88888 乔四 刑侦档案"
+        ],
+        "recommended_vox_verbs": [
+            "NETWORK_GRAPH",
+            "CONCENTRIC_TRAP",
+            "SPLIT_PARADOX"
+        ],
+        "title": "[중국 실화 사건] 숫자 8 다섯 개가 찍힌 번호판을 달고 도시 철거권을 독점했던 지하 제국 두목과 비밀 특공대의 심야 기습 | 하얼빈 송융자 사건 ([Vụ Án Có Thật ở Trung Quốc] Ông trùm gắn biển số xe năm số 8 độc quyền mảng giải tỏa cả thành phố và cuộc đột kích bí mật của Tổ chuyên án Trung ương | Đại án Tống Vĩnh Giai)",
+        "topic_anchor": "[중국 실화 사건] 숫자 8 다섯 개가 찍힌 번호판을 달고 도시 철거권을 독점했던 지하 제국 두목과 비밀 특공대의 심야 기습 | 하얼빈 송융자 사건",
+        "winner_cluster": "Luồng 2 · Biển Số Xe Đen A88888 & Mật Lệnh Cắt Liên Lạc Nội Bộ Để Bắt Gọn Đế Chế Tống Vĩnh Giai Tại Cáp Nhĩ Tân (하얼빈 송융자 차오쓰 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Tống Vĩnh Giai (Kiều Tứ — 宋永佳, Cáp Nhĩ Tân 1986–1991) — Khi Tổ Chuyên Án Bí Mật Dùng Lý Lịch Giả Đặt Phòng Khách Sạn Để Tránh Tai Mắt Bảo Kê",
+        "codex_reasons": [
+            "Một trong những đại án chống tội phạm có tổ chức nổi tiếng nhất lịch sử vùng Đông Bắc Trung Quốc, có đầy đủ ảnh/video phiên tòa xét xử công khai và tuyên án tử hình tháng 6/1991",
+            "Cực hợp NETWORK_GRAPH & CONCENTRIC_TRAP"
+        ],
+        "opening_hook": "1980년대 말 하얼빈 시내에서 검은색 벤츠 승용차 번호판 끝에 숫자 팔 다섯 개가 찍힌 차가 나타나면 교통신호등마저 길을 비켜주곤 했습니다. 평범한 벽돌공 출신에서 도시 재개발 철거 시장을 통째로 삼킨 송융자의 제국을 무너뜨리기 위해, 베이징에서 내려온 비밀 수사팀이 암호명으로 작전을 개시했습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án triệt phá tập đoàn tội phạm có tổ chức lớn nhất vùng Đông Bắc do Tống Vĩnh Giai (Kiều Tứ) cầm đầu tại Cáp Nhĩ Tân · Tổ chuyên án bí mật bắt giữ ngày 10/8/1990 · Tòa án Hắc Long Giang tuyên án tử hình tháng 6/1991】 Hồ sơ thật 100% Chuyên án Tống Vĩnh Giai (宋永佳, biệt danh Kiều Tứ 乔四) tại Cáp Nhĩ Tân, Hắc Long Giang (1986–1991): Xuất thân là thợ nề ở cầu Đại Kiều, Tống Vĩnh Giai lập băng nhóm cưỡng ép độc quyền các dự án giải tỏa mặt bằng tại Cáp Nhĩ Tân và mua chuộc nhiều quan chức; tháng 8/1990, Tổ chuyên án 8·10 giữ bí mật tuyệt đối bắt gọn toàn bộ băng nhóm và Tòa án Hắc Long Giang thi hành án tử hình Tống Vĩnh Giai cùng 13 đồng phạm ngày 9/6/1991.",
+        "hook_archetype": "scale_absurdity_collision"
+    },
+    {
+        "id": "vio_cn_guangdong_yangjiang_xujianqiang_linguokin_2009",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "广东阳江十二年双首脑垄断海鲜水泥市场涉黑大案侦破纪实 — 许建强·林国钦 (1996–2009)",
+        "archival_search_keywords_zh": [
+            "广东阳江 许建强 林国钦 今日说法",
+            "阳江涉黑大案 焦点访谈 央视",
+            "许建强 林国钦 庭审 死刑"
+        ],
+        "recommended_vox_verbs": [
+            "NETWORK_GRAPH",
+            "LEDGER_DIFF_SCRUB",
+            "CONCENTRIC_TRAP"
+        ],
+        "title": "[중국 실화 사건] 시멘트부터 해산물 도매시장 가격까지 12년간 마음대로 정하던 두 억대 회장의 비밀 장부 | 광둥 양장시 쉬젠창 사건 ([Vụ Án Có Thật ở Trung Quốc] Cuốn sổ cái mật của hai vị Chủ tịch tập đoàn tự tay định giá từ xi măng đến hải sản suốt 12 năm ở một thành phố | Đại án Hứa Kiến Cường Quảng Đông)",
+        "topic_anchor": "[중국 실화 사건] 시멘트부터 해산물 도매시장 가격까지 12년간 마음대로 정하던 두 억대 회장의 비밀 장부 | 광둥 양장시 쉬젠창 사건",
+        "winner_cluster": "Luồng 2 · Hai Ông Trùm Thao Túng Mọi Chợ Đầu Mối Dương Giang Suốt 12 Năm & Đêm 500 Cảnh Sát Cơ Động Tỉnh Đột Kích (광둥 양장시 쉬젠창·린궈친 사건)",
+        "codex_score": 97,
+        "profile_score": 97,
+        "codex_angle": "Hồ Sơ Thật 100%: Hứa Kiến Cường · Lâm Quốc Khâm (广东阳江涉黑大案, 1996–2009) — Phiên Tòa 43 Bị Cáo Kéo Dài 42 Ngày Và Bản Án Tử Hình Của Tòa Án Tối Cao",
+        "codex_reasons": [
+            "Chuyên án điểm của Bộ Công an Trung Quốc được phát sóng trên cả CCTV 焦点访谈 và 今日说法, cực kỳ giàu tư liệu phiên tòa",
+            "Tòa án Nhân dân Trung cấp Dương Giang và Tòa án Tối cao phê chuẩn thi hành án tử hình Hứa Kiến Cường tháng 12/2009"
+        ],
+        "opening_hook": "광둥성 해안 도시 양장시에서는 십이 년 동안 시민들이 집을 지을 때 쓰는 시멘트 한 포대부터 식탁에 오르는 생선 한 마리까지 두 사람의 허락 없이는 유통될 수 없었습니다. 자선 사업가와 정협 위원 명함을 들고 다녔던 쉬젠창과 린궈친의 제국이 오백 명의 성 공안청 특공대에 의해 일제히 봉쇄됐습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án 43 bị cáo do hai trùm Hứa Kiến Cường & Lâm Quốc Khâm cầm đầu thao túng kinh tế và gây trọng án suốt 12 năm tại Dương Giang, Quảng Đông · 500 cảnh sát tỉnh đột kích thu giữ sổ cái mật · Tòa Tối cao thi hành án tử hình Hứa Kiến Cường năm 2009】 Hồ sơ thật 100% Đại án Hứa Kiến Cường và Lâm Quốc Khâm tại Dương Giang, Quảng Đông (广东阳江许建强·林国钦等43人涉黑大案, 1996–2009): Dưới vỏ bọc doanh nhân tỷ phú, hai đối tượng lập mạng lưới cưỡng đoạt và độc quyền 8 ngành nghề thiết yếu của thành phố suốt 12 năm; đêm 21/11/2007, Công an tỉnh Quảng Đông điều 500 cảnh sát cơ động bao vây bắt giữ toàn bộ 43 đối tượng, xét xử liên tục 42 ngày và thi hành án tử hình Hứa Kiến Cường tháng 12/2009.",
+        "hook_archetype": "double_life_unmasking"
+    },
+    {
+        "id": "vio_cn_hunan_changsha_pengshuiyang_10d",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "湖南长沙芙蓉区7·30案件公安部A级通缉10天跨省抓捕纪实 — 彭水洋 (2010)",
+        "archival_search_keywords_zh": [
+            "长沙 7·30 彭水洋 公安部A级通缉 央视",
+            "湖南长沙 彭水洋 福建泉州落网 纪实",
+            "彭水洋 庭审 死刑"
+        ],
+        "recommended_vox_verbs": [
+            "GEO_VECTOR_PURSUIT",
+            "FORENSIC_ZOOM_CHAIN",
+            "RADIAL_TIME_PRESSURE"
+        ],
+        "title": "[중국 실화 사건] 대낮 관공서 복도에 검은 가방을 내려놓고 사라진 공안부 A급 수배범의 10일 도주 경로 | 창사 펑수이양 사건 ([Vụ Án Có Thật ở Trung Quốc] Đặt chiếc túi đen ở hành lang cơ quan thuế giữa ban ngày rồi biến mất và 10 ngày truy lùng tội phạm cấp A | Chuyên án Bành Thủy Dương Trường Sa)",
+        "topic_anchor": "[중국 실화 사건] 대낮 관공서 복도에 검은 가방을 내려놓고 사라진 공안부 A급 수배범의 10일 도주 경로 | 창사 펑수이양 사건",
+        "winner_cluster": "Luồng 2 · Dấu Vết Điện Tử Từ Phòng Máy Tính & 10 Ngày Truy Bắt Bành Thủy Dương Xuyên 4 Tỉnh Tới Phúc Kiến (후난 창사 A급 수배범 펑수이양 사건)",
+        "codex_score": 97,
+        "profile_score": 97,
+        "codex_angle": "Hồ Sơ Thật 100%: Bành Thủy Dương & Chuyên Án 7·30 Trường Sa, Hồ Nam (2010) — Khi Lệnh Truy Nã Cấp A Của Bộ Công An Khóa Chặt Quán Internet Tại Tuyền Châu",
+        "codex_reasons": [
+            "Chuyên án truy nã cấp A của Bộ Công an Trung Quốc tháng 8/2010 với lộ trình đào tẩu xuyên Hồ Nam – Giang Tây – Quảng Tây – Phúc Kiến cực hợp bản đồ 3D GIS",
+            "Tòa án Nhân dân Trung cấp Trường Sa xét xử công khai và tuyên án tử hình Bành Thủy Dương"
+        ],
+        "opening_hook": "2010년 7월 30일 오후 네 시 십오 분, 창사시 푸룽구 세무분국 삼 층 회의실 복도에 낯선 남자가 검은 가방 하나를 밀어 넣고 계단으로 빠르게 내려갔습니다. 공안부가 현상금 십만 위안의 A급 수배령을 내린 지 열흘째 되던 날, 천 킬로미터 밖 해안 도시의 작은 PC방 모니터 앞에서 그의 행적이 포착됐습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án 7·30 tại Chi cục thuế quận Phù Dung, Trường Sa, Hồ Nam (tước đoạt 4 sinh mạng) · lệnh truy nã cấp A Bộ Công an · 10 ngày truy bắt xuyên 4 tỉnh tới Tuyền Châu, Phúc Kiến và Tòa án Trường Sa tuyên án tử hình Bành Thủy Dương】 Hồ sơ thật 100% Chuyên án 7·30 tại Trường Sa, Hồ Nam (湖南长沙7·30彭水洋爆炸案, 2010): Sau khi gây án tại Chi cục thuế Đông Đồn Độ chiều 30/7/2010 do bất mãn cá nhân, Bành Thủy Dương bắt xe trốn qua Giang Tây, Quảng Tây rồi sang Phúc Kiến; Bộ Công an phát lệnh truy nã cấp A toàn quốc và bắt giữ hắn tại Tuyền Châu ngày 8/8/2010, Tòa án Trường Sa tuyên án tử hình.",
+        "hook_archetype": "countdown_system_breach"
+    },
+    {
+        "id": "vio_cn_hubei_wuhan_zhangminggao_10y",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "湖北武汉1991–2000年连环特大悬案10年弹道痕检侦破纪实 — 张明高 (1991–2000)",
+        "archival_search_keywords_zh": [
+            "武汉 张明高 10年大案 侦破纪实",
+            "湖北 12·4大案 张明高 审判 死刑",
+            "张明高 刑侦档案 央视"
         ],
         "recommended_vox_verbs": [
             "FORENSIC_ZOOM_CHAIN",
-            "SINGLE_EVIDENCE_AUTOPSY",
-            "DUAL_ERA_LOCK"
-        ],
-        "title": "[중국 실화 사건] 필적을 숨기려 현장에 왼손으로 메모를 남기고 25년간 이웃으로 살아온 범인의 정체 | 안산 25년 필적 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Chân tướng kẻ thủ ác cố tình viết giấy bằng tay trái để giấu nét chữ rồi sống ẩn mình suốt 25 năm | Kỳ án An Sơn)",
-        "topic_anchor": "[중국 실화 사건] 필적을 숨기려 현장에 왼손으로 메모를 남기고 25년간 이웃으로 살아온 범인의 정체 | 안산 25년 필적 미제사건",
-        "winner_cluster": "Luồng 2 · Giám Định Tâm Lý Bút Tích Từ Một Nét Chữ Viết Thừa Suốt 25 Năm (랴오닝 안산 25년 필적 미제사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án Bút Tích 25 Năm Tại An Sơn, Liêu Ninh — Có Thể Giả Nét Chữ Run Rẩy Nhưng Không Thể Giấu Thói Quen Viết Sai Một Nét Chấm",
-        "codex_reasons": [
-            "Giám định văn tự học & bút tích hình sự cực kỳ độc đáo (0% trùng lặp với các vụ ADN thông thường)",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "왼손으로 글씨체를 일부러 삐뚤빼뚤하게 바꾸어 적어 놓은 짧은 쪽지 한 장. 범인은 자신의 필적을 완벽히 숨겼다고 믿었지만, 무심코 찍어 놓은 마지막 획 하나에 평생 고치지 못한 습관이 숨어 있었습니다. 25년 뒤 낡은 공장 자재 출납부에서 똑같은 글자가 발견되는 순간이었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại An Sơn · án lạnh 25 năm giải mã từ một nét chữ viết thừa trong mẩu giấy đánh lạc hướng】 Hồ sơ thật 100% Kỳ án truy vết bút tích suốt 25 năm tại An Sơn, Liêu Ninh (辽宁鞍山25年笔迹物证侦破积案 — Quách Mỗ 郭某, 1995–2020): Hung thủ cố tình viết bằng tay không thuận để đánh lừa giám định viên, nhưng mắc thói quen viết thừa một nét chấm ở bộ thủ đặc thù; các thế hệ cảnh sát kiên trì đối chiếu hồ sơ lưu trữ nhà máy và khóa chặt chân tướng sau 25 năm."
-    },
-    {
-        "id": "vio_cn_zhejiang_jinhua_18y_alpine_pollen_trace",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "micro_forensic_anomaly",
-        "case_real_name_zh": "浙江金华18年积案泥土罕见深谷植物花粉孢子锁定隐匿山谷纪实 — 郑志强 (2002–2020)",
-        "archival_search_keywords_zh": [
-            "花粉 破案 18年 今日说法",
-            "植物孢子 微量物证 侦破 天网",
-            "浙江金华 18年 悬案"
-        ],
-        "recommended_vox_verbs": [
-            "MICRO_TRACE_MATCH",
-            "GEO_VECTOR_PURSUIT",
-            "SINGLE_EVIDENCE_AUTOPSY"
-        ],
-        "title": "[중국 실화 사건] 도심 한복판 사건 현장에서 해발 1,000m 고산지대 식물 흔적이 발견된 미스터리 | 진화 18년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Bí ẩn dấu vết thực vật vùng núi cao 1.000m xuất hiện ngay tại hiện trường vụ án giữa lòng thành phố | Kỳ án 18 năm Kim Hoa)",
-        "topic_anchor": "[중국 실화 사건] 도심 한복판 사건 현장에서 해발 1,000m 고산지대 식물 흔적이 발견된 미스터리 | 진화 18년 미제사건",
-        "winner_cluster": "Luồng 2 · Pháp Y Thực Vật Học: 3 Hạt Phấn Hoa Dưới Kính Hiển Vi Điện Tử Chỉ Thẳng Thung Lũng Ẩn Náu (진화 18년 꽃가루 포자 추적 사건)",
-        "codex_score": 97,
-        "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Đột Phá Pháp Y Thực Vật Học (Forensic Palynology) Tại Kim Hoa, Chiết Giang — Khi Thiên Nhiên Ghi Lại Dấu Chân Kẻ Trốn Chạy",
-        "codex_reasons": [
-            "Góc nhìn khoa học pháp y thực vật học mới lạ bậc nhất, cực kỳ thu hút và 100% Xanh tiền",
-            "Khớp tuyệt đối VOX Optical Loupe + 3D GIS Map"
-        ],
-        "opening_hook": "전자현미경을 오천 배로 확대하자, 메마른 진흙 알갱이 사이에서 기묘한 육각형 돌기를 가진 미세 꽃가루 세 알이 모습을 드러냈습니다. 해발 팔백 미터 북향 계곡에서만 자라는 희귀 양치식물과 야생 차나무의 조합이었죠. 18년 동안 오리무중이던 추적 지도가 단 하나의 작은 마을로 좁혀지는 순간이었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Kim Hoa · án lạnh 18 năm khoanh vùng thung lũng ẩn náu của hung thủ nhờ 3 hạt phấn hoa pháp y】 Hồ sơ thật 100% Kỳ án 18 năm giải mã nhờ pháp y bào tử phấn hoa tại Chiết Giang (浙江18年积案花粉微量物证侦破纪实 — Trịnh Mỗ 郑某, 2002–2020): Từ mẫu bùn khô dưới đế giày lưu trữ trong kho vật chứng, các nhà thực vật học pháp y phân tích tổ hợp 3 loài phấn hoa đặc hữu chỉ cùng tồn tại ở một tiểu vùng khí hậu thung lũng, khoanh vùng chính xác nơi xuất thân của nghi phạm."
-    },
-    {
-        "id": "vio_cn_shaanxi_baoji_21y_train_delay_ledger",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "last_ordinary_routine",
-        "case_real_name_zh": "陕西宝鸡1999年悬案21年绿皮火车晚点调度台账击破假证言纪实 — 严某 (1999–2020)",
-        "archival_search_keywords_zh": [
-            "火车晚点 21年 悬案 今日说法",
-            "陕西宝鸡 命案积案 铁路台账 天网",
-            "不在场证明 绿皮火车 破案"
-        ],
-        "recommended_vox_verbs": [
-            "ALIBI_SHATTER",
-            "CRASH_TIMELINE",
-            "DUAL_ERA_LOCK"
-        ],
-        "title": "[중국 실화 사건] 밤 11시 기차를 탔다는 알리바이 하나로 21년간 수사망을 빠져나간 남자의 치밀한 거짓말 | 바오지 21년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Lời nói dối tinh vi của người đàn ông thoát diện tình nghi suốt 21 năm nhờ tấm vé chuyến tàu đêm 11 giờ | Kỳ án Bảo Kê)",
-        "topic_anchor": "[중국 실화 사건] 밤 11시 기차를 탔다는 알리바이 하나로 21년간 수사망을 빠져나간 남자의 치밀한 거짓말 | 바오지 21년 미제사건",
-        "winner_cluster": "Luồng 2 · Cuốn Sổ Trực Ban Tàu Hỏa Trễ 27 Phút Bóc Trần Lời Khai Ngoại Phạm 21 Năm (산시 바오지 21년 연착 일지 사건)",
-        "codex_score": 96,
-        "profile_score": 96,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án 21 Năm Bảo Kê, Thiểm Tây — Khi Cuốn Sổ Giấy Ố Vàng Trong Kho Lưu Trữ Đường Sắt Phá Vỡ Kịch Bản Hoàn Hảo",
-        "codex_reasons": [
-            "Suy luận điều tra thời gian biểu tàu hỏa chuẩn mực như tiểu thuyết Matsumoto Seicho nhưng 100% là hồ sơ thật",
-            "100% Xanh tiền YouTube"
-        ],
-        "opening_hook": "밤 열한 시 정각에 출발하는 야간 완행열차에 올라타 고향으로 내려갔다는 진술은 21년 동안 단 한 번도 의심받지 않았습니다. 사용한 종이 기차표까지 남아 있었기 때문이죠. 그러나 재수사팀이 철도국 지하 문서고에서 먼지 쌓인 당직 일지를 찾아냈을 때, 그날 밤 열차는 폭우로 스물일곱 분 늦게 출발했다는 사실이 드러났습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Bảo Kê · 21 năm dùng vé tàu tạo ngoại phạm giả bị đánh sập bởi sổ điều độ tàu trễ 27 phút】 Hồ sơ thật 100% Kỳ án 21 năm tại Bảo Kê, Thiểm Tây (陕西宝鸡1999–2020铁路调度台账破案纪实 — Nghiêm Mỗ 严某): Nghi phạm mua sẵn vé tàu và nhờ người bấm lỗ để chứng minh đã rời thành phố lúc 23:00, nhưng khi tổ chuyên án lật lại sổ điều độ viết tay năm 1999 mới phát hiện đoàn tàu đêm đó bị trễ 27 phút — khoảng trống thời gian vừa khít với hiện trường."
-    },
-    {
-        "id": "vio_cn_guangxi_guilin_14y_watchmaker_silence",
-        "topic_stream": "major_violent_crime",
-        "hook_archetype": "last_ordinary_routine",
-        "case_real_name_zh": "广西桂林重案逃犯潜逃14年隐居古镇修钟表匠不用手机落网案 — 唐某 (2005–2019)",
-        "archival_search_keywords_zh": [
-            "修表匠 逃犯 14年 今日说法",
-            "广西桂林 古镇 潜逃14年 天网",
-            "不用手机 逃犯 落网"
-        ],
-        "recommended_vox_verbs": [
             "DUAL_ERA_LOCK",
-            "SPLIT_PARADOX",
             "MICRO_TRACE_MATCH"
         ],
-        "title": "[중국 실화 사건] 14년간 스마트폰도 거부하고 오직 잔돈만 받던 고즈넉한 옛 마을 시계 수리공의 진짜 정체 | 구이린 14년 은둔 사건 ([Vụ Án Có Thật ở Trung Quốc] Chân tướng kẻ truy nã trọng án ẩn mình 14 năm làm thợ sửa đồng hồ nơi phố cổ từ chối quét mã điện thoại | Chuyên án Quế Lâm)",
-        "topic_anchor": "[중국 실화 사건] 14년간 스마트폰도 거부하고 오직 잔돈만 받던 고즈넉한 옛 마을 시계 수리공의 진짜 정체 | 구이린 14년 은둔 사건",
-        "winner_cluster": "Luồng 2 · Tiệm Sửa Đồng Hồ Chỉ Nhận Tiền Mặt & 14 Năm Sống Ngoài Mạng Lưới Số (광시 구이린 14년 시계공 수배범 사건)",
-        "codex_score": 95,
-        "profile_score": 95,
-        "codex_angle": "Hồ Sơ Thật 100%: Đường Mỗ (唐某, Quảng Tây 2005–2019) — Sửa Hàng Nghìn Chiếc Đồng Hồ Cho Hàng Xóm Nhưng Thời Gian Của Chính Mình Đứng Yên Ở Năm 2005",
+        "title": "[중국 실화 사건] 겨울밤에만 나타나 흔적 없이 사라지던 10년 미제사건 주범이 도심 골목 잡화점 주인이었다니 | 우한 장밍가오 사건 ([Vụ Án Có Thật ở Trung Quốc] Kẻ thủ ác chỉ xuất hiện vào đêm mùa đông suốt 10 năm hóa ra là chủ tiệm bách hóa nhỏ ngay trong ngõ | Đại án Trương Minh Cao Vũ Hán)",
+        "topic_anchor": "[중국 실화 사건] 겨울밤에만 나타나 흔적 없이 사라지던 10년 미제사건 주범이 도심 골목 잡화점 주인이었다니 | 우한 장밍가오 사건",
+        "winner_cluster": "Luồng 2 · Quy Luật Chỉ Xuất Hiện Vào Tháng Chạp Suốt 10 Năm & Đường Khương Tuyến Kính Hiển Vi Khóa Chặt Trương Minh Cao (우한 10년 미제 장밍가오 사건)",
+        "codex_score": 97,
+        "profile_score": 97,
+        "codex_angle": "Hồ Sơ Thật 100%: Trương Minh Cao & Kỳ Án 10 Năm Tại Vũ Hán (1991–2000) — Khi Hồ Sơ Phân Tích Tâm Lý Không Gian Khoanh Trúng Bán Kính 2km Quanh Hán Khẩu",
         "codex_reasons": [
-            "Chất liệu đời thường đầy chiều sâu tâm lý, cực kỳ hợp giọng kể điềm tĩnh của 그것이 알고 싶다 / 꼬꼬무",
-            "100% Xanh tiền YouTube"
+            "Một trong những chuyên án điều tra dấu vết và tâm lý học tội phạm nổi tiếng nhất của Công an Vũ Hán thập niên 1990, Tòa án Vũ Hán tuyên án tử hình năm 2001",
+            "Cực hợp DUAL_ERA_LOCK & FORENSIC_ZOOM_CHAIN"
         ],
-        "opening_hook": "모두가 휴대폰 큐알 코드로 백 원짜리 물건까지 계산하는 시대에, 오래된 골목 어귀의 작은 시계 수리점 주인은 끝까지 빛바랜 지폐와 동전만을 고집했습니다. 통장도, 휴대폰도 없이 남의 고장 난 시간만 고쳐 주던 그 남자의 서랍 속에는 14년 전 멈춰 선 또 다른 인생이 숨겨져 있었습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân · 14 năm trốn truy nã dưới vỏ bọc thợ sửa đồng hồ phố cổ chỉ nhận tiền mặt ở Quế Lâm】 Hồ sơ thật 100% Chuyên án bắt giữ kẻ trốn truy nã 14 năm tại Quế Lâm, Quảng Tây (广西桂林逃犯隐居修表14年落网案 — Đường Mỗ 唐某, 2005–2019): Để tránh định danh thực trên hệ thống thanh toán điện tử và viễn thông, nghi phạm tự học nghề sửa đồng hồ cơ ở một thị trấn nhỏ và chỉ giao dịch bằng tiền lẻ suốt 14 năm trước khi bị phát hiện qua đợt rà soát nhân khẩu lưu động."
+        "opening_hook": "1991년부터 9년 동안 우한시에서는 찬 바람이 부는 연말 겨울밤마다 동일한 흔적을 남기는 중대 사건이 잇달아 발생했습니다. 범인은 한 번 나타나면 일 년 내내 감쪽같이 숨어버렸는데, 프로파일러들이 모든 도주 경로의 교차점을 지도 위에 찍자 번화가 골목의 작은 일용품 가게 하나가 떠올랐습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án liên hoàn kéo dài 10 năm tại Vũ Hán, Hồ Bắc · chuyên gia giám định dấu vết và tâm lý hình sự khoanh vùng bắt giữ Trương Minh Cao vào đêm Giao thừa năm 2000 · Tòa án Vũ Hán tuyên án tử hình】 Hồ sơ thật 100% Chuyên án Trương Minh Cao tại Vũ Hán, Hồ Bắc (湖北武汉张明高十年系列特大案件, 1991–2000): Suốt 10 năm từ 1991 đến 2000, Trương Minh Cao chỉ ra tay vào dịp cuối năm rồi quay về ẩn mình dưới vỏ bọc chủ quầy hàng nhỏ và người chồng hiền lành tại Hán Khẩu; Công an Vũ Hán phân tích tọa độ địa lý hiện trường kết hợp giám định dấu vết, bắt gọn Trương Minh Cao và Tòa án Vũ Hán tuyên án tử hình đầu năm 2001.",
+        "hook_archetype": "cold_archive_match"
     },
     {
-        "id": "vio_cn_hubei_yichang_27y_river_sand_mineral",
+        "id": "vio_cn_heilongjiang_hegang_nanshan_1995",
         "topic_stream": "major_violent_crime",
-        "hook_archetype": "cold_archive_match",
-        "case_real_name_zh": "湖北宜昌1993年积案27年衣物折缝特殊江砂矿物成分锁定真凶案 — 覃建华 (1993–2020)",
+        "case_real_name_zh": "黑龙江鹤岗1995年1·28南山矿特大案件与烧毁编号390814化学复原侦破纪实 — 田原·田宇·孙海波·闫文宇 (1995)",
         "archival_search_keywords_zh": [
-            "江砂 微量物证 27年 悬案 今日说法",
-            "湖北宜昌 27年 命案积案 天网",
-            "矿物成分 锁定真凶 纪实"
+            "鹤岗 1·28大案 田原 孙海波 纪实",
+            "黑龙江鹤岗 南山矿 侦破纪实 央视",
+            "1995 鹤岗大案 审判 死刑"
         ],
         "recommended_vox_verbs": [
             "SINGLE_EVIDENCE_AUTOPSY",
             "MICRO_TRACE_MATCH",
+            "FORENSIC_ZOOM_CHAIN"
+        ],
+        "title": "[중국 실화 사건] 불에 타 녹아내린 금속 표면에서 화학 시약으로 되살려낸 여섯 자리 일련번호 '390814'의 비밀 | 허강 1·28 사건 ([Vụ Án Có Thật ở Trung Quốc] Dãy số seri 6 chữ số '390814' phục hồi bằng dung dịch hóa học trên khối kim loại bị nung chảy giữa đêm tuyết | Đại án 1·28 Hạc Cương)",
+        "topic_anchor": "[중국 실화 사건] 불에 타 녹아내린 금속 표면에서 화학 시약으로 되살려낸 여섯 자리 일련번호 '390814'의 비밀 | 허강 1·28 사건",
+        "winner_cluster": "Luồng 2 · Phản Ứng Ăn Mòn Hóa Học Khôi Phục Dãy Số '390814' & 12 Ngày Đêm Phá Đại Án Hạc Cương (헤이룽장 허강 390814 일련번호 복원 사건)",
+        "codex_score": 98,
+        "profile_score": 98,
+        "codex_angle": "Hồ Sơ Thật 100%: Anh Em Điền Nguyên · Tôn Hải Ba & Đại Án 1·28 Hạc Cương, Hắc Long Giang (1995) — Khi Giám Định Kim Tương Học Biến Đống Tro Tàn Thành Danh Sách Nghi Phạm Chính Xác",
+        "codex_reasons": [
+            "Một trong những đại án hình sự kinh điển nhất lịch sử công an Hắc Long Giang, màn phục hồi số seri kim loại '390814' trong phòng thí nghiệm cực hợp SINGLE_EVIDENCE_AUTOPSY",
+            "Tòa án Nhân dân Trung cấp Hạc Cương xét xử công khai trước 30.000 người dân và thi hành án tử hình tháng 3/1995"
+        ],
+        "opening_hook": "범인들은 모든 단서를 지우기 위해 현장에 불을 지르고 금속 부품의 일련번호까지 줄칼로 깊게 갈아낸 뒤 영하 삼십 도의 눈보라 속으로 사라졌습니다. 하지만 형사 기술진이 불에 그을린 강철 표면에 특수 부식액을 떨어뜨리고 현미경 렌즈를 맞추자, 지워졌던 여섯 자리 숫자 삼구공팔일사가 희미하게 모습을 드러냈습니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án 1·28 năm 1995 tại mỏ Nam Sơn, Hạc Cương, Hắc Long Giang (tước đoạt 10 sinh mạng) · kỹ thuật hình sự dùng phản ứng ăn mòn hóa học khôi phục số seri 390814 phá án trong 12 ngày · Tòa án Hạc Cương tuyên án tử hình Điền Nguyên, Tôn Hải Ba, Diêm Văn Vũ】 Hồ sơ thật 100% Đại án 1·28 tại Hạc Cương, Hắc Long Giang (黑龙江鹤岗1995年1·28南山矿特大案 — Điền Nguyên 田原, Điền Vũ 田宇, Tôn Hải Ba 孙海波, Diêm Văn Vũ 闫文宇): Đêm 28/1/1995 (28 Tết), 4 đối tượng tấn công khu bảo vệ mỏ Nam Sơn rồi đốt hiện trường xóa dấu vết; chuyên gia kỹ thuật hình sự phục hồi thành công dãy số seri 390814 bị mài xóa trên kim loại, truy ra nguồn gốc tại nông trường Bảo Tuyền Lĩnh và bắt gọn băng nhóm sau 12 ngày, tuyên án tử hình.",
+        "hook_archetype": "micro_forensic_anomaly"
+    },
+    {
+        "id": "vio_cn_hebei_shijiazhuang_zhangyujun_melamine_2008",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "河北石家庄三鹿蛋白粉源头制售600吨特大危害公共安全案 — 张玉军·耿金平 (2007–2009)",
+        "archival_search_keywords_zh": [
+            "张玉军 耿金平 蛋白粉 庭审 今日说法",
+            "三鹿事件 源头 张玉军 死刑 央视",
+            "石家庄中院 张玉军 审判纪实"
+        ],
+        "recommended_vox_verbs": [
+            "SINGLE_EVIDENCE_AUTOPSY",
+            "SCALE_MULTIPLICATION",
+            "NETWORK_GRAPH"
+        ],
+        "title": "[중국 실화 사건] 단백질 수치 검사기만 감쪽같이 속이는 '가짜 마법 가루' 600톤을 지하 창고에서 배합한 남자의 비밀 | 스자좡 장위쥔 사건 ([Vụ Án Có Thật ở Trung Quốc] Pha chế 600 tấn 'bột thần kỳ' trong kho ngầm để đánh lừa máy đo độ đạm và bản án tử hình cho kẻ đầu sỏ | Đại án Trương Ngọc Quân Thạch Gia Trang)",
+        "topic_anchor": "[중국 실화 사건] 단백질 수치 검사기만 감쪽같이 속이는 '가짜 마법 가루' 600톤을 지하 창고에서 배합한 남자의 비밀 | 스자좡 장위쥔 사건",
+        "winner_cluster": "Luồng 2 · Lỗ Hổng Phương Pháp Đo Nitơ Kjeldahl & Cuộc Truy Nguyên 600 Tấn Bột Công Nghiệp Tới Kho Ngầm Của Trương Ngọc Quân (스자좡 장위쥔·겅진핑 600톤 원료 추적 사건)",
+        "codex_score": 99,
+        "profile_score": 99,
+        "codex_angle": "Hồ Sơ Thật 100%: Trương Ngọc Quân · Cảnh Kim Bình (河北石家庄三鹿源头特大案, 2007–2009) — Khi Ban Chuyên Án Bộ Công An Lần Ngược Chuỗi Cung Ứng Tới Xưởng Pha Chế Bí Mật Ở Sơn Đông",
+        "codex_reasons": [
+            "Một trong những đại án an toàn cộng đồng chấn động nhất thế kỷ 21 tại Trung Quốc, nguyên lý hóa học đánh lừa máy kiểm nghiệm Kjeldahl cực hợp đồ họa giải phẫu VOX",
+            "Tòa án Nhân dân Trung cấp Thạch Gia Trang và Tòa án Tối cao phê chuẩn thi hành án tử hình Trương Ngọc Quân và Cảnh Kim Bình tháng 11/2009"
+        ],
+        "opening_hook": "물을 잔뜩 타서 묽어진 우유에 이 하얀 가루 한 스푼만 섞으면, 공장의 최첨단 단백질 함량 검사기가 즉시 최고 등급 합격 판정을 내렸습니다. 화학 지식을 악용해 지하 작업장에서 무려 육백 톤의 가짜 단백질 가루를 만들어 전국으로 유통시킨 장위쥔의 비밀 공장을 추적합니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án xâm phạm an toàn công cộng đặc biệt nghiêm trọng · Trương Ngọc Quân pha chế 600 tấn bột melamine công nghiệp đánh lừa máy đo độ đạm bán cho Cảnh Kim Bình · Tòa án Thạch Gia Trang tuyên án tử hình cả 2 bị cáo năm 2009】 Hồ sơ thật 100% Đại án nguồn gốc bột đạm giả tại Thạch Gia Trang (Hà Bắc) và Tế Nam (Sơn Đông) (河北石家庄张玉军·耿金平以危险方法危害公共安全案, 2007–2009): Lợi dụng quy trình kiểm tra độ đạm bằng cách đo hàm lượng nguyên tố Nitơ, Trương Ngọc Quân lập xưởng ngầm pha trộn hóa chất công nghiệp melamine với maltodextrin tạo thành hơn 600 tấn 'bột đạm chuyên dụng', còn Cảnh Kim Bình trực tiếp đổ vào bồn sữa nguyên liệu; cả hai bị Tòa án Thạch Gia Trang tuyên án tử hình và thi hành án ngày 24/11/2009.",
+        "hook_archetype": "scale_absurdity_collision"
+    },
+    {
+        "id": "vio_cn_shandong_jinan_panghongwei_vaccine_2016",
+        "topic_stream": "major_violent_crime",
+        "case_real_name_zh": "山东济南跨24省5.7亿元未冷藏疫苗非法经营特大专案 — 庞红卫·孙琪 (2010–2016)",
+        "archival_search_keywords_zh": [
+            "山东济南 庞红卫 5.7亿 疫苗案 央视新闻",
+            "庞红卫 孙琪 庭审 纪实",
+            "济南特大非法经营案 侦破"
+        ],
+        "recommended_vox_verbs": [
+            "NETWORK_GRAPH",
+            "LEDGER_DIFF_SCRUB",
             "GEO_VECTOR_PURSUIT"
         ],
-        "title": "[중국 실화 사건] 27년간 풀리지 않던 강변 미제사건의 범인이 옛 나루터 마을에 그대로 숨어 살았던 이유 | 이창 27년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Lý do kẻ thủ ác trong kỳ án treo 27 năm bên bờ sông vẫn ẩn mình ngay tại ngôi làng bến đò năm xưa | Kỳ án 27 năm Nghi Xương)",
-        "topic_anchor": "[중국 실화 사건] 27년간 풀리지 않던 강변 미제사건의 범인이 옛 나루터 마을에 그대로 숨어 살았던 이유 | 이창 27년 미제사건",
-        "winner_cluster": "Luồng 2 · Giám Định Địa Chất Pháp Y 0,5 Gam Cát Sông Mở Khóa Hồ Sơ Lạnh 27 Năm (후베이 이창 27년 강모래 광물 사건)",
+        "title": "[중국 실화 사건] 집행유예 기간 중 한여름 40도 창고에서 5억 7천만 위안어치 의약품을 24개 성으로 보낸 모녀의 비밀 장부 | 지난 팡훙웨이 사건 ([Vụ Án Có Thật ở Trung Quốc] Đang hưởng án treo vẫn thuê nhà kho nóng 40 độ gửi hàng trăm triệu tệ dược phẩm đi 24 tỉnh và cuốn sổ mật của hai mẹ con | Đại án Bàng Hồng Vệ)",
+        "topic_anchor": "[중국 실화 사건] 집행유예 기간 중 한여름 40도 창고에서 5억 7천만 위안어치 의약품을 24개 성으로 보낸 모녀의 비밀 장부 | 지난 팡훙웨이 사건",
+        "winner_cluster": "Luồng 2 · Nhà Kho Không Máy Lạnh Nóng 40 Độ C & Cuốn Sổ Giao Dịch 570 Triệu Tệ Phủ Khắp 24 Tỉnh (산둥 지난 팡훙웨이 5.7억 위안 사건)",
         "codex_score": 97,
         "profile_score": 97,
-        "codex_angle": "Hồ Sơ Thật 100%: Kỳ Án 27 Năm Tại Nghi Xương, Hồ Bắc — Khi Tỷ Lệ Tinh Thể Khoáng Vật Trong Nửa Gam Cát Trở Thành Bản Đồ Định Vị",
+        "codex_angle": "Hồ Sơ Thật 100%: Bàng Hồng Vệ · Tôn Kỳ & Đại Án 570 Triệu NDT Tại Tế Nam, Sơn Đông (2010–2017) — Cuộc Truy Vết Hơn 300 Tài Khoản Ngân Hàng Và Hóa Đơn Chuyển Phát Nhanh Toàn Quốc",
         "codex_reasons": [
-            "Khoa học địa chất pháp y (Forensic Geology) cực kỳ lôi cuốn và giàu hình ảnh trực quan cho VOX",
-            "100% Xanh tiền YouTube"
+            "Chuyên án lớn do Quốc vụ viện và Bộ Công an Trung Quốc trực tiếp chỉ đạo năm 2016, bản đồ mạng lưới phân phối 24 tỉnh và sổ cái 570 triệu NDT cực hợp VOX",
+            "Tòa án Nhân dân Trung cấp Tế Nam xét xử công khai và tuyên phạt tổng cộng 19 năm tù đối với Bàng Hồng Vệ"
         ],
-        "opening_hook": "스물일곱 년 전 봉인된 낡은 작업복 바짓단의 접힌 솔기를 뜯어내자, 설탕 한 꼬집만 한 영점 오 그램의 고운 모래가 하얀 종이 위로 쏟아져 내렸습니다. 지질 연구소의 성분 분석기가 그 모래알 속 희귀 광물 비율을 읽어낸 순간, 안개 낀 거대한 강줄기 위에서 단 하나의 옛 나루터에 붉은 원이 그려졌습니다.",
-        "note": "【Hồ sơ vụ án: trọng án tước đoạt sinh mạng nạn nhân tại Nghi Xương · án lạnh 27 năm giải mã nhờ phân tích khoáng vật 0,5g cát sông trong gấu quần】 Hồ sơ thật 100% Kỳ án 27 năm tại Nghi Xương, Hồ Bắc (湖北宜昌1993–2020微量江砂物证侦破积案 — Đàm Kiến Hoa 覃建华): Tổ chuyên án mở lại vật chứng năm 1993, thu thập 0,5g cát mịn kẹt sâu trong đường chỉ may và phối hợp viện địa chất phân tích phổ khoáng vật đặc trưng của một nhánh phụ lưu, kết hợp rà soát sinh học khoanh vùng và bắt giữ hung thủ sau 27 năm."
+        "opening_hook": "영하가 아닌 영상 이 도에서 팔 도 사이의 정밀한 냉장 온도를 유지해야 하는 특수 의약품 수십만 상자가 한여름 실내 온도가 사십 도까지 치솟는 일반 지하 창고에 수북이 쌓여 있었습니다. 이미 같은 죄로 집행유예를 선고받았던 전직 약사 팡훙웨이가 딸과 함께 세운 오억 칠천만 위안 규모의 지하 유통망을 파헤칩니다.",
+        "note": "📋 【Hồ sơ vụ án: đại án Bàng Hồng Vệ & con gái Tôn Kỳ đang trong thời gian thử thách án treo vẫn thuê kho thường không bảo quản lạnh để buôn bán 570 triệu tệ vắc-xin xuyên 24 tỉnh · Quốc vụ viện chỉ đạo phá án và Tòa án Tế Nam tuyên án 19 năm tù】 Hồ sơ thật 100% Đại án 570 triệu NDT tại Tế Nam, Sơn Đông (山东济南庞红卫·孙琪5.7亿元非法经营疫苗案, 2010–2017): Từng là dược sĩ bệnh viện tại Hà Trạch và bị phạt tù treo năm 2009, Bàng Hồng Vệ chuyển lên Tế Nam tiếp tục cùng con gái Tôn Kỳ thu mua và vận chuyển dược phẩm bằng thùng xốp thường đi 24 tỉnh thành thu về 570 triệu NDT trước khi bị Công an Tế Nam bắt giữ và tòa tuyên án.",
+        "hook_archetype": "cold_archive_match"
     }
 ]
 
@@ -3624,7 +3068,8 @@ def auto_replenish_dna_case_vault(
     produced_records: list[dict[str, Any]] | None = None,
     sibling_curated_candidates: list[dict[str, Any]] | None = None,
     new_dynamic_cases: list[dict[str, Any]] | None = None,
-    min_curated_per_stream: int = 5,
+    min_curated_per_stream: int = 6,
+    single_stream_quota: int = 10,
     replenish_per_produced: int = 2,
     vault_path: Path | str | None = None,
 ) -> dict[str, Any]:
@@ -3676,7 +3121,15 @@ def auto_replenish_dna_case_vault(
                 existing_Pool.append(enriched)
         vault_data["dynamic_cases"] = dyn_list
 
-    merged_vault = list(VERIFIED_TWO_STREAM_RESERVE_CASES) + dyn_list
+    merged_vault: list[dict[str, Any]] = []
+    seen_vault_ids: set[str] = set()
+    for _v_item in list(VERIFIED_TWO_STREAM_RESERVE_CASES) + dyn_list:
+        _v_cid = str(_v_item.get("id") or "").strip()
+        if _v_cid and _v_cid in seen_vault_ids:
+            continue
+        if _v_cid:
+            seen_vault_ids.add(_v_cid)
+        merged_vault.append(_v_item)
 
     # Filter out all produced cases permanently
     sibling_list = list(sibling_curated_candidates or [])
@@ -3694,7 +3147,12 @@ def auto_replenish_dna_case_vault(
             str(enriched.get("winner_cluster") or ""),
             str(enriched.get("note") or ""),
         ]).strip()
-        is_prod_dup, _ = _is_duplicate_against_records(blob, produced_list)
+        is_prod_dup, _ = _is_duplicate_against_records(
+            blob,
+            produced_list,
+            candidate_id=str(enriched.get("id") or ""),
+            enforce_mo_cooldown=False,
+        )
         if is_prod_dup:
             continue
         enriched["already_produced"] = False
@@ -3717,23 +3175,24 @@ def auto_replenish_dna_case_vault(
             continue
         if not _has_real_case_anchor(ec):
             continue
+        ec_cid = str(ec.get("id") or "")
         blob = " ".join([
             str(ec.get("title") or ""),
             str(ec.get("case_real_name_zh") or ""),
             str(ec.get("note") or ""),
         ]).strip()
-        if _is_duplicate_against_records(blob, produced_list)[0]:
+        if _is_duplicate_against_records(blob, produced_list, candidate_id=ec_cid, enforce_mo_cooldown=False)[0]:
             continue
-        if sibling_list and _is_duplicate_against_records(blob, sibling_list)[0]:
+        if sibling_list and _is_duplicate_against_records(blob, sibling_list, candidate_id=ec_cid, enforce_mo_cooldown=False)[0]:
             continue
-        if _is_duplicate_against_records(blob, clean_curated)[0]:
+        if _is_duplicate_against_records(blob, clean_curated, candidate_id=ec_cid, enforce_mo_cooldown=False)[0]:
             continue
         ec["already_produced"] = False
         clean_curated.append(ec)
 
-    # Rotate vault by profile id so sibling profiles get completely disjoint active curated lists
+    # Rotate vault by profile id + produced_count so each new replenishment advances smoothly
     pid_offset = 36 if "financial-fugitive" in pid else (24 if "director-v2" in pid else (0 if pid else 12))
-    rot = pid_offset % max(1, len(unproduced_vault))
+    rot = (pid_offset + produced_count) % max(1, len(unproduced_vault))
     rotated_unproduced = unproduced_vault[rot:] + unproduced_vault[:rot]
 
     def _stream_count(items: list[dict[str, Any]], s_id: str) -> int:
@@ -3741,30 +3200,36 @@ def auto_replenish_dna_case_vault(
 
     newly_topped_up: list[dict[str, Any]] = []
     active_target_streams = (locked_single_stream,) if locked_single_stream else ("financial_crime", "major_violent_crime")
-    per_stream_quota = (min_curated_per_stream * 2) if locked_single_stream else min_curated_per_stream
+    per_stream_quota = max(single_stream_quota, min_curated_per_stream) if locked_single_stream else min_curated_per_stream
     for s_id in active_target_streams:
-        for cand in rotated_unproduced:
+        for enforce_mo in (True, False):
             if _stream_count(clean_curated, s_id) >= per_stream_quota:
                 break
-            if cand.get("topic_stream") != s_id:
-                continue
-            blob = " ".join([
-                str(cand.get("title") or ""),
-                str(cand.get("case_real_name_zh") or ""),
-                str(cand.get("note") or ""),
-            ]).strip()
-            if sibling_list and _is_duplicate_against_records(blob, sibling_list)[0]:
-                continue
-            if _is_duplicate_against_records(blob, clean_curated)[0]:
-                continue
-            cand_copy = dict(cand)
-            cand_copy["research_origin"] = "auto_replenished_dna_vault"
-            clean_curated.append(cand_copy)
-            newly_topped_up.append(cand_copy)
+            for cand in rotated_unproduced:
+                if _stream_count(clean_curated, s_id) >= per_stream_quota:
+                    break
+                if cand.get("topic_stream") != s_id:
+                    continue
+                cand_cid = str(cand.get("id") or "")
+                blob = " ".join([
+                    str(cand.get("title") or ""),
+                    str(cand.get("case_real_name_zh") or ""),
+                    str(cand.get("note") or ""),
+                ]).strip()
+                if enforce_mo and _is_duplicate_against_records(blob, produced_list, candidate_id=cand_cid, enforce_mo_cooldown=True)[0]:
+                    continue
+                if sibling_list and _is_duplicate_against_records(blob, sibling_list, candidate_id=cand_cid, enforce_mo_cooldown=False)[0]:
+                    continue
+                if _is_duplicate_against_records(blob, clean_curated, candidate_id=cand_cid, enforce_mo_cooldown=False)[0]:
+                    continue
+                cand_copy = dict(cand)
+                cand_copy["research_origin"] = "auto_replenished_dna_vault"
+                clean_curated.append(cand_copy)
+                newly_topped_up.append(cand_copy)
 
     # Interleave clean_curated for balanced display (or keep dedicated single stream)
     if locked_single_stream:
-        profile["curated_today_candidates"] = clean_curated[:10]
+        profile["curated_today_candidates"] = clean_curated[:per_stream_quota]
     else:
         fin_cur = [x for x in clean_curated if x.get("topic_stream") == "financial_crime"]
         vio_cur = [x for x in clean_curated if x.get("topic_stream") == "major_violent_crime"]
@@ -3774,7 +3239,7 @@ def auto_replenish_dna_case_vault(
                 interleaved_cur.append(fin_cur[i])
             if i < len(vio_cur):
                 interleaved_cur.append(vio_cur[i])
-        profile["curated_today_candidates"] = interleaved_cur[:12]
+        profile["curated_today_candidates"] = interleaved_cur[: min_curated_per_stream * 2]
     if isinstance(profile.get("editorial_dna"), dict):
         profile["editorial_dna"]["curated_today_candidates"] = [dict(x) for x in profile["curated_today_candidates"]]
 
@@ -3822,6 +3287,7 @@ def auto_replenish_dna_case_vault(
             "major_violent_crime": vio_available,
         },
         "curated_active_count": len(profile["curated_today_candidates"]),
+        "replenished_candidates": [dict(x) for x in newly_topped_up],
     }
 
 
@@ -3846,12 +3312,17 @@ def _has_real_case_anchor(item: dict[str, Any]) -> bool:
             return False
 
     zh = str(item.get("case_real_name_zh") or "").strip()
+    note_text = str(item.get("note") or "").strip()
+    # Strictly reject anonymous placeholder suspects ('张某', '陈某', '刘某', '某') — every case must have a 100% real full name
+    if "某" in zh or "某" in note_text or "某" in title:
+        return False
+    if re.search(r"\b[가-힣]모\s*(씨|사건)\b", title):
+        return False
     # Reject multi-case slash hedging like "Case A案 / Case B案" (violates 1-case-per-video law)
     if "/" in zh:
         case_segments = [seg for seg in zh.split("/") if ("案" in seg or "事件" in seg)]
         if len(case_segments) >= 2:
             return False
-    # Reject anonymous placeholder suspects like '张某' ONLY if there is no specific city/year/institution anchor
     if len(re.findall(r"[\u4e00-\u9fff]", zh)) >= 4:
         return True
     blob = " ".join([
@@ -3925,7 +3396,7 @@ def build_two_stream_research_prompt(
         "     * **CẤM TUYỆT ĐỐI 100%**: (a) CẤM viết mơ hồ chỉ nói chuyện trốn chạy chung chung mà khán giả đọc xong không biết vụ án kinh hoàng ở điểm nào (`10개 성을 돌며 13년간 추적을 피한...`, `산악 마을을 공포에 빠뜨린... 오토바이를 타고 검문소를 노린 이유`, `침입자`, `방범창 없는 3층만 노렸다`); (b) CẤM kiểu câu đứt đoạn dùng dấu `…` hay `...`; (c) CẤM cụm báo cáo công an sáo rỗng (`15,000명 병력 대포위전`, `21개월의 대추격`); (d) CẤM spoil kết cục hoặc manh mối bắt giữ ngay trên tiêu đề (`완벽한 알리바이를 무너뜨린...`, `그를 잡은...`, `...에 잡힌 날`, `최후`).\n"
         "   - **Tách bạch 100% Tiêu đề YouTube Công Khai (`title`) và Hồ sơ Nội bộ (`note`)**: Phần `note` chỉ hiển thị nội bộ trong Popup `📖 Giải thích vụ án` cho người sản xuất chọn bài (không bao giờ đăng lên YouTube), nên `note` BẮT BUỘC mở đầu bằng `📋 【Hồ sơ vụ án: ...】` ghi rõ đây là trọng án gì, bao nhiêu nạn nhân / bao nhiêu tiền và lệnh truy nã cấp A để người dùng biết chính xác tính chất vụ án.\n"
         "1. MỌI ĐỀ TÀI PHẢI LÀ **ĐÚNG 1 VỤ ÁN CÓ THẬT DUY NHẤT TẠI TRUNG QUỐC** (tuyệt đối CẤM dùng dấu `/` ghép 2–3 vụ án khác nhau vào `case_real_name_zh`, và tiêu đề tiếng Hàn + tiếng Việt phải khớp 1-1 với chính tên nghi phạm/địa danh của `case_real_name_zh` đó).\n"
-        "2. TUYỆT ĐỐI CẤM bịa chuyện khuyết danh (như '3 chiếc đồng hồ trong phòng kín' không tên tuổi), CẤM để lẫn chữ Hán/chữ Nhật (`の`, `枚`) vào câu tiếng Hàn hoặc chữ Hàn vào bản dịch tiếng Việt, CẤM dùng `[Số đếm] + 해` (`열여덟 해` -> bắt buộc viết `18년`), và CẤM chọn vụ án nhỏ lẻ không có phóng sự truyền hình (`CCTV 今日说法 / 天网 / 一线 / 庭审现场`).\n"
+        "2. TUYỆT ĐỐI CẤM dùng tên viết tắt khuyết danh kiểu `张某`, `陈某`, `刘某`, `王某`, `某` (`장모`, `천모`, `류모`) hoặc bịa chuyện khuyết danh — BẮT BUỘC 100% vụ án phải có HỌ TÊN THẬT ĐẦY ĐỦ của thủ phạm chính đã được tòa án xét xử công khai và báo chí chính thống (`CCTV 今日说法 / 天网 / 一线 / 庭审现场 / 新华社`) đăng tải, CẤM để lẫn chữ Hán/chữ Nhật (`の`, `枚`) vào câu tiếng Hàn hoặc chữ Hàn vào bản dịch tiếng Việt, CẤM dùng `[Số đếm] + 해` (`열여덟 해` -> bắt buộc viết `18년`), và CẤM chọn vụ án nhỏ lẻ không có phóng sự truyền hình (`CCTV 今日说法 / 天网 / 一线 / 庭审现场`).\n"
         f"3. Tiêu đề tiếng Hàn bắt buộc mở đầu bằng `[{primary_kw}]` theo cấu trúc 2 trụ cột chuẩn Winner (`<= 76` ký tự tiếng Hàn trước phần dịch tiếng Việt trong ngoặc `(...)`, 1 câu liền mạch không dấu `…` làm rõ độ rợn của vụ án gốc + nghịch lý vỏ bọc/hành vi + `| Tên vụ án`, cho phép từ tư pháp mạnh `사형수/무기징역/18년 복역수/1급 수배범`, `0%` mơ hồ kiểu trốn chạy chung chung, `0%` cụm báo cáo công an `대포위전/대추격`, `0%` spoil manh mối bắt giữ `완벽한 알리바이를 무너뜨린/그를 잡은`, `0%` cụm từ `생명을 앗아간/목숨을 앗아간/운명을 앗아간/đoạt mạng/tước đoạt sinh mạng` và `0%` từ vàng tiền `살인/살해/사망/시신/사체/백골/피/혈흔/총성/흉기/자살/성폭행/엽기`).\n"
         "4. **PHẦN GIẢI THÍCH HỒ SƠ ÁN NỘI BỘ (`note` trong Popup `📖 Giải thích vụ án`) PHẢI CHO BIẾT RÕ LÀ ÁN GÌ ĐỂ NGƯỜI DÙNG CHỌN**: Bắt buộc mở đầu `note` bằng nhãn phân loại `📋 【Hồ sơ vụ án: <loại trọng án/đại án + tước đoạt sinh mạng bao nhiêu nạn nhân hoặc quy mô bao nhiêu tiền + lệnh truy nã cấp A/đỏ hoặc án lạnh bao nhiêu năm>】` rồi giải thích đầy đủ diễn biến vụ án thật.\n"
         "5. **ĐA DẠNG HÓA 8 KIỂU MỞ MÀN LINH HOẠT THEO CHỦ ĐỀ (`8 COLD-OPEN HOOK ARCHETYPES` — CẤM RẬP KHUÔN `[Năm/Thành phố]... 하지만...`)**: Trường `opening_hook` của 8–10 đề tài trong lô BẮT BUỘC xoay vòng linh hoạt theo giải phẫu từng vụ án qua 8 kiểu mở màn chuẩn `그것이 알고 싶다` (`micro_forensic_anomaly`, `double_life_unmasking`, `chilling_verbatim_line`, `countdown_system_breach`, `locked_room_vault_paradox`, `last_ordinary_routine`, `scale_absurdity_collision`, `cold_archive_match`), giữ lực hút tò mò cực đại nhưng `0%` từ vựng tử vong/sinh mạng/máu/thi thể/vũ khí trong câu Hook!\n"

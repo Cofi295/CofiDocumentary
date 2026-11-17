@@ -80,6 +80,11 @@ GENERIC_HANZI_STOPWORDS: set[str] = {
     "河南郑州", "浙江杭州", "浙江宁波", "浙江温州", "江苏南京", "湖北武汉", "辽宁沈阳", "陕西西安",
     "黑龙江大庆", "黑龙江哈尔滨", "内蒙古呼和浩特", "广东深圳", "广东广州", "四川成都", "湖南常德", "湖南长沙",
     "广西桂林", "云南昆明", "福建厦门", "河北石家庄", "河北邯郸", "山东青岛", "山西闻喜", "安徽宿州",
+    "山东潍坊", "福建福安", "贵州贵阳", "江西乐安", "安徽芜湖", "浙江绍兴", "浙江金华", "金华", "广东东莞", "广东佛山",
+    "江苏无锡", "江苏苏州", "江苏常州", "河南洛阳", "河南安阳", "河南周口", "湖南衡阳", "湖南怀化",
+    "湖北潜江", "湖北咸宁", "四川宜宾", "吉林通化", "辽宁大连", "辽宁营口", "辽宁锦州",
+    "金融诈骗", "集资诈骗", "合同诈骗", "票据诈骗", "贷款诈骗", "信用卡诈骗",
+    "银行承兑汇票", "承兑汇票", "商业汇票", "钨芯假黄金", "假黄金",
 }
 
 GENERIC_STOPWORDS: set[str] = {
@@ -181,6 +186,12 @@ CANONICAL_ENTITY_ALIASES: list[tuple[str, tuple[str, ...]]] = [
     ("person_wang_qiang_liaoning", ("왕창", "왕강", "vương cường", "wang qiang", "王强")),
     ("person_long_zhimin", ("룽즈민", "용지민", "상뤄", "long trị dân", "long zhimin", "龙治民")),
     ("person_zhu_xianjian", ("주셴젠", "주현건", "chu hiền kiện", "zhu xianjian", "朱贤健")),
+    ("person_zeng_chunliang", ("쩡춘량", "증춘량", "러안 쩡춘량", "tăng xuân lượng", "zeng chunliang", "曾春亮")),
+    ("person_xu_dapeng", ("쉬다펑", "서대붕", "웨이팡 쉬다펑", "từ đại bằng", "xu dapeng", "徐大鹏")),
+    ("person_liu_zhaohua", ("류자오화", "유초화", "lưu chiêu hoa", "liu zhaohua", "刘招华")),
+    ("person_gao_yulun", ("가오위룬", "고옥륜", "왕더빈", "추이젠궈", "cao ngọc luân", "gao yulun", "高玉伦", "王德彬")),
+    ("person_du_shaoping", ("두사오핑", "두소평", "신화오중", "덩스핑", "đỗ thiếu bình", "đặng thế bình", "du shaoping", "杜少平", "邓世平")),
+    ("case_guiyang_huaxi_11y", ("구이양 11년", "귀양 11년", "구이양 화시", "귀양 화시", "贵阳花溪")),
     # Geographic & institutional Sino-Korean <-> Mandarin equivalents
     ("place_zhejiang", ("저장성", "저장", "절강성", "절강", "chiết giang", "zhejiang", "浙江")),
     ("place_shenzhen", ("선전", "심천", "thâm quyến", "thẩm quyến", "shenzhen", "深圳")),
@@ -202,6 +213,7 @@ CANONICAL_ENTITY_ALIASES: list[tuple[str, tuple[str, ...]]] = [
     ("place_baiyin", ("바이인", "백은시", "bạch ngân", "baiyin", "白银")),
     ("place_panyu", ("판위", "번우", "phiên ngung", "panyu", "番禺")),
     ("place_wanxiang_park", ("완샹공원", "만향공원", "vạn hướng", "万向公园")),
+    ("place_jinhua", ("진화시", "진화", "금화시", "kim hoa", "jinhua", "金华")),
 ]
 
 
@@ -217,7 +229,7 @@ CASE_CLUSTERS: list[dict[str, Any]] = [
         "scenario_a": ["28년간", "28년", "28 năm", "28-year"],
         "scenario_b": [
             "학교 매점", "매점", "tiệm tạp hóa", "tạp hóa trường học", "grocery store", "school store",
-            "y-염색체", "y-str", "nhiễm sắc thể y",
+            "붉은 옷", "학교 매점 아저씨",
         ],
     },
     {
@@ -591,7 +603,21 @@ CASE_CLUSTERS: list[dict[str, Any]] = [
 ]
 
 
-_HANZI_BLOCK_RE = re.compile(r"[\u4e00-\u9fff]{2,8}")
+_HANZI_BLOCK_RE = re.compile(r"[\u4e00-\u9fff]{2,48}")
+_HANZI_INTERNAL_SPLIT_RE = re.compile(
+    r"(?:公安部|中级人民法院|最高人民法院|人民检察院|非法集资崩盘|非法集资|集资诈骗|金融诈骗|合同诈骗|贷款诈骗|票据诈骗"
+    r"|贪污挪用|挪用公款|银行承兑汇票|商业承兑汇票|承兑汇票|钨芯假黄金|特大持枪|系列持枪抢劫|持枪抢劫|系列抢劫"
+    r"|重特大命案|特大命案|命案积案|系列悬案|连环杀人|杀人碎尸|绑架勒索|越狱脱逃|级通缉犯|级通缉令|通缉犯|通缉令"
+    r"|侦破纪实|破案纪实|锁定真凶|大围捕|大追捕|潜逃|侦破|落网|归案)"
+)
+_PIPE_CASE_TAG_RE = re.compile(r"\|\s*([^\(\[\n\r|]{3,60})")
+_PIPE_TAG_GENERIC_SUFFIX_RE = re.compile(
+    r"(?:\s*(?:대추격\s*사건|추적\s*사건|미제\s*사건|미제사건|도주\s*사건|두\s*얼굴\s*사건|은둔\s*사건"
+    r"|신분세탁\s*사건|위장\s*사건|검거\s*사건|실종\s*사건|연쇄\s*사건|실화\s*사건|사건\s*전말|프로파일링"
+    r"|역추적|추적기|추적|도주극|사건))+$",
+    re.IGNORECASE,
+)
+_CANDIDATE_ID_PREFIX_RE = re.compile(r"^(?:vio_cn_|fin_cn_|cyber_cn_|infra_cn_|tc_cn_|vn_cn_|us_vault_|us_pres_|grace_kr_)")
 _HANZI_CHAR_RE = re.compile(r"[\u4e00-\u9fff]")
 _DISTINCTIVE_METRIC_RE = re.compile(
     r"\b(\d+(?:\.\d+)?)\s*(톤|tấn|만\s*위안|억\s*위안|억\s*달러|조\s*원|km|킬로미터|m|미터|일|시간|giờ|비트코인|btc)\b"
@@ -647,27 +673,76 @@ def _extract_hanzi_anchors_cached(text: str) -> tuple[str, ...]:
         return ()
     blocks = _HANZI_BLOCK_RE.findall(text)
     out: list[str] = []
-    for raw_b in blocks:
-        if raw_b in GENERIC_HANZI_STOPWORDS:
-            continue
-        cleaned_b = raw_b
-        for _ in range(3):
-            next_b = _HANZI_EDGE_GENERIC_RE.sub("", cleaned_b).strip()
-            if next_b == cleaned_b:
-                break
-            cleaned_b = next_b
-        if (
-            len(cleaned_b) >= 2
-            and cleaned_b not in GENERIC_HANZI_STOPWORDS
-            and not _HANZI_EDGE_GENERIC_RE.fullmatch(cleaned_b)
-            and cleaned_b not in out
-        ):
-            out.append(cleaned_b)
+    for raw_block in blocks:
+        sub_blocks = [sb for sb in _HANZI_INTERNAL_SPLIT_RE.split(raw_block) if sb]
+        for raw_b in sub_blocks:
+            if raw_b in GENERIC_HANZI_STOPWORDS:
+                continue
+            cleaned_b = raw_b
+            for _ in range(4):
+                next_b = _HANZI_EDGE_GENERIC_RE.sub("", cleaned_b).strip()
+                if next_b == cleaned_b:
+                    break
+                cleaned_b = next_b
+            if (
+                len(cleaned_b) >= 2
+                and cleaned_b not in GENERIC_HANZI_STOPWORDS
+                and not _HANZI_EDGE_GENERIC_RE.fullmatch(cleaned_b)
+                and cleaned_b not in out
+            ):
+                out.append(cleaned_b)
     return tuple(out)
 
 
 def _extract_hanzi_anchors(text: str) -> list[str]:
     return list(_extract_hanzi_anchors_cached(text or ""))
+
+
+@lru_cache(maxsize=8192)
+def extract_pipe_case_tag(text: str) -> str:
+    """
+    Extract and normalize the canonical case tag after `|` in titles such as
+    `[중국 실화 사건] ... | 러안 쩡춘량 사건` -> `러안 쩡춘량`.
+    Returns empty string if absent or purely generic/geographic.
+    """
+    if not text or "|" not in text:
+        return ""
+    # Strip trailing bilingual translation block `([Vụ Án...])` before extracting pipe tag
+    head = re.sub(r"\(\s*\[[^\)]*\)\s*$", "", text.strip())
+    m = _PIPE_CASE_TAG_RE.search(head)
+    if not m:
+        return ""
+    raw_tag = m.group(1).strip()
+    stripped = _PIPE_TAG_GENERIC_SUFFIX_RE.sub("", raw_tag).strip()
+    norm_tag = _normalize_text(stripped)
+    if not norm_tag or len(norm_tag.replace(" ", "")) < 3:
+        return ""
+    if norm_tag in GENERIC_STOPWORDS:
+        return ""
+    place_only_norms = {
+        v_norm
+        for _, is_place, v_norms in _PREPARED_CANONICAL_ALIASES
+        if is_place
+        for v_norm in v_norms
+    }
+    if norm_tag in place_only_norms:
+        return ""
+    return norm_tag
+
+
+def normalize_candidate_core_slug(candidate_id: str) -> str:
+    """
+    Normalize candidate IDs across streams (e.g. `fin_cn_shaoxing_ningbo_xuli_22y`
+    and `vio_cn_shaoxing_ningbo_xuli_22y` -> `shaoxing_ningbo_xuli_22y`).
+    Returns empty string for short generic numeric IDs (`01`, `1`, `ai_1`).
+    """
+    raw = str(candidate_id or "").strip().lower()
+    if not raw or raw.startswith(("topic-", "sug-", "mem-")):
+        return ""
+    core = _CANDIDATE_ID_PREFIX_RE.sub("", raw).strip("_- ")
+    if len(core) < 6 or core.isdigit() or re.fullmatch(r"(?:ai_?)?\d+", core):
+        return ""
+    return core
 
 
 @lru_cache(maxsize=8192)
@@ -755,15 +830,20 @@ def _extract_case_anchors_and_entities_cached(
                 if s not in keywords:
                     keywords.append(s)
 
+    # 1a. Canonical pipe-tag case identifier (`| 러안 쩡춘량 사건` -> `pipe:러안 쩡춘량`)
+    pipe_tag = extract_pipe_case_tag(title) or extract_pipe_case_tag(topic)
+    if pipe_tag and f"pipe:{pipe_tag}" not in entities:
+        entities.append(f"pipe:{pipe_tag}")
+
     # 1b. Canonical Sino-Korean / Mandarin / Hanzi alias IDs
     canon_unique, canon_places = _extract_canonical_alias_ids_cached(norm, combined_low)
     for cid in sorted(canon_unique) + sorted(canon_places):
-        if cid not in entities and len(entities) < 10:
+        if cid not in entities and len(entities) < 12:
             entities.append(cid)
 
     # 1c. Specific Chinese Hanzi anchors (suspect names / location-case anchors)
     for hz in _extract_hanzi_anchors_cached(combined):
-        if hz not in entities and len(entities) < 10:
+        if hz not in entities and len(entities) < 12:
             entities.append(hz)
 
     # 2. Extract numbered timeframes and measurements
@@ -811,12 +891,29 @@ def check_case_similarity(
     target_topic: str = "",
     target_entities: list[str] | None = None,
     target_keywords: list[str] | None = None,
+    candidate_id: str = "",
+    target_candidate_id: str = "",
 ) -> tuple[bool, str, float]:
     """
     Determine if candidate_text refers to the same underlying documentary case / topic
     as target_title / target_topic / entities.
     Returns: (is_duplicate: bool, reason: str, confidence: float)
     """
+    # 0. Exact or cross-stream candidate_id core-slug match
+    cand_slug = normalize_candidate_core_slug(candidate_id)
+    targ_slugs: set[str] = set()
+    if target_candidate_id:
+        ts = normalize_candidate_core_slug(target_candidate_id)
+        if ts:
+            targ_slugs.add(ts)
+    for e in (target_entities or []):
+        if isinstance(e, str) and e.startswith("slug:"):
+            ts = normalize_candidate_core_slug(e[5:])
+            if ts:
+                targ_slugs.add(ts)
+    if cand_slug and cand_slug in targ_slugs:
+        return True, f"Trùng khớp mã hồ sơ đề tài gốc ({cand_slug})", 1.0
+
     cand_norm = _normalize_text(candidate_text)
     t_title_norm = _normalize_text(target_title)
     t_topic_norm = _normalize_text(target_topic)
@@ -830,9 +927,32 @@ def check_case_similarity(
     if cand_norm == t_title_norm or (len(cand_norm) >= 12 and (cand_norm in t_title_norm or t_title_norm in cand_norm)):
         return True, "Trùng khớp nguyên văn tiêu đề đề tài", 1.0
 
+    # 1a. Pipe case tag match (`| 러안 쩡춘량 사건`, `| 선양 3·8 두 얼굴 사건`)
+    cand_pipe = extract_pipe_case_tag(candidate_text)
+    targ_pipes: set[str] = set()
+    for pt in (extract_pipe_case_tag(target_title), extract_pipe_case_tag(target_topic)):
+        if pt:
+            targ_pipes.add(pt)
+    for e in (target_entities or []):
+        if isinstance(e, str) and e.startswith("pipe:"):
+            pt = _normalize_text(e[5:])
+            if pt:
+                targ_pipes.add(pt)
+    if cand_pipe and cand_pipe in targ_pipes:
+        return True, f"Trùng khớp nhãn vụ án định danh ({cand_pipe})", 0.98
+    if cand_pipe and len(cand_pipe.replace(" ", "")) >= 4 and cand_pipe in target_combined:
+        return True, f"Trùng khớp nhãn vụ án định danh ({cand_pipe})", 0.97
+    for tp in targ_pipes:
+        if len(tp.replace(" ", "")) >= 4 and tp in cand_norm:
+            return True, f"Trùng khớp nhãn vụ án định danh ({tp})", 0.97
+
     # 1b. Specific Chinese Hanzi case/suspect anchor overlap
     cand_hanzi = set(_extract_hanzi_anchors_cached(candidate_text))
     target_hanzi = set(_extract_hanzi_anchors_cached(target_raw))
+    for e in (target_entities or []):
+        if isinstance(e, str) and _HANZI_CHAR_RE.search(e):
+            for hz in _extract_hanzi_anchors_cached(e):
+                target_hanzi.add(hz)
     if cand_hanzi and target_hanzi:
         shared_hanzi = [h for h in cand_hanzi.intersection(target_hanzi) if len(h) >= 2]
         if any(len(h) >= 3 for h in shared_hanzi) or len(shared_hanzi) >= 2:
@@ -848,9 +968,7 @@ def check_case_similarity(
     targ_unique_ids = set(targ_u_frozen)
     targ_place_ids = set(targ_p_frozen)
     for e in (target_entities or []):
-        if isinstance(e, str) and e.startswith("person_"):
-            targ_unique_ids.add(e)
-        elif isinstance(e, str) and e.startswith("org_"):
+        if isinstance(e, str) and e.startswith(("person_", "org_", "case_")):
             targ_unique_ids.add(e)
         elif isinstance(e, str) and e.startswith("place_"):
             targ_place_ids.add(e)
@@ -929,10 +1047,11 @@ def check_case_similarity(
     def _clean_anchor_list(items: list[str]) -> list[str]:
         cleaned_list: list[str] = []
         for item in items:
-            s = _normalize_text(str(item or ""))
-            if not s or len(s) < 2 or s in GENERIC_STOPWORDS:
+            raw_item = str(item or "").strip().lower()
+            if raw_item.startswith(("person_", "org_", "place_", "case_", "pipe:", "slug:")):
                 continue
-            if s.startswith(("person_", "org_", "place_")):
+            s = _normalize_text(raw_item)
+            if not s or len(s) < 2 or s in GENERIC_STOPWORDS:
                 continue
             if _ANCHOR_NUM_FULL_RE.fullmatch(s):
                 continue

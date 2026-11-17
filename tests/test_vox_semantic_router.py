@@ -658,6 +658,46 @@ class TestFinancialForensicVoxAndProfileIntegration:
             seen_vox_prompts.add(b["vox_design_prompt"])
             seen_sigs.add(spec["vox_scene_signature"])
 
+    def test_geo_map_sentences_and_planned_gis_preserved_and_labels_deduped(self):
+        from documentary.vox_engine.semantic_router import attach_two_layer_visual_prompts
+
+        geo_beats = [
+            {
+                "beat_id": "B005-V01",
+                "editorial_layer": "VOX_NEWSROOM",
+                "narration_text": "읍내에서 불과 이십 킬로미터 떨어진 조용한 시골 마을의 외딴 벽돌집 안에 멈춰 있었거든요.",
+                "purpose": "illustrate_parabolic_3d_gis_flyto_mechanism_for_b005",
+                "framing_motion_intent": "[VOX_NEWSROOM · <GeoJson3DMapStage>] 32.9722°N, 114.6358°E -> 32.8541°N, 114.7412°E",
+                "voice_spec": {
+                    "clauses": ["읍내에서 불과 이십 킬로미터 떨어진 조용한 시골 마을의 외딴 벽돌집 안에 멈춰 있었거든요."],
+                    "clause_windows": [[0.0, 1.0]],
+                    "metrics": ["핑위현 읍내의"],
+                    "clause_focus_tags": ["핑위현 읍내의"],
+                },
+            },
+            {
+                "beat_id": "B038-V01",
+                "editorial_layer": "VOX_NEWSROOM",
+                "narration_text": "실종된 남학생 대다수가 핑위현 읍내의 후이신 피시방과 주변 오락실 반경 2킬로미터 이내에서 마지막으로 목격됐습니다.",
+            },
+            {
+                "beat_id": "B066-V01",
+                "editorial_layer": "VOX_NEWSROOM",
+                "narration_text": "핑위현 읍내의 번화가에서 동남쪽으로 비포장도로가 이십 킬로미터나 이어집니다.",
+            },
+            {
+                "beat_id": "B165-V01",
+                "editorial_layer": "VOX_NEWSROOM",
+                "narration_text": "형사대대는 즉각 비상 동원령을 내리고 장청량이 지목한 위황먀오향 다황좡으로 무장 경력을 급파했습니다.",
+            },
+        ]
+        for idx, beat in enumerate(geo_beats):
+            attach_two_layer_visual_prompts(beat, beat_index=idx, total_beats=len(geo_beats))
+            spec = beat["vox_blueprint_spec"]
+            assert spec["stage_component"] == "GeoJson3DMapStage", f"{beat['beat_id']} must stay GeoJson3DMapStage"
+            labels = spec["micro_labels_ko"]
+            assert len(labels) == len(set(labels)), f"{beat['beat_id']} micro_labels_ko must not duplicate: {labels}"
+
 
 if __name__ == "__main__":
     sys.exit(pytest.main([__file__, "-v"]))

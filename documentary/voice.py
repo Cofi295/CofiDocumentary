@@ -810,9 +810,13 @@ def _build_mistaken_native_to_sino() -> dict[str, str]:
 
 
 _MISTAKEN_NATIVE_TO_SINO = _build_mistaken_native_to_sino()
+_SINGLE_DIGIT_NATIVE_SET = {
+    "하나", "둘", "셋", "넷", "다섯", "여섯", "일곱", "여덟", "아홉",
+    "한", "두", "세", "네",
+}
 _COMPOUND_NATIVE_KEYS = "|".join(
     sorted(
-        (k for k in _MISTAKEN_NATIVE_TO_SINO if len(k) >= 2 or k in ("스무", "쉰")),
+        (k for k in _MISTAKEN_NATIVE_TO_SINO if k not in _SINGLE_DIGIT_NATIVE_SET),
         key=len,
         reverse=True,
     )
@@ -942,11 +946,11 @@ def harmonize_korean_particle_after_stem(stem: str, particle: str) -> str:
 
 
 _MISTAKEN_COMPOUND_NATIVE_SINO_COUNTER_RE = re.compile(
-    rf"(?<![가-힣])({_COMPOUND_NATIVE_KEYS})(\s*)(년|년도|년대|년간|년생|개월|세|층|호|원|분|초|퍼센트|대|급|심|킬로미터|킬로그램|센티미터|밀리미터|밀리그램|밀리리터|제곱미터|리터|미터|그램|톤|달러|위안|유로)"
+    rf"(?<![가-힣])({_COMPOUND_NATIVE_KEYS})(\s*)(년|년도|년대|년간|년생|개월|세|층|호|원|분|초|퍼센트|급|심|킬로미터|킬로그램|센티미터|밀리미터|밀리그램|밀리리터|제곱미터|리터|미터|그램|톤|달러|위안|유로)"
     rf"(?={_KO_COUNTER_PARTICLES}(?![가-힣]))"
 )
 _MISTAKEN_SIMPLE_NATIVE_SINO_COUNTER_RE = re.compile(
-    rf"(?<![가-힣])({_ALL_NATIVE_KEYS})(\s*)(년|년도|년대|년간|년생|개월|층|호|원|초|퍼센트|급|심|킬로미터|킬로그램|센티미터|밀리미터|밀리그램|밀리리터|제곱미터|리터|미터|그램|톤|달러|위안|유로)"
+    rf"(?<![가-힣])({_ALL_NATIVE_KEYS})(\s*)(년|년도|년대|년간|년생|개월|호|원|초|퍼센트|급|심|킬로미터|킬로그램|센티미터|밀리미터|밀리그램|밀리리터|제곱미터|리터|미터|그램|톤|달러|위안|유로)"
     rf"(?={_KO_COUNTER_PARTICLES}(?![가-힣]))"
 )
 _MISTAKEN_24H_NATIVE_SI_RE = re.compile(
@@ -1043,7 +1047,26 @@ _KO_ORTHOGRAPHY_TTS_FIX_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
     (re.compile(r"([일이삼사오육칠팔구십백천만]+)\s*마흔\s*날"), r"\1사십 일"),
     (re.compile(r"([일이삼사오육칠팔구십백천만]+)\s*서른\s*날"), r"\1삼십 일"),
     (re.compile(r"([일이삼사오육칠팔구십백천만]+)\s*스물\s*날"), r"\1이십 일"),
-    (re.compile(r"(?<![가-힣])이\s+세대(?=\s*(?:전자|주민|신분증|이동통신|기술|전산망))"), "2세대"),
+    (re.compile(r"(?<![가-힣])일세대(?=\s|[가-힣]|[,.)?!]|$)"), "1세대"),
+    (re.compile(r"(?<![가-힣])이세대(?=\s|[가-힣]|[,.)?!]|$)"), "2세대"),
+    (re.compile(r"(?<![가-힣])삼세대(?=\s|[가-힣]|[,.)?!]|$)"), "3세대"),
+    (re.compile(r"(?<![가-힣])사세대(?=\s|[가-힣]|[,.)?!]|$)"), "4세대"),
+    (re.compile(r"(?<![가-힣])오세대(?=\s|[가-힣]|[,.)?!]|$)"), "5세대"),
+    (re.compile(r"(?<![가-힣])일\s+세대(?=\s*(?:형사|감식관|수사관|전담팀|수사팀|전자|주민|신분증|이동통신|기술|전산망|유전자|장비|원로|선배))"), "1세대"),
+    (re.compile(r"(?<![가-힣])이\s+세대(?=\s*(?:형사|감식관|수사관|전담팀|수사팀|전자|주민|신분증|이동통신|기술|전산망|유전자|장비|원로|선배))"), "2세대"),
+    (re.compile(r"(?<![가-힣])삼\s+세대(?=\s*(?:형사|감식관|수사관|전담팀|수사팀|전자|주민|신분증|이동통신|기술|전산망|유전자|장비|원로|선배))"), "3세대"),
+    (re.compile(r"(?<![가-힣])사\s+세대(?=\s*(?:형사|감식관|수사관|전담팀|수사팀|전자|주민|신분증|이동통신|기술|전산망|유전자|장비|원로|선배))"), "4세대"),
+    (re.compile(r"(?<![가-힣])오\s+세대(?=\s*(?:형사|감식관|수사관|전담팀|수사팀|전자|주민|신분증|이동통신|기술|전산망|유전자|장비|원로|선배))"), "5세대"),
+    (
+        re.compile(
+            r"(?<![가-힣])(영하|영상)\s+((?:[일이삼사오육칠팔구]?십\s*)?[일이삼사오육칠팔구]|영)\s*도"
+            r"(?=(?:로|에서|의|를|가|이|까지|부터|에|만|도|는|은|였|입|라|고|며)?(?![가-힣]))"
+        ),
+        lambda m: (
+            f"{m.group(1)} "
+            f"{0 if m.group(2).strip() == '영' else ((0 if '십' not in m.group(2) else (10 if m.group(2).replace(' ', '').startswith('십') else {'일':1,'이':2,'삼':3,'사':4,'오':5,'육':6,'칠':7,'팔':8,'구':9}[m.group(2).replace(' ', '')[0]] * 10)) + ({'':0,'일':1,'이':2,'삼':3,'사':4,'오':5,'육':6,'칠':7,'팔':8,'구':9}[m.group(2).replace(' ', '').split('십')[-1]] if '십' in m.group(2) else {'일':1,'이':2,'삼':3,'사':4,'오':5,'육':6,'칠':7,'팔':8,'구':9}[m.group(2).strip()]))}도"
+        ),
+    ),
     (re.compile(r"(?<![가-힣])일천(?=[이삼사오육칠팔구]?백)"), "천"),
     (re.compile(r"(지워\s*왔던|숨겨\s*왔던|억눌러\s*왔던|감춰\s*왔던)\s*모국어(?=[였이기의를은는도만])"), r"\1 고향 말투"),
 )
@@ -1119,6 +1142,9 @@ _KO_WEAPON_SIK_RE = re.compile(
     r"(?!\s*(?:사|당|품|구|물|민|량|수|탁|장|전))"
 )
 _KO_MIDDLE_DOT_DATE_RE = re.compile(r"(?<!\d)(1[0-2]|[1-9])[·ㆍ](\d{1,2})(?!\d)")
+_KO_ORDINAL_JE_CHAPTER_RE = re.compile(
+    r"(?<![가-힣])제\s*(\d{1,4})\s*(장|막|편|부|절|항|조|과|회)(?=[,\s.?!:)]|$)"
+)
 _KO_ORDINAL_JE_RE = re.compile(r"(?<![가-힣])제\s*(\d{1,4})")
 _KO_TILDE_RANGE_RE = re.compile(
     r"(?<!\d)(\d{1,4})\s*~\s*(\d{1,4})(\s*)([가-힣]{1,6})?"
@@ -1157,7 +1183,7 @@ _KO_DECIMAL_RE = re.compile(r"(?<!\d)(\d+)\.(\d+)(?!\d)")
 _KO_CORPSE_GU_BEFORE_RE = re.compile(r"(?:시신|유골|백골|사체|주검|유해)\s*$")
 _KO_CORPSE_GU_AFTER_RE = re.compile(r"^\s*의\s*(?:시신|유골|백골|사체|주검|유해)")
 _KO_VEHICLE_BEFORE_RE = re.compile(
-    r"(?:차량|승용차|트럭|버스|오토바이|자전거|택시|기계|장비|카메라|씨씨티비|컴퓨터|휴대전화)\s*$"
+    r"(?:차량|승합차|현금수송차|수송차|승용차|트럭|버스|오토바이|스쿠터|자전거|택시|순찰차|구급차|장갑차|굴착기|헬기|드론|무인기|항공기|비행기|선박|보트|기계|장비|카메라|씨씨티비|에어컨|실외기|컴퓨터|노트북|휴대전화)\s*$"
 )
 _KO_SINO_DAE_CATEGORY_AFTER_RE = re.compile(
     r"^\s*(?:보험|사회보험|연금|강(?![가-힣])|강력|은행|그룹|문명|원칙|수칙|철칙|사건|범죄|중증|질환|"
@@ -1389,6 +1415,10 @@ def normalize_korean_tts_text(text: str) -> str:
         return f"{m_ko}{d_ko}"
 
     out = _KO_MIDDLE_DOT_DATE_RE.sub(_replace_middle_dot_date, out)
+    out = _KO_ORDINAL_JE_CHAPTER_RE.sub(
+        lambda m: f"제{_int_to_sino_korean(int(m.group(1)))} {m.group(2)}",
+        out,
+    )
     out = _KO_ORDINAL_JE_RE.sub(lambda m: f"제{_int_to_sino_korean(int(m.group(1)))}", out)
 
     def _replace_tilde_range(match: re.Match[str]) -> str:
@@ -1582,6 +1612,10 @@ def normalize_korean_tts_text(text: str) -> str:
         r"\1, \2, \3",
         out,
     )
+    # Rare ㄷ-batchim phonetic respelling for TTS G2P fidelity (표준발음법 제7항/제23항:
+    # '반짇고리' and '반짓고리' both realize identically as [반짇꼬리], whereas rare syllable '짇'
+    # is misread as '잔' by neural TTS tokenizers; display/SRT text retains standard '반짇고리').
+    out = out.replace("반짇고리", "반짓고리")
     return out
 
 
@@ -2006,26 +2040,60 @@ def _normalize_for_asr_compare(text: str, language: str = "ko") -> str:
     )
 
 
+_KO_ADNOMINAL_MODIFIER_WORDS: set[str] = {
+    "붉은", "작은", "낡은", "같은", "없는", "있는", "많은", "적은", "깊은", "높은", "넓은", "짧은", "긴", "큰",
+    "흰", "검은", "푸른", "맑은", "흐린", "차가운", "뜨거운", "무거운", "가벼운", "어려운", "쉬운", "새로운",
+    "오래된", "달아난", "얼어붙은", "풀린", "쌓인", "막힌", "닫힌", "열린", "숨긴", "남긴", "버린", "잃은",
+    "찾은", "잡힌", "찍힌", "적힌", "묻은", "섞인", "엉긴", "끊어진", "사라진", "무너진", "좁혀진", "밝혀진",
+    "드러난", "확인된", "발견된", "제출된", "봉인된", "격납된", "유지하는", "흐르는", "비추는", "지내던",
+    "준비하던", "돌아보던", "내려다보던", "기다리던", "살아온", "이어온", "지켜온", "버텨낸", "지켜낸",
+    "찍은", "수사하는", "않는", "나누던", "하는", "올랐던", "걸릴", "들은", "저지른", "버틴", "남은",
+    "떨리는", "울리는", "들리는", "보이는", "쓰이는", "남기는", "숨기는", "지키는", "버티는", "그리는", "노리는",
+}
+_KO_NO_COMMA_BEFORE_NEXT_WORDS: set[str] = {
+    "건", "것", "것도", "것이", "것은", "것을", "수", "수밖에", "리", "리가", "줄", "채", "셈", "셈입니다.",
+    "바", "데", "때", "곳", "날", "명", "명이", "명을", "점", "점이", "점을", "물론", "온", "왔습니다.",
+    "낸", "냈습니다.", "버렸죠.", "주었죠.", "두었죠.", "놓았습니다.", "가며", "갔습니다.", "봐", "삼아",
+    "없었죠.", "없었습니다.", "있었습니다.", "막을", "나누며", "똑같았습니다.",
+}
+
+
 def _inject_gentle_breath_comma(tts_text: str, language: str = "ko") -> str:
-    """Insert a single natural mid-clause breath comma on retry #2 without altering any spoken words."""
+    """Insert a single natural mid-clause breath comma without splitting modifier-noun or verb-auxiliary pairs."""
     txt = str(tts_text or "").strip()
     if not txt or "," in txt or "<break" in txt:
         return txt
     lang = str(language or "ko").strip().lower()
     if lang == "ko":
+        # If beat already contains 2 sentences separated by a period/question/exclamation mark, do not add a random comma
+        if re.search(r"[.?!]\s+[가-힣0-9]", txt):
+            return txt
         compact = re.sub(r"\s+", "", txt)
         if len(compact) < 28:
             return txt
         tokens = txt.split()
         if len(tokens) >= 5:
             mid = len(tokens) // 2
-            for idx in range(max(1, mid - 2), min(len(tokens) - 2, mid + 2)):
+            # Search outward from the middle for a genuine syntactic clause/adverbial boundary
+            candidate_indices = sorted(
+                range(max(1, mid - 3), min(len(tokens) - 2, mid + 3)),
+                key=lambda i: abs(i - mid),
+            )
+            for idx in candidate_indices:
                 tok = tokens[idx]
-                if tok.endswith(("은", "는", "에서", "뒤", "후", "끝에", "결국", "당시", "하지만")) and not tok.endswith(","):
+                next_tok = tokens[idx + 1] if idx + 1 < len(tokens) else ""
+                if tok.endswith((",", ".", "?", "!")):
+                    continue
+                if next_tok in _KO_NO_COMMA_BEFORE_NEXT_WORDS:
+                    continue
+                if tok == "물론" or tok.endswith(
+                    ("에서는", "에서", "뒤", "후", "끝에", "동안", "사이", "따라", "통해", "대신", "결국", "당시", "하지만", "그러나", "그런데", "오히려", "게다가", "아울러", "고", "며", "면서", "지만", "는데")
+                ):
                     tokens[idx] = tok + ","
                     return " ".join(tokens)
-            tokens[mid - 1] = tokens[mid - 1].rstrip(",") + ","
-            return " ".join(tokens)
+                if tok.endswith(("은", "는")) and tok not in _KO_ADNOMINAL_MODIFIER_WORDS and not tok.endswith(("하는", "되는", "있는", "없는", "않는", "모르는", "흐르는", "비추는")):
+                    tokens[idx] = tok + ","
+                    return " ".join(tokens)
         return txt
     words = txt.split()
     if len(words) >= 16:
@@ -2034,8 +2102,6 @@ def _inject_gentle_breath_comma(tts_text: str, language: str = "ko") -> str:
             if words[idx].lower() in {"and", "but", "while", "when", "after", "before", "nhưng", "khi", "mà"}:
                 words[idx - 1] = words[idx - 1].rstrip(",") + ","
                 return " ".join(words)
-        words[mid - 1] = words[mid - 1].rstrip(",") + ","
-        return " ".join(words)
     return txt
 
 
@@ -2059,9 +2125,17 @@ _CANONICAL_KO_PROPER_NOUNS: tuple[str, ...] = (
 )
 _NON_TOPO_KO_WORDS: set[str] = {
     "가능성", "필요성", "정확성", "중요성", "심각성", "위험성", "구체성", "진실성", "완전성", "신뢰성",
+    "연관성", "통기성", "보존성", "연속성", "신빙성", "정당성", "효율성", "보안성", "익명성", "일관성",
+    "특수성", "전문성", "객관성", "타당성", "합리성", "치밀성", "잔혹성", "대담성", "기동성", "유동성", "접근성",
     "당시", "동시", "즉시", "일시", "다시", "혹시", "역시", "항시", "수시", "잠시", "표시", "무시", "지시", "감시",
+    "반드시", "평상시", "비상시", "유사시", "출퇴근시", "이동시",
     "표현", "재현", "출현", "실현", "발현", "구현",
+    "떨어진", "사라진", "벌어진", "희끗해진", "성성해진", "무너진", "좁혀진", "밝혀진", "갈라진", "이어진",
+    "끊어진", "퍼진", "가진", "다진", "숨진", "던진", "빠진", "터진", "커진", "번진", "남겨진", "버려진",
+    "알려진", "주어진", "쓰러진", "흩어진", "부서진", "열려진", "가려진", "기울어진", "만들어진",
+    "출입구", "비상구", "하수구", "배수구", "환기구", "돌파구", "탈출구", "해결구", "인구", "가구", "식구", "도구", "기구", "장구", "문구", "청구", "추구", "요구", "연구", "탐구", "복구",
 }
+_KO_NUMERAL_ONLY_RE = re.compile(r"^[영공일이삼사오육칠팔구십백천만억조점]+$")
 
 
 def _extract_korean_proper_nouns(text: str, explicit_nouns: list[str] | None = None) -> list[str]:
@@ -2074,9 +2148,13 @@ def _extract_korean_proper_nouns(text: str, explicit_nouns: list[str] | None = N
     for kw in _CANONICAL_KO_PROPER_NOUNS:
         if kw in cleaned and kw not in found:
             found.append(kw)
-    for m in re.finditer(r"([가-힣]{2,4}(?:성|시|현|구|진|촌))(?=[,\s은는이가의에을를로과와도만]|$)", cleaned):
+    for m in re.finditer(r"(?<![가-힣])([가-힣]{2,4}(?:성|시|현|구|진|촌))(?=[,\s은는이가의에을를로과와도만]|였|입|라|$)", cleaned):
         cand = m.group(1)
-        if cand not in _NON_TOPO_KO_WORDS and cand not in found:
+        if cand in _NON_TOPO_KO_WORDS or _KO_NUMERAL_ONLY_RE.match(cand):
+            continue
+        if cand.endswith("진") and cand[-2] in "진해졌어아여워춰뤄퍼터커버빠던숨다":
+            continue
+        if cand not in found:
             found.append(cand)
     return found
 
@@ -2309,7 +2387,7 @@ def inspect_beat_audio_quality(
                                     cand_w = norm_asr[wi : wi + plen]
                                     s_syl = difflib.SequenceMatcher(None, norm_pn, cand_w).ratio()
                                     s_jam = difflib.SequenceMatcher(None, j_pn, _ko_phonetic_jamo(cand_w)).ratio()
-                                    s_val = max(s_syl, s_jam)
+                                    s_val = 0.5 * (s_syl + s_jam)
                                     if s_val > best_s:
                                         best_s = s_val
                                         best_w = cand_w
@@ -2982,22 +3060,42 @@ class CofiVoiceEngine:
                         voice_matches_manifest
                         and isinstance(prev_b, dict)
                         and isinstance(prev_q, dict)
-                        and (bool(prev_q.get("passed")) or int(prev_q.get("reroll_attempts") or 0) > 0)
+                        and bool(prev_q.get("passed"))
                         and str(prev_b.get("text") or "").strip() == text
                         and (not enable_word_sync or isinstance(prev_b.get("words"), list))
                     ):
                         can_reuse_this = True
                         duration = wav_duration(path)
                         prev_start = float(prev_b.get("start_sec") or 0.0)
-                        cached_rel_words = [
+                        raw_prev_words = [
                             {
                                 "word": str(w.get("word") or ""),
-                                "start": round(max(0.0, float(w.get("start") or 0.0) - prev_start), 3),
-                                "end": round(max(0.0, float(w.get("end") or 0.0) - prev_start), 3),
+                                "rel_start": round(
+                                    max(
+                                        0.0,
+                                        float(w["rel_start"])
+                                        if w.get("rel_start") is not None
+                                        else float(w.get("start") or 0.0) - prev_start,
+                                    ),
+                                    3,
+                                ),
+                                "rel_end": round(
+                                    max(
+                                        0.0,
+                                        float(w["rel_end"])
+                                        if w.get("rel_end") is not None
+                                        else float(w.get("end") or 0.0) - prev_start,
+                                    ),
+                                    3,
+                                ),
                             }
                             for w in (prev_b.get("words") or [])
                             if isinstance(w, dict)
                         ]
+                        if len(raw_prev_words) > 1 and max((w["rel_end"] for w in raw_prev_words), default=0.0) <= 0.09:
+                            cached_rel_words = []
+                        else:
+                            cached_rel_words = raw_prev_words
                         qc_rows.append(dict(prev_q))
                     elif voice_matches_orphan:
                         cached_qc = inspect_beat_audio_quality(
@@ -3397,7 +3495,9 @@ class CofiVoiceEngine:
             "beats": rendered,
         }
         (workspace / "voice_manifest.json").write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-        (workspace / "subtitles.srt").write_text(build_srt(rendered), encoding="utf-8")
+        srt_text = build_srt(rendered)
+        (workspace / "subtitles.srt").write_text(srt_text, encoding="utf-8")
+        (workspace / "narration.srt").write_text(srt_text, encoding="utf-8")
         return StageResult(returncode=0, last_message=f"Đã tạo voice cho {len(rendered)} visual beat, tổng {cursor:.1f}s", log_path=workspace / "voice_manifest.json")
 
 

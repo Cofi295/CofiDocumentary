@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone
 import difflib
 import hashlib
@@ -11,7 +12,14 @@ from typing import Any
 
 from .codex_gateway import StageResult
 from .edit_footage_fetcher import EditDirectFootageFetcher
-from .prompts import _is_true_crime_vox25d_job, build_edit_batch_prompt, build_footage_eye_agent_prompt, build_phase_prompt
+from .prompts import (
+    _is_true_crime_vox25d_job,
+    build_edit_batch_prompt,
+    build_footage_eye_agent_prompt,
+    build_phase_prompt,
+    is_any_vox_enabled_for_job,
+    is_creative_audio_drama_job,
+)
 from .visuals import resolve_visual_strategy
 
 
@@ -119,7 +127,8 @@ _SHOT_SCALE_CYCLE = (
 )
 
 
-def _infer_act_index(beat: dict[str, Any], idx: int, total: int) -> int:
+def _infer_act_index(beat: dict[str, Any], idx: int, total: int, *, chapter_count: int = 5) -> int:
+    max_act = max(5, int(chapter_count or 5))
     raw_act = str(
         beat.get("act")
         or beat.get("act_id")
@@ -129,10 +138,23 @@ def _infer_act_index(beat: dict[str, Any], idx: int, total: int) -> int:
     ).strip().upper()
     m = re.search(r"(\d+)", raw_act)
     if m:
-        return max(1, min(5, int(m.group(1))))
+        parsed_act = int(m.group(1))
+        return max(1, min(max(max_act, 6 if parsed_act == 6 else max_act), parsed_act))
     if total <= 1:
         return 1
     ratio = idx / float(total)
+    if max_act >= 6:
+        if ratio < 0.10:
+            return 1
+        if ratio < 0.28:
+            return 2
+        if ratio < 0.50:
+            return 3
+        if ratio < 0.72:
+            return 4
+        if ratio < 0.89:
+            return 5
+        return 6
     if ratio < 0.16:
         return 1
     if ratio < 0.42:
@@ -317,6 +339,13 @@ def build_edit_rhythm_score(
         except Exception:
             pass
 
+    ed_dna_score = job.get("editing_dna") if isinstance(job.get("editing_dna"), dict) else {}
+    snap_score = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    chapter_count = int(
+        ed_dna_score.get("chapter_count")
+        or ((snap_score.get("editorial_dna") or {}).get("chapter_count") if isinstance(snap_score.get("editorial_dna"), dict) else 0)
+        or (6 if str(job.get("content_mode") or snap_score.get("content_mode") or "").strip().lower() == "creative_audio_drama" else 5)
+    )
     fps = 30
     total_beats = len(beats)
     score_beats: list[dict[str, Any]] = []
@@ -325,6 +354,18 @@ def build_edit_rhythm_score(
     prev_scale = ""
     twist_drops_used = 0
     max_twist_drops = max(1, total_beats // 25)
+
+    hook_choreo_score = (
+        ed_dna_score.get("cold_open_hook_choreography")
+        if isinstance(ed_dna_score.get("cold_open_hook_choreography"), dict)
+        else (
+            ((snap_score.get("editing_dna") or {}).get("cold_open_hook_choreography"))
+            if isinstance((snap_score.get("editing_dna") or {}).get("cold_open_hook_choreography"), dict)
+            else {}
+        )
+    )
+    is_audio_drama_score = bool(hook_choreo_score.get("enabled") is True)
+    seen_ch1_curtain = False
 
     for idx, beat in enumerate(beats):
         bid = _beat_id(beat) or str(beat.get("id") or "").strip()
@@ -337,13 +378,37 @@ def build_edit_rhythm_score(
         pause_reason = str(vb.get("pause_reason") or beat.get("pause_reason") or "standard_narrative")
         caesuras = list(vb.get("editorial_caesuras") or beat.get("editorial_caesuras") or [])
         vtype = str(beat.get("visual_type") or "").upper()
+        b_text_raw = str(beat.get("narration_text") or beat.get("text") or "").strip()
+        if b_text_raw.startswith("제1장") or b_text_raw.startswith("제 1장"):
+            seen_ch1_curtain = True
+        b_start_s = float(vb.get("start_sec") if vb.get("start_sec") is not None else (beat.get("start_sec") or 0.0))
+        is_drama_cold_open = bool(
+            beat.get("is_cold_open_hook")
+            or (
+                is_audio_drama_score
+                and total_beats >= 25
+                and not seen_ch1_curtain
+                and b_start_s < 45.0
+                and vtype != "CINEMA_TEXT"
+            )
+        )
 
-        act_num = _infer_act_index(beat, idx, total_beats)
-        nxt_act_num = _infer_act_index(nxt_beat, idx + 1, total_beats) if nxt_beat else act_num
-        is_act_opening = idx == 0 or (idx > 0 and act_num != _infer_act_index(beats[idx - 1], idx - 1, total_beats))
+        act_num = _infer_act_index(beat, idx, total_beats, chapter_count=chapter_count)
+        nxt_act_num = _infer_act_index(nxt_beat, idx + 1, total_beats, chapter_count=chapter_count) if nxt_beat else act_num
+        is_act_opening = idx == 0 or (idx > 0 and act_num != _infer_act_index(beats[idx - 1], idx - 1, total_beats, chapter_count=chapter_count))
         is_act_closing = bool(nxt_beat and act_num != nxt_act_num)
 
-        if emo_reg == "urgent_action" or pause_reason in ("urgent_action_chain", "editorial_kinetic_shave"):
+        if is_drama_cold_open:
+            cut_feel = "cold_open_dramatic_hook"
+            max_subclip_sec = min(3.4, urgent_max)
+            hold_silence_sec = 0.0
+            forbid_mid_silence_cut = False
+            camera_energy = str(
+                beat.get("camera_mode")
+                or ("cold_open_push_punch" if idx % 3 == 0 else ("cold_open_pull_shock" if idx % 3 == 1 else "cold_open_tension_pan_right"))
+            )
+            bgm_lift_db = 1.6
+        elif emo_reg == "urgent_action" or pause_reason in ("urgent_action_chain", "editorial_kinetic_shave"):
             cut_feel = "rapid_kinetic_cut"
             max_subclip_sec = urgent_max
             hold_silence_sec = 0.0
@@ -386,7 +451,11 @@ def build_edit_rhythm_score(
             bgm_lift_db = 0.0
 
         # J-Cut / L-Cut & Dissolve Choreography
-        if "sanctuary" in cut_style:
+        if cut_feel == "cold_open_dramatic_hook":
+            jl_cut_mode = "j_cut_hook_snap"
+            visual_lead_frames = 4
+            visual_trail_frames = 0
+        elif "sanctuary" in cut_style:
             jl_cut_mode = "gentle_sanctuary_dissolve"
             visual_lead_frames = 0
             visual_trail_frames = dissolve_frames
@@ -689,10 +758,293 @@ class EditCoordinator:
         self._save_progress(workspace, progress)
 
     def _is_transient_failure(self, result: StageResult) -> bool:
+        if int(result.returncode or 0) == 130:
+            return False
+        if result.log_path:
+            lp = Path(result.log_path)
+            for cand_dir in (lp, lp.parent, lp.parent.parent):
+                if (cand_dir / "stop_phase.json").is_file():
+                    return False
         message = str(result.last_message or "").strip().lower()
+        if "stop_phase" in message or "đã dừng bước sản xuất theo yêu cầu" in message:
+            return False
         if not message:
             return True
         return any(marker in message for marker in self.TRANSIENT_FAILURE_MARKERS)
+
+    @staticmethod
+    def _completed_footage_beat_ids(workspace: Path, hygiene: dict[str, Any] | None = None) -> set[str]:
+        """Identify beats that already have an eye-verified, non-failed MP4 clip on disk."""
+        failed_ids: set[str] = set()
+        for err in (hygiene or {}).get("failures") or (hygiene or {}).get("failed_assets") or []:
+            if isinstance(err, dict):
+                bid = str(err.get("beat_id") or "").strip()
+                if bid:
+                    failed_ids.add(bid)
+
+        verified: set[str] = set()
+        for fname, key in (("footage_review.json", "selected_candidates"), ("asset_registry.json", "assets")):
+            fpath = workspace / fname
+            if not fpath.is_file():
+                continue
+            try:
+                data = json.loads(fpath.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            for row in (data.get(key) or []):
+                if not isinstance(row, dict):
+                    continue
+                bid = str(row.get("beat_id") or "").strip()
+                if not bid or bid in failed_ids:
+                    continue
+                if not row.get("eye_verified") or len(str(row.get("observed_content") or "").strip()) < 10:
+                    continue
+                rel_p = str(row.get("path") or "").strip()
+                mp4_cand = workspace / rel_p if rel_p else workspace / "media" / "edit_footage" / f"edit_broll_{bid}.mp4"
+                alt_cand = workspace / "media" / "edit_footage" / f"{bid}_edit_broll.mp4"
+                if (mp4_cand.is_file() and mp4_cand.stat().st_size > 8192) or (alt_cand.is_file() and alt_cand.stat().st_size > 8192):
+                    verified.add(bid)
+        return verified
+
+    @staticmethod
+    def _existing_footage_sources(workspace: Path) -> list[str]:
+        sources_dir = workspace / "media" / "footage" / "sources"
+        if not sources_dir.is_dir():
+            return []
+        found: list[str] = []
+        for p in sorted(sources_dir.iterdir()):
+            if p.is_file() and p.suffix.lower() in {".mp4", ".mkv", ".webm", ".mov"} and not p.name.endswith(".part") and p.stat().st_size > 100_000:
+                found.append(p.name)
+        return found
+
+    @staticmethod
+    def _group_footage_beats_by_act(beats: list[dict[str, Any]]) -> list[tuple[str, list[dict[str, Any]]]]:
+        grouped: dict[str, list[dict[str, Any]]] = {}
+        order: list[str] = []
+        for idx, b in enumerate(beats):
+            act = str(b.get("act") or b.get("chapter_id") or "").strip().upper()
+            if not act:
+                act = f"ACT0{_infer_act_index(b, idx, len(beats))}"
+            if act not in grouped:
+                grouped[act] = []
+                order.append(act)
+            grouped[act].append(b)
+        return [(act, grouped[act]) for act in order]
+
+    def _run_footage_worker_prompt(
+        self,
+        job: dict[str, Any],
+        workspace: Path,
+        prompt: str,
+        *,
+        label: str,
+        parallel: bool,
+    ) -> StageResult:
+        if parallel and hasattr(self.codex_gateway, "SHARED_SESSION_LABEL"):
+            runner = getattr(self.codex_gateway, "run_prompt", None)
+            if callable(runner):
+                return runner(prompt, workspace, label, use_remotion_root=True, reuse_session=False)
+        return self._run_batch_prompt(job, workspace, prompt, label=label)
+
+    @staticmethod
+    def _filter_footage_target_beats(job: dict[str, Any], beats: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], int]:
+        """Return only beats eligible for @footage (exclude VOX, CINEMA_TEXT, AI_4D/AI_IMAGE)."""
+        if is_creative_audio_drama_job(job):
+            filtered = [
+                b
+                for b in beats
+                if isinstance(b, dict)
+                and str(b.get("visual_type") or "").strip().lower() != "cinema_text"
+                and (
+                    str(b.get("visual_type") or "").strip().lower() == "sourced_video"
+                    or str(b.get("visual_route") or "").strip().lower() == "footage"
+                )
+            ]
+            return filtered, max(1, int(len(filtered) * 0.85)) if filtered else 1
+
+        non_footage_routes = {
+            "VOX",
+            "VOX_NEWSROOM",
+            "CINEMA_TEXT",
+            "TEXT_BEAT",
+            "AI_4D",
+            "AI_IMAGE",
+            "AI_VISUAL",
+            "AI",
+            "NATIVE_MOTION",
+        }
+        non_footage_types = {"vox", "cinema_text", "ai_image", "ai_video", "ai_4d", "native_motion"}
+        filtered = [
+            b
+            for b in beats
+            if isinstance(b, dict)
+            and str(b.get("visual_type") or "").strip().lower() not in non_footage_types
+            and str(b.get("visual_route") or "").strip().lower() not in non_footage_types
+            and str(b.get("route") or b.get("visual_category") or b.get("category") or "").strip().upper() not in non_footage_routes
+        ]
+        return filtered, 1
+
+    @staticmethod
+    def _flagged_global_footage_beat_ids(workspace: Path, hygiene: dict[str, Any] | None) -> set[str]:
+        """Map GLOBAL_FOOTAGE source failures (stair-step/monopoly) back to the affected beat IDs."""
+        failures = (hygiene or {}).get("failures") or (hygiene or {}).get("failed_assets") or []
+        global_reasons = [
+            str(err.get("reason") or "")
+            for err in failures
+            if isinstance(err, dict) and str(err.get("beat_id") or "").strip() == "GLOBAL_FOOTAGE"
+        ]
+        if not global_reasons:
+            return set()
+        combined_reasons = "\n".join(global_reasons).lower()
+        flagged: set[str] = set()
+        for fname, key in (("asset_registry.json", "assets"), ("footage_review.json", "selected_candidates")):
+            fpath = workspace / fname
+            if not fpath.is_file():
+                continue
+            try:
+                rows = json.loads(fpath.read_text(encoding="utf-8")).get(key) or []
+            except Exception:
+                continue
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                bid = str(row.get("beat_id") or "").strip()
+                if not bid:
+                    continue
+                src_meta = row.get("source") if isinstance(row.get("source"), dict) else {}
+                src_ref = str(
+                    row.get("source_video")
+                    or row.get("source_file")
+                    or row.get("source_url")
+                    or src_meta.get("source_video")
+                    or ""
+                ).strip()
+                if not src_ref:
+                    continue
+                src_name = Path(src_ref).name.lower()
+                src_stem = Path(src_ref).stem.lower()
+                if (src_name and src_name in combined_reasons) or (len(src_stem) >= 4 and src_stem in combined_reasons):
+                    flagged.add(bid)
+        return flagged
+
+    @classmethod
+    def _resolve_rework_beats(
+        cls,
+        workspace: Path,
+        target_beats: list[dict[str, Any]],
+        hygiene: dict[str, Any] | None,
+        completed_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        """Select focused rework beats without re-dumping beats intentionally skipped for VOX/AI fallback."""
+        failed_ids = {
+            str(err.get("beat_id") or "").strip()
+            for err in ((hygiene or {}).get("failures") or (hygiene or {}).get("failed_assets") or [])
+            if isinstance(err, dict)
+            and str(err.get("beat_id") or "").strip()
+            and str(err.get("beat_id") or "").strip() != "GLOBAL_FOOTAGE"
+        }
+        explicit_fix_ids = failed_ids | cls._flagged_global_footage_beat_ids(workspace, hygiene)
+        if explicit_fix_ids and len(completed_ids) >= max(1, len(target_beats) // 2):
+            return [b for b in target_beats if _beat_id(b) in explicit_fix_ids]
+        return [
+            b
+            for b in target_beats
+            if _beat_id(b) in explicit_fix_ids or _beat_id(b) not in completed_ids
+        ]
+
+    @classmethod
+    def _group_beats_for_parallel_workers(
+        cls,
+        beats: list[dict[str, Any]],
+        parallel_cap: int,
+    ) -> list[tuple[str, list[dict[str, Any]]]]:
+        act_groups = cls._group_footage_beats_by_act(beats)
+        if len(act_groups) > 1 or parallel_cap <= 1 or len(beats) <= 16:
+            return act_groups
+        workers = min(parallel_cap, max(2, (len(beats) + 11) // 12))
+        chunk_size = max(1, (len(beats) + workers - 1) // workers)
+        return [(f"PART{idx + 1:02d}", chunk) for idx, chunk in enumerate(_chunks(beats, chunk_size))]
+
+    def _dispatch_footage_workers(
+        self,
+        job: dict[str, Any],
+        workspace: Path,
+        work_beats: list[dict[str, Any]],
+        *,
+        hygiene: dict[str, Any],
+        completed_ids: set[str],
+        parallel_cap: int,
+        label_prefix: str,
+        act_prefix: str,
+        is_rework: bool,
+    ) -> tuple[list[StageResult], dict[str, Any]]:
+        """Run 1 worker (<=16 beats) or parallel workers (>16 beats) and refresh hygiene audit."""
+        from .critic_loops import audit_footage_hygiene
+
+        existing_sources = self._existing_footage_sources(workspace)
+        job_id = str(job.get("id") or workspace.name).strip()
+        failed_report = hygiene if (hygiene.get("failures") or hygiene.get("failed_assets")) else None
+        groups = self._group_beats_for_parallel_workers(work_beats, parallel_cap)
+        use_parallel = parallel_cap > 1 and len(work_beats) > 16 and len(groups) > 1
+        worker_results: list[StageResult] = []
+
+        if not use_parallel:
+            prompt = build_footage_eye_agent_prompt(
+                job,
+                workspace,
+                self.remotion_dir,
+                work_beats,
+                failed_report=failed_report,
+                act_label="REWORK" if is_rework else "",
+                completed_beat_ids=sorted(completed_ids),
+                existing_sources=existing_sources,
+            )
+            res = self._run_footage_worker_prompt(job, workspace, prompt, label=label_prefix, parallel=False)
+            if res is not None:
+                worker_results.append(res)
+                if res.returncode == 130:
+                    return worker_results, hygiene
+        else:
+            workers = min(parallel_cap, len(groups))
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                futures = []
+                for idx, (group_name, group_beats) in enumerate(groups):
+                    act_tag = f"{act_prefix}{group_name}" if act_prefix else group_name
+                    prompt = build_footage_eye_agent_prompt(
+                        job,
+                        workspace,
+                        self.remotion_dir,
+                        group_beats,
+                        failed_report=failed_report,
+                        act_label=act_tag,
+                        worker_index=idx,
+                        total_workers=len(groups),
+                        completed_beat_ids=sorted(completed_ids),
+                        existing_sources=existing_sources,
+                    )
+                    futures.append(
+                        pool.submit(
+                            self._run_footage_worker_prompt,
+                            job,
+                            workspace,
+                            prompt,
+                            label=f"{label_prefix}_{group_name.lower()}",
+                            parallel=True,
+                        )
+                    )
+                for fut in as_completed(futures):
+                    res = fut.result()
+                    if res is not None:
+                        worker_results.append(res)
+                        if res.returncode == 130:
+                            for pending_f in futures:
+                                pending_f.cancel()
+                            return worker_results, hygiene
+
+        if use_parallel or is_rework:
+            EditDirectFootageFetcher(workspace, self.remotion_dir, job_id=job_id).build_verify_ftg_clips_sheets(job)
+        refreshed_hygiene = audit_footage_hygiene(workspace, job)
+        return worker_results, refreshed_hygiene
 
     def _run_dedicated_footage_eye_agent(
         self,
@@ -700,39 +1052,79 @@ class EditCoordinator:
         workspace: Path,
         beats: list[dict[str, Any]],
     ) -> StageResult | None:
-        """Run the dedicated @footage AI Agent to hunt, cut, and eye-verify archival footage
-        before @edit begins timeline construction."""
+        """Run @footage AI Agent (parallel by Act/chunk when >16 beats) on footage-eligible beats only."""
         from .critic_loops import audit_footage_hygiene, is_live_critic_gateway_available
 
+        target_beats, min_expected_ftg = self._filter_footage_target_beats(job, beats)
+        if not target_beats:
+            return None
+
         hygiene = audit_footage_hygiene(workspace, job)
-        if str(hygiene.get("status") or "").upper() == "PASSED" and int(hygiene.get("assets_inspected") or 0) > 0:
+        if str(hygiene.get("status") or "").upper() == "PASSED" and int(hygiene.get("assets_inspected") or 0) >= min_expected_ftg:
             return None
         if not is_live_critic_gateway_available(self.codex_gateway):
             return None
 
-        max_rounds = 2
-        last_res: StageResult | None = None
-        for attempt in range(1, max_rounds + 1):
-            ftg_prompt = build_footage_eye_agent_prompt(
+        completed_ids = self._completed_footage_beat_ids(workspace, hygiene)
+        pending_beats = [b for b in target_beats if _beat_id(b) not in completed_ids] or target_beats
+        parallel_cap = _positive_int_env("COFI_FOOTAGE_PARALLEL_WORKERS", 5, minimum=1)
+
+        worker_results, hygiene = self._dispatch_footage_workers(
+            job,
+            workspace,
+            pending_beats,
+            hygiene=hygiene,
+            completed_ids=completed_ids,
+            parallel_cap=parallel_cap,
+            label_prefix="footage_eye",
+            act_prefix="",
+            is_rework=False,
+        )
+        cancelled = next((r for r in worker_results if r.returncode == 130), None)
+        if cancelled is not None:
+            return cancelled
+        if str(hygiene.get("status") or "").upper() == "PASSED" and int(hygiene.get("assets_inspected") or 0) >= min_expected_ftg:
+            return StageResult(
+                0,
+                f"@footage đã duyệt bằng mắt {hygiene.get('assets_inspected', 0)} clip (PASSED).",
+                workspace / ".producer" / "footage_eye",
+            )
+
+        refreshed_completed = self._completed_footage_beat_ids(workspace, hygiene)
+        rework_beats = self._resolve_rework_beats(workspace, target_beats, hygiene, refreshed_completed)
+        if rework_beats:
+            rework_skip_ids = refreshed_completed - {_beat_id(b) for b in rework_beats}
+            rework_results, hygiene = self._dispatch_footage_workers(
                 job,
                 workspace,
-                self.remotion_dir,
-                beats,
-                failed_report=hygiene if (hygiene.get("failures") or hygiene.get("failed_assets")) else None,
+                rework_beats,
+                hygiene=hygiene,
+                completed_ids=rework_skip_ids,
+                parallel_cap=parallel_cap,
+                label_prefix="footage_eye_rework",
+                act_prefix="REWORK_",
+                is_rework=True,
             )
-            last_res = self._run_batch_prompt(job, workspace, ftg_prompt)
-            hygiene = audit_footage_hygiene(workspace, job)
-            if str(hygiene.get("status") or "").upper() == "PASSED" and int(hygiene.get("assets_inspected") or 0) > 0:
-                return StageResult(0, f"@footage AI Agent đã duyệt bằng mắt {hygiene.get('assets_inspected', 0)} clip (PASSED).", workspace / ".producer" / "edit")
-        return last_res
+            cancelled_rw = next((r for r in rework_results if r.returncode == 130), None)
+            if cancelled_rw is not None:
+                return cancelled_rw
+            if str(hygiene.get("status") or "").upper() == "PASSED" and int(hygiene.get("assets_inspected") or 0) >= min_expected_ftg:
+                return StageResult(
+                    0,
+                    f"@footage đã hoàn tất sửa lỗi & duyệt bằng mắt {hygiene.get('assets_inspected', 0)} clip (PASSED).",
+                    workspace / ".producer" / "footage_eye_rework",
+                )
+            return next((r for r in rework_results if r.returncode != 0), rework_results[-1] if rework_results else None)
 
-    def _run_batch_prompt(self, job: dict[str, Any], workspace: Path, prompt: str) -> StageResult:
+        return next((r for r in worker_results if r.returncode != 0), worker_results[-1] if worker_results else None)
+
+    def _run_batch_prompt(self, job: dict[str, Any], workspace: Path, prompt: str, *, label: str = "edit") -> StageResult:
         reusable = getattr(self.codex_gateway, "run_prompt_reusable", None)
         if callable(reusable):
-            return reusable(prompt, workspace, "edit", use_remotion_root=True)
+            return reusable(prompt, workspace, label, use_remotion_root=True)
         runner = getattr(self.codex_gateway, "run_prompt", None)
         if callable(runner):
-            return runner(prompt, workspace, "edit", use_remotion_root=True)
+            return runner(prompt, workspace, label, use_remotion_root=True)
         return self.codex_gateway.run(job, "edit", workspace)
 
     def _checkpoint(self, job: dict[str, Any], workspace: Path, progress: dict[str, Any], note: str) -> None:
@@ -753,9 +1145,10 @@ class EditCoordinator:
 
         from .vox_engine import VoxBlenderBridge, VoxSemanticRouter, is_vox_satellite_enabled
         from .financial_vox_engine import FinancialVoxSemanticRouter, is_financial_vox_enabled
-        is_true_crime_vox25d = _is_true_crime_vox25d_job(job)
-        vox_enabled = False if is_true_crime_vox25d else is_vox_satellite_enabled(job)
-        fin_vox_enabled = is_financial_vox_enabled(job)
+        vox_globally_allowed = is_any_vox_enabled_for_job(job)
+        is_true_crime_vox25d = _is_true_crime_vox25d_job(job) if vox_globally_allowed else False
+        vox_enabled = False if (not vox_globally_allowed or is_true_crime_vox25d) else is_vox_satellite_enabled(job)
+        fin_vox_enabled = False if not vox_globally_allowed else is_financial_vox_enabled(job)
         if is_true_crime_vox25d:
             legacy_keys = (
                 "scene_archetype",
@@ -829,6 +1222,12 @@ class EditCoordinator:
         rhythm_score = build_edit_rhythm_score(job, workspace, beats)
         visual["rhythm_archetype_id"] = rhythm_score.get("archetype_id")
         _write_json_atomic(visual_path, visual)
+        try:
+            from .workspace_ledger import sync_beat_shards
+
+            sync_beat_shards(workspace, visual, job=job)
+        except Exception:
+            pass
         _write_json_atomic(workspace / "edit_rhythm_score.json", rhythm_score)
         if self.remotion_dir:
             _jid_rhythm = str(job.get("id") or workspace.name).strip()
@@ -1074,7 +1473,7 @@ class EditCoordinator:
                 + safe_zone_fix_rule
                 + "4. Do NOT alter beat durations, narration sync, or composition registration."
             )
-            fix_res = self._run_batch_prompt(job, workspace, fix_prompt)
+            fix_res = self._run_batch_prompt(job, workspace, fix_prompt, label="edit_qa_critic")
             if fix_res and fix_res.last_message:
                 messages.append(fix_res.last_message)
             screening = audit_edit_timeline_and_screen(job, workspace, self.remotion_dir, beats)

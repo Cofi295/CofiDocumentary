@@ -174,17 +174,28 @@ def _is_core_evidence_or_character(metadata: dict[str, Any] | None, unit: str = 
     return has_positive
 
 
+def _is_chibi_mascot_style(style_preset: str, style_prompt: str) -> bool:
+    combined = f"{style_preset or ''} {style_prompt or ''}".lower()
+    if any(tok in combined for tok in ("0% cartoon", "0% stickman", "realistic human anatomy", "photorealistic", "35mm", "kodak vision3")):
+        return False
+    return any(tok in combined for tok in ("chibi", "mascot", "#ffd43b", "yellow spherical", "noir_chibi"))
+
+
 def _route_for(
     strategy: str,
     source_priority: str,
     metadata: dict[str, Any] | None = None,
     unit: str = "",
     visual_mix: dict[str, Any] | None = None,
+    *,
+    vox_allowed: bool = True,
+    visual_priority_mode: str = "",
 ) -> str:
-    """3-Tier Meaning-Driven Visual Priority Router:
-    - Priority #1: Authentic archival footage (`footage` / `REAL_FTG`) when real case footage exists.
-    - Priority #2: Bespoke VOX illustration (`vox` / `<Desk>` / `<GeoJson3DMapStage>`) whenever real footage is absent.
-    - Priority #3 (Last Resort Only): AI image (`ai_visual` / `AI_IMAGE`) strictly for closed-room psychological moments where neither real footage nor VOX illustration applies.
+    """Meaning-Driven Visual Priority Router (Capability-Aware):
+    - Investigative / Archival Mode (`vox_allowed=True`):
+      #1 `footage` (`REAL_FTG`) -> #2 `vox` (`<Desk>` / `<GeoJson3DMapStage>`) -> #3 `ai_visual` (`AI_IMAGE`).
+    - AI Cinema Character Drama Mode (`visual_priority_mode == 'ai_cinema_character_drama'` or `vox_allowed=False`):
+      #1 `ai_visual` (`~80%` 35mm Cinema Character Keyframes) + #2 `footage` (`~15%` Clean Atmospheric 4K B-Roll) + #3 `cinema_text` (`~5%` Chapter Curtains), with `0%` `vox`.
     """
     if strategy == "full_ai":
         return "ai_visual"
@@ -194,6 +205,30 @@ def _route_for(
     plan_route = str((metadata or {}).get("visual_route") or "").strip().lower()
     vtype = str((metadata or {}).get("visual_type") or "").strip().lower()
     p = str(source_priority or "").strip().lower()
+
+    if visual_priority_mode == "ai_cinema_character_drama" or not vox_allowed:
+        if (
+            plan_route == "cinema_text"
+            or vtype == "cinema_text"
+            or intent.startswith(("[CINEMA_TEXT", "FramelessCinemaTextBeat"))
+        ):
+            return "footage"
+        if (
+            plan_route == "footage"
+            or vtype in {"sourced_video", "footage", "atmospheric_broll"}
+            or p in {"must_real", "footage_only"}
+            or intent.startswith(("[ATMOS_BROLL", "[REAL_FTG", "CLEAN_4K_ATMOSPHERIC_BROLL"))
+        ):
+            return "footage"
+        if (
+            plan_route in {"ai_visual", "vox", "vox_motion"}
+            or vtype in {"ai_reconstruction", "ai_visual", "vox", "vox_motion"}
+            or p in {"must_ai", "prefer_ai"}
+            or visual_priority_mode == "ai_cinema_character_drama"
+            or float((visual_mix or {}).get("ai") or 0.0) >= 0.60
+        ):
+            return "ai_visual"
+        return "footage"
 
     if (
         plan_route in {"vox", "vox_motion"}
@@ -347,6 +382,7 @@ def _prompt_for(
         for tok in ("0% cartoon", "0% stickman", "realistic human anatomy")
     )
     style_ref = str(style.get("style_reference_image") or "").strip()
+    is_chibi_ref = _is_chibi_mascot_style(style_preset, style_prompt)
     has_ref = bool(style_ref and Path(style_ref).is_file()) and not forbids_cartoon
     no_text_rule = (
         "SCENE FOCUS RULE: Depict the physical scene, characters, environment, lighting, and action of this moment in a unified full-bleed 16:9 frame."
@@ -357,9 +393,13 @@ def _prompt_for(
             parts.append(f"[Preset: {style_preset}] {style_prompt}")
         elif style_prompt:
             parts.append(style_prompt)
-        if has_ref:
+        if has_ref and is_chibi_ref:
             parts.append(
                 "A visual style reference image is attached. MANDATORY CHARACTER & COLOR LOCK: Draw ALL human characters as 2D rounded chibi mascot figures strictly copying the exact character design, BRIGHT GOLDEN-YELLOW head and body skin color tone (#FFD43B warm yellow spherical head, yellow hands, and yellow feet — NEVER white skin and NEVER realistic human faces), proportions, bold clean black linework, simple black oval eyes with white specular highlights, thin curved eyebrows, minimal line mouth, and outfit style from the attached reference image."
+            )
+        elif has_ref:
+            parts.append(
+                "A visual reference image is attached. Match its cinematic lighting, color grading, film grain, and character/wardrobe continuity faithfully with realistic human anatomy."
             )
         parts.append(f"Core scene to illustrate (visual action & setting only, without any text): {scene_focus}.")
         parts.append(no_text_rule)
@@ -432,16 +472,26 @@ class VisualsCoordinator:
         if ai_media_mode not in {"image", "video", "mixed"}:
             ai_media_mode = "image" if strategy in {"edit_direct_footage", "full_ai"} else "mixed"
 
+        from .prompts import is_any_vox_enabled_for_job, is_creative_audio_drama_job
+
         editing_dna = job.get("editing_dna") or (job.get("channel_profile_snapshot") or {}).get("editing_dna") or {}
+        if not isinstance(editing_dna, dict):
+            editing_dna = {}
         preset_id = str(editing_dna.get("preset_id") or "").strip()
-        if preset_id in {"forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10", "financial_forensic_vox"} and not job.get("ai_media_mode"):
+        visual_priority_mode = str(editing_dna.get("visual_priority_mode") or "").strip().lower()
+        vox_allowed = is_any_vox_enabled_for_job(job)
+        is_ai_cinema_drama = is_creative_audio_drama_job(job) or visual_priority_mode == "ai_cinema_character_drama"
+        if (
+            preset_id in {"forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10", "financial_forensic_vox", "kr_goodnight_cinema_drama"}
+            or is_ai_cinema_drama
+        ) and not job.get("ai_media_mode"):
             ai_media_mode = "image"
         has_explicit_closed_room_intents = any(
             str((b or {}).get("framing_motion_intent") or "").strip().startswith("CLOSED_ROOM_PROFILE_AI_RECONSTRUCTION")
             or str((b or {}).get("visual_type") or "").strip().lower() in {"ai_visual", "ai_reconstruction"}
             for b in plan_by_id.values()
         )
-        if strategy == "edit_direct_footage":
+        if strategy == "edit_direct_footage" and not is_ai_cinema_drama:
             if preset_id in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"}:
                 max_selective_ai_beats = max(24, int(round(len(voice_beats) * 0.35)))
             else:
@@ -467,25 +517,96 @@ class VisualsCoordinator:
 
         refined: list[dict[str, Any]] = []
         prompt_rows: list[dict[str, Any]] = []
+        seen_drama_ch1_header = False
+        hook_choreo_cfg = (
+            editing_dna.get("cold_open_hook_choreography")
+            if isinstance(editing_dna.get("cold_open_hook_choreography"), dict)
+            else {}
+        )
+        enable_drama_hook_fast_cuts = bool(
+            is_ai_cinema_drama
+            and hook_choreo_cfg.get("enabled") is True
+            and len(voice_beats) >= 25
+        )
+        _HOOK_SUB_SPECS: tuple[tuple[str, str, str], ...] = (
+            (
+                "MEDIUM_CONFRONTATION_TWO_SHOT",
+                "cold_open_push_punch",
+                " [COLD-OPEN HOOK SHOT A: Dramatic K-drama medium confrontation angle, sharp chiaroscuro evening contrast, kinetic emotional tension in facial expression and posture]",
+            ),
+            (
+                "EXTREME_MACRO_PROP_IMPACT",
+                "cold_open_pull_shock",
+                " [COLD-OPEN HOOK SHOT B: Tight 85mm macro cutaway on hands, heirloom object, teacup, or trembling fingers on table edge, shallow DOF]",
+            ),
+            (
+                "TIGHT_EYES_DIGNITY_REACTION",
+                "cold_open_tension_pan_right",
+                " [COLD-OPEN HOOK SHOT C: Intense close-up reaction on protagonist's composed eyes under warm amber key light]",
+            ),
+        )
         for parent_index, voice_beat in enumerate(voice_beats, 1):
             parent_id = str(voice_beat.get("beat_id") or f"B{parent_index:03d}").strip()
             text = str(voice_beat.get("text") or "").strip()
-            units = [text] if ((preset_id in {"forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10", "financial_forensic_vox"} or strategy in {"evidence_footage", "full_ai"}) and len(text) <= 360) else split_visual_text(text, self.max_chars)
-            if not units:
-                continue
+            if re.match(r"^제\s*1\s*장\b", text):
+                seen_drama_ch1_header = True
             metadata = dict(plan_by_id.get(parent_id) or {})
             start = float(voice_beat.get("start_sec") or 0.0)
             end = float(voice_beat.get("end_sec") or start)
             total_duration = max(0.001, end - start)
+            plan_vtype_early = str(metadata.get("visual_type") or "").strip().lower()
+            is_drama_cold_open_beat = bool(
+                enable_drama_hook_fast_cuts
+                and not seen_drama_ch1_header
+                and start < 45.0
+                and plan_vtype_early != "cinema_text"
+            )
+            if is_drama_cold_open_beat and total_duration >= 4.8 and len(text) >= 26:
+                units = split_visual_text(text, 28)
+                if len(units) == 1 and len(text) >= 30 and " " in text:
+                    mid = len(text) // 2
+                    sp_candidates = [i for i, ch in enumerate(text) if ch == " " and 8 <= i <= len(text) - 8]
+                    if sp_candidates:
+                        sp_idx = min(sp_candidates, key=lambda i: abs(i - mid))
+                        units = [text[:sp_idx].strip(), text[sp_idx + 1 :].strip()]
+                units = units[:3]
+            else:
+                units = (
+                    [text]
+                    if (
+                        (
+                            preset_id in {"forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10", "financial_forensic_vox", "kr_goodnight_cinema_drama"}
+                            or strategy in {"evidence_footage", "full_ai"}
+                            or is_ai_cinema_drama
+                        )
+                        and len(text) <= 360
+                    )
+                    else split_visual_text(text, self.max_chars)
+                )
+            if not units:
+                continue
             weights = [max(1, len(_compact(unit))) for unit in units]
             total_weight = max(1, sum(weights))
             cursor = start
             for unit_index, (unit, weight) in enumerate(zip(units, weights), 1):
                 beat_id = f"{parent_id}-V{unit_index:02d}"
                 unit_end = end if unit_index == len(units) else cursor + total_duration * weight / total_weight
-                source_priority = str(metadata.get("source_priority") or "prefer_real")
-                route = _route_for(strategy, source_priority, metadata=metadata, unit=unit, visual_mix=visual_mix)
-                if strategy == "edit_direct_footage":
+                default_sp = "prefer_ai" if is_ai_cinema_drama else "prefer_real"
+                source_priority = "prefer_ai" if is_drama_cold_open_beat else str(metadata.get("source_priority") or default_sp)
+                route = (
+                    "ai_visual"
+                    if is_drama_cold_open_beat
+                    else _route_for(
+                        strategy,
+                        source_priority,
+                        metadata=metadata,
+                        unit=unit,
+                        visual_mix=visual_mix,
+                        vox_allowed=vox_allowed,
+                        visual_priority_mode=visual_priority_mode or ("ai_cinema_character_drama" if is_ai_cinema_drama else ""),
+                    )
+                )
+                if strategy == "edit_direct_footage" and vox_allowed and not is_ai_cinema_drama:
                     if route == "ai_visual":
                         if unit_index > 1 or selective_ai_count >= max_selective_ai_beats:
                             # Priority #2 when real footage is absent: route to VOX before AI
@@ -495,16 +616,19 @@ class VisualsCoordinator:
                 plan_vtype = str(metadata.get("visual_type") or "").strip().lower()
                 plan_vroute = str(metadata.get("visual_route") or "").strip().lower()
                 plan_intent = str(metadata.get("framing_motion_intent") or "").strip()
-                is_plan_vox = (
+                is_plan_vox = vox_allowed and (
                     route == "vox"
                     or plan_vtype in {"vox", "vox_motion"}
                     or plan_vroute in {"vox", "vox_motion"}
                     or plan_intent.startswith(("[VOX_NEWSROOM", "V23 "))
                 )
                 is_plan_cinema_text = (
-                    plan_vtype == "cinema_text"
-                    or plan_vroute == "cinema_text"
-                    or plan_intent.startswith(("[CINEMA_TEXT", "FramelessCinemaTextBeat"))
+                    not is_drama_cold_open_beat
+                    and (
+                        plan_vtype == "cinema_text"
+                        or plan_vroute == "cinema_text"
+                        or plan_intent.startswith(("[CINEMA_TEXT", "FramelessCinemaTextBeat"))
+                    )
                 )
                 if is_plan_vox and route != "ai_visual":
                     resolved_vtype = "vox"
@@ -513,10 +637,23 @@ class VisualsCoordinator:
                     resolved_vtype = "cinema_text"
                 else:
                     resolved_vtype = "ai_reconstruction" if route == "ai_visual" else "sourced_video"
-                prompt = _prompt_for(unit, metadata, route, style_settings=style_settings)
+                eff_metadata = dict(metadata)
+                hook_extra_fields: dict[str, Any] = {}
+                if is_drama_cold_open_beat:
+                    h_scale, h_cam, h_suffix = _HOOK_SUB_SPECS[(unit_index - 1) % len(_HOOK_SUB_SPECS)]
+                    base_vdesc = str(metadata.get("visual_description") or unit).strip()
+                    eff_metadata["visual_description"] = f"{base_vdesc}{h_suffix}"
+                    hook_extra_fields = {
+                        "is_cold_open_hook": True,
+                        "editorial_gear": "cold_open_fast_cut_hook",
+                        "shot_scale": h_scale,
+                        "camera_mode": h_cam,
+                        "transition_frames": 3 if unit_index == 1 else 2,
+                    }
+                prompt = _prompt_for(unit, eff_metadata, route, style_settings=style_settings)
                 is_quote = bool(metadata.get("is_verbatim_quote") or metadata.get("is_quote"))
                 beat = {
-                    **metadata,
+                    **eff_metadata,
                     "beat_id": beat_id,
                     "parent_beat_id": parent_id,
                     "narration_text": unit,
@@ -526,7 +663,7 @@ class VisualsCoordinator:
                     "source_priority": source_priority,
                     "visual_route": route,
                     "visual_type": resolved_vtype,
-                    "visual_description": str(metadata.get("visual_description") or unit).strip(),
+                    "visual_description": str(eff_metadata.get("visual_description") or unit).strip(),
                     "footage_search_queries": metadata.get("footage_search_queries") or [unit],
                     "framing_motion_intent": str(metadata.get("framing_motion_intent") or "").strip(),
                     "ai_media_mode": ai_media_mode,
@@ -535,6 +672,7 @@ class VisualsCoordinator:
                     "is_verbatim_quote": is_quote,
                     "visual_strategy": strategy,
                     "visual_mix": visual_mix,
+                    **hook_extra_fields,
                 }
                 refined.append(beat)
                 prompt_rows.append({
@@ -549,10 +687,37 @@ class VisualsCoordinator:
                 })
                 cursor = unit_end
 
+        if is_ai_cinema_drama and strategy != "full_ai" and len(refined) >= 8:
+            target_ftg_share = float((visual_mix or {}).get("footage") or 0.15)
+            current_ftg = sum(1 for b in refined if b.get("visual_route") == "footage" and b.get("visual_type") != "cinema_text")
+            desired_ftg = max(1, int(round(len(refined) * target_ftg_share)))
+            if current_ftg == 0 and desired_ftg > 0:
+                atmos_tokens = ("밤", "빗소리", "골목", "거리", "풍경", "찻잔", "온기", "새벽", "창밖", "rain", "street", "night", "tea", "alley", "courtyard")
+                candidates = [
+                    idx_r
+                    for idx_r, b in enumerate(refined)
+                    if b.get("visual_route") == "ai_visual"
+                    and not b.get("is_verbatim_quote")
+                    and any(tok in f"{b.get('narration_text', '')} {b.get('visual_description', '')}".lower() for tok in atmos_tokens)
+                ]
+                if not candidates:
+                    step = max(5, len(refined) // max(1, desired_ftg))
+                    candidates = [idx_r for idx_r in range(step - 1, len(refined), step) if not refined[idx_r].get("is_verbatim_quote")]
+                for idx_r in candidates[:desired_ftg]:
+                    b = refined[idx_r]
+                    b["visual_route"] = "footage"
+                    b["visual_type"] = "sourced_video"
+                    b["source_priority"] = "prefer_real"
+                    b["framing_motion_intent"] = b.get("framing_motion_intent") or "[ATMOS_BROLL] Clean 4K Korean atmospheric night/rain/tea B-roll"
+                    b["prompt"] = _prompt_for(b["narration_text"], b, "footage", style_settings=style_settings)
+                    if idx_r < len(prompt_rows):
+                        prompt_rows[idx_r]["visual_route"] = "footage"
+                        prompt_rows[idx_r]["prompt"] = b["prompt"]
+
         from .vox_engine import VoxSemanticRouter, attach_two_layer_visual_prompts, is_vox_satellite_enabled
         from .financial_vox_engine import FinancialVoxSemanticRouter, is_financial_vox_enabled
-        vox_enabled = is_vox_satellite_enabled(job)
-        fin_vox_enabled = is_financial_vox_enabled(job)
+        vox_enabled = vox_allowed and is_vox_satellite_enabled(job)
+        fin_vox_enabled = vox_allowed and is_financial_vox_enabled(job)
         if vox_enabled:
             router = VoxSemanticRouter()
             refined = router.route_timeline(refined, job)
@@ -560,10 +725,11 @@ class VisualsCoordinator:
             fin_router = FinancialVoxSemanticRouter()
             refined = fin_router.route_timeline(refined, job)
 
-        total_refined = len(refined)
-        for idx_b, b_item in enumerate(refined):
-            if not b_item.get("vox_design_prompt") or not b_item.get("visual_layers"):
-                attach_two_layer_visual_prompts(b_item, beat_index=idx_b, total_beats=total_refined)
+        if vox_allowed:
+            total_refined = len(refined)
+            for idx_b, b_item in enumerate(refined):
+                if not b_item.get("vox_design_prompt") or not b_item.get("visual_layers"):
+                    attach_two_layer_visual_prompts(b_item, beat_index=idx_b, total_beats=total_refined)
 
         for row in prompt_rows:
             bid = row.get("beat_id")
@@ -577,10 +743,10 @@ class VisualsCoordinator:
                 if matching.get("editorial_layer"):
                     row["editorial_layer"] = matching["editorial_layer"]
                 row["ai_prompt"] = matching.get("ai_prompt") or row.get("prompt") or ""
-                row["ai_cutout_prop_prompt"] = matching.get("ai_cutout_prop_prompt") or ""
-                row["vox_design_prompt"] = matching.get("vox_design_prompt") or ""
-                row["vox_blueprint_spec"] = matching.get("vox_blueprint_spec") or {}
-                row["visual_layers"] = matching.get("visual_layers") or {}
+                row["ai_cutout_prop_prompt"] = matching.get("ai_cutout_prop_prompt") or "" if vox_allowed else ""
+                row["vox_design_prompt"] = matching.get("vox_design_prompt") or "" if vox_allowed else ""
+                row["vox_blueprint_spec"] = matching.get("vox_blueprint_spec") or {} if vox_allowed else {}
+                row["visual_layers"] = matching.get("visual_layers") or {} if vox_allowed else {}
 
         from .critic_loops import audit_and_refine_storyboard_sequence
 
@@ -588,12 +754,13 @@ class VisualsCoordinator:
         if _compact("".join(item["narration_text"] for item in refined)) != _compact(script):
             raise RuntimeError("Visuals/STP did not preserve 100% of script.md")
 
+        co_lead = "vox" if (vox_enabled or fin_vox_enabled) else ("ai_visual" if is_ai_cinema_drama else None)
         duration = float(voice.get("duration_sec") or (refined[-1]["end_sec"] if refined else 0.0))
         self._write_json(workspace / "visual_manifest.json", {
             "version": 2,
             "source": "visuals_stp_after_voice",
             "lead_agent": "visuals",
-            "co_lead_agent": "vox" if (vox_enabled or fin_vox_enabled) else None,
+            "co_lead_agent": co_lead,
             "target_duration_sec": round(duration, 3),
             "visual_strategy": strategy,
             "visual_mix": visual_mix,
@@ -603,7 +770,7 @@ class VisualsCoordinator:
         self._write_json(workspace / "visual_prompts.json", {
             "version": 1,
             "lead_agent": "visuals",
-            "co_lead_agent": "vox" if (vox_enabled or fin_vox_enabled) else None,
+            "co_lead_agent": co_lead,
             "visual_strategy": strategy,
             "visual_mix": visual_mix,
             "ai_media_mode": ai_media_mode,

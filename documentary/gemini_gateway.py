@@ -749,6 +749,16 @@ The visual_manifest object must satisfy every PLAN requirement above, including 
     @staticmethod
     def _build_local_fallback_handoff(workspace: Path, meta_dir: Path, session: dict[str, object]) -> str:
         parts: list[str] = []
+        try:
+            from .workspace_ledger import format_compact_ledger_brief, resolve_job_workspace_for_meta
+
+            target_ws = resolve_job_workspace_for_meta(workspace, meta_dir)
+            if target_ws is not None:
+                ledger_brief = format_compact_ledger_brief(target_ws)
+                if ledger_brief:
+                    parts.append(f"Sổ cái tiến độ dự án (`state_ledger.json`):\n{ledger_brief}")
+        except Exception:
+            pass
         previous = meta_dir / "handoff_summary.txt"
         if previous.exists():
             try:

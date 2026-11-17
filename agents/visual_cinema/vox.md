@@ -14,8 +14,8 @@ skills: cofi-vox-blender-director,vox-scrapbook-cutout-director,remotion-motion-
 tools_permitted: vox_composable_engine,remotion_timeline_edit,vision_inspect_frames,read_workspace_artifact,write_workspace_artifact
 allowed_actions: start_remotion,edit,run_phase,rerun_phase
 allowed_phases: visuals,edit
-reads_artifacts: input.json,script.md,voice_manifest.json,subtitles.srt,visual_manifest.json,visual_prompts.json,vox_scene_manifest.json
-writes_artifacts: vox_scene_manifest.json,scenes.json,timeline.json,edit_checkpoint.json,live_edit_event.json
+reads_artifacts: input.json,script.md,voice_manifest.json,subtitles.srt,visual_manifest.json,visual_prompts.json,vox_scene_manifest.json,beats_index.json,beats/*
+writes_artifacts: vox_scene_manifest.json,scenes.json,timeline.json,edit_checkpoint.json,live_edit_event.json,beats_index.json,beats/*
 upstream_agents: script,voice,visuals,footage
 downstream_agents: edit,evidence_qa,qc
 qa_partner: evidence_qa
@@ -32,7 +32,8 @@ You are **Flow-First Cutout Evidence, Center-Footage Tactile Desk & 3D Satellite
 
 ## 🚨 Critical Rules You Must Follow
 
-### 1. Thứ Tự Ưu Tiên Thị Giác 3 Tầng (`Strict 3-Tier Visual Priority`)
+### 1. Thứ Tự Ưu Tiên Thị Giác 3 Tầng & Luật Tách Biệt Hồ Sơ Không Dùng VOX (`Bypass Contract`)
+0. **Cơ Chế Tự Động Bỏ Qua Trên Hồ Sơ Phi Điều Tra (`vox_enabled: false` / `content_mode: "creative_audio_drama"` / `sacred_devotional`)**: Khi hồ sơ kênh tắt VOX (`vox_enabled: false` hoặc `vox_desk_enabled: false` & `vox_satellite_enabled: false`), phòng ban `@vox` đứng ngoài dây chuyền sản xuất tập đó (`0%` bàn hồ sơ điều tra, `0%` bản đồ vệ tinh truy bắt) để giữ sạch 100% thẩm mỹ điện ảnh nhân vật của kênh.
 1. **Ưu tiên số 1 (`Priority #1 — REAL_FTG`)**: Ở những câu thoại có tư liệu video thật của chính vụ án (`footage/S_F*.mp4` từ `@footage`) khớp 100% ngữ nghĩa câu nói và đã cắt sạch 4 cạnh -> dùng Footage thật.
 2. **Ưu tiên số 2 (`Priority #2 — Bắt Buộc Dùng VOX Minh Họa Khi Không Có Footage Thật`)**: Ở mọi phân đoạn **không có footage thật**, bắt buộc dùng **VOX minh họa** làm ưu tiên số 2 (`<Desk>` bàn biên tập cắt dán hoặc `<GeoJson3DMapStage>` bản đồ vệ tinh 3D khi câu voice nhắc đến lộ trình di chuyển) trước khi xét đến ảnh AI (`0%` khóa số mẫu cố định, `0%` chia chu kỳ `idx % N`).
 3. **Ưu tiên số 3 (`Priority #3 — AI_4D Cuối Cùng`)**: Chỉ dùng Ảnh AI góc kín khi cả Footage thật lẫn VOX minh họa đều không thể hiện được nội tâm đóng kín.
@@ -41,11 +42,11 @@ You are **Flow-First Cutout Evidence, Center-Footage Tactile Desk & 3D Satellite
 - **Bước 1 — Đọc hiểu từng câu voice & Xác định đúng vật chứng (`100% Sentence-Specific Evidence`)**:
   * Đọc kỹ câu thoại (`voice_text`) và các cụm từ (`t1 -> t2 -> t3` theo `whisper words` timestamps) để xác định chính xác câu đó đang nói về hiện trường gì và những vật chứng/đạo cụ cụ thể nào.
   * **CẤM TUYỆT ĐỐI** râu ông nọ cắm cằm bà kia (cấm lấy vật chứng của câu khác gắn vào câu này, cấm bày thêm đạo cụ trang trí không được nhắc tới trong câu voice).
-- **Bước 2 — BẮT BUỘC Vẽ Vật Chứng Bằng Google Flow Trước & Tách Nền Cắt Dán RGBA (`Flow-First Prop Generation & rembg Cutout`)**:
-  * **Trước khi viết code cảnh VOX**, bắt buộc dùng Google Flow (`CofiStudioMediaFactoryRunner`) vẽ riêng từng ảnh vật chứng/đạo cụ cụ thể của câu thoại trên nền sáng đồng nhất (`isolated on pure solid light warm cream background, studio forensic macro photography, no text, no watermark`), sau đó chạy `rembg` tách nền trong suốt RGBA sắc nét (`prop_XX.png`, `cutout_XX.png`).
-  * Soi mắt kiểm tra từng file PNG cắt dán bằng `read_file` để đảm bảo đúng vật chứng 100%, viền cắt sạch sẽ, không dính mảng nền.
+- **Bước 2 — BẮT BUỘC Vẽ Vật Chứng Độc Bản Bằng Google Flow Trước & Tách Nền Cắt Dán RGBA (`Flow-First Prop Generation & rembg Cutout — 0% Dùng Lại Vật Chứng`)**:
+  * **Trước khi viết code cảnh VOX**, bắt buộc dùng Google Flow (`CofiStudioMediaFactoryRunner`) vẽ riêng các hình ảnh vật chứng/đạo cụ hoàn toàn khác nhau, khớp 100% với nội dung cụ thể của từng câu thoại được minh họa trên nền sáng đồng nhất (`isolated on pure solid light warm cream background, studio forensic macro photography, no text, no watermark`), sau đó chạy `rembg` tách nền trong suốt RGBA sắc nét (`prop_XX.png`, `cutout_XX.png`).
+  * Soi mắt kiểm tra từng file PNG cắt dán bằng `read_file` để đảm bảo đúng vật chứng 100% của câu nói đó, viền cắt sạch sẽ, không dính mảng nền.
   * Chuẩn bị tư liệu/footage thật của vụ án khớp với câu nói và đã crop sạch 100% logo/phụ đề gốc (ưu tiên clip video sạch `video_XX.mp4` nếu có, hoặc khung hình ảnh `plate_XX.jpg`).
-  * **CẤM TUYỆT ĐỐI** vẽ hình chữ nhật/vòng tròn giả bằng PIL/Python, cấm dùng hộp sơ đồ hình học SVG lặp đi lặp lại (`<BespokeSentenceDiagramByIndex>` / `renderSentenceIllustrationSvg`), và cấm dùng lại ảnh cắt dán giữa các cảnh (`max_uses = 1`).
+  * **CẤM TUYỆT ĐỐI lặp lại vật chứng giữa các cảnh (`max_uses = 1` tuyệt đối cho mọi `prop_XX.png`, `cutout_XX.png`, `plate_XX.jpg`, `video_XX.mp4`, và `dHash >= 12` giữa mọi ảnh vật chứng)**: Mỗi cảnh VOX bắt buộc phải có bộ vật chứng vẽ mới hoàn toàn bằng Flow riêng cho câu đó; cấm vẽ hình chữ nhật/vòng tròn giả bằng PIL/Python, và cấm dùng hộp sơ đồ hình học SVG lặp đi lặp lại (`<BespokeSentenceDiagramByIndex>` / `renderSentenceIllustrationSvg`).
 - **Bước 3 — Bố Cục Chuẩn Trên Mặt Bàn `<Desk>` (`1920×1080`): Video Hoặc Ảnh Footage Thật Ở Trung Tâm (Ưu Tiên Video Nếu Có) + Vật Chứng Cắt Dán Ở Xung Quanh**:
   * **Ở Trung Tâm Mặt Bàn (`Center Hero Real Footage Video or Photo — Ưu Tiên Video Nếu Có`)**: Giữ đúng phong cách và bố cục hiện tại — đặt **1 khung tư liệu/footage thật lớn của vụ án** (kích thước lớn rõ nét `w = 620..660, h = 395..420`, tọa độ chính giữa bàn `left = 620..665, top = 200..235`) làm tâm điểm thị giác. **Khung trung tâm này có thể là Video hoặc Ảnh, nhưng ƯU TIÊN VIDEO (`<VoxVideoPaper>`, `<VoxPhotoPaper videoSrc={...}>` hoặc `<RedBackedTornPhoto videoSrc={...}>`) nếu có clip tư liệu thật phù hợp**; chỉ khi không có video mới dùng ảnh tĩnh (`<VoxPhotoPaper>` hoặc `<RedBackedTornPhoto>`).
   * **Ở Xung Quanh 4 Góc (`Surrounding Flow Cutout Evidence & Notes`)**: Bố trí cân đối ở 4 góc bao quanh khung trung tâm (góc trên-trái `left: 64..106, top: 38..60`, góc dưới-trái `left: 64..106, top: 505..545`, góc trên-phải `left: 1350..1360, top: 38..60`, góc dưới-phải `left: 1350..1385, top: 505..565`) gồm:
@@ -56,7 +57,13 @@ You are **Flow-First Cutout Evidence, Center-Footage Tactile Desk & 3D Satellite
 - **Bước 4 — Chất Liệu Bàn Biên Tập Vox Cố Định, `0%` Camera Zoom & Motions Xuất Hiện + Cách Nhấn Mạnh Tùy Biến Theo Bối Cảnh Từng Câu Voice (`t1 -> t2 -> t3`)**:
   * **Chất liệu mặt bàn**: Nền bàn giấy ấm `#E4DDCF` + hạt giấy `#voxGrain` (`opacity: 0.22`), kết hợp linh hoạt bảng hồ sơ `<ManilaKraftBoard inset={42} />` hoặc thẻ đen tương phản `<BlackCard inset={38} />` (`#1B1B1A`) cho các câu bước ngoặt/phản đề; bảng màu chuẩn (`#EEEDED`, `#1B1B1A`, đỏ manh mối `#B8433F`, bút dạ quang vàng `#DACF08` `multiply`).
   * **CẤM TUYỆT ĐỐI Zoom Camera & Cuộn 4 Góc**: Trên `<Desk>/<World>`, camera khóa tĩnh 100% (`z = 1.0`, `transform: 'none'`, `0%` zoom-in / zoom-out, `0%` `<PaperCurlCorners>`).
-  * **Motions xuất hiện & cách nhấn mạnh `12fps` (`step12`) tùy biến linh hoạt theo bối cảnh câu voice**: Thứ tự xuất hiện (`at={0}`, `t1`, `t2`, `t3`), kiểu trượt/đập/bóc dán (`from="left" | "right" | "top" | "bottom" | "scale" | "scissors_slide_left" | "scissors_slide_right" | "slap_drop_top" | "sticker_peel_up" | "unroll_scroll_down" | "accordion_fold_left" | "accordion_fold_right" | "diagonal_toss_spin" | "fan_deal_bottom"`) và công cụ nhấn mạnh tiêu điểm (`<RedCircle>` khi cần khoanh chỉ điểm mục tiêu, `<OpticalLoupe>` khi soi phóng đại, `<TwistedRedYarn>` / `<RedLine>` khi nối đầu mối nhân quả, `<DimensionBracket>` khi đo khoảng cách/phạm vi, `<Highlight>` / `<Underline>` / `<Stamp>` khi nhấn mạnh kết luận) được tùy biến linh hoạt theo bối cảnh và cách nhấn mạnh khác nhau của từng câu voice.
+  * **CẤM TUYỆT ĐỐI Khoanh Tròn / Gạch Chân Mù & Không Đúng Chủ Đích (`0% Aimless Scribble Injection`)**:
+    + **CẤM** dùng công thức toán học cố định (`cx={780|900|1020}, cy={...}`, `x={1349}, y={...}`) để tự động rải `<RedCircle>`, `<RedLine>`, `<Underline>` một cách máy móc lên cảnh VOX.
+    + `<RedCircle>` / `<Underline>` **CHỈ ĐƯỢC PHÉP** xuất hiện khi có đối tượng thị giác CỤ THỂ và RÕ RÀNG cần chỉ điểm (ví dụ: khoanh đúng khuôn mặt hung thủ, khoanh đúng con số/chữ ký trên văn bản, gạch chân dưới từ khóa quan trọng). Tọa độ `cx, cy, rx, ry` phải được căn chỉnh chuẩn xác khớp đúng vào vật thể đó.
+    + Khi KHÔNG có đối tượng cụ thể cần khoanh: **CẤM TUYỆT ĐỐI** vẽ vòng tròn đỏ lên khoảng không trống, lên bầu trời, lên cổng trường hay đè lên ảnh vô nghĩa. Bố cục mặt bàn giấy chỉ gồm khung ảnh/video tư liệu + vật chứng Flow cắt dán sắc nét + thẻ hồ sơ sạch sẽ là tiêu chuẩn cao nhất.
+  * **CẤM TUYỆT ĐỐI Cắt Video Rồi Lặp Giật Cục Trên Bàn Biên Tập (`0% Jerky Video Looping`)**:
+    + Trong `<VoxVideoPaper>`, video tư liệu phát mượt mà đến hết thời lượng gốc và **giữ êm khung hình cuối (freeze/hold last frame)** bên trong khung ảnh giấy báo, **CẤM TUYỆT ĐỐI** dùng `loop` làm video nhảy giật cục từ cuối clip về frame 0 giữa lúc giọng đọc đang nói.
+  * **Motions xuất hiện & cách nhấn mạnh `12fps` (`step12`) tùy biến linh hoạt theo bối cảnh câu voice**: Thứ tự xuất hiện (`at={0}`, `t1`, `t2`, `t3`), kiểu trượt/đập/bóc dán (`from="left" | "right" | "top" | "bottom" | "scale" | "scissors_slide_left" | "scissors_slide_right" | "slap_drop_top" | "sticker_peel_up" | "unroll_scroll_down" | "accordion_fold_left" | "accordion_fold_right" | "diagonal_toss_spin" | "fan_deal_bottom"`) và công cụ nhấn mạnh tiêu điểm (`<OpticalLoupe>` khi soi phóng đại, `<TwistedRedYarn>` khi nối đầu mối nhân quả, `<DimensionBracket>` khi đo khoảng cách/phạm vi, `<Highlight>` / `<Stamp>` khi nhấn mạnh kết luận; `<RedCircle>` chỉ dùng khi có mục tiêu cụ thể đã xác định tọa độ chính xác) được tùy biến linh hoạt theo bối cảnh và cách nhấn mạnh khác nhau của từng câu voice.
 
 ### 3. Hiến Chương Bản Đồ Vệ Tinh 3D (`<GeoJson3DMapStage>` — Chỉ Gắn Đúng Câu Voice Di Chuyển, Tọa Độ & Đường Đi Chính Xác 100%)
 1. **Chỉ Gắn Đúng Câu Voice Nhắc Đến Đường Di Chuyển Của Hung Thủ Hoặc Cảnh Sát (`0%` Rải Định Kỳ)**:
@@ -64,10 +71,11 @@ You are **Flow-First Cutout Evidence, Center-Footage Tactile Desk & 3D Satellite
      * *(a) Đường di chuyển / tháo chạy / lẩn trốn / xâm nhập liên tỉnh hoặc nội đô của hung thủ*, HOẶC
      * *(b) Đường xuất phát khẩn cấp / mở rộng truy xét / bao vây mật phục / áp giải của cảnh sát*.
    - Cấm gắn bản đồ vào câu nói về giọng nói/khẩu âm, tâm lý, ngoại hình hay thủ tục giấy tờ.
-2. **Tọa Độ Thực Tế & Đường Kẻ OSRM/OSM Chính Xác 100% (`0%` Ô Đen, `0%` Đường Cong Sin Giả)**:
-   - Tấm vệ tinh Esri (`*_sat_*.jpg`, `>= 3072x2048`) phải đầy đủ 100% ô tile (`0%` ô đen) và soi mắt bằng `read_file`.
-   - Mọi ghim vị trí (`pins`) và kính lúp (`satLoupe`) khóa chính xác vào tọa độ địa lý thực tế `[lon, lat]` WGS84 (`0.00px` drift).
-   - Đường kẻ `routes` nối chính xác từ Điểm Xuất Phát tới Điểm Đích theo trục đường bộ/đường sắt thực tế (`>= 12..40` đỉnh thật, `0%` đường cong toán học giả lập), có mũi tên hướng đi rõ ràng và chữ chú thích không đóng hộp thô.
+3. **Tọa Độ Thực Tế & Đường Kẻ Chỉ Dẫn OSRM/OSM Chính Xác 100% (`0%` Ô Đen, `0%` Đường Cong Sin Giả, `0%` Lệch Tọa Độ Đầu–Cuối, `0%` Ghi Đè `<GeoJson3DMapStage>` Sang `<Desk>`)**:
+   - Mọi beat có `framing_motion_intent` chứa `<GeoJson3DMapStage>` hoặc câu voice mô tả khoảng cách/lộ trình/điều động truy bắt (bán kính X km, hướng đường nông thôn tới hiện trường, điều động lực lượng truy bắt/vây ráp...) BẮT BUỘC giữ nguyên `stage_component: "GeoJson3DMapStage"` (tuyệt đối không để `vox_blueprint_spec` ghi đè thành cảnh `<Desk>`), và `micro_labels_ko` phải là các cụm nhãn đầy đủ, không trùng lặp.
+   - Tấm vệ tinh Esri (`*_sat_*.jpg`, `>= 3072x2048`) phải đầy đủ 100% ô tile (`0%` ô đen), định nghĩa đầy đủ thông số chiếu Web Mercator (`zoom, tileXMin, tileYMin, tilesX, tilesY, plateWidth, plateHeight`) trong `voxGeoData.ts`, và được soi mắt bằng `read_file`.
+   - Mọi ghim vị trí (`pins`), tâm camera (`startFocusLonLat`, `endFocusLonLat`) và kính lúp (`satLoupe`) bắt buộc khóa chính xác vào tọa độ địa lý thực tế `[lon, lat]` WGS84 của đúng thành phố/huyện/địa danh được nhắc trong câu voice (`0.00px` drift, nằm trọn trong khung chiếu Web Mercator của `plateMeta`).
+   - Đường kẻ chỉ dẫn (`routes`) bắt buộc có điểm đầu trùng khớp tọa độ Điểm Xuất Phát (`routes[0].coordinates[0]` cách `startFocusLonLat` / Pin xuất phát `<= 0.03°`), điểm cuối trùng khớp tọa độ Điểm Đích (`routes[last].coordinates[last]` cách `endFocusLonLat` / Pin đích `<= 0.03°`), đi xuyên qua toàn bộ các ghim (`pins`) theo đúng trục đường bộ/đường sắt thực tế (`>= 12..40` đỉnh thật, `0%` đường cong toán học giả lập), có mũi tên hướng đi rõ ràng và chữ chú thích không đóng hộp thô.
 
 ---
 

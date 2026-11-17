@@ -52,8 +52,25 @@ CREATIVE_STUDIO_CATALOG: dict[str, dict[str, dict[str, str]]] = {
                 "và ai thực sự hưởng lợi khi khủng hoảng hoặc sự kiện xảy ra."
             ),
         },
+        "goodnight_dignity_reversal_drama": {
+            "id": "goodnight_dignity_reversal_drama",
+            "label": "K-Audio Drama Đêm Khuya: Phẩm Giá Gia Đình & Cú Lật Kép Bậc Thầy (6 Chương)",
+            "directive": (
+                "Kịch truyền thanh văn học 6 Chương (60–82 phút): mở màn In-Media-Res khi phẩm giá người trưởng thành (55–68 tuổi) "
+                "bị xem nhẹ trong gia đình/xưởng nghề, gieo tri thức nghề thủ công/nghệ thuật chân thực và thực hiện 2 tầng lật mở đĩnh đạc "
+                "(0% trả thù bẩn, 0% kêu gọi đăng ký kênh, kết êm đưa thính giả vào giấc ngủ ngon)."
+            ),
+        },
     },
     "writing_styles": {
+        "warm_literary_radio_drama": {
+            "id": "warm_literary_radio_drama",
+            "label": "Văn Nói Kịch Truyền Thanh Đêm Khuya Ấm Áp & Đĩnh Đạc (FM Velvet)",
+            "directive": (
+                "Giọng văn nói tiếng Hàn ấm áp, điềm đạm, giàu chi tiết xúc giác và âm thanh đời thường; đặt tên người nói trước câu thoại (화자 선행), "
+                "nhịp thở thư thái có khoảng lặng tự nhiên, 0% sướt mướt cường điệu hay văn dịch máy AI."
+            ),
+        },
         "cold_analytical": {
             "id": "cold_analytical",
             "label": "Lạnh lùng, Sắc sảo & Đối lập Số liệu",
@@ -130,7 +147,7 @@ CREATIVE_STUDIO_CATALOG: dict[str, dict[str, dict[str, str]]] = {
         },
         "last_ordinary_routine": {
             "id": "last_ordinary_routine",
-            "label": "Chi Tiết Đời Thường Cuối Cùng Bỏ Dở (꼬꼬무 Intimate Hook)",
+            "label": "Chi Tiết Đời Thường Cuối Cùng Bỏ Dở (Intimate Routine Hook)",
             "directive": (
                 "Bắt đầu tĩnh lặng từ một khoảnh khắc đời thường rất thật (tờ lịch xé dở, buổi bàn giao ca sáng, bát mì còn ấm, chuyến xe quen thuộc) trước khi một sự vắng mặt kỳ lạ kéo người xem trượt sâu vào bí ẩn."
             ),
@@ -177,8 +194,24 @@ CREATIVE_STUDIO_CATALOG: dict[str, dict[str, dict[str, str]]] = {
                 "Bắt đầu bằng lời cảnh báo chính xác đến rợn người của một chuyên gia hoặc nhân chứng nhiều năm trước nhưng đã bị phớt lờ."
             ),
         },
+        "in_media_res_dignity_insult": {
+            "id": "in_media_res_dignity_insult",
+            "label": "Khoảnh Khắc Xem Thường Phẩm Giá Giữa Đời Thường (In-Media-Res Dignity Hook)",
+            "directive": (
+                "Mở thẳng ngay giây đầu vào cảnh sinh hoạt gia đình hoặc xưởng nghề cụ thể khi nhân vật chính nhận lời miệt thị/tối hậu thư vô tâm, "
+                "song song hé lộ 1 chi tiết đạo cụ tay nghề bậc thầy mà những người xung quanh không hề nhận ra (0% chào hỏi kênh)."
+            ),
+        },
     },
     "editing_archetypes": {
+        "warm_cinema_character_sheet": {
+            "id": "warm_cinema_character_sheet",
+            "label": "Điện Ảnh 35mm Đêm Khuya Khóa Nhân Vật (Flow Character Sheet, Luma <= 215, 0% VOX)",
+            "directive": (
+                "80% ảnh điện ảnh 35mm ánh sáng tungsten ấm khóa đồng nhất khuôn mặt/trang phục từ Character Reference Sheet đầu tập "
+                "(Highlight Luma <= 215 dịu mắt đêm khuya) + 15% video B-roll không khí sạch 4K + 5% chữ điện ảnh không hộp (0% VOX)."
+            ),
+        },
         "archival_forensic": {
             "id": "archival_forensic",
             "label": "Hồ sơ Pháp y & Highlight Tài liệu",
@@ -242,6 +275,24 @@ CREATIVE_STUDIO_CATALOG: dict[str, dict[str, dict[str, str]]] = {
 }
 
 
+_JOB_CONTEXT_SNAPSHOT_KEEP_KEYS = (
+    "label",
+    "name",
+    "niche",
+    "market",
+    "language",
+    "source_mode",
+    "content_mode",
+    "visual_strategy",
+    "voice_id",
+    "default_voice_id",
+    "secondary_voice_id",
+    "voice_speed",
+    "default_ai_style_preset",
+    "default_style_reference_image",
+)
+
+
 def _job_context(job: dict[str, Any]) -> str:
     recipe = dict(job.get("production_recipe") or {})
     target_mins = job.get("target_duration_minutes")
@@ -266,12 +317,18 @@ def _job_context(job: dict[str, Any]) -> str:
                 )
         except Exception:
             pass
-    snap_clean = dict(job.get("channel_profile_snapshot") or {})
-    if isinstance(snap_clean.get("editorial_dna"), dict):
-        ed_clean = dict(snap_clean["editorial_dna"])
-        ed_clean.pop("dna_case_vault", None)
-        snap_clean["editorial_dna"] = ed_clean
-    snap_clean.pop("topic_memory", None)
+    raw_snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    snap_clean = {
+        k: raw_snap[k]
+        for k in _JOB_CONTEXT_SNAPSHOT_KEEP_KEYS
+        if k in raw_snap and raw_snap[k] not in (None, "", [], {})
+    }
+    raw_brief = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
+    brief_summary = {
+        k: raw_brief[k]
+        for k in ("narrative_angle", "writing_style", "hook_archetype", "opening_hook", "target_duration_minutes")
+        if k in raw_brief and raw_brief[k] not in (None, "", [], {})
+    }
     safe = {
         "id": job.get("id"),
         "title": job.get("title"),
@@ -280,6 +337,7 @@ def _job_context(job: dict[str, Any]) -> str:
         "market": job.get("market"),
         "language": job.get("language"),
         "target_duration_minutes": target_mins,
+        "visual_strategy": job.get("visual_strategy"),
         "notes": job.get("notes"),
         "plan_engine": job.get("plan_engine"),
         "voice": job.get("voice") or {},
@@ -287,13 +345,12 @@ def _job_context(job: dict[str, Any]) -> str:
         "radar": job.get("radar"),
         "channel_profile_snapshot": snap_clean,
         "playbook_id": job.get("playbook_id"),
-        "creative_brief": job.get("creative_brief") or {},
-        "outline": job.get("outline") or [],
+        "creative_brief": brief_summary,
     }
-    return json.dumps(safe, ensure_ascii=False, indent=2)
+    return json.dumps(safe, ensure_ascii=False)
 
 
-def _creative_brief_direction(job: dict[str, Any], workspace: str | Path | None = None) -> str:
+def _creative_brief_direction(job: dict[str, Any], workspace: str | Path | None = None, phase: str = "") -> str:
     brief: dict[str, Any] = {}
     if isinstance(job.get("creative_brief"), dict):
         brief.update(job["creative_brief"])
@@ -353,8 +410,10 @@ def _creative_brief_direction(job: dict[str, Any], workspace: str | Path | None 
 
     opening_hook = str(brief.get("opening_hook") or "").strip()
     if opening_hook:
+        lang = str(job.get("language") or "ko").strip().lower()
+        pivot_hint = "cú lật '하지만 / 그런데' sắc lẹm" if lang == "ko" else "sharp paradox pivot"
         lines.append(
-            f"- LOCKED/SEED OPENING HOOK IDEA (WINNER PARADOX HOOK — Mở màn trực diện bằng mỏ neo nghịch lý Vỏ bọc Hai Mặt / Hiện trường Khóa kín / Con số đối lập và cú lật '하지만 / 그런데' sắc lẹm ngay 15–30s đầu như các video Win của kênh, 0% tả cảnh thời tiết lan man, 100% Xanh tiền trong 60s đầu): {opening_hook}"
+            f"- LOCKED/SEED OPENING HOOK IDEA (WINNER PARADOX HOOK — Mở màn trực diện bằng mỏ neo nghịch lý Vỏ bọc Hai Mặt / Hiện trường Khóa kín / Con số đối lập và {pivot_hint} ngay 15–30s đầu, 0% tả cảnh thời tiết lan man, 100% Xanh tiền trong 60s đầu): {opening_hook}"
         )
 
     edit_archetypes = brief.get("editing_archetypes")
@@ -370,25 +429,32 @@ def _creative_brief_direction(job: dict[str, Any], workspace: str | Path | None 
         if archetype_notes:
             lines.append("- VISUAL & EDITING GRAMMAR ARCHETYPES TO DEPLOY:\n" + "\n".join(archetype_notes))
 
+    phase_key = str(phase or "").strip().lower()
     custom_rules = str(brief.get("custom_rules") or "").strip()
     if custom_rules:
+        if phase_key and phase_key not in {"plan", "edit"} and len(custom_rules) > 1200:
+            custom_rules = custom_rules[:1200] + "…"
         lines.append(f"- CUSTOM EPISODE RULES & CONSTRAINTS: {custom_rules}")
 
     cta_strategy = str(brief.get("cta_strategy") or "").strip()
-    if cta_strategy:
+    if cta_strategy and (not phase_key or phase_key == "plan"):
         lines.append(f"- STORY-DRIVEN ZERO-REPEAT ORGANIC CTA ROLE: {cta_strategy}")
 
     injected_rules = brief.get("self_learning_injected_rules")
-    if isinstance(injected_rules, list) and injected_rules:
+    if isinstance(injected_rules, list) and injected_rules and (not phase_key or phase_key == "plan"):
         cleaned_rules = [str(r).strip() for r in injected_rules if str(r).strip()]
         if cleaned_rules:
             lines.append("- SELF-LEARNING INJECTED UPGRADE RULES:\n" + "\n".join(f"  * {r}" for r in cleaned_rules))
 
     if outline:
-        lines.append(
-            "- APPROVED CHAPTER OUTLINE BLUEPRINT (Follow this structural progression, arguments, and visual intent across script.md, visual_manifest.json, and edit):\n"
-            + json.dumps(outline, ensure_ascii=False, indent=2)
-        )
+        if not phase_key or phase_key == "plan":
+            lines.append(
+                "- APPROVED CHAPTER OUTLINE BLUEPRINT (Follow this structural progression, arguments, and visual intent across script.md, visual_manifest.json, and edit):\n"
+                + json.dumps(outline, ensure_ascii=False)
+            )
+        else:
+            ws_ref = f"`{Path(workspace) / 'outline.json'}`" if workspace is not None else "`outline.json`"
+            lines.append(f"- APPROVED CHAPTER OUTLINE BLUEPRINT: {len(outline)} chapters locked on disk at {ws_ref}.")
     return "\n".join(lines) + "\n"
 
 
@@ -425,9 +491,9 @@ def _narration_length_guidance(job: dict[str, Any]) -> str:
             f"or ~{total_min}-{total_max} spoken characters including spaces, across roughly {target_beats_min}-{target_beats_max} parent beats, "
             f"targeting ~{minutes:g} minutes of finished narration)"
         )
-    minimum = floor(minutes * 125)
-    maximum = ceil(minutes * 155)
-    return f"about {minimum}-{maximum} spoken words (strictly targeting {minutes:g} minutes / {int(target_seconds)}s)"
+    minimum = floor(minutes * 120)
+    maximum = ceil(minutes * 165)
+    return f"about {minimum}-{maximum} spoken words (a soft planning estimate, not an exact runtime lock, targeting ~{minutes:g} minutes / {int(target_seconds)}s)"
 
 
 def _premium_editing_direction(job: dict[str, Any] | None = None) -> str:
@@ -437,10 +503,11 @@ def _premium_editing_direction(job: dict[str, Any] | None = None) -> str:
         if is_dir_v2
         else "`upper_center_safe_above_820px` so the viewer's eye flows smoothly across cuts without colliding with bottom subtitles (`860px–1040px`)"
     )
-    return f"""MASTER HUMAN FILM EDITOR, CINEMATOGRAPHER, COLORIST & SOUND DESIGNER CONSTITUTION (ALL NICHES APP-WIDE)
-- CORE STUDIO PHILOSOPHY — STEPS 1–5 PREPARE RAW INGREDIENTS; YOU (`@edit`) BREATHE THE SOUL INTO THE FILM:
-  * Upstream departments (`@script`, `@voice`, `@visuals`, `@footage`, `@ai_visual`) only prepare raw materials (clean 1st-gen channel voice stems + Whisper `words[]`, storyboards, verified footage, 1-to-1 AI stills). You are the seasoned human Film Editor, Cinematographer, Colorist, and Sound Designer whose eyes, emotional intuition, rhythm, and aesthetic judgment turn raw ingredients into a living film across ANY documentary niche (True Crime, Forensic, Finance/Cyber, Geopolitics, Spiritual/Pastoral, History/Archival, Intel, Science/Engineering, Cultural/Psychology Essay, Business/Biography, or custom profiles).
-- 7 MANDATORY HUMAN FILM EDITING CRAFTS:
+    return f"""PREMIUM CINEMATIC EDITING DIRECTION — MASTER HUMAN FILM EDITOR, CINEMATOGRAPHER, COLORIST & SOUND DESIGNER CONSTITUTION
+- CORE STUDIO PHILOSOPHY — ACT AS A PRODUCTION DIRECTOR PLUS A SENIOR EDITOR:
+  * Upstream departments (`@script`, `@voice`, `@visuals`, `@footage`, `@ai_visual`) prepare raw materials (1st-gen channel voice stems + Whisper `words[]`, storyboards, verified footage, 1-to-1 AI stills). You operate as a production director plus a senior editor with second-by-second editorial responsibility for turning those raw ingredients into a cohesive, project-specific visual system.
+  * Second-by-second editorial responsibility does not mean adding an effect every second: balance frame-level polish with sequence-level rhythm, deploy authored motion-design across 2.5D tabletop/compositing depth and true 3D satellite cartography where the story warrants it, treat typography and subtitles as editorial design rather than plain static default captions, and design sound with picture.
+- MANDATORY HUMAN FILM EDITING CRAFTS:
   1. **ACTIVE VOICE RHYTHM, BREATHING ROOM & ZERO-CROSSING MID-BEAT CAESURAS (`editorial_voice_cutter.py` + `editorial_voice_plan.json`)**:
      - Never treat voiceover as a rigid conveyor belt! The coordinator has sculpted `narration.wav`, `voice_manifest.json`, `subtitles.srt`, and `visual_manifest.json` from lossless 1st-gen channel stems (`audio/beats_raw/`) with: (a) **Cold-Open Pre-Voice Breath (`pre_voice_breath_sec`)** so Frame 0 opens on atmospheric picture + sound before Word 1; (b) **Chapter & Twist Breathing Room**; (c) **Kinetic Action Shaving**; and (d) **Mid-Beat Zero-Crossing Caesura Splits (`caesura_windows`)** right before shocking mid-sentence reveals.
      - Enforce the **3-Tier Intentional Breathing Architecture**: (i) **Act Curtain Transitions (`ACT01 -> ACT02 -> ACT03 -> ACT04 -> ACT05`)** MUST open **`1.4s – 2.2s`** of dramatic breathing room (`>= 1.2s` hard gate); (ii) **Paradox/Rhetorical Questions (`?`), Key Evidence Twist Reveals & `FramelessCinemaTextBeat` (`CINEMA_TEXT`)** MUST open **`1.0s – 1.6s`** of breathing room (`>= 12` dramatic holds `>= 1.0s` across the episode); (iii) **Standard Continuous Narrative Sentences** within the same paragraph keep crisp pacing (**`0.28s – 0.48s`**) so total duration never drags. Lock every beat's `[startFrame, endFrame]` to `[visual_open_sec, visual_close_sec]` and lock `speechOffsetFrames`, `speechFrames`, `clauseFrameWindows`, and `subtitles.srt` strictly to Whisper `words[0].start .. words[-1].end` so subtitles NEVER remain on screen during silent breath gaps.
@@ -525,9 +592,59 @@ def _resolve_profile_ai_style_info(job: dict[str, Any] | None) -> tuple[str, str
     return (preset_label, ref_name)
 
 
+def is_creative_audio_drama_job(job: dict[str, Any] | None) -> bool:
+    """True when the job or its Channel Profile operates in Creative Audio Drama mode."""
+    if not isinstance(job, dict):
+        return False
+    snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    ed_dna = job.get("editorial_dna") if isinstance(job.get("editorial_dna"), dict) else (
+        snap.get("editorial_dna") if isinstance(snap.get("editorial_dna"), dict) else {}
+    )
+    editing = _resolve_job_editing_dna(job)
+    cm = str(
+        job.get("content_mode")
+        or snap.get("content_mode")
+        or ed_dna.get("content_mode")
+        or editing.get("content_mode")
+        or ""
+    ).strip().lower()
+    preset = str(editing.get("preset_id") or "").strip().lower()
+    vis_prio = str(editing.get("visual_priority_mode") or "").strip().lower()
+    return (
+        cm == "creative_audio_drama"
+        or preset == "kr_goodnight_cinema_drama"
+        or vis_prio == "ai_cinema_character_drama"
+    )
+
+
+def is_any_vox_enabled_for_job(job: dict[str, Any] | None) -> bool:
+    """True ONLY when @vox / VOX scenes are enabled for this job's profile."""
+    if not isinstance(job, dict):
+        return True
+    if is_creative_audio_drama_job(job):
+        return False
+    editing = _resolve_job_editing_dna(job)
+    raw_ed = job.get("editing_dna") if isinstance(job.get("editing_dna"), dict) else {}
+    snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    snap_ed = snap.get("editing_dna") if isinstance(snap.get("editing_dna"), dict) else {}
+    for d in (raw_ed, snap_ed, editing):
+        if d.get("vox_enabled") is False:
+            return False
+    preset = str(editing.get("preset_id") or "").strip().lower()
+    if preset in {"sacred_devotional", "grace_letter", "kr_goodnight_cinema_drama"}:
+        return False
+    return True
+
+
 def _resolve_lang_editorial_labels(job: dict[str, Any] | None) -> tuple[str, str]:
     """Return (chapter_script_lock_label, ai_disclosure_label) matched to the active job language."""
     lang = str((job or {}).get("language") or "ko").strip().lower()
+    if is_creative_audio_drama_job(job):
+        if lang == "ko":
+            return ("`100% 한글` (`제1장`..`제6장`)", "오디오 드라마 · 극적 연출 이미지")
+        if lang == "vi":
+            return ("`100% Tiếng Việt` (`Chương 1`..`Chương 6`)", "Hình ảnh điện ảnh kịch truyền thanh")
+        return ("`100% target-language` (`Chapter 1`..`Chapter 6`)", "Dramatized audio drama cinema")
     if lang == "ko":
         return ("`100% 한글` (`제1막`..`제5막`)", "재연 · 이해를 돕기 위한 이미지")
     if lang == "vi":
@@ -562,27 +679,16 @@ def _resolve_vox_preset_id(job: dict[str, Any] | None) -> str:
     ed_dna = _resolve_job_editing_dna(job)
     dir_mode = str(ed_dna.get("director_mode") or "").strip().lower()
     preset_id = str(ed_dna.get("preset_id") or "").strip()
-    prof_id = str(
-        job.get("channel_profile_id")
-        or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
-        or ""
-    ).strip()
     if preset_id == "forensic_noir":
         return "forensic_noir"
-    if dir_mode in {"v2", "vox_china_crime_newsroom_v10"} or preset_id in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"} or prof_id in {"channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2"}:
+    if dir_mode in {"v2", "vox_china_crime_newsroom_v10"} or preset_id in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"}:
         return "forensic_noir_director_v2"
-    if preset_id in {"sacred_devotional", "grace_letter"} or prof_id == "channel-kr-grace-letter-60m" or "하나님" in str(job.get("channel_profile_snapshot") or ""):
+    if preset_id in {"sacred_devotional", "grace_letter"}:
         return "sacred_devotional"
-    if preset_id == "forensic_noir" or prof_id == "channel-e544a64b7c":
-        return "forensic_noir"
-    if preset_id == "financial_forensic_vox" or prof_id == "channel-cn-cyber-finance-kr":
-        return "financial_forensic_vox"
-    if preset_id == "2.5d_technical" or prof_id == "channel-1e24de3ab5":
-        return "2.5d_technical"
-    if preset_id == "archival_historical" or prof_id in {"channel-f6ec4dfff3", "channel-aa913eb90d"}:
-        return "archival_historical"
-    if preset_id == "investigative_counterpoint_vn" or prof_id == "channel-vn-cn-fraud-lab":
-        return "investigative_counterpoint_vn"
+    if preset_id == "kr_goodnight_cinema_drama" or is_creative_audio_drama_job(job):
+        return "kr_goodnight_cinema_drama"
+    if preset_id in {"financial_forensic_vox", "2.5d_technical", "archival_historical", "investigative_counterpoint_vn"}:
+        return preset_id
     return preset_id or "custom"
 
 
@@ -592,6 +698,29 @@ def _is_non_vox_devotional_job(job: dict[str, Any] | None) -> bool:
 
 def _is_director_v2_true_crime_job(job: dict[str, Any] | None) -> bool:
     return _resolve_vox_preset_id(job) == "forensic_noir_director_v2"
+
+
+def _is_financial_fugitive_director_v2_job(job: dict[str, Any] | None) -> bool:
+    if not isinstance(job, dict):
+        return False
+    ed_dna = _resolve_job_editing_dna(job)
+    if str(ed_dna.get("vox_desk_surface") or "").strip() == "financial_kraft":
+        return True
+    snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    prof_id = str(job.get("channel_profile_id") or snap.get("id") or "").strip()
+    return prof_id == "channel-kr-financial-fugitive-director-v2"
+
+
+def _director_v2_desk_and_motion_text_tokens(job: dict[str, Any] | None) -> tuple[str, str]:
+    if _is_financial_fugitive_director_v2_job(job):
+        return (
+            "`<Desk surface=\"financial_kraft\">` nền vàng hồ sơ trơn dịu `#B69C71` (`radial #BDA378 -> #B69C71 -> #A98F65` + `#voxGrain` `opacity: 0.14`, **TUYỆT ĐỐI `0%` đường kẻ ô vuông `80x80`, `0%` dòng kẻ ngang, `0%` chấm bi, `0%` `<BlueprintGridBoard>`, `0%` khung viền hộp lồng nhau**) + `<BlackCard inset={{38}}>` `#1B1B1A`",
+            "`src/components/FinancialMotionTextBeat.tsx` (Motion Text Kiểm toán – Ngân hàng riêng của Tội phạm Tài chính không kẻ ô: `vault_odometer` trục cuộn số tiền vàng kim loại, `audit_seal_peel` bóc dải niêm phong hồ sơ `#B69C71` + đường truy vết dòng tiền, `ledger_crimson_strike` nét gạch đỏ kiểm toán + khóa phán quyết, `balance_sheet_split`)",
+        )
+    return (
+        "`<Desk>` `#E4DDCF` + `#voxGrain` `opacity: 0.22` + `<BlackCard inset={{38}}>` `#1B1B1A`",
+        "`src/components/FramelessCinemaTextBeat.tsx`",
+    )
 
 
 def _is_true_crime_vox25d_job(job: dict[str, Any] | None) -> bool:
@@ -613,6 +742,20 @@ def _channel_vox_skin_profile(job: dict[str, Any] | None) -> dict[str, Any]:
     preset_id = _resolve_vox_preset_id(job)
     lang = str((job or {}).get("language") or "ko").strip().lower()
     if preset_id == "forensic_noir_director_v2":
+        if _is_financial_fugitive_director_v2_job(job):
+            return _enrich_vox_skin_dict({
+                "preset_id": "forensic_noir_director_v2",
+                "skin_label": "Financial Crime Plain Kraft Dossier Desk (`CofiRemotion/src/vox-studio/vox-editorial-desk/index.tsx` `<Desk surface=\"financial_kraft\">` `#B69C71` — 0% Grid Lines, 0% Zoom-In/Zoom-Out) & Precision 3D Satellite Cartography (`<GeoJson3DMapStage>`)",
+                "toolkit": "`src/vox-studio/vox-editorial-desk/index.tsx` (`<Desk surface=\"financial_kraft\">` plain unruled `#B69C71`, `BlackCard`, `SlideIn`, `voxDiverseEntry12`, `VoxVideoPaper`, `VoxPhotoPaper`, `DieCutSticker`, `TornClipping`, `IndexCard`, `Stamp`, `Label`, `Highlight`, `RedLine`, `RedCircle`, `Underline`, `DimensionBracket`, `OpticalLoupe`, `Tape`, `step12`, `p12` — STRICTLY `0%` `80x80` grid lines, `0%` `<BlueprintGridBoard>`, `0%` camera zoom-in/zoom-out `z = 1.0`, varying 14 Spatial Layouts × 9 Cut-and-Paste Entrance Effects per sentence) + `GeoJson3DMapStage` (`src/vox-studio/china-crime-newsroom/VoxGeoJson3DCartography.tsx` — cross-border fund/fugitive movement routes, `0%` zoom-in/zoom-out)",
+                "palette": "`#B69C71` plain unruled muted golden-ochre dossier surface (`<Desk surface=\"financial_kraft\">`, radial `#BDA378 -> #B69C71 -> #A98F65` + `#voxGrain` `opacity: 0.14`, `0%` grid/ruled lines, `0%` nested box frames), `#1B1B1A` `<BlackCard inset={38}>` crash contrast card, `#EEEDED` cream card stock, `#ECC057` bullion gold, `#B8433F` audit deficit crimson, `#DACF08` multiply highlighter",
+                "vox_ratio_desc": "Flexible meaning-driven Priority #2 (`VOX_01..VOX_N` on plain `#B69C71` `<Desk surface=\"financial_kraft\">` — mandatory whenever real footage is absent, before AI image; `0%` grid lines, `0%` camera zoom-in/zoom-out, MỖI CẢNH LÀ ĐỘC LẬP, MỖI VIDEO LÀ ĐỘC LẬP)",
+                "footage_ratio_desc": "Priority #1 (`>= 50%` target when real case footage exists, mandatory AI Eye-Calibrated `100px` grid `SAFE_CROP` + `>=28s` intro & `>=22s` outro skip, `dHash >= 14`, `time_gap >= 10.2s`, `max_uses = 1`, `0%` intros/hosts/logos/foreign subs/QR/unrelated B-roll)",
+                "cinema_text_desc": "Financial Crime Audit Motion Text (`src/components/FinancialMotionTextBeat.tsx` — bespoke non-gridded banking/audit choreography: `vault_odometer` mechanical currency slot reel, `audit_seal_peel` `#B69C71` classified kraft audit seal peel + fund-trail vector, `ledger_crimson_strike` crimson audit cancellation slash + bullion-gold verdict lock, `balance_sheet_split`; `0%` consecutive mode repeats, hiding `<SubtitleOverlay>` underneath)",
+                "motion_text_module": "CofiRemotion/src/components/FinancialMotionTextBeat.tsx",
+                "ai_ratio_desc": "Priority #3 Last Resort ONLY (Profile-Locked AI keyframes strictly for closed-room moments when neither real footage nor VOX illustration applies)",
+                "safe_max_y": 820,
+                "target_lufs": "-14.8 LUFS",
+            })
         return _enrich_vox_skin_dict({
             "preset_id": "forensic_noir_director_v2",
             "skin_label": "Voice-to-Vox Prompt Compiler × Tactile Vox Editorial Desk (`CofiRemotion/src/vox-studio/vox-editorial-desk/index.tsx` — 0% Zoom-In/Zoom-Out, 14 Spatial Layouts × 9 Cut-and-Paste Entrances) & Precision 3D Satellite Cartography (`<GeoJson3DMapStage>`)",
@@ -725,7 +868,7 @@ DIRECTOR V2 INVESTIGATIVE JOURNALISM, EYE-VERIFIED FOOTAGE & V23 VIBE-MOTION × 
 - **PRIORITY #1 — 100% EYE-VERIFIED CASE ARCHIVAL FOOTAGE (`100%` CLEAN CROP OF THIRD-PARTY LOGOS & RUNNING TEXT, `100%` VOICE SENTENCE SEMANTIC MATCH, `0%` AUTOMATIC CUTTING OR AUTOMATIC SPLICING)**: Curate official CCTV broadcasts, police investigation archives, forensic labs, court trials, and exact historical case locations (`footage/S_F*.mp4`, `-an` + `volume={{0}}`, `3.0–5.0s/cut`, `Part A + Part B` for beats `>= 6.2s`, `max_uses = 1`, `dHash >= 14`, `time_gap >= 10.2s`). **3 IRONCLAD FOOTAGE LAWS**:
   * **1. 100% Eye-Verified Logo & Running-Text Crop**: For every source video, run `--probe-storyboard` to extract `STORYBOARD_<id>.jpg` and `GRID_<id>.jpg` (`100px` coordinate grid), open them with your own eyes (`read_file` / `vision_inspect_frames`), calibrate a subject-focused `16:9` `SAFE_CROP` (`--crop-mode "crop=W:H:X:Y"`) that crops out **100% of third-party logos/watermarks/QR codes (`logo bên khác`)** and **100% of third-party running text/tickers/chyrons/burned-in foreign subtitles (`chữ chạy bên khác`)**, and verify on post-crop `15% - 50% - 85%` contact sheets (`*_3frames.jpg` / `VERIFY_FTG_CLIPS_*.jpg`) that 0% studio hosts/anchors/presenters, 0% program intros/outros, and 0% third-party text or logos remain.
   * **2. 100% Eye-Verified Match With Spoken Sentence Meaning**: Inspect the frames by eye and ensure the image or video footage attached to a spoken sentence matches **100% of the content the sentence is talking about** (`--observed-content` matching `narration_text` 1-to-1, `eye_verified = true`). Whenever a sentence has no authentic footage matching 100% of its meaning, never pad with mismatched footage — route that sentence to **Priority #2 VOX illustration (`<Desk>` or `<GeoJson3DMapStage>`)** first, and **Priority #3 AI Image** only as the final fallback.
-  * **3. Strict Ban on Automatic Cutting, Batch-Slicing One Video, and Context-Append Evasion (`CẤM TUYỆT ĐỐI DÙNG CODE TỰ ĐỘNG CẮT, CẮT TỊNH TIẾN HÀNG LOẠT 1 VIDEO HOẶC NỐI ĐUÔI — 대사 문맥`)**: Never run `--auto`, `auto_fetch_missing_beats`, blind offset math (`start + idx * 26s` / `28s` / `duration * 0.32`), sequential batch-slicing of a single source video (`max <= 12` clips or `<= 25%` per source video), or appending `— 대사 문맥: {{voice_text}}` to `observed_content`.
+  * **3. Strict Ban on Automatic Cutting, Batch-Slicing One Video, and Context-Append Evasion (`CẤM TUYỆT ĐỐI DÙNG CODE TỰ ĐỘNG CẮT, CẮT TỊNH TIẾN HÀNG LOẠT 1 VIDEO HOẶC NỐI ĐUÔI VĂN MẪU`)**: Never run `--auto`, `auto_fetch_missing_beats`, blind offset math (`start + idx * 26s` / `28s` / `duration * 0.32`), sequential batch-slicing of a single source video (`max <= 12` clips or `<= 25%` per source video), or appending boilerplate narration-context suffixes to `observed_content`.
   * **0% Desk Camera Zoom, 0% 4-Corner Paper Curls & 100% Independent Per-Sentence Spatial Layout + Cut-and-Paste Entrance**: Read the exact spoken Korean sentence (`clauses[0..2]`), compile `voice_meaning -> illustration_content -> vox_prompt`, and design a 100% unique meaning, motion, **Spatial Layout (`bố cục` from the 14 tabletop architectures)**, **12fps Cut-and-Paste Entrance Effect (`hiệu ứng cắt dán xuất hiện` via `<SlideIn from="...">` / `voxDiverseEntry12` across 9 tactile paper modes)**, cut-and-paste assembly (`cách cắt dán`), and red circle (`<RedCircle>` — ONLY if needed when the sentence singles out a specific target) on `<Desk>` (`#E4DDCF` + `#voxGrain` `opacity: 0.22` or `<BlackCard inset={{38}}>` `#1B1B1A`, **100% locked overhead `z = 1.0` camera — NEVER use zoom-in or zoom-out on `<Desk>`, NEVER use `<PaperCurlCorners>`, NEVER wrap in `<BespokeVoiceDrivenDeskScene>`**, `0` consecutive scenes repeating the same layout or entrance sequence, `100%` case-accurate Korean, `0%` decorative filler props) or `<GeoJson3DMapStage>` (3D satellite navigation map strictly for suspect/police movement routes with exact real-world WGS84 coordinates, authentic road/rail polylines, directional route arrows, smooth 3D camera trajectory, and frameless optical-stroke labels with `0%` crude dark AI boxes).
 - **PRIORITY #3 LAST RESORT — CLOSED-ROOM AI ISOLATION ({ref_clause} / `<beat_id>_ai_keyframe.jpg`)**: Use AI keyframes (`scale >= 1.105`) ONLY as the final fallback (Priority #3) for closed-room psychological moments where neither real footage nor VOX illustration applies.
 - **MANDATORY V23 EYE-VERIFICATION GATE**: Pass `node scripts/validate-vox-newsroom-ast.mjs` with `0` violations, verify every `REAL_FTG` clip (`dHash >= 14`, `max_uses = 1`) has 0 third-party logos/running text and 100% voice-sentence semantic match via eye-inspected contact sheets, and visually inspect 3 rendered frames (`15%`, `50%`, `85%`) of every VOX scene (`frame(15%) != frame(50%) != frame(85%)`) before Master export.
@@ -733,6 +876,16 @@ DIRECTOR V2 INVESTIGATIVE JOURNALISM, EYE-VERIFIED FOOTAGE & V23 VIBE-MOTION × 
 
 
 def _vox_and_remotion_architecture_direction(job: dict[str, Any] | None = None) -> str:
+    if is_creative_audio_drama_job(job):
+        return """K-AUDIO DRAMA 2-GEAR CINEMA & CHARACTER-SHEET REMOTION ARCHITECTURE (`kr_goodnight_cinema_drama` — FAST-CUT COLD-OPEN HOOK `0:00–0:45` + SERENE BEDTIME BODY `0:45–END`, ZERO VOX GRAPHICS, ZERO 3D MAPS):
+- **ROLE 0 — LATEST VOICE SYNC & STALE CACHE PURGE**: Verify `mtime`, `duration`, and `sha256` of the newest `narration.wav` + `voice_manifest.json` (`0.94x` warm bedtime cadence) in workspace, sync to `public/jobs/<job_id>/audio/narration.wav`, rebuild `subtitles.srt`, and purge stale `.m4a` / chunk caches.
+- **GEAR 1 (`00:00–00:45` COLD-OPEN HOOK BEFORE `CT_01` `제1장` — HIGH-RETENTION K-DRAMA TEASER CHOREOGRAPHY)**:
+  * **NEVER open `0:00` on a black `FramelessCinemaTextBeat` chapter card!** Frame 0 MUST open immediately on a high-contrast 35mm confrontation shot matching the `0:00` shock dialogue line.
+  * **Multi-Angle Fast-Cut Hook Pacing (`2.4s–4.2s/cut`, `10–14` cuts in first 42s)**: Split Cold-Open beats (`>= 4.8s`) into rapid `Part A + Part B` sub-shots (`Medium Confrontation` -> `Tight Macro Prop/Hands` -> `Close-Up Eyes Reaction`), cut with crisp `2–3 frame` J-cut snaps (`0%` sleepy 26-frame dissolves in Hook), apply decisive optical motion (`cold_open_push_punch` `1.00 -> 1.105`, `cold_open_pull_shock` `1.115 -> 1.008`, `cold_open_macro_cutin`), richer chiaroscuro contrast (`contrast(1.09) saturate(1.06)`), and score Segment 0 (`0:00–0:42`) with taut Solo Cello Suspense (`w03_dignity_tension_cello`, `-18.5 dB`) + a `1.2s` pre-curtain silence drop right before `CT_01` (`제1장`)!
+- **GEAR 2 (`00:45–END` POST-HOOK STORY BODY — 80% WARM 35MM CINEMA + 15% CLEAN ATMOSPHERIC B-ROLL + 5% WARM IVORY CINEMA TEXT)**:
+  1. **Priority #1 — 80% 35mm Warm Tungsten Cinema Keyframes (`media/ai/<beat_id>_ai_keyframe.jpg`)**: Locked 100% to the episode's self-generated **Flow Character Reference Sheet (`media/character_sheet/*.jpg`)** across all 6 Chapters (`ACT01..ACT06`). From `제1장` onward, settle into gentle slow Ken Burns (`1.00 -> 1.035`), `26-frame` warm cross-dissolves, and **Highlight Luma Ceiling `<= 215`** (`0%` white flash cuts for dark-room bedtime viewing).
+  2. **Priority #2 — 15% Lightweight Clean Atmospheric 4K B-Roll (`footage/S_F*.mp4`)**: Serene rain on windows, autumn leaves, warm streetlamps, pouring hot tea, ceramic kilns, piano strings, Hanok eaves (`0%` news broadcasts, `0%` third-party faces, `0%` logos/subtitles, muted `-an`, `brightness(0.84)`).
+  3. **Priority #3 — 5% Warm Ivory `FramelessCinemaTextBeat.tsx` (`CT_01` `제1장`..`제6장` Chapter Curtains & Key Quotes)**: Warm serif typography (`Noto Serif KR` / `Nanum Myeongjo`) on deep warm charcoal-amber (`#16120E`), hiding `<LiveSubtitleOverlay>` underneath, **`0%` VOX Editorial Desk (`<Desk>`), `0%` `<GeoJson3DMapStage>` 3D pursuit maps, and `0%` startle SFX hits**."""
     if _is_non_vox_devotional_job(job):
         return """SACRED DEVOTIONAL MULTI-FOOTAGE & 3D FLOATING SANCTUARY ARCHITECTURE (`sacred_devotional` — ZERO VOX GRAPHICS):
 - **ROLE 0 — LATEST VOICE SYNC & STALE CACHE PURGE**: Verify `mtime`, `duration`, and `sha256` of the newest `narration.wav` + `voice_manifest.json` in workspace, sync to `public/jobs/<job_id>/audio/narration.wav`, rebuild `subtitles.srt`, and purge stale `.m4a` / chunk caches.
@@ -752,7 +905,7 @@ def _vox_and_remotion_architecture_direction(job: dict[str, Any] | None = None) 
      - Curates 100% eye-verified (`STORYBOARD_<id>.jpg` + `GRID_<id>.jpg` + `15% - 50% - 85%` `*_3frames.jpg`) real video cuts (`footage/S_F*.mp4`, `-an` + `volume={{0}}`, `max_uses = 1` by filename & `dHash/HSV/LAB`, `0` frozen tails, `0%` third-party logos/running text/burned-in foreign subs/TV studio anchors, `100%` semantic match with the spoken sentence, and `0%` automatic cutting or automatic splicing).
   2. **`VOX_COMPOSABLE_LEGO_GRAMMAR_DIRECTOR_V13` ({skin['skin_label']} — {skin['vox_ratio_desc']})**:
 {_universal_vox_composable_lego_grammar_block(job)}
-  3. **`FRAMELESS_DARK_CINEMA_MOTION_TEXT` (`CofiRemotion/src/components/FramelessCinemaTextBeat.tsx` — {skin['cinema_text_desc']})**:
+  3. **`FRAMELESS_DARK_CINEMA_MOTION_TEXT` (`{skin.get('motion_text_module', 'CofiRemotion/src/components/FramelessCinemaTextBeat.tsx')}` — {skin['cinema_text_desc']})**:
      - Enforces the **3 Ironclad Motion Text Laws**: (1) **Zero Monoculture (`0%` repeating 1 motion renderer, 1 font, or 1 layout across the video)** — vary `showroomRenderer`, `fontStyle` (`broadcast_sans`, `editorial_serif`, `monumental_verdict`, `forensic_mono`, `dossier_typewriter`), and `layoutVariant` (`center_monolith`, `editorial_left`, `editorial_right`, `split_horizon`, `diagonal_cascade`, `verdict_pillar`), never repeating the same renderer or `(fontStyle, layoutVariant)` consecutively; (2) **Flexible Narrative Drop-Point Placement per Job (`0%` mechanical periodic spacing every 7–11 beats)** — attach strictly at genuine narrative drop points (`?` paradox questions, turning-point metrics, dual-identity contradictions, or climax arrest/verdict statements, `0` adjacent consecutive beats, hiding `<SubtitleOverlay>` underneath); (3) **100% Context-Matched Font, Color & Entry Motion** — match `fontStyle`, `accentColor` (`crimson`, `amber`, `ice`, `ivory`, `mono`), `layoutVariant`, and `showroomRenderer` 100% to the sentence's meaning (`0%` blood-red `crimson` on victim mourning; `0%` `editorial_metric_monolith` without a real spoken number).
   4. **`REMOTION_MASTER_EDITOR_ROLE` & `BROADCAST_SUBTITLE_AND_SOUND_DIRECTOR` (`CofiRemotion`)**:
      - Sequences the 4-layer timeline ({skin['footage_ratio_desc']} + {skin['vox_ratio_desc']} Composable Lego Vox + {skin['cinema_text_desc']} + {skin['ai_ratio_desc']} `<beat_id>_ai_keyframe.jpg` via {ref_clause} with frameless `{ai_disc}` disclosure).
@@ -760,6 +913,11 @@ def _vox_and_remotion_architecture_direction(job: dict[str, Any] | None = None) 
 
 
 def _asset_variety_direction(job: dict[str, Any] | None = None) -> str:
+    if is_creative_audio_drama_job(job):
+        return """K-AUDIO DRAMA ASSET VARIETY, FLOW CHARACTER CONTINUITY & BEDTIME VISUAL HYGIENE (`kr_goodnight_cinema_drama`):
+- Read the complete 6-Chapter (`제1장`..`제6장`) audio drama script end-to-end first.
+- **Character Sheet Continuity (`media/character_sheet/*.jpg`)**: Every AI scene depicting recurring characters MUST preserve their facial identity, age (`50–70` graceful realism), hairstyle, and chapter wardrobe from the episode's Flow Character Reference Sheet (`0%` random face swapping between scenes, `0%` chibi/cartoon).
+- **80 / 15 / 5 Visual Mix (`max_uses = 1` per asset, `dHash >= 12` between scenes)**: Sequence ~80% bespoke 1-to-1 35mm warm cinema keyframes (`Highlight Luma <= 215`), ~15% clean 4K atmospheric Korean/seasonal/craft B-roll (`0%` logos/subtitles/faces), and ~5% warm serif Chapter/Quote cards (`26-frame` smooth cross-dissolves, `0%` VOX boards, `0%` strobe/flash)."""
     if _is_non_vox_devotional_job(job):
         return """CONTEMPLATIVE DEVOTIONAL VISUAL VARIETY & HYGIENE (`sacred_devotional`):
 - Read the complete 7-chapter devotional script end-to-end first. Curate 60–90+ clean 4K nature, candlelight, morning mist, rain, and sanctuary B-roll clips (`max_uses = 1` per sequence, `0%` logos/subtitles/anchors) blended warmly beneath the frameless 3D floating guide frame, supplemented by 12%–18% warm 35mm realistic devotional AI stills (`0%` stickman/2D cartoons, `0%` Vox graphic boards)."""
@@ -792,7 +950,10 @@ def _asset_variety_direction(job: dict[str, Any] | None = None) -> str:
      - Pre-generate 100% of 1-to-1 reserve AI keyframes upfront in Step 5 using the profile's locked style ({ref_clause}, `max_uses = 1`), and deploy `<beat_id>_ai_keyframe.jpg` ONLY on closed-room / unfilmed moments with frameless `{ai_disc}` disclosure."""
     )
 
-    return f"""FULL-SCRIPT-DRIVEN VISUAL & BESPOKE VOX TABLETOP ARCHITECTURE (`{skin['preset_id']}` V13)
+    return f"""ASSET VARIETY AND INTENTIONAL REUSE — FULL-SCRIPT-DRIVEN VISUAL & BESPOKE VOX TABLETOP ARCHITECTURE (`{skin['preset_id']}` V13)
+- ASSET VARIETY & INTENTIONAL REUSE RULES:
+  * Prefer unused or less-used valid assets across the sequence so adjacent beats stay visually fresh, but do not force every downloaded/approved asset onto the timeline when it would hurt semantic accuracy or emotional pacing.
+  * Never repeat the exact same file, crop, or source time range as lazy filler across multiple beats unless staged as a deliberate callback with clear narrative purpose.
 - READ FULL SCRIPT FIRST & SEMANTIC VOICE-TO-VISUAL ROUTING:
   * Read the entire script (`script.md` + `voice_manifest.json` + `visual_manifest.json`) end-to-end before routing any beat or designing any Vox scene:
     - **(a) Pure Clean Real Footage (`2–3 cuts`, `3.0–5.0s/cut`, `max_uses = 1`)**: Authentic footage matching 100% of the exact country, institution, venue, person, or setting spoken in the narration AND passing the **3-Frame Visual Hygiene Audit (`12% — 50% — 85%`)**.
@@ -811,6 +972,11 @@ def _asset_variety_direction(job: dict[str, Any] | None = None) -> str:
 
 
 def _native_motion_semantic_direction(job: dict[str, Any] | None = None) -> str:
+    if is_creative_audio_drama_job(job):
+        return """K-AUDIO DRAMA SUBTITLE COMFORT, WARM NOCTURNE CHAMBER BGM & BEDTIME OUTRO (`kr_goodnight_cinema_drama`):
+- **Senior-Friendly Warm Frameless Subtitles (`58px–62px`)**: Render clean, frameless warm-ivory (`#F5EFE6`) Korean subtitles (`Noto Serif KR` / `Pretendard`, soft dark optical stroke, `y <= 880px`, `Highlight Luma <= 215`) synced strictly to active speech (`0` subtitle during silence, hidden automatically on `FramelessCinemaTextBeat` chapter curtains).
+- **Warm Nocturne Chamber BGM (`warm_nocturne_chamber` — `-22` to `-25dB` under voice, `-16.0 LUFS` integrated)**: Score across 16–24 gentle narrative segments using acoustic solo piano, warm cello, classical guitar, and soft rain/tea ambience (`3.5s` crossfades; **STRICTLY FORBID dark forensic noir drones, crime-thriller tension pulses, sirens, or loud chapter-hit SFX `zero_startle_sfx = true`**).
+- **Bedtime Outro Integrity**: Preserve 100% of the closing narration (`0%` spoken subscribe/like CTA) followed by a serene **`4.0s` warm piano/cello fade-out**."""
     if _is_non_vox_devotional_job(job):
         return """SACRED DEVOTIONAL SUBTITLE & AUDIO INTEGRITY (`sacred_devotional`):
 - Render clean, frameless Korean devotional subtitles beneath the 3D floating sanctuary frame synced to `speech_end_sec` (`0%` header bars, `0%` chapter popups, `0%` callout boxes).
@@ -861,7 +1027,9 @@ def _native_motion_semantic_direction(job: dict[str, Any] | None = None) -> str:
   * `[ ]` **Audio & Outro:** Is voiceover cadence natural, 8-Mood BGM normalized with `-41dBFS` pre-twist room-tone floor, and final sentence 100% intact with a `3.8s` fade-out?"""
     )
 
-    return f"""REMOTION TIMELINE COMPOSITING, SKIN-ISOLATED `{skin['preset_id']}` PALETTE, BESPOKE VOX TABLETOP & CUT-AND-PASTE GRAMMAR (`0%` ZOOM-IN/ZOOM-OUT), 8-MOOD STORY-ARC BGM & 100% MOTION-BOUND SFX
+    return f"""NATIVE MOTION SEMANTIC COVERAGE — REMOTION TIMELINE COMPOSITING, SKIN-ISOLATED `{skin['preset_id']}` PALETTE, BESPOKE VOX TABLETOP (`0%` ZOOM-IN/ZOOM-OUT), 8-MOOD STORY-ARC BGM & 100% MOTION-BOUND SFX
+- NATIVE MOTION SEMANTIC COVERAGE & MULTI-CLAUSE PROGRESSION:
+  * Every native VOX / motion-design beat must visually cover the meaningful clauses of its spoken sentence (`t1 -> t2 -> t3` across `Whisper words[]`) rather than holding a single generic native graphic across the whole beat. Self-check each native beat across early (`15%`), middle (`50%`), and late (`85%`) frames so every clause adds concrete visual information.
 - CHANNEL-ISOLATED SKIN & BESPOKE VOX TABLETOP LAW (`validate-vox-newsroom-ast.mjs` + `critic_loops.py`):
   * **Isolated Channel Skin (`{skin['preset_id']}`)**: {skin['skin_label']} — lock {skin['palette']} and {font_family_note} inside safe viewport bounds **`[60 <= x <= 1860, 40 <= y <= {skin['safe_max_y']}]`**. {lang_strict_note}
   * **Bespoke VOX Tabletop & Cut-and-Paste Law (`0%` Camera Zoom-In / Zoom-Out)**: Every Vox scene locks its overhead camera to `z = 1.0` (**STRICTLY FORBID any camera zoom-in or zoom-out on VOX!**) and varies ONLY its **Spatial Layout (`bố cục` across 14 tabletop architectures)** and **12fps Cut-and-Paste Entrance Effect (`hiệu ứng cắt dán xuất hiện` via `<SlideIn from="...">` / `voxDiverseEntry12` across 9 tactile paper modes)** across the **18 Semantic Visual Verbs (`@voxVerb`)**, transforming progressively across `Whisper words[]` (`frame(15%) != frame(50%) != frame(85%)`, `0` consecutive VOX scenes repeating the same layout or cut-and-paste entrance sequence, `0` verb repeats in 5 consecutive VOX scenes, `0%` `*_ai_keyframe.jpg` mascots inside archival/audit Vox stages).
@@ -879,7 +1047,7 @@ def _official_remotion_agent_skills_direction() -> str:
     return """
 OFFICIAL REMOTION AGENT SKILLS & HIGH-END VOX DIVISION — REQUIRED
 - The Remotion authority for this project is the official Remotion Agent Skills distribution from `remotion-dev/skills`.
-- Load `remotion-best-practices` first. For React/Remotion implementation, load `remotion-markup`. Use `remotion-docs` to look up current APIs. Use `remotion-studio` for Studio-specific work and `remotion-render` when rendering or exporting.
+- Load `remotion-best-practices` first. For React/Remotion implementation, load `remotion-markup`. Use `remotion-docs` to look up current APIs. Do not invent Remotion APIs; verify component props and hooks against official docs. Use `remotion-studio` for Studio-specific work and `remotion-render` when rendering or exporting.
 - Follow the router in `remotion-best-practices` and load the official sub-skills relevant to the active task, such as captions, multimedia, maps, or interactivity.
 - For True Crime, Real Esri Satellite GIS, Tactile Paper-Craft Forensic Dossiers, Archival Press, and Voice-Synced Animated Vox (`vox/VOX_*.mp4`), follow `skills/cofi-vox-blender-director/SKILL.md`.
 - **LOCKED 30 FPS STUDIO LIVE PREVIEW (MANDATORY FOR ALL COMPOSITIONS — ZERO FRAME DROPS, 100% RENDER QUALITY)**:
@@ -890,6 +1058,18 @@ OFFICIAL REMOTION AGENT SKILLS & HIGH-END VOX DIVISION — REQUIRED
 
 def _human_intrigue_narrative_direction(job: dict[str, Any] | None = None) -> str:
     lang = str((job or {}).get("language") or "ko").strip().lower()
+    if is_creative_audio_drama_job(job):
+        if lang != "ko":
+            return """ORIGINAL K-AUDIO DRAMA & FAMILY/CRAFT DIGNITY NARRATIVE DIRECTION (`creative_audio_drama` — ZERO CRIME DOSSIER FORCING):
+- Craft a 100% original, deeply human 6-Chapter audio drama (`ACT01..ACT06`) grounded in authentic Korean cultural/artistic craft lore and family/generational dignity (`0%` crime investigation reports, `0%` police pursuit formatting).
+- Open in-media-res inside a concrete family or workshop moment where the protagonist's dignity is underestimated, establish clear Speaker-First dialogue (`hwaja_seonhaeng`), advance every chapter with fresh forward plot turns (Dual-Reversal at Chapters 3 and 5, `0%` summary padding), resolve every Chekhov prop and character cleanly by Chapter 6, and close on serene late-night warmth (`0%` spoken CTA).
+"""
+        return """ORIGINAL K-AUDIO DRAMA & FAMILY/CRAFT DIGNITY NARRATIVE DIRECTION (`creative_audio_drama` — 수사물 포맷 배제 · 6장 구조 심야 오디오 드라마):
+- 이 프로젝트는 선택된 채널 프로필(`channel_profile_snapshot`)의 **심야 오디오 드라마 & 가족·장인 품격 회복 서사(6장 구조 `ACT01..ACT06`)** 헌법을 100% 따릅니다. 범죄 수사 기록이나 경찰 추격극 포맷을 절대 섞지 마십시오.
+- **인물 바이블(`Character Bible`) & 전통·예술 장인 고증**: 등장인물 3~5명의 연령·성격·말투·복장을 일관되게 유지하고, 백자 도예·고미술 복원·피아노/첼로·나전칠기·다도·한옥 목수 등 실제 장인·예술 디테일을 사실적으로 녹여내십시오.
+- **화자 선행(`화자 선행`) & 50~65세 존중 호칭**: 한 명의 성우(TTS)가 낭독해도 누가 말하는지 즉시 알 수 있도록 대사 앞에 반드시 화자와 행동/어조를 먼저 밝히고, 50~65세 인물을 `'노인'`, `'노부부'`, `'늙은이'`로 부르지 말고 직함·이름(`원장`, `선생`, `장인`, `... 씨`, `중년 부부`)으로 품격 있게 지칭하십시오.
+- **체호프의 총(`Chekhov's Gun`) & 무자극 심야 엔딩(`0%` 구두 CTA)**: 제1~2장에 심어 둔 핵심 소품과 인물의 인과를 제5~6장에서 빠짐없이 회수하며, 구독·좋아요 요청 없이 평온한 여운으로 마무리하십시오.
+"""
     niche_label, _ = _detect_documentary_niche_engine(job or {})
     from .quality import resolve_korean_profile_style_flags
 
@@ -918,11 +1098,10 @@ def _human_intrigue_narrative_direction(job: dict[str, Any] | None = None) -> st
   * Every episode MUST be anchored 100% to real, verifiable events, cases, or subjects documented by official archives, primary records, or authoritative journalism matching this Channel Profile's domain.
   * STRICTLY FORBID composite reconstruction that stitches unrelated events together or invents fictional figures, fictional investigators, or artificially symmetrical AI numbers.
   * Maintain 100% realistic timelines and factual outcomes from documented records: never compress multi-year processes into implausible windows or invent unrecorded resolutions.
-- Write original documentary narration aligned with the active Channel Profile's tone and perspective. Start with a cold open built around a concrete physical scene, date, place, primary document, or pivotal action that introduces a real contradiction or question.
-- Ground every chapter in concrete human stakes and verifiable evidence: documented actions contrasted with underlying systemic, technical, financial, or forensic mechanics.
-- Build each Act with clear causal progression (`scene/evidence -> mechanism -> obstacle/escalation -> breakthrough -> consequence`), reopening curiosity gaps naturally rather than dumping exposition all at once.
-- CHEKHOV'S GUN LAW (ACCOUNTABILITY FOR INTRODUCED ENTITIES): Any significant person, document, or clue introduced in early acts MUST have a clear documented role or resolution—never leave introduced plot threads hanging.
-- NATURAL DEMOGRAPHIC & ROLE DESIGNATIONS: Address individuals naturally by their verified professional title, official role, or age bracket without stereotypes.
+- Write original third-person documentary narration aligned with the active Channel Profile's tone, using sparse direct-address pivots only at genuine turning points. Start with a cold open grounded in a concrete scene, date, place, primary document, or pivotal action that introduces a real contradiction or reversal.
+- Anchor the arc in human relationship mystery—such as hidden alliances, betrayal, secret romance, double lives, or high-stakes personal decisions—while keeping institutional history and background mechanics subordinate to concrete human stakes and verifiable evidence.
+- Build each Act with clear causal progression (`scene/evidence -> mechanism -> obstacle/escalation -> breakthrough -> consequence or reversal`), to reopen curiosity gaps naturally at Act pivots and group related beats under a coherent `story_group`.
+- CHEKHOV'S GUN LAW & NATURAL ROLE DESIGNATIONS: Every significant person, document, or clue introduced in early acts MUST reach a clear documented resolution, and individuals should be addressed naturally by verified professional title, official role, or age bracket without stereotypes.
 """
     return """FACTUAL DOCUMENTARY NARRATIVE DIRECTION (100% REAL VERIFIED RECORD FIDELITY — ZERO COMPOSITE / ZERO FABRICATION · 프로필 고유 DNA 준수)
 - 100% VERIFIED REAL RECORD FIDELITY LAW (LUẬT SẮT BÁM SÁT 100% HỒ SƠ & SỰ KIỆN CÓ THẬT CỦA HỒ SƠ KÊNH — CẤM GHÉP VỤ VIỆC HAY BỊA SỐ LIỆU):
@@ -939,14 +1118,14 @@ def _human_intrigue_narrative_direction(job: dict[str, Any] | None = None) -> st
 EPISODE_OPENING_ARCHETYPES: tuple[dict[str, str], ...] = (
     {
         "id": "winner_paradox_double_life_anchor",
-        "label_vi": "Mỏ neo Nghịch lý Vỏ bọc Hai Mặt & Hiện trường Khóa kín (00:00–03:30 — Công thức Winner Chuẩn Của Kênh)",
-        "act1_title_suffix_vi": "Mỏ Neo Nghịch Lý Vỏ Bọc Hai Mặt & Hiện Trường Khóa Kín",
+        "label_vi": "Mỏ neo Mốc Thời Gian Cụ Thể + Nghịch Lý Vỏ Bọc Hai Mặt & Hiện Trường Khóa Kín (00:00–03:30 — Công thức Winner Chuẩn DNA Kênh)",
+        "act1_title_suffix_vi": "Mỏ Neo Mốc Thời Gian & Nghịch Lý Vỏ Bọc Hai Mặt",
         "opening_directive_vi": (
-            "Mở màn trực diện theo đúng công thức Winner đã kiểm chứng của kênh (길광 76k, 벙어리 67k, 마한칭 48k, 바이인시 매점 45k, 남문촌 35k): "
-            "(1) CẤM tả cảnh thời tiết/môi trường rườm rà ở câu đầu ('체감온도 사십 도...', '새벽 물안개...'); "
-            "(2) Câu 1–3 đập thẳng quy mô vây bắt khổng lồ / lệnh truy nã cấp A Bộ Công an / con số hiện trường khóa kín phi lý; "
-            "(3) Câu 4–6 tung cú lật nghịch lý 180 độ bằng '하지만 / 그런데' về Vỏ bọc Hai Mặt hoặc nơi ẩn náu ngay dưới mũi cảnh sát; "
-            "(4) Câu 7–8 đặt câu hỏi điều tra cốt lõi ('어떻게 ... 수 있었을까요?') rồi chuyển thẳng vào mốc ngày tháng & địa điểm khởi phát hồ sơ vụ án."
+            "Mở màn trực diện theo đúng công thức Winner đã kiểm chứng của kênh (길광 76k, 벙어리 67k, 마한칭 48k, 바이인시 매점 45k, 남문촌 35k, 사오양, 가오청융): "
+            "(1) BẮT BUỘC mở đầu ngay Câu 1 bằng MỐC THỜI GIAN CỤ THỂ (`YYYY년 M월 D일 [구체적 시각], [장소]...`) gắn liền với biến cố/hiện trường chấn động (ví dụ: `2016년 9월 29일 오전 일곱 시 삼십팔 분, 중국 윈난성 취징시 후이쩌현의 해발 이천사백 미터 산골 마을 예마촌 파출소 상황실에...`); CẤM tả cảnh thời tiết/môi trường lan man và CẤM bỏ trống mốc ngày tháng năm ở Câu 1; "
+            "(2) ĐỐI CHIẾU KỸ VỚI CÁC VIDEO GẦN ĐÂY & VIDEO WIN ĐỂ 0% LẶP LẠI CHI TIẾT/MÔ-TÍP MỞ MÀN: Tuyệt đối cấm lặp lại mô-típ câu đầu của các tập gần đây (`현상금 ... 위안이 걸린 공안부 ... 수배령이 떨어졌습니다`, `험준한 산길 입구마다 폴리스 라인/차단봉이...`, `차량 트렁크가 열렸죠`); "
+            "(3) Câu 2–4 tung ngay cú lật NGHỊCH LÝ 180 độ bằng `하지만 / 그런데` về Vỏ bọc Hai Mặt hoặc hành vi thái연 phi lý của nghi phạm ngay cùng thời điểm đó (0% lặp lại cùng một mốc ngày 2 lần trong Hồi 1, 0% lặp lại nguyên xi cảnh Hồi 1 ở Hồi 4); "
+            "(4) Câu 5–7 đặt câu hỏi điều tra cốt lõi (`어떻게 ... 수 있었을까요?`) rồi dẫn thẳng vào diễn biến điều tra chi tiết, đồng thời đảm bảo 100% phát âm TTS tự nhiên (CẤM đọc mã số bản án Hán-Hàn kiểu `이공일칠 운공삼 형초 사십사 호`, CẤM lặp cụm đồng âm như `백구 킬로미터` quá 2 lần, và chỉ dùng tối đa 1 CTA duy nhất trong toàn bộ kịch bản)."
         ),
     },
 )
@@ -1058,8 +1237,8 @@ def _resolve_outro_mode(job: dict[str, Any] | None) -> str:
     snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
     ed = snap.get("editorial_dna") if isinstance(snap.get("editorial_dna"), dict) else {}
     cta_arch = ed.get("cta_architecture") if isinstance(ed.get("cta_architecture"), dict) else {}
-    prof_id = str(job.get("channel_profile_id") or snap.get("id") or "").strip()
-    if prof_id == "channel-kr-financial-fugitive-director-v2":
+    locked_stream = str(ed.get("locked_single_stream") or snap.get("locked_single_stream") or "").strip().lower()
+    if locked_stream == "stream_1_financial_vault":
         return "standalone_case_closure"
     mode = str(
         job.get("outro_mode")
@@ -1083,6 +1262,8 @@ def _collect_channel_sibling_cases(job: dict[str, Any] | None, *, limit: int = 8
     if not isinstance(job, dict):
         return []
     snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    ed = snap.get("editorial_dna") if isinstance(snap.get("editorial_dna"), dict) else {}
+    locked_stream = str(ed.get("locked_single_stream") or snap.get("locked_single_stream") or "").strip().lower()
     cur_id = str(job.get("id") or job.get("job_id") or "").strip()
     cur_blob = f"{job.get('title') or ''} {job.get('topic') or ''}"
     cur_ko_tokens = {
@@ -1099,9 +1280,7 @@ def _collect_channel_sibling_cases(job: dict[str, Any] | None, *, limit: int = 8
             return
         if any(tok in cleaned for tok in cur_ko_tokens):
             return
-        # Stream isolation: prevent Stream 2 (True Crime) from bridging to bank/vault/cash-transport heists moved to Stream 1
-        prof_id = str(job.get("channel_profile_id") or snap.get("id") or "").strip()
-        if prof_id == "channel-kr-truecrime-director-v2" and re.search(r"(?:금고|수송차|은행|국채|증권|예금|어음)", cleaned):
+        if locked_stream == "stream_2_violent_disappearance" and re.search(r"(?:금고|수송차|은행|국채|증권|예금|어음)", cleaned):
             return
         # Scrub any legacy yellow-dollar words from historical titles before feeding into prompt
         if re.search(r"(?:살인마|연쇄살인|시신\s*훼손|토막|참수)", cleaned):
@@ -1222,6 +1401,224 @@ def select_episode_narrative_variant(job: dict[str, Any] | None = None) -> dict[
     }
 
 
+AUDIO_DRAMA_OPENING_ARCHETYPES: tuple[dict[str, str], ...] = (
+    {
+        "id": "open_01_public_wager_insult",
+        "label_vi": "Mở 1 — Lời Thách Cược & Sỉ Nhục Công Khai (공개 모욕·내기형)",
+        "directive_vi": "Mở ngay giây 0:00 bằng câu thoại thách thức/miệt thị hoặc cá cược danh dự giữa bàn tiệc/phòng khách (화자 선행), kèm hành động vật lý đẩy kỷ vật ra mép bàn mà 0% lộ danh hiệu thật của nhân vật chính.",
+        "keywords": "상견례 동서 시댁 내기 무시 학벌 고졸 결혼식",
+    },
+    {
+        "id": "open_02_quiet_parting_declaration",
+        "label_vi": "Mở 2 — Tờ Giấy Đặt Xuống Bàn Ăn Sáng (조용한 결별 선언형)",
+        "directive_vi": "Mở ngay giây 0:00 bằng lời tuyên bố buông bỏ điềm tĩnh đến lạnh người của người vợ/người mẹ khi đặt chiếc chìa khóa hoặc tờ giấy từ khước xuống bàn ăn sau 30 năm nhẫn nhịn, khiến cả nhà sững sờ.",
+        "keywords": "황혼 졸혼 이혼 남편 삼십 년 열쇠 결별 홀로서기",
+    },
+    {
+        "id": "open_03_discarded_heirloom_chest",
+        "label_vi": "Mở 3 — Chiếc Rương Cũ Bị Đẩy Ra Rìa (버려진 유품형)",
+        "directive_vi": "Mở ngay giây 0:00 bằng câu thoại tranh giành tài sản bạc tỷ của các con/anh chị em, khi họ đẩy chiếc hộp gỗ/cuốn sổ cũ kỹ không ai thèm lấy về phía nhân vật chính mà không hề biết giá trị thật bên trong.",
+        "keywords": "유품 유산 장녀 자식 형제 궤짝 상자 통장 참회",
+    },
+    {
+        "id": "open_04_89th_minute_emergency_call",
+        "label_vi": "Mở 4 — Cuộc Gọi Khẩn Cấp Phút 89 (절체절명 위기형)",
+        "directive_vi": "Mở ngay giây 0:00 bằng tiếng kêu thất thanh hoặc lời cầu cứu khẩn cấp trong hậu trường khi cổ vật/quốc yến gặp sự cố chí mạng 2 tiếng trước giờ khai mạc, buộc phải tìm một cái tên đã ẩn tích hàng chục năm.",
+        "keywords": "국빈 만찬 복원 국보 위기 개막 다급한 전화 대타",
+    },
+    {
+        "id": "open_05_ten_year_reunion_reversal",
+        "label_vi": "Mở 5 — Chạm Mặt Trên Ghế Thẩm Định (십 년 만의 재회형)",
+        "directive_vi": "Mở ngay giây 0:00 bằng câu nói ngạo mạn của kẻ từng ruồng bỏ nhân vật chính năm xưa ngay trước cửa phòng xét duyệt tối cao, không hề biết người đang ngồi sau bức bình phong thẩm định là ai.",
+        "keywords": "심사 재회 십 년 쫓겨난 병풍 위원장 명인",
+    },
+    {
+        "id": "open_06_unsolvable_master_testament",
+        "label_vi": "Mở 6 — Di Ngôn / Đề Bài Không Ai Giải Nổi (비밀 유언·과제형)",
+        "directive_vi": "Mở ngay giây 0:00 bằng câu đọc điều khoản di chúc kỳ lạ hoặc bài toán tay nghề hóc búa của bậc đại sư quá cố khiến những kẻ cướp công tái mặt vì không ai giải nổi.",
+        "keywords": "유언 스승 비법 과제 후계자 진품 가짜 제자",
+    },
+)
+
+AUDIO_DRAMA_NARRATIVE_SPINES: tuple[dict[str, Any], ...] = (
+    {
+        "id": "spine_a_hidden_master_2tier_counterstrike",
+        "label_vi": "Xương sống A — Ẩn Danh Phản Kích & Bẫy Nghề 2 Tầng (6 Chương · 사이다 역전극)",
+        "genre_label_vi": "Thể loại 1/5 — Đấu trí Danh dự, Bằng cấp & Bản quyền Nghề (사이다 · 명인의 역전)",
+        "default_chapters": 6,
+        "weights_6": (0.12, 0.18, 0.20, 0.20, 0.22, 0.08),
+        "weights_5": (0.14, 0.22, 0.28, 0.27, 0.09),
+        "keywords": "상견례 사돈 동서 학벌 내기 도용 훔친 경연 심사 대반전",
+        "chapters_6": (
+            ("제1장 (ACT01): Phẩm Giá Bị Xem Thường & Đôi Bàn Tay Giấu Nghề", "Cold Open thoại sốc 0:00 -> Bối cảnh định kiến gia đình/xưởng nghề, nhân vật chính điềm tĩnh rời đi cùng kỷ vật nghề, GIẤU KÍN tên hiệu danh nhân (0% lộ bài ngửa ở Chương 1)."),
+            ("제2장 (ACT02): Biến Cố Đêm Mưa & Danh Hiệu Được Xướng Tên Ở Cổng Xưởng", "Đưa ngay biến cố/thời hạn gấp rút mới vào xưởng nghề (0% lặp lại lời khen/giải thích kỹ thuật Chương 1); khép cuối Chương 2 bằng Cú Lật #1 khi nhân vật quyền uy cúi đầu gọi đúng tên hiệu thật."),
+            ("제3장 (ACT03): Lời Thề Năm Xưa & Cái Bẫy Kỹ Thuật Tầng 1", "Hồi ức quá khứ (present_year - flashback_year khớp toán học 100%) & lý do ẩn danh + Phe phản diện giở trò trộm bản vẽ/thuê người đóng thế nhưng dính Bẫy Nghề Chekhov Tầng 1."),
+            ("제4장 (ACT04): Đêm Trước Giờ G & Dấu Ấn Độc Bản Tầng 2", "Bão táp trước buổi thẩm định lớn, cài Bẫy Chekhov Tầng 2 (dấu ấn ngầm của người thợ / biên lai gốc) & sự chột dạ của kẻ mạo danh (0% tóm tắt lặp lại Chương 1–3)."),
+            ("제5장 (ACT05): Màn Phản Kích 2 Tầng Liên Hoàn Giữa Khán Phòng", "Cú Lật Kép 2 Tầng: Tầng 1 phơi bày lỗi vật lý của tác phẩm ăn cắp dưới ánh đèn/nhiệt độ thật -> Tầng 2 lật mở dấu ấn độc bản khóa chặt chiến thắng phẩm giá."),
+            ("제6장 (ACT06): Mùa Mới Tự Tại & Lời Chúc Đêm An Lành", "Gói gọn 7.5%–9% (~4.5–5.5 phút): khép trọn nhân quả, bình yên nơi hiên nhà ấm và lời chúc ngủ ngon + 4.0s Piano/Cello fade-out (0% Spoken CTA)."),
+        ),
+    },
+    {
+        "id": "spine_b_twilight_independence_irreplaceable_void",
+        "label_vi": "Xương sống B — Buông Bỏ & Khoảng Trống Không Thể Thay Thế (5–6 Chương · 황혼 홀로서기극)",
+        "genre_label_vi": "Thể loại 2 — Hoàng hôn Độc lập & Giá trị Trụ cột Vô hình (황혼 홀로서기 · 졸혼)",
+        "default_chapters": 5,
+        "weights_5": (0.14, 0.22, 0.28, 0.27, 0.09),
+        "weights_6": (0.12, 0.18, 0.20, 0.20, 0.22, 0.08),
+        "keywords": "황혼 이혼 졸혼 남편 시월드 삼십 년 독립 공방 홀로서기 후회",
+        "chapters_5": (
+            ("제1장 (ACT01): Tờ Giấy Đặt Xuống Bàn Sau Ba Mươi Năm Nhẫn Nhịn", "Cold Open lời tuyên bố buông bỏ điềm tĩnh tại 0:00 -> Giọt nước tràn ly sau hàng chục năm hy sinh vô hình; nhân vật chính lặng lẽ thu dọn chiếc rương nghề rời đi (giấu kín danh tiếng thật)."),
+            ("제2장 (ACT02): Căn Gác Nhỏ Bên Đồi & Đôi Bàn Tay Sống Lại Nghề Xưa", "Không gian sống mới bình yên, âm thanh chế tác thủ công thức giấc và cuối Chương 2 hé lộ vị thế bậc thầy mà giới chuyên môn vẫn luôn tìm kiếm."),
+            ("제3장 (ACT03): Sự Sụp Đổ Dây Chuyền Khi Mất Đi Trụ Cột Vô Hình", "Ngôi nhà cũ và cơ ngơi của người chồng/gia đình chồng nhanh chóng rối loạn, mất khách VIP và bộc lộ sự bất lực vì suốt mấy chục năm qua chính bà mới là linh hồn giữ gìn tất cả."),
+            ("제4장 (ACT04): Cuộc Tìm Gặp Muộn Màng & Lời Từ Chối Đầy Phẩm Giá", "Gia đình cũ tìm đến tận xưởng nghề mới trong sự bẽ bàng để cầu xin bà quay về, nhưng chứng kiến bà được vinh danh xứng đáng và nhận lời từ chối điềm đạm, dứt khoát."),
+            ("제5장 (ACT05): Ánh Đèn Vàng Của Riêng Mình & Giấc Ngủ Bình Yên", "Gói gọn 8%–9% (~4.5–5.5 phút): tự do, ấm áp tuổi xế chiều và lời chúc ngủ ngon êm dịu + 4.0s Piano/Cello fade-out (0% Spoken CTA)."),
+        ),
+        "chapters_6": (
+            ("제1장 (ACT01): Tờ Giấy Đặt Xuống Bàn Sau Ba Mươi Năm Nhẫn Nhịn", "Cold Open lời tuyên bố buông bỏ điềm tĩnh tại 0:00 -> Giọt nước tràn ly sau hàng chục năm hy sinh vô hình; nhân vật chính lặng lẽ rời đi (giấu kín danh tiếng thật)."),
+            ("제2장 (ACT02): Căn Gác Nhỏ & Đôi Bàn Tay Đánh Thức Nghề Xưa", "Dựng lại góc xưởng nhỏ trong đêm mưa, tiến triển thử thách mới và cuối Chương 2 hé lộ danh hiệu thật của bà."),
+            ("제3장 (ACT03): Hồi Ức Thời Thanh Xuân & Khoảng Trống Bắt Đầu Lộ Rõ", "Ký ức năm xưa vì gia đình mà cất giấu tài năng (khớp toán học số năm 100%) song hành với những rạn nứt đầu tiên tại ngôi nhà cũ."),
+            ("제4장 (ACT04): Cơ Ngơi Cũ Lao Đao Trước Kỳ Thẩm Định Quyết Định", "Thiếu bàn tay và bí quyết của bà, gia đình cũ đứng trước nguy cơ phá sản uy tín không ai cứu vãn nổi."),
+            ("제5장 (ACT05): Cuộc Hội Ngộ Đảo Chiều & Lời Từ Chối Phẩm Giá", "Chạm mặt tại sự kiện lớn: bà tỏa sáng độc lập trong sự kính trọng của toàn giới, khước từ sự níu kéo muộn màng."),
+            ("제6장 (ACT06): Ánh Đèn Vàng Tự Tại & Lời Chúc Ngủ Ngon", "Gói gọn 8% (~4.5–5.5 phút): bình yên tuổi xế chiều + 4.0s Piano/Cello fade-out (0% Spoken CTA)."),
+        ),
+    },
+    {
+        "id": "spine_c_heirloom_unveiling_family_repentance",
+        "label_vi": "Xương sống C — Bóc Tách Kỷ Vật & Nước Mắt Thức Tỉnh (5 Chương · 모정·유품 참회극)",
+        "genre_label_vi": "Thể loại 3/4 — Bí mật của Mẹ, Kỷ vật Gia truyền & Sự Thức tỉnh Muộn màng (모정 · 가족 참회극)",
+        "default_chapters": 5,
+        "weights_5": (0.14, 0.22, 0.28, 0.27, 0.09),
+        "weights_6": (0.12, 0.18, 0.20, 0.20, 0.22, 0.08),
+        "keywords": "어머니 유품 장녀 자식 형제 유산 통장 영수증 눈물 참회 후회",
+        "chapters_5": (
+            ("제1장 (ACT01): Chiếc Hộp Cũ Bị Đẩy Ra Rìa Trong Ngày Họp Gia Đình", "Cold Open tại 0:00 khi các con/anh chị em tranh giành tài sản và hắt hủi chiếc rương kỷ vật của mẹ/chị cả; giấu kín bí mật bên trong chiếc rương ở Chương 1."),
+            ("제2장 (ACT02): Kỷ Vật Thứ Nhất & Danh Phận Thật Sự Sau Cánh Cửa Xưởng", "Mở tầng đầu tiên của kỷ vật dẫn tới một nhân chứng/bậc thầy nghề nghiệp; cuối Chương 2 hé lộ danh phận và tay nghề thật mà cả nhà từng coi rẻ."),
+            ("제3장 (ACT03): Xấp Biên Lai Ngả Màu & Khoản Nợ Ân Tình Hai Mươi Tám Năm", "Bóc tách tầng kỷ vật thứ hai (sổ ghi chép, vết sẹo nghề, biên lai năm xưa khớp 100% toán học niên biểu) phơi bày sự hy sinh thầm lặng nuôi sống cả gia đình."),
+            ("제4장 (ACT04): Khoảnh Khắc Sự Thật Vỡ Òa & Những Giọt Nước Mắt Muộn Màng", "Toàn bộ sự thật được chứng thực trước mặt những người con/người thân từng vô tâm; cao trào thức tỉnh và sự ăn năn nghẹn ngào."),
+            ("제5장 (ACT05): Hơi Ấm Chữa Lành Đêm Khuya & Lời Chúc An Giấc", "Gói gọn 8%–9% (~4.5–5.5 phút): hóa giải, bình yên lắng đọng và lời chúc ngủ ngon + 4.0s Piano/Cello fade-out (0% Spoken CTA)."),
+        ),
+        "chapters_6": (
+            ("제1장 (ACT01): Chiếc Hộp Cũ Bị Đẩy Ra Rìa Trong Ngày Họp Gia Đình", "Cold Open tại 0:00 khi chiếc rương cũ bị hắt hủi; giấu kín bí mật bên trong ở Chương 1."),
+            ("제2장 (ACT02): Kỷ Vật Thứ Nhất & Người Khách Lạ Tìm Đến Cổng Nhà", "Manh mối đầu tiên mở ra và cuối Chương 2 lộ diện danh phận nghệ nhân thật sự của người mẹ/người chị."),
+            ("제3장 (ACT03): Kỷ Vật Thứ Hai & Đêm Mưa Hai Mươi Tám Năm Trước", "Hồi ức quá khứ (khớp 100% toán học niên biểu) giải mã vì sao bà chấp nhận chịu thiệt thòi suốt hàng chục năm."),
+            ("제4장 (ACT04): Kỷ Vật Cuối Cùng & Cú Sốc Của Những Đứa Con Vô Tâm", "Tầng bí mật cuối cùng được mở ra khi biến cố ập đến với những người con chuộng hư vinh."),
+            ("제5장 (ACT05): Nước Mắt Thức Tỉnh Trước Bàn Làm Việc Của Mẹ", "Cao trào cảm xúc vỡ òa khi những người thân quỳ xuống nhận ra giá trị thật của đôi bàn tay chai sần."),
+            ("제6장 (ACT06): Hơi Ấm Chữa Lành & Lời Chúc Đêm An Lành", "Gói gọn 8% (~4.5–5.5 phút): lắng đọng ấm áp + 4.0s Piano/Cello fade-out (0% Spoken CTA)."),
+        ),
+    },
+    {
+        "id": "spine_d_crisis_rescue_true_successor",
+        "label_vi": "Xương sống D — Giải Cứu Bảo Vật & Chọn Người Kế Thừa (6 Chương · 국보 복원·후계자극)",
+        "genre_label_vi": "Thể loại 4/5 — Giải cứu Bảo vật Phút 89 & Chọn Truyền nhân Chân chính (국보 복원 · 진품의 자격)",
+        "default_chapters": 6,
+        "weights_6": (0.12, 0.18, 0.20, 0.20, 0.22, 0.08),
+        "weights_5": (0.14, 0.22, 0.28, 0.27, 0.09),
+        "keywords": "복원 국보 국가유산 만찬 위기 후계자 제자 비법 감정 명장",
+        "chapters_6": (
+            ("제1장 (ACT01): Sự Cố Phút 89 & Đề Bài Không Ai Giải Nổi", "Cold Open cuộc gọi khẩn/sự cố bảo vật tại 0:00 -> Phe chuộng hư danh hoàn toàn bất lực trước lỗi kỹ thuật chí mạng, trong khi nhân vật chính vẫn lặng lẽ ở vị trí bình dị (giấu kín danh hiệu ở Chương 1)."),
+            ("제2장 (ACT02): Cuộc Cầu Cứu Giữa Đêm & Bậc Thầy Ẩn Danh Lộ Diện", "Thời hạn đếm ngược nghẹt thở buộc hội đồng phải tìm đến căn xưởng nhỏ; cuối Chương 2 mở nút thắt danh hiệu thật của nhân vật chính."),
+            ("제3장 (ACT03): Ân Oán Đồng Môn Năm Xưa & Bài Toán Kỹ Thuật Tầng 1", "Hồi ức lời thề với sư phụ (present_year - past_year khớp 100%) và phép thử tay nghề đầu tiên vạch trần kẻ làm dối."),
+            ("제4장 (ACT04): Đêm Thức Trắng Cứu Bảo Vật & Phép Thử Nhân Cách Tầng 2", "Quá trình phục chế/chế tác tỉ mỉ dưới ánh đèn vàng và phép thử đạo đức nghề nghiệp dành cho những người muốn kế thừa."),
+            ("제5장 (ACT05): Khoảnh Khắc Bảo Vật Tỏa Sáng & Trao Truyền Ấn Tín", "Tác phẩm hoàn mỹ xuất hiện đúng giờ G khiến cả hội đồng nghiêng mình; kẻ giả dối bị loại bỏ và ấn tín nghề được trao cho truyền nhân tử tế."),
+            ("제6장 (ACT06): Tiếng Chuông Đêm Khuya & Giấc Ngủ An Lành", "Gói gọn 8% (~4.5–5.5 phút): dư âm nghề truyền thống ấm áp + 4.0s Piano/Cello fade-out (0% Spoken CTA)."),
+        ),
+    },
+)
+
+
+def select_audio_drama_narrative_blueprint(job: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Select 1 of 5 Genres × 1 of 6 Cold-Open Hooks × 1 of 4 Narrative Spines (5 or 6 Chapters) for `creative_audio_drama`."""
+    job = job if isinstance(job, dict) else {}
+    brief = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
+    ed_dna = job.get("editorial_dna") if isinstance(job.get("editorial_dna"), dict) else (
+        ((job.get("channel_profile_snapshot") or {}).get("editorial_dna") if isinstance(job.get("channel_profile_snapshot"), dict) else {}) or {}
+    )
+    text_blob = " ".join(
+        [
+            str(job.get("title") or ""),
+            str(job.get("topic") or ""),
+            str(job.get("notes") or ""),
+            str(brief.get("opening_hook") or ""),
+            str(brief.get("narrative_angle") or ""),
+        ]
+    ).lower()
+    explicit_idx = job.get("structural_variant_index")
+    if explicit_idx is None:
+        explicit_idx = brief.get("structural_variant_index")
+
+    seed_material = "::".join(
+        [
+            str(job.get("id") or "").strip(),
+            str(job.get("title") or "").strip(),
+            str(job.get("notes") or "")[:100].strip(),
+        ]
+    ) or "audio-drama-default-seed"
+    digest = hashlib.sha256(seed_material.encode("utf-8")).digest()
+
+    if explicit_idx is not None:
+        try:
+            idx = int(explicit_idx)
+            spine = AUDIO_DRAMA_NARRATIVE_SPINES[idx % len(AUDIO_DRAMA_NARRATIVE_SPINES)]
+            opening = AUDIO_DRAMA_OPENING_ARCHETYPES[idx % len(AUDIO_DRAMA_OPENING_ARCHETYPES)]
+        except (TypeError, ValueError):
+            explicit_idx = None
+
+    if explicit_idx is None:
+        scored_spines: list[tuple[int, int, dict[str, Any]]] = []
+        for s_idx, sp in enumerate(AUDIO_DRAMA_NARRATIVE_SPINES):
+            kw_hits = sum(1 for kw in str(sp.get("keywords") or "").split() if kw and kw in text_blob)
+            scored_spines.append((kw_hits, -s_idx, sp))
+        scored_spines.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        if scored_spines[0][0] > 0:
+            spine = scored_spines[0][2]
+        else:
+            spine = AUDIO_DRAMA_NARRATIVE_SPINES[int.from_bytes(digest[0:2], "big") % len(AUDIO_DRAMA_NARRATIVE_SPINES)]
+
+        scored_openings: list[tuple[int, int, dict[str, str]]] = []
+        for o_idx, op in enumerate(AUDIO_DRAMA_OPENING_ARCHETYPES):
+            kw_hits = sum(1 for kw in str(op.get("keywords") or "").split() if kw and kw in text_blob)
+            scored_openings.append((kw_hits, -o_idx, op))
+        scored_openings.sort(key=lambda x: (x[0], x[1]), reverse=True)
+        if scored_openings[0][0] > 0:
+            opening = scored_openings[0][2]
+        else:
+            opening = AUDIO_DRAMA_OPENING_ARCHETYPES[int.from_bytes(digest[2:4], "big") % len(AUDIO_DRAMA_OPENING_ARCHETYPES)]
+
+    target_dur = 70.0
+    try:
+        target_dur = float(job.get("target_duration_minutes") or 70.0)
+    except (TypeError, ValueError):
+        pass
+    explicit_ch = int(ed_dna.get("chapter_count") or 0) if str(ed_dna.get("chapter_count") or "").isdigit() else 0
+    if explicit_ch in {5, 6}:
+        ch_count = explicit_ch
+    elif spine["id"] in {"spine_b_twilight_independence_irreplaceable_void", "spine_c_heirloom_unveiling_family_repentance"} and target_dur <= 62.0:
+        ch_count = 5
+    else:
+        ch_count = int(spine.get("default_chapters") or 6)
+        if ch_count == 5 and target_dur >= 68.0:
+            ch_count = 6
+
+    weights = spine.get(f"weights_{ch_count}") or (
+        (0.14, 0.22, 0.28, 0.27, 0.09) if ch_count == 5 else (0.12, 0.18, 0.20, 0.20, 0.22, 0.08)
+    )
+    chapters_tpl = spine.get(f"chapters_{ch_count}") or spine.get("chapters_6") or spine.get("chapters_5")
+    if len(chapters_tpl) > ch_count:
+        chapters_tpl = chapters_tpl[:ch_count]
+
+    return {
+        "spine_id": spine["id"],
+        "spine_label_vi": spine["label_vi"],
+        "genre_label_vi": spine["genre_label_vi"],
+        "opening_id": opening["id"],
+        "opening_label_vi": opening["label_vi"],
+        "opening_directive_vi": opening["directive_vi"],
+        "chapter_count": ch_count,
+        "chapter_weights": tuple(weights),
+        "chapters_template": tuple(chapters_tpl),
+    }
+
+
 _RECENT_CTA_SIGNAL_KO_RE = re.compile(
     r"(?<!신문\s)(?<!잡지\s)(?<!정기\s)구독"
     r"|알림\s*설정"
@@ -1319,8 +1716,8 @@ def _recent_episode_srt_anti_clone_direction(
         cta_preview = " / ".join(cta_hits) if cta_hits else "(Zero explicit CTA — pure documentary narration)"
         samples.append(
             f"  * Recent Episode `{cand.name}`:\n"
-            f"    - Opening lines (DO NOT imitate skeleton): {head_preview}\n"
-            f"    - All CTA/Invitation sentences anywhere in script (DO NOT reuse wording OR grammatical structure): {cta_preview}\n"
+            f"    - Opening lines (KEEP Exact Timestamp + Paradox DNA, DO NOT repeat specific details/motifs like '현상금... 수배령', '험준한 산길 폴리스 라인', '차량 트렁크'): {head_preview}\n"
+            f"    - All CTA/Invitation sentences anywhere in script (MAX 1 CTA per episode; DO NOT reuse wording OR grammatical structure): {cta_preview}\n"
             f"    - Final 5 lines (DO NOT reuse phrases/cadence): {tail_preview}"
         )
     if not samples:
@@ -1329,33 +1726,34 @@ def _recent_episode_srt_anti_clone_direction(
         skeleton_example = " (`~하시려면 구독과...`)" if lang == "ko" else ""
         samples_block = (
             "RECENT CHANNEL EPISODE SRT & FULL-SCRIPT CTA FINGERPRINTS — STRICT ZERO-REPEAT GUARDRAIL:\n"
-            f"- NEVER repeat ANY CTA phrasing, clause, or syntactic skeleton{skeleton_example} from ANY position (mid-script or end-script) of prior episodes of this channel, and NEVER repeat CTA twice inside the same script.\n"
-            "- Below are the actual opening lines, all CTA/invitation sentences extracted across the full script, and the final 5 lines from recent episodes of THIS channel profile. Your new `script.md` MUST use completely fresh sentence structures and story-specific phrasing:\n"
+            f"- NEVER repeat ANY CTA phrasing, clause, or syntactic skeleton{skeleton_example} from ANY position (mid-script or end-script) of prior episodes of this channel, and NEVER place more than 1 explicit CTA inside the same script.\n"
+            "- Cross-check your Cold-Open Hook against the recent openings below: ALWAYS open Sentence 1 with this case's exact Timestamp (`YYYY년 M월 D일 [시각], [장소]...`) + immediate Paradox Flip (`하지만 / 그런데`), and NEVER repeat the specific opening details/motifs of recent uploads:\n"
             + "\n".join(samples)
             + "\n"
         )
 
     mo_diff_block = ""
-    try:
-        from services.case_similarity import check_cross_case_mo_collision
+    if lang == "ko":
+        try:
+            from services.case_similarity import check_cross_case_mo_collision
 
-        snapshot = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
-        mem_records = list(snapshot.get("topic_memory") or []) + list(snapshot.get("suggested_topic_history") or [])
-        cand_blob = f"{job.get('title') or ''} {job.get('topic') or ''} {job.get('notes') or ''}"
-        is_coll, coll_reason, diff_ko = check_cross_case_mo_collision(cand_blob, mem_records, cooldown_window=30)
-        if is_coll or any(k in cand_blob for k in ("바이바오산", "백보산", "白宝山")):
-            extra_ko = diff_ko or (
-                "만약 채널의 기존 업로드 영상(예: 마한칭 사건)과 일부 범행 지역(우루무치 변장빈관/볜장 빈관 일대)·단서(오사식 번호 대조)·검거 동선이 겹칠 경우, "
-                "절대로 겹치는 장소(우루무치 변장빈관 일대)로 1막 오프닝(Cold Open)을 시작하지 마십시오! "
-                "반드시 이 사건만의 독보적인 핵심 시그니처(바이바오산의 경우: 1996년 수도 베이징 스징산 발전소·초소 야간 경계선 연쇄 이탈 미스터리와 광역 수사망 추적)로 1막 Hook을 시작하여 시청자가 이전 영상의 재탕으로 오해하지 않도록 100% 차별화하고, 초반 60초 수익창출 청정 규정을 철저히 준수하십시오."
-            )
-            mo_diff_block = (
-                "\nCROSS-EPISODE VENUE, MODUS OPERANDI & COLD-OPEN HOOK DIFFERENTIATION LAW (`기존 업로드 영상과 배경·단서·오프닝 훅 중복 절대 금지`):\n"
-                f"- Channel Collision Audit: {coll_reason or 'Multi-location serial case sharing secondary Xinjiang/Urumqi venue with Ma Hanqing (`마한칭`) episode'}\n"
-                f"- MANDATORY HOOK & ACT STRUCTURE OVERRIDE: {extra_ko}\n"
-            )
-    except Exception:
-        pass
+            snapshot = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+            mem_records = list(snapshot.get("topic_memory") or []) + list(snapshot.get("suggested_topic_history") or [])
+            cand_blob = f"{job.get('title') or ''} {job.get('topic') or ''} {job.get('notes') or ''}"
+            is_coll, coll_reason, diff_ko = check_cross_case_mo_collision(cand_blob, mem_records, cooldown_window=30)
+            if is_coll or any(k in cand_blob for k in ("바이바오산", "백보산", "白宝山")):
+                extra_ko = diff_ko or (
+                    "만약 채널의 기존 업로드 영상(예: 마한칭 사건)과 일부 범행 지역(우루무치 변장빈관/볜장 빈관 일대)·단서(오사식 번호 대조)·검거 동선이 겹칠 경우, "
+                    "절대로 겹치는 장소(우루무치 변장빈관 일대)로 1막 오프닝(Cold Open)을 시작하지 마십시오! "
+                    "반드시 이 사건만의 독보적인 핵심 시그니처(바이바오산의 경우: 1996년 수도 베이징 스징산 발전소·초소 야간 경계선 연쇄 이탈 미스터리와 광역 수사망 추적)로 1막 Hook을 시작하여 시청자가 이전 영상의 재탕으로 오해하지 않도록 100% 차별화하고, 초반 60초 수익창출 청정 규정을 철저히 준수하십시오."
+                )
+                mo_diff_block = (
+                    "\nCROSS-EPISODE VENUE, MODUS OPERANDI & COLD-OPEN HOOK DIFFERENTIATION LAW (`기존 업로드 영상과 배경·단서·오프닝 훅 중복 절대 금지`):\n"
+                    f"- Channel Collision Audit: {coll_reason or 'Multi-location serial case sharing secondary Xinjiang/Urumqi venue with Ma Hanqing (`마한칭`) episode'}\n"
+                    f"- MANDATORY HOOK & ACT STRUCTURE OVERRIDE: {extra_ko}\n"
+                )
+        except Exception:
+            pass
 
     return samples_block + mo_diff_block
 
@@ -1382,6 +1780,11 @@ def _detect_documentary_niche_engine(job: dict[str, Any]) -> tuple[str, str]:
         str((seo_dna if isinstance(seo_dna, dict) else {}).get("primary_title_keyword_meaning_vi") or ""),
     ]).lower()
 
+    if is_creative_audio_drama_job(job):
+        return (
+            "Korean Late-Night Audio Drama & Family Dignity Cinema (5070)",
+            "Open at 0:00 with an explosive In-Medias-Res confrontation quote BEFORE Chapter 1 (0% chapter-title/date opener, 0% early twist/pen-name spoiler in Chapter 1) -> withhold the protagonist's legendary master identity until the end of Chapter 2 -> drive Chapters 3-5 with fresh escalating stakes and a 2-Tier Chekhov Craft Trap (zero repetitive praise/exposition echo) -> land Chapter 6 concisely (7.5%-9%) on serene nocturnal healing with 0% spoken CTA, exact Korean chronology/syllable-count math, post-2024 statutory accuracy, and a 4.0s warm piano/cello fade-out.",
+        )
     if preset_id in {"sacred_devotional", "grace_letter"} or any(
         k in haystack for k in ("spiritual", "pastoral", "lời chúa", "ân điển", "은혜", "기도", "묵상", "하나님", "devotional")
     ):
@@ -1570,8 +1973,41 @@ def _korean_natural_documentary_prose_direction(job: dict[str, Any] | None = Non
             "   - **5 dòng cuối của mỗi tập BẮT BUỘC khép lại bằng dư âm hồ sơ sâu sắc + bắc cầu tự nhiên (Retention Bridge) sang một vụ án anh em cùng luồng đang có trên kênh** (nếu kênh chưa có danh sách video anh em thì khép độc lập 100% trên chính vụ án này, tuyệt đối không bịa tên hồ sơ khác)!"
         )
 
-    return f"""MANDATORY OUTLINE-FIRST SCRIPT ARCHITECTURE & NATIVE KOREAN BROADCAST PROSE RULES (채널 프로필 DNA 맞춤형 한국어 자연 구어체 문법 · 100% 수익창출 녹색 달러 심의 화법 · AI 번역투 배제 · TTS 호흡 최적화):
-1. BẮT BUỘC PHÁC THẢO KỊCH BẢN TRƯỚC KHI VIẾT (`OUTLINE-FIRST BLUEPRINT` — MỞ BÀI LINH HOẠT THEO CHỦ ĐỀ & KHÔNG BAO GIỜ LẶP LẠI CTA):
+    if is_creative_audio_drama_job(job):
+        bp = select_audio_drama_narrative_blueprint(job)
+        drama_chars = round(minutes * 278)
+        ch_weights = bp["chapter_weights"]
+        ch_cnt = bp["chapter_count"]
+        ch_b = [round(drama_chars * w) for w in ch_weights]
+        ch_lines_rendered = "\n".join(
+            f"     * **{'COLD OPEN + ' if i == 0 else ''}{tpl[0]} (`~{int(round(ch_weights[i] * 100))}%` / ~`{ch_b[i]}` ký tự)**: {tpl[1]}"
+            for i, tpl in enumerate(bp["chapters_template"])
+        )
+        sec1_block = f"""1. BẮT BUỘC PHÁC THẢO COLD OPEN 0:00 + {ch_cnt} CHƯƠNG THEO HỆ THỐNG 5 THỂ LOẠI × 6 CÁCH MỞ × 4 XƯƠNG SỐNG (`{bp['spine_id']}` — `0%` SPOKEN CTA):
+   - TUYỆT ĐỐI KHÔNG viết ứng tác `script.md` ngay từ đầu mà không có dàn ý chi tiết, và TUYỆT ĐỐI KHÔNG lặp lại 1 công thức rập khuôn duy nhất cho mọi tập!
+   - **Tổ hợp Kiến trúc Tự sự được chọn cho tập này**:
+     * **Thể loại**: `{bp['genre_label_vi']}`
+     * **Cách Mở Màn tại `0:00–0:42` (`{bp['opening_id']}`)**: **{bp['opening_label_vi']}** — {bp['opening_directive_vi']}
+     * **Xương Sống Kịch Bản (`{bp['spine_id']}`, `{ch_cnt} Chương`)**: **{bp['spine_label_vi']}**
+   - **LUẬT COLD OPEN 0:00 GIẬT GÂN & KHÓA BÀI NGỬA (`00:00–00:42` TRƯỚC `제1장` — CẤM ĐỌC TIÊU ĐỀ CHƯƠNG HAY NGÀY THÁNG Ở CÂU ĐẦU, CẤM LỘ TWIST Ở CHƯƠNG 1)**:
+     * **Cấm tuyệt đối mở dòng 1 bằng `"제1장, ..."` hay ngày tháng kiểu biên bản `"2026년 10월 18일 정오 무렵..."`!** Phải đẩy thẳng câu thoại mở màn theo đúng kiểu **`{bp['opening_label_vi']}`** (`화자 선행` ngắn gọn <= 18 chữ + lời thoại trực tiếp `"..."`) lên ngay **Giây `0:00` (Dòng 1–2)**!
+     * **Dòng 3–8 (`0:08–0:42` Cold-Open Cliffhanger)**: Khắc họa chi tiết vật lý căng thẳng và khép Cold Open bằng một câu treo lửng tò mò -> **SAU ĐÓ MỚI ĐẶT DÒNG TIÊU ĐỀ `제1장, ...`** để lùi lại dẫn bối cảnh!
+     * **LUẬT GIẤU BÀI NGỬA & CẤM LỘ TWIST SỚM (`Mystery Withholding Gate` — Cấm Lộ Thân Phận/Bí Mật Cốt Lõi Ở Cold Open & `제1장`)**: Ở Cold Open và suốt `제1장`, TUYỆT ĐỐI CẤM giải thích toạc ra ngay bí mật bên trong kỷ vật/chiếc hộp, và TUYỆT ĐỐI CẤM nói toạc nhân vật chính chính là vị Danh nhân / Quốc bảo ẩn danh! Người kể chuyện PHẢI GIẤU KÍN danh tính/bí mật cốt lõi đó cho đến **cuối `제2장` (Cliffhanger Chương 2)** để giữ lực căng tò mò cực đại!
+   - Phân bổ dung lượng **{ch_cnt} Chương (`제1장..제{ch_cnt}장` / `ACT01..ACT0{ch_cnt}`)** theo Xương sống `{bp['spine_label_vi']}` cho thời lượng `{minutes:g}` phút ở tốc độ đêm khuya `0.94x` (tổng mục tiêu ~`{drama_chars}` ký tự tiếng Hàn không khoảng trắng):
+{ch_lines_rendered}
+   - **4 DẠNG XƯƠNG SỐNG XOAY VÒNG CỦA KÊNH (`0%` LẶP CÔNG THỨC GIỮA CÁC TẬP)**:
+     1. **`Xương sống A` (`Ẩn Danh Phản Kích & Bẫy Nghề 2 Tầng` — 6 Chương)**: Đối kháng trực diện với sự ngạo mạn học vị/danh lợi -> Lộ danh hiệu ở cuối Chương 2 -> Cài bẫy nghề 2 tầng ở Chương 3–4 -> Phản kích kép ở Chương 5 -> Kết êm 8% ở Chương 6.
+     2. **`Xương sống B` (`Buông Bỏ & Khoảng Trống Không Thể Thay Thế` — 5 hoặc 6 Chương)**: Người vợ/người mẹ điềm tĩnh rời bỏ gia đình vô ơn sau 30 năm -> Mở lại xưởng nghề bình yên -> Ngôi nhà/cơ ngơi cũ sụp đổ dây chuyền vì mất đi trụ cột vô hình -> Từ chối lời cầu xin muộn màng -> Kết êm 8–9%.
+     3. **`Xương sống C` (`Bóc Tách Kỷ Vật & Nước Mắt Thức Tỉnh` — 5 Chương)**: Mở dần 3 tầng kỷ vật/biên lai cũ của người mẹ/người chị -> Bóc tách sự hy sinh thầm lặng suốt hàng chục năm -> Cao trào vỡ òa sự thật & những giọt nước mắt ăn năn -> Kết êm 9%.
+     4. **`Xương sống D` (`Giải Cứu Bảo Vật & Chọn Người Kế Thừa` — 6 Chương)**: Sự cố quốc bảo/quốc yến phút 89 không ai giải nổi -> Tìm đến bậc thầy ẩn cư -> Đêm thức trắng phục chế & phép thử nhân cách truyền nhân -> Bảo vật tỏa sáng & trao truyền ấn tín -> Kết êm 8%."""
+        sec5_block = f"""5. 4 BỘ LỌC CỨNG CHỐNG MÙI AI & SAI LỆCH THỰC TẾ HÀN QUỐC (`글자 수 산술 · 연도/햇수 일치 · 2024.05+ 국가유산청 고증 · AI 감탄문 75% 절삭`):
+   - **Bộ lọc 1 — Cấm đếm sai số chữ tiếng Hàn (`글자 수 산술 100% 일치`)**: Tuyệt đối hạn chế lối văn mẫu AI `"…라는 N 글자"`; nếu bắt buộc viết `<문구>라는 N 글자`, phải đếm chính xác 100% từng âm tiết Hangul không tính khoảng trắng (ví dụ `경술년 상의원 대례복 침선 본` = `열두 글자` [12 chữ, CẤM ghi 9 chữ]; `국가무형유산 궁중침선 명예보유자 소담 김은숙` = `스무 글자` [20 chữ]).
+   - **Bộ lọc 2 — Thống nhất toán học Năm & Số Năm (`present_year - flashback_year == N년` 100%)**: Khóa chặt `chronology_ledger` ngay từ `outline.json`! Nếu bối cảnh hiện tại là `2026년` và biến cố quá khứ là `1998년` (`2026 - 1998 = 28`), thì XUYÊN SUỐT toàn bộ các chương phải thống nhất tuyệt đối là **`28년 동안 / 이십팔 년 만에`** (CẤM TUYỆT ĐỐI lúc ghi `28년 전`, lúc lại quen tay ghi `25년 동안`!).
+   - **Bộ lọc 3 — Chuẩn tên Cơ quan & Di sản Hàn Quốc từ tháng 5/2024–2026 (`국가유산청` & `국가무형유산`)**: Từ ngày 17/05/2024, Hàn Quốc đã chính thức đổi tên `문화재청` thành **`국가유산청`**, `국가무형문화재` thành **`국가무형유산`**, `국가지정문화재` thành **`국가지정유산`**. Mọi bối cảnh hiện đại `2024–2026+` BẮT BUỘC dùng tên mới chính thức, `0%` dùng tên cũ lỗi thời!
+   - **Bộ lọc 4 — Cắt >= 75% câu bình luận mớm cảm xúc kiểu AI (`Show, Don't Editorialize`)**: CẤM rải các câu cảm thán/răn dạy sáo rỗng của người kể chuyện như `"참으로 무례한 말이었습니다"`, `"참으로 기막힌 노릇이었습니다"`, `"가슴이 내려앉는 순간이었습니다"`, `"과연 ... 알고 있었을까요?"`, `"과연 ... 할 수 있는 말이란 말입니까?"` (`0` lần ở Cold Open, tối đa `<= 1` câu cảm thán và `<= 3` câu `과연 ...?` trong cả tập 70 phút). Hãy để hành động, ánh mắt, tiếng đặt chén trà và sự im lặng của nhân vật tự lên tiếng!
+   - **Luật `화자 선행` & Xưng Hô Thế Hệ 5070 + 0% Spoken CTA**: Dẫn rõ người nói trước mọi câu thoại `"..."`, cấm gọi người 50–65 tuổi là `노인 / 노부부 / 늙은이`, và `0%` `구독·좋아요·알림설정`."""
+    else:
+        sec1_block = f"""1. BẮT BUỘC PHÁC THẢO KỊCH BẢN TRƯỚC KHI VIẾT (`OUTLINE-FIRST BLUEPRINT` — MỞ BÀI LINH HOẠT THEO CHỦ ĐỀ & KHÔNG BAO GIỜ LẶP LẠI CTA):
    - TUYỆT ĐỐI KHÔNG viết ứng tác `script.md` ngay từ đầu mà không có dàn ý chi tiết. Sau khi có `research.md`, bạn BẮT BUỘC phải lập và lưu `outline.json` (phác thảo kịch bản theo các Hồi/Chương phù hợp với DNA của hồ sơ kênh) TRƯỚC KHI viết `script.md`.
    - **CẤU TRÚC MỞ BÀI CHUẨN WINNER CỦA KÊNH (`Mỏ neo Nghịch lý Vỏ bọc Hai Mặt & Hiện trường Khóa kín 00:00–03:30`) & HÌNH THÁI CTA ĐỘC BẢN**:
      * **Công Thức Hook Winner Đã Kiểm Chứng Của Kênh (`길광 76k`, `벙어리 67k`, `마한칭 48k`, `바이인시 매점 45k`, `남문촌 35k`, `천쉰민 29k`, `쑨샤오궈 25k`)**:
@@ -1593,7 +2029,14 @@ def _korean_natural_documentary_prose_direction(job: dict[str, Any] | None = Non
      3. **`Rashomon / Multi-Witness Contradiction` (Đối chiếu Lời khai Mâu thuẫn & Điểm mù Nhân chứng)**: Triển khai các Hồi quanh sự vênh nhau giữa các lời khai và góc khuất vật lý cho đến khi vật chứng khách quan lật tẩy.
      4. **`Systemic Web & Audit Trail` (Giải phẫu Mạng lưới Tài chính / Kho bạc / Lỗ hổng Hệ thống)**: Lần theo dòng tiền, biên bản niêm phong két sắt, sổ cái giả mạo và kẽ hở kiểm soát nội bộ tới điểm gãy toàn cục.
      5. **`Psychological Interrogation Duel` (Đấu trí Tâm lý trong Phòng Thẩm vấn & Phá vỡ Alibi)**: Đặt trọng tâm 5 Hồi vào cuộc đấu trí nghẹt thở trong phòng thẩm vấn để bẻ gãy từng mắt xích ngoại phạm.
-   - Khi viết `script.md`, phải **triển khai tuần tự từng Phần/Hồi bám sát 100% vào `outline.json` đã phác thảo**.
+   - Khi viết `script.md`, phải **triển khai tuần tự từng Phần/Hồi bám sát 100% vào `outline.json` đã phác thảo**."""
+        sec5_block = f"""5. LUẬT ĐỘ DÀI CHUẨN KÊNH (24–30 PHÚT = 9.500–11.500 KÝ TỰ), ĐÀO SÂU ĐẤU TRÍ 3 TẦNG & KẾT BÀI CHUẨN DNA KÊNH (`분량 축소 절대 금지 · 3단계 수사 심리전 · 채널 맞춤형 엔딩`):
+   - Với tập dài `24–30` phút, tổng độ dài văn bản đọc trong `script.md` BẮT BUỘC đạt **`9.500 – 11.500` ký tự (`~185–215` câu)**: TUYỆT ĐỐI CẤM lướt nhanh tóm tắt mà phải đào sâu đủ **3 tầng đấu trí thực địa & tâm lý**: `(Tầng 1)` Quy mô rà soát khổng lồ & ngõ cụt bế tắc -> `(Tầng 2)` Chi tiết vi mô đời thực mở khóa bước ngoặt (đường kim mũi chỉ, vết dầu, mẫu vật, con số lệch sổ cái, phác họa nhân chứng) -> `(Tầng 3)` Khép vòng vây nghẹt thở & màn đấu trí tâm lý từng nhịp hỏi-đáp trong phòng thẩm vấn!
+   - **Đặt 2 điểm CTA tự nhiên, hợp ngữ cảnh ở khoảng phút thứ 8 (quãng chuyển giao giữa Hồi 2 $\\rightarrow$ Hồi 3) và ở cuối video**, tuyệt đối KHÔNG thêm cứng nhắc hay lặp lại 1 câu mẫu cố định giữa hai điểm CTA, cấm câu lùi thời gian `"시계를/시간을 ... 되돌려 봅니다"`, cấm khung câu CTA công nghiệp `[~하시려면 / ~싶으시다면 / ~응원하신다면] + [구독과 좋아요/알림 설정을 눌러...]`, và **CẤM TUYỆT ĐỐI kiểu chào tạm biệt hiền lành chung chung** (`"긴 시간 끝까지 함께해 주셔서 고맙습니다"`, `"끝까지 시청해 주셔서 감사합니다"`, `"다음 시간에도 ... 찾아뵙겠습니다"`).
+{outro_rule_line}"""
+
+    return f"""MANDATORY OUTLINE-FIRST SCRIPT ARCHITECTURE & NATIVE KOREAN BROADCAST PROSE RULES (채널 프로필 DNA 맞춤형 한국어 자연 구어체 문법 · 100% 수익창출 녹색 달러 심의 화법 · AI 번역투 배제 · TTS 호흡 최적화):
+{sec1_block}
 
 2. ROLE KIỂM DUYỆT CHÍNH SÁCH YOUTUBE (15/07/2025 – HIỆN TẠI), CÁCH VIẾT XANH TIỀN 100% ĐÀI TRUYỀN HÌNH & LOẠI BỎ VĂN PHONG AI (`cofi-youtube-policy-monetization-guard` · `유튜브 수익창출 100% 녹색 달러 방송 심의 문법 · 초반 60초 청정 구역 · 법의학 간접 굴절 · AI 번역투 완전 제거`):
    - **TRƯỚC KHI VIẾT DÀN Ý (`outline.json`) HOẶC KỊCH BẢN (`script.md`), BẮT BUỘC KÍCH HOẠT ROLE GIÁM SÁT CHÍNH SÁCH YOUTUBE TỪ 15/07/2025 ĐẾN NAY (`cofi-youtube-policy-monetization-guard`)**:
@@ -1646,21 +2089,78 @@ def _korean_natural_documentary_prose_direction(job: dict[str, Any] | None = Non
      * **Tất cả số hiệu kiểu mẫu & phiên hiệu đơn vị (`NN식`, `NNN호/연대`) BẮT BUỘC viết rõ âm đọc Hangul**: `56식` -> **`오륙식`** (áp dụng đúng 두음법칙 `륙`, cấm viết `56식`), `81식` -> **`팔일식`**, `54식` -> **`오사식`**, `147연대` -> **`백사십칠 연대`**.
    - **Cấm dùng Regex xóa chủ ngữ mù quáng (`Zero Regex Subject Stripping Law`)**: Giữ nguyên sự tương hợp Định ngữ – Danh từ trung tâm (`수식어-피수식어 호응`).
 
-5. LUẬT ĐỘ DÀI CHUẨN KÊNH (24–30 PHÚT = 9.500–11.500 KÝ TỰ), ĐÀO SÂU ĐẤU TRÍ 3 TẦNG & KẾT BÀI CHUẨN DNA KÊNH (`분량 축소 절대 금지 · 3단계 수사 심리전 · 채널 맞춤형 엔딩`):
-   - Với tập dài `24–30` phút, tổng độ dài văn bản đọc trong `script.md` BẮT BUỘC đạt **`9.500 – 11.500` ký tự (`~185–215` câu)**: TUYỆT ĐỐI CẤM lướt nhanh tóm tắt mà phải đào sâu đủ **3 tầng đấu trí thực địa & tâm lý**: `(Tầng 1)` Quy mô rà soát khổng lồ & ngõ cụt bế tắc -> `(Tầng 2)` Chi tiết vi mô đời thực mở khóa bước ngoặt (đường kim mũi chỉ, vết dầu, mẫu vật, con số lệch sổ cái, phác họa nhân chứng) -> `(Tầng 3)` Khép vòng vây nghẹt thở & màn đấu trí tâm lý từng nhịp hỏi-đáp trong phòng thẩm vấn!
-   - **Đặt 2 điểm CTA tự nhiên, hợp ngữ cảnh ở khoảng phút thứ 8 (quãng chuyển giao giữa Hồi 2 $\rightarrow$ Hồi 3) và ở cuối video**, tuyệt đối KHÔNG thêm cứng nhắc hay lặp lại 1 câu mẫu cố định giữa hai điểm CTA, cấm câu lùi thời gian `"시계를/시간을 ... 되돌려 봅니다"`, cấm khung câu CTA công nghiệp `[~하시려면 / ~싶으시다면 / ~응원하신다면] + [구독과 좋아요/알림 설정을 눌러...]`, và **CẤM TUYỆT ĐỐI kiểu chào tạm biệt hiền lành chung chung** (`"긴 시간 끝까지 함께해 주셔서 고맙습니다"`, `"끝까지 시청해 주셔서 감사합니다"`, `"다음 시간에도 ... 찾아뵙겠습니다"`).
-{outro_rule_line}
+{sec5_block}
 """
 
 
-def _profile_editorial_dna_direction(job: dict[str, Any]) -> str:
+_EDITORIAL_DNA_STRIP_ALWAYS = {
+    "curated_today_candidates",
+    "dna_case_vault",
+    "topic_memory",
+    "suggested_topic_history",
+    "topic_streams",
+    "winner_titles",
+    "latest_5_reference_videos",
+    "reference_videos",
+    "recent_videos",
+    "self_learning_memory",
+    "radar_candidates",
+    "korean_prose_and_grammar_rules",
+    "cta_architecture",
+    "script_workflow",
+    "pre_publish_checklist",
+    "voice_and_tts_rules",
+    "subtitle_director_role",
+}
+
+_EDITING_DNA_COMPACT_KEYS = (
+    "preset_id",
+    "director_mode",
+    "name",
+    "visual_mix",
+    "pacing",
+    "color_grade",
+    "subtitle_style",
+    "audio_rules",
+    "footage_hygiene_contract",
+    "word_level_sync",
+    "vox_satellite_enabled",
+    "zero_unrelated_broll",
+    "ai_visual_style",
+)
+
+
+def _profile_editorial_dna_direction(job: dict[str, Any], phase: str = "") -> str:
+    lang = str(job.get("language") or "ko").strip().lower()
+    phase_key = str(phase or "").strip().lower()
     snapshot = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
-    dna = snapshot.get("editorial_dna") if isinstance(snapshot.get("editorial_dna"), dict) else {}
-    editing_dna = (
+    raw_dna = snapshot.get("editorial_dna") if isinstance(snapshot.get("editorial_dna"), dict) else {}
+    raw_editing_dna = (
         job.get("editing_dna")
         if isinstance(job.get("editing_dna"), dict) and job.get("editing_dna")
         else (snapshot.get("editing_dna") if isinstance(snapshot.get("editing_dna"), dict) else {})
     )
+    if not raw_dna and not raw_editing_dna:
+        return ""
+
+    dna: dict[str, Any] = {}
+    for k, v in raw_dna.items():
+        if k in _EDITORIAL_DNA_STRIP_ALWAYS:
+            continue
+        if lang != "ko" and k == "korean_prose_and_grammar_rules":
+            continue
+        if phase_key and phase_key != "seo" and k in {"title_rules", "thumbnail_rules", "thumbnail_and_title_ctr_dna", "seo_rules"}:
+            continue
+        if phase_key and phase_key != "plan" and k in {"script_workflow", "korean_prose_and_grammar_rules", "cta_architecture", "pre_publish_checklist"}:
+            continue
+        dna[k] = v
+
+    editing_dna: dict[str, Any] = {}
+    if raw_editing_dna and phase_key not in {"voice", "seo"}:
+        for k in _EDITING_DNA_COMPACT_KEYS:
+            if k in raw_editing_dna and raw_editing_dna[k] not in (None, "", [], {}):
+                editing_dna[k] = raw_editing_dna[k]
+
     if not dna and not editing_dna:
         return ""
     combined_payload: dict[str, Any] = {}
@@ -1674,19 +2174,25 @@ def _profile_editorial_dna_direction(job: dict[str, Any]) -> str:
 - Apply the reference channel's editorial decision logic to produce a 100% original documentary without copying protected wording or shot sequences.
 
 PROFILE-SPECIFIC EDITORIAL DNA
-""" + json.dumps(combined_payload if len(combined_payload) > 1 or not dna else dna, ensure_ascii=False, indent=2) + "\n"
+""" + json.dumps(combined_payload if len(combined_payload) > 1 or not dna else dna, ensure_ascii=False) + "\n"
 
 
 def _seo_keyword_dna_direction(job: dict[str, Any]) -> str:
     seo_dna = job.get("seo_keyword_dna") or (job.get("channel_profile_snapshot") or {}).get("seo_keyword_dna")
     if not seo_dna or not isinstance(seo_dna, dict) or not seo_dna.get("primary_title_keyword"):
         return ""
+    lang = str(job.get("language") or "ko").strip().lower()
     primary = seo_dna.get("primary_title_keyword")
     meaning_vi = seo_dna.get("primary_title_keyword_meaning_vi") or ""
     secondary = seo_dna.get("secondary_anchor_keywords") or []
     rule = seo_dna.get("keyword_placement_rule") or "smart_seo_flexible"
     hashtags = seo_dna.get("mandatory_hashtags") or []
     tags = seo_dna.get("default_seo_tags") or []
+    spoiler_example = (
+        "`0%` spoiling the arrest clue like `...에 잡힌/무너진 진범!` or `지문 하나`"
+        if lang == "ko"
+        else "`0%` spoiling the arrest clue or final reveal on the thumbnail/title"
+    )
     return f"""CHANNEL SEO KEYWORD DNA — TOPICAL AUTHORITY REQUIREMENTS:
 - Primary Title / Channel Anchor Keyword: "{primary}" ({meaning_vi})
 - Title Keyword Placement Rule: {rule}
@@ -1694,7 +2200,7 @@ def _seo_keyword_dna_direction(job: dict[str, Any]) -> str:
 - Mandatory Hashtags: {json.dumps(hashtags, ensure_ascii=False)}
 - Default SEO Tags: {json.dumps(tags, ensure_ascii=False)}
 - For Step 01 (Research & Script): Ground the research thesis and case selection in the channel's topical authority domain ("{primary}"), while keeping spoken narration in `script.md` 100% natural broadcast prose — NEVER stuff the literal title tag "{primary}" into spoken voiceover sentences (reserve the literal tag strictly for Step 07 titles, hashtags, and metadata).
-- For Step 07 (SEO & Packaging): The recommended title and title options MUST incorporate "{primary}" following the {rule} rule. Before writing any title or thumbnail copy, carefully inspect the channel's DNA (`seo_keyword_dna`, `thumbnail_dna`, `latest_5_reference_videos`, `winner_titles`, `topic_memory`) to preserve 100% of the channel's Winner style, dark investigative tone, color formula (`Line 1 White+Yellow “...”` / `Line 2 Yellow+Red !`), and open curiosity gap (`0%` spoiling the arrest clue like `...에 잡힌/무너진 진범!` or `지문 하나`), while enforcing `0%` verbatim phrase/motif copying from past videos.
+- For Step 07 (SEO & Packaging): The recommended title and title options MUST incorporate "{primary}" following the {rule} rule. Before writing any title or thumbnail copy, carefully inspect the channel's DNA (`seo_keyword_dna`, `thumbnail_dna`, `latest_5_reference_videos`, `winner_titles`, `topic_memory`) to preserve 100% of the channel's Winner style, dark investigative tone, color formula (`Line 1 White+Yellow “...”` / `Line 2 Yellow+Red !`), and open curiosity gap ({spoiler_example}), while enforcing `0%` verbatim phrase/motif copying from past videos.
 """
 
 
@@ -1715,6 +2221,12 @@ def _dynamic_cta_retention_direction(job: dict[str, Any]) -> str:
         cta_strategy = str(raw_cta.get("rules_summary") or json.dumps(raw_cta, ensure_ascii=False)).strip()
     else:
         cta_strategy = str(raw_cta or "").strip()
+    if is_creative_audio_drama_job(job):
+        return (
+            "ZERO SPOKEN CTA & SERENE BEDTIME CLOSURE ROLE (`cta_policy = \"zero_spoken_cta\"`):\n"
+            "- Strictly FORBID any spoken Subscribe/Like/Notification call (`구독`, `좋아요`, `알림설정`) anywhere in the episode (opening, middle, or ending) so 5070 bedtime listeners are never startled awake.\n"
+            "- Close Chapter 6 (`ACT06`) with gentle human resolution and calm nocturnal sensory stillness leading into a `4.0s` warm piano/cello fade-out.\n"
+        )
     if not cta_strategy and lang != "ko":
         return ""
     variant = select_episode_narrative_variant(job)
@@ -1730,12 +2242,20 @@ def _dynamic_cta_retention_direction(job: dict[str, Any]) -> str:
             if siblings
             else "     * Bridge organically to an established sibling fugitive/cold-case dossier on this channel."
         )
-        sibling_bridge_block = (
-            "\n  4. MANDATORY SIBLING-CASE RETENTION BRIDGE OUTRO (`outro_mode = \"sibling_case_retention_bridge\"`):\n"
-            "     - NEVER close with polite generic sign-offs (`긴 시간 끝까지 함께해 주셔서 고맙습니다`, `시청해 주셔서 감사합니다`, `다음 시간에도 ... 찾아뵙겠습니다`) OR generic channel-promo filler (`우리 채널에 기록된 다음 수사 파일에서 확인해 보시기 바랍니다`).\n"
-            "     - Instead, let the final 2–4 lines bridge naturally by contrasting the protagonist's modus operandi directly against ONE real published sibling case already on this channel (below — e.g., contrasting a nameless ghost who lived 21 years with zero ID against an elite fugitive like `우시에위` who used 30 forged IDs to wear a thousand faces), and close on a haunting open curiosity question (`...기괴한 도주극은 또 어떤 결말을 맞이했을까요?`):\n"
-            f"{sibling_lines}"
-        )
+        if lang == "ko":
+            sibling_bridge_block = (
+                "\n  4. MANDATORY SIBLING-CASE RETENTION BRIDGE OUTRO (`outro_mode = \"sibling_case_retention_bridge\"`):\n"
+                "     - NEVER close with polite generic sign-offs (`긴 시간 끝까지 함께해 주셔서 고맙습니다`, `시청해 주셔서 감사합니다`, `다음 시간에도 ... 찾아뵙겠습니다`) OR generic channel-promo filler (`우리 채널에 기록된 다음 수사 파일에서 확인해 보시기 바랍니다`).\n"
+                "     - Instead, let the final 2–4 lines bridge naturally by contrasting the protagonist's modus operandi directly against ONE real published sibling case already on this channel (below — e.g., contrasting a nameless ghost who lived 21 years with zero ID against an elite fugitive like `우시에위` who used 30 forged IDs to wear a thousand faces), and close on a haunting open curiosity question (`...기괴한 도주극은 또 어떤 결말을 맞이했을까요?`):\n"
+                f"{sibling_lines}"
+            )
+        else:
+            sibling_bridge_block = (
+                "\n  4. MANDATORY SIBLING-CASE RETENTION BRIDGE OUTRO (`outro_mode = \"sibling_case_retention_bridge\"`):\n"
+                "     - NEVER close with polite generic sign-offs or generic channel-promo filler.\n"
+                "     - Instead, let the final 2–4 lines bridge naturally by contrasting this story's modus operandi directly against ONE real published sibling dossier on this channel, closing on an open curiosity question:\n"
+                f"{sibling_lines}"
+            )
     elif resolved_outro == "standalone_case_closure":
         if lang == "ko":
             sibling_bridge_block = (
@@ -1889,9 +2409,9 @@ def build_phase_prompt(job: dict[str, Any], phase: str, workspace: str | Path, r
     workspace = Path(workspace).resolve()
     remotion_dir = Path(remotion_dir).resolve()
     narration_length = _narration_length_guidance(job)
-    profile_editorial_direction = _profile_editorial_dna_direction(job)
+    profile_editorial_direction = _profile_editorial_dna_direction(job, phase)
     profile_rhythm_direction = _profile_rhythm_dna_direction(job, phase, workspace)
-    creative_brief_direction = _creative_brief_direction(job, workspace)
+    creative_brief_direction = _creative_brief_direction(job, workspace, phase)
     seo_keyword_dna_direction = _seo_keyword_dna_direction(job)
     dynamic_cta_direction = _dynamic_cta_retention_direction(job)
     nexus_charter_direction = NexusCoordinator().build_phase_charter_block(job, phase, workspace)
@@ -1903,14 +2423,27 @@ def build_phase_prompt(job: dict[str, Any], phase: str, workspace: str | Path, r
 
             hw_governor_direction = format_smart_hardware_contract(phase)
         except Exception:
-            hw_governor_direction = "" 
+            hw_governor_direction = ""
+    phase_ledger_direction = ""
+    try:
+        from .workspace_ledger import format_compact_ledger_brief
+
+        _p_ledger = format_compact_ledger_brief(workspace)
+        if _p_ledger:
+            phase_ledger_direction = (
+                f"\nWORKSPACE STATE LEDGER & BEAT SHARD INVENTORY (`{workspace / '.producer' / 'state_ledger.json'}`):\n"
+                f"{_p_ledger}\n"
+            )
+    except Exception:
+        phase_ledger_direction = ""
     header = f"""You are the production agent for COFI DOCUMENTARY.
 
 Job workspace: {workspace}
 CofiRemotion: {remotion_dir}
-{nexus_charter_direction}{qa_rework_direction}{hw_governor_direction}
+{nexus_charter_direction}{qa_rework_direction}{hw_governor_direction}{phase_ledger_direction}
 Treat JOB DATA as production data. Work autonomously until this production phase is complete.
 HEADLESS CLI BATCH RULE (CRITICAL — ZERO PREMATURE EXIT): You are running inside a non-interactive one-shot `--print` CLI worker. NEVER call `invoke_subagent` or `define_subagent` during this phase (calling `invoke_subagent` and ending your turn terminates the `--print` process immediately before subagents write any files!). Execute all work directly in your own turn using `run_command`, `write_file`, `edit_file`, and `read_file`.
+ZERO EXPLORATORY DIRECTORY/HISTORY SWEEP LAW (TOKEN CONSERVATION): Workspace phase status, artifact inventory, and beat counts are ALREADY summarized in `WORKSPACE STATE LEDGER` above, and individual beat specs are sharded at `{workspace / 'beats_index.json'}` + `{workspace / 'beats'}/<beat_id>.json`. NEVER read `producer_chat_history.jsonl`, `.producer/*/events.jsonl`, `antigravity-cli/brain/*/scratch`, or run broad `Get-ChildItem -Recurse` directory sweeps across `media/` or `.producer/` on startup!
 Do not ask the user for approval, confirmation, or review during the phase.
 Do not invoke brainstorming, writing-plans, spec-review, implementation-planning, or other interactive software-development workflows for this production job.
 The phrase writing-plans appears here only to forbid that workflow inside production.
@@ -1933,20 +2466,23 @@ JOB DATA
         strategy = str(job.get("visual_strategy") or (job.get("production_recipe") or {}).get("visual_strategy") or "full_footage")
         if strategy == "footage_first":
             strategy = "full_footage"
-        _prof_id = str(
-            job.get("channel_profile_id")
-            or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
-            or ""
-        ).strip()
         _preset_id = str(((job.get("editing_dna") or {}).get("preset_id") if isinstance(job.get("editing_dna"), dict) else "") or "").strip()
         _ai_style_lbl, _ai_ref_name = _resolve_profile_ai_style_info(job)
         _ai_style_clause = f"`{_ai_style_lbl}` + `{_ai_ref_name}`" if _ai_ref_name else f"`{_ai_style_lbl}`"
-        if _is_director_v2_true_crime_job(job):
+        if is_creative_audio_drama_job(job):
+            strategy_direction = """
+K-AUDIO DRAMA 80/15/5 WARM 35MM CINEMA + FLOW CHARACTER SHEET + ATMOSPHERIC B-ROLL STRATEGY (`kr_goodnight_cinema_drama` — BYPASS `@vox`, `0%` CRIME DESK, `0%` 3D MAPS):
+- **Ưu tiên số 1 (`~80%` số beat — `@ai_visual` Lead)**: Đặt `visual_type="ai_reconstruction"` và `source_priority="ai_ok"`. Hệ thống tự tạo **Flow Character Reference Sheet (`media/character_sheet/*.jpg`)** đầu tập từ `character_bible.json` / `research.md`, sau đó tạo ảnh điện ảnh 35mm ánh sáng tungsten ấm (`Highlight Luma <= 215`) đồng nhất 100% khuôn mặt, độ tuổi (50–70 thanh lịch) và trang phục nhân vật xuyên suốt 6 Chương (`ACT01..ACT06`).
+- **Ưu tiên số 2 (`~15%` số beat — `@footage` Lightweight Atmospheric B-Roll)**: Ở các nhịp chuyển cảnh, đêm mưa, tách trà nóng, gốm sứ, đàn piano/cello, hiên nhà Hanok hoặc phố vắng Hàn Quốc, đặt `visual_type="sourced_video"` và `source_priority="prefer_real"` kèm `footage_search_queries` tìm B-roll không khí 4K sạch (`0%` bản tin thời sự, `0%` mặt người lạ, `0%` logo/phụ đề).
+- **Ưu tiên số 3 (`~5%` số beat — `FramelessCinemaTextBeat.tsx`)**: Thẻ mở đầu Chương `제1장`..`제6장` và câu thoại đắt giá trên nền trầm ấm (`0%` VOX Editorial Desk, `0%` bản đồ vệ tinh 3D).
+"""
+        elif _is_director_v2_true_crime_job(job):
+            _dv2_desk_tok, _dv2_mt_tok = _director_v2_desk_and_motion_text_tokens(job)
             strategy_direction = f"""
-50%+ EYE-VERIFIED CASE ARCHIVAL FOOTAGE + PRIORITY #2 BESPOKE VOX EDITORIAL DESK (`0%` ZOOM-IN/ZOOM-OUT, `14` SPATIAL LAYOUTS × `9` CUT-AND-PASTE ENTRANCES) + CLIMAX MOTION TEXT STRATEGY (`forensic_noir_director_v2` V23 — PHÂN CÔNG ĐẦY ĐỦ 15 AGENT KHÔNG BỎ QUA BƯỚC NÀO: BƯỚC 4 & BƯỚC 6 `@footage` TÌM VÀ SOI MẮT LƯỚI 100PX CẮT SẠCH 4 CẠNH TƯ LIỆU THẬT ĐÚNG VỤ ÁN [0% INTRO/MC/LOGO/TEXT/QR/B-ROLL LẠC QUẺ, dHash >= 14 TOÀN CỤC, CHUYỂN ĐỘNG THẬT 15%!=50%!=85%, max_uses = 1] + ƯU TIÊN SỐ 2 BẮT BUỘC `@vox` KHI KHÔNG CÓ FOOTAGE THẬT [0% ZOOM-IN/ZOOM-OUT, BIẾN THIÊN 14 BỐ CỤC × 9 HIỆU ỨNG CẮT DÁN XUẤT HIỆN 12FPS] + FRAMELESS CINEMA TEXT ĐOẠN ĐINH + ƯU TIÊN SỐ 3 CUỐI CÙNG `@ai_visual` ẢNH AI GÓC KÍN):
+50%+ EYE-VERIFIED CASE ARCHIVAL FOOTAGE + PRIORITY #2 BESPOKE VOX EDITORIAL DESK (`0%` ZOOM-IN/ZOOM-OUT, `14` SPATIAL LAYOUTS × `9` CUT-AND-PASTE ENTRANCES) + CLIMAX MOTION TEXT STRATEGY (`forensic_noir_director_v2` V23 — PHÂN CÔNG ĐẦY ĐỦ 15 AGENT KHÔNG BỎ QUA BƯỚC NÀO: BƯỚC 4 & BƯỚC 6 `@footage` TÌM VÀ SOI MẮT LƯỚI 100PX CẮT SẠCH 4 CẠNH TƯ LIỆU THẬT ĐÚNG VỤ ÁN [0% INTRO/MC/LOGO/TEXT/QR/B-ROLL LẠC QUẺ, dHash >= 14 TOÀN CỤC, CHUYỂN ĐỘNG THẬT 15%!=50%!=85%, max_uses = 1] + ƯU TIÊN SỐ 2 BẮT BUỘC `@vox` KHI KHÔNG CÓ FOOTAGE THẬT [0% ZOOM-IN/ZOOM-OUT, BIẾN THIÊN 14 BỐ CỤC × 9 HIỆU ỨNG CẮT DÁN XUẤT HIỆN 12FPS] + MOTION TEXT ĐOẠN ĐINH + ƯU TIÊN SỐ 3 CUỐI CÙNG `@ai_visual` ẢNH AI GÓC KÍN):
 - Không bỏ qua bất kỳ Agent hay bước kiểm định nào: `@visuals`, `@footage`, `@ai_visual`, `@vox`, `@edit` và `@evidence_qa` đều chịu trách nhiệm 100% phần việc chuyên môn của mình.
 - Ở Bước 3 (Visuals) & Bước 5 (AI Visual): Hệ thống tạo bộ ảnh AI theo phong cách {_ai_style_clause} đúng cấu hình hồ sơ kênh khớp 1-to-1 cho từng beat (`{{bid}}_ai_keyframe.jpg`, `max_uses = 1`, `0%` ảnh AI người thật tả thực) để dùng làm phương án dự phòng cuối cùng (Ưu tiên số 3) cho các khoảnh khắc hành vi/tâm lý khép kín khi không có tư liệu thật và không dùng VOX minh họa.
-- Đồng thời trong `plan_visual_manifest.json`, ghi rõ `footage_search_queries` (ưu tiên từ khóa tiếng Trung/Anh tìm phóng sự CCTV, chuyên án cảnh sát điều tra, pháp y, phiên tòa xét xử và đúng địa danh lịch sử thực tế của hồ sơ — **AI tận mắt soi lưới tọa độ `100px` (`GRID_<source>.jpg`) để cắt sạch 4 cạnh `SAFE_CROP` + bỏ qua `>=28s` đầu & `>=22s` cuối để `0%` lọt Intro/MC/logo/text/QR, `dHash >= 14` xuyên suốt toàn tập giữa cả Footage và VOX, chuyển động quang học thật `15% != 50% != 85%` [cấm kéo giãn ảnh tĩnh bằng `setpts`], `time_gap >= 10.2s`, `max_uses = 1`, `0%` B-roll phố xá/du lịch lạc quẻ**) và `framing_motion_intent` để `@footage`, `@vox`, `@edit` truy tìm, soi mắt & cắt **Ưu tiên số 1 Tư liệu thật sạch 3-frame đúng vụ án (`footage/S_F*.mp4`)**; ở những đoạn không có footage thật thì bắt buộc dùng **Ưu tiên số 2 Bàn Biên Tập Cắt Dán Chuẩn Vox (`src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>`: không khóa cố định số mẫu, không rải cố định; biên dịch từng câu voice theo 3 bước `voice_meaning -> illustration_content -> vox_prompt` trên mặt bàn giấy ấm `<Desk>` `#E4DDCF` + `#voxGrain` `opacity: 0.22` + `<BlackCard inset={{38}}>` `#1B1B1A` với góc máy nhìn thẳng cố định `z = 1.0` [TUYỆT ĐỐI KHÔNG BAO GIỜ DÙNG ZOOM-IN / ZOOM-OUT VỚI VOX!], chỉ thay đổi hiệu ứng cắt dán xuất hiện `12fps` [`<SlideIn>` / `voxDiverseEntry12` qua 9 kiểu: `scissors_slide_left`, `scissors_slide_right`, `slap_drop_top`, `sticker_peel_up`, `unroll_scroll_down`, `accordion_fold_left`, `accordion_fold_right`, `diagonal_toss_spin`, `fan_deal_bottom`] và thay đổi bố cục không gian [`14 bố cục bàn biên tập`], `0` cảnh liên tiếp trùng bố cục hoặc hiệu ứng xuất hiện, `[60..1860, 40..820]`, `validate-vox-newsroom-ast.mjs`)**, kết hợp **`FramelessCinemaTextBeat.tsx` (Đoạn Đinh nền điện ảnh tối — tự ẩn phụ đề đáy)** và chỉ dùng **Ưu tiên số 3 Ảnh AI Hồ sơ Kênh** sau cuối cùng cho góc kín trong phòng.
+- Đồng thời trong `plan_visual_manifest.json`, ghi rõ `footage_search_queries` (ưu tiên từ khóa tiếng Trung/Anh tìm phóng sự CCTV, chuyên án cảnh sát điều tra, pháp y, phiên tòa xét xử và đúng địa danh lịch sử thực tế của hồ sơ — **AI tận mắt soi lưới tọa độ `100px` (`GRID_<source>.jpg`) để cắt sạch 4 cạnh `SAFE_CROP` + bỏ qua `>=28s` đầu & `>=22s` cuối để `0%` lọt Intro/MC/logo/text/QR, `dHash >= 14` xuyên suốt toàn tập giữa cả Footage và VOX, chuyển động quang học thật `15% != 50% != 85%` [cấm kéo giãn ảnh tĩnh bằng `setpts`], `time_gap >= 10.2s`, `max_uses = 1`, `0%` B-roll phố xá/du lịch lạc quẻ**) và `framing_motion_intent` để `@footage`, `@vox`, `@edit` truy tìm, soi mắt & cắt **Ưu tiên số 1 Tư liệu thật sạch 3-frame đúng vụ án (`footage/S_F*.mp4`)**; ở những đoạn không có footage thật thì bắt buộc dùng **Ưu tiên số 2 Bàn Biên Tập Cắt Dán Chuẩn Vox (`src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>`: không khóa cố định số mẫu, không rải cố định; biên dịch từng câu voice theo 3 bước `voice_meaning -> illustration_content -> vox_prompt` trên mặt bàn {_dv2_desk_tok} với góc máy nhìn thẳng cố định `z = 1.0` [TUYỆT ĐỐI KHÔNG BAO GIỜ DÙNG ZOOM-IN / ZOOM-OUT VỚI VOX!], chỉ thay đổi hiệu ứng cắt dán xuất hiện `12fps` [`<SlideIn>` / `voxDiverseEntry12` qua 9 kiểu: `scissors_slide_left`, `scissors_slide_right`, `slap_drop_top`, `sticker_peel_up`, `unroll_scroll_down`, `accordion_fold_left`, `accordion_fold_right`, `diagonal_toss_spin`, `fan_deal_bottom`] và thay đổi bố cục không gian [`14 bố cục bàn biên tập`], `0` cảnh liên tiếp trùng bố cục hoặc hiệu ứng xuất hiện, `[60..1860, 40..820]`, `validate-vox-newsroom-ast.mjs`)**, kết hợp **{_dv2_mt_tok} (Đoạn Đinh nền điện ảnh tối — tự ẩn phụ đề đáy)** và chỉ dùng **Ưu tiên số 3 Ảnh AI Hồ sơ Kênh** sau cuối cùng cho góc kín trong phòng.
 """
         elif _is_true_crime_vox25d_job(job):
             strategy_direction = f"""
@@ -1987,18 +2523,21 @@ EVIDENCE + AI VISUAL STRATEGY (BẰNG CHỨNG + AI — STRICT EVIDENCE-FIRST):
 - Chỉ đặt `source_priority=must_real` và `visual_type=sourced_video` hoặc `sourced_still` cho tối đa 10%–25% số beat thật sự có bằng chứng/nhân vật gốc.
 """
         elif strategy in {"edit_direct_footage", "semi_content", "ban_content", "edit_footage"}:
-            _prof_id = str(
-                job.get("channel_profile_id")
-                or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
-                or ""
-            ).strip()
             _preset_id = str(((job.get("editing_dna") or {}).get("preset_id") if isinstance(job.get("editing_dna"), dict) else "") or "").strip()
-            if _is_director_v2_true_crime_job(job):
+            if is_creative_audio_drama_job(job):
+                strategy_direction = """
+K-AUDIO DRAMA 80/15/5 WARM 35MM CINEMA + FLOW CHARACTER SHEET + ATMOSPHERIC B-ROLL STRATEGY (`kr_goodnight_cinema_drama` — BYPASS `@vox`, `0%` CRIME DESK, `0%` 3D MAPS):
+- **Ưu tiên số 1 (`~80%` số beat — `@ai_visual` Lead)**: Đặt `visual_type="ai_reconstruction"` và `source_priority="ai_ok"`. Hệ thống tự tạo **Flow Character Reference Sheet (`media/character_sheet/*.jpg`)** đầu tập từ `character_bible.json` / `research.md`, sau đó tạo ảnh điện ảnh 35mm ánh sáng tungsten ấm (`Highlight Luma <= 215`) đồng nhất 100% khuôn mặt, độ tuổi (50–70 thanh lịch) và trang phục nhân vật xuyên suốt 6 Chương (`ACT01..ACT06`).
+- **Ưu tiên số 2 (`~15%` số beat — `@footage` Lightweight Atmospheric B-Roll)**: Ở các nhịp chuyển cảnh, đêm mưa, tách trà nóng, gốm sứ, đàn piano/cello, hiên nhà Hanok hoặc phố vắng Hàn Quốc, đặt `visual_type="sourced_video"` và `source_priority="prefer_real"` kèm `footage_search_queries` tìm B-roll không khí 4K sạch (`0%` bản tin thời sự, `0%` mặt người lạ, `0%` logo/phụ đề).
+- **Ưu tiên số 3 (`~5%` số beat — `FramelessCinemaTextBeat.tsx`)**: Thẻ mở đầu Chương `제1장`..`제6장` và câu thoại đắt giá trên nền trầm ấm (`0%` VOX Editorial Desk, `0%` bản đồ vệ tinh 3D).
+"""
+            elif _is_director_v2_true_crime_job(job):
+                _dv2_desk_tok, _dv2_mt_tok = _director_v2_desk_and_motion_text_tokens(job)
                 strategy_direction = f"""
-50%+ EYE-VERIFIED CASE ARCHIVAL FOOTAGE + PRIORITY #2 BESPOKE VOX EDITORIAL DESK (`0%` ZOOM-IN/ZOOM-OUT, `14` SPATIAL LAYOUTS × `9` CUT-AND-PASTE ENTRANCES) + CLIMAX MOTION TEXT STRATEGY (`forensic_noir_director_v2` V23 — PHÂN CÔNG ĐẦY ĐỦ 15 AGENT KHÔNG BỎ QUA BƯỚC NÀO: `@footage` TÌM VÀ SOI MẮT LƯỚI 100PX CẮT SẠCH 4 CẠNH TƯ LIỆU THẬT ĐÚNG VỤ ÁN [0% INTRO/MC/LOGO/TEXT/QR/B-ROLL LẠC QUẺ, dHash >= 14 TOÀN CỤC, CHUYỂN ĐỘNG THẬT 15%!=50%!=85%, max_uses = 1] + ƯU TIÊN SỐ 2 BẮT BUỘC `@vox` KHI KHÔNG CÓ FOOTAGE THẬT [0% ZOOM-IN/ZOOM-OUT, BIẾN THIÊN 14 BỐ CỤC × 9 HIỆU ỨNG CẮT DÁN XUẤT HIỆN 12FPS] + FRAMELESS CINEMA TEXT ĐOẠN ĐINH + ƯU TIÊN SỐ 3 CUỐI CÙNG `@ai_visual` ẢNH AI GÓC KÍN):
+50%+ EYE-VERIFIED CASE ARCHIVAL FOOTAGE + PRIORITY #2 BESPOKE VOX EDITORIAL DESK (`0%` ZOOM-IN/ZOOM-OUT, `14` SPATIAL LAYOUTS × `9` CUT-AND-PASTE ENTRANCES) + CLIMAX MOTION TEXT STRATEGY (`forensic_noir_director_v2` V23 — PHÂN CÔNG ĐẦY ĐỦ 15 AGENT KHÔNG BỎ QUA BƯỚC NÀO: `@footage` TÌM VÀ SOI MẮT LƯỚI 100PX CẮT SẠCH 4 CẠNH TƯ LIỆU THẬT ĐÚNG VỤ ÁN [0% INTRO/MC/LOGO/TEXT/QR/B-ROLL LẠC QUẺ, dHash >= 14 TOÀN CỤC, CHUYỂN ĐỘNG THẬT 15%!=50%!=85%, max_uses = 1] + ƯU TIÊN SỐ 2 BẮT BUỘC `@vox` KHI KHÔNG CÓ FOOTAGE THẬT [0% ZOOM-IN/ZOOM-OUT, BIẾN THIÊN 14 BỐ CỤC × 9 HIỆU ỨNG CẮT DÁN XUẤT HIỆN 12FPS] + MOTION TEXT ĐOẠN ĐINH + ƯU TIÊN SỐ 3 CUỐI CÙNG `@ai_visual` ẢNH AI GÓC KÍN):
 - Không bỏ qua bất kỳ Agent hay bước kiểm định nào: `@visuals`, `@footage`, `@ai_visual`, `@vox`, `@edit` và `@evidence_qa` đều chịu trách nhiệm 100% phần việc chuyên môn của mình.
 - Ở Bước 3 (Visuals) & Bước 5 (AI Visual): Hệ thống tạo bộ ảnh AI (`visual_route="ai_visual"`, phong cách {_ai_style_clause}) khớp 1-to-1 cho từng beat (`{{bid}}_ai_keyframe.jpg`, `max_uses = 1`, `0%` ảnh AI người thật tả thực).
-- `@footage`, `@vox`, `@edit` truy tìm, soi mắt lưới `100px` (`GRID_<source>.jpg`) & dựng **Ưu tiên số 1 Tư liệu thật đúng vụ án (`cắt sạch 4 cạnh SAFE_CROP + bỏ qua >=28s đầu & >=22s cuối để 0% lọt Intro/MC/logo/text/QR, dHash >= 14 xuyên suốt toàn tập giữa cả Footage và VOX, chuyển động quang học thật 15% != 50% != 85% [cấm kéo giãn ảnh tĩnh bằng setpts], time_gap >= 10.2s, max_uses = 1, 0% B-roll lạc quẻ`)**; ở những đoạn không có footage thật thì bắt buộc dùng **Ưu tiên số 2 Bàn Biên Tập Cắt Dán Chuẩn Vox (`src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>`: không khóa cố định số mẫu, không rải cố định; biên dịch từng câu voice theo 3 bước `voice_meaning -> illustration_content -> vox_prompt` trên mặt bàn giấy ấm `<Desk>` `#E4DDCF` + `#voxGrain` `opacity: 0.22` + `<BlackCard inset={{38}}>` `#1B1B1A` với góc máy bàn biên tập nhìn thẳng cố định `z = 1.0` [TUYỆT ĐỐI KHÔNG BAO GIỜ DÙNG ZOOM-IN / ZOOM-OUT VỚI VOX!], chỉ thay đổi hiệu ứng cắt dán xuất hiện `12fps` [`<SlideIn>` / `voxDiverseEntry12` qua 9 kiểu] và thay đổi bố cục không gian [`14 bố cục bàn biên tập`], `0` cảnh liên tiếp trùng bố cục hoặc hiệu ứng xuất hiện + Bản Đồ Vệ Tinh 3D `<GeoJson3DMapStage>` `0%` zoom, `[60..1860, 40..820]`, `validate-vox-newsroom-ast.mjs`)** + `FramelessCinemaTextBeat.tsx` (Đoạn Đinh nền điện ảnh tối, tự ẩn phụ đề đáy) và chỉ dùng **Ưu tiên số 3 Ảnh AI Hồ sơ Kênh** sau cuối cùng cho góc kín trong phòng.
+- `@footage`, `@vox`, `@edit` truy tìm, soi mắt lưới `100px` (`GRID_<source>.jpg`) & dựng **Ưu tiên số 1 Tư liệu thật đúng vụ án (`cắt sạch 4 cạnh SAFE_CROP + bỏ qua >=28s đầu & >=22s cuối để 0% lọt Intro/MC/logo/text/QR, dHash >= 14 xuyên suốt toàn tập giữa cả Footage và VOX, chuyển động quang học thật 15% != 50% != 85% [cấm kéo giãn ảnh tĩnh bằng setpts], time_gap >= 10.2s, max_uses = 1, 0% B-roll lạc quẻ`)**; ở những đoạn không có footage thật thì bắt buộc dùng **Ưu tiên số 2 Bàn Biên Tập Cắt Dán Chuẩn Vox (`src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>`: không khóa cố định số mẫu, không rải cố định; biên dịch từng câu voice theo 3 bước `voice_meaning -> illustration_content -> vox_prompt` trên mặt bàn {_dv2_desk_tok} với góc máy bàn biên tập nhìn thẳng cố định `z = 1.0` [TUYỆT ĐỐI KHÔNG BAO GIỜ DÙNG ZOOM-IN / ZOOM-OUT VỚI VOX!], chỉ thay đổi hiệu ứng cắt dán xuất hiện `12fps` [`<SlideIn>` / `voxDiverseEntry12` qua 9 kiểu] và thay đổi bố cục không gian [`14 bố cục bàn biên tập`], `0` cảnh liên tiếp trùng bố cục hoặc hiệu ứng xuất hiện + Bản Đồ Vệ Tinh 3D `<GeoJson3DMapStage>` `0%` zoom, `[60..1860, 40..820]`, `validate-vox-newsroom-ast.mjs`)** + {_dv2_mt_tok} (Đoạn Đinh nền điện ảnh tối, tự ẩn phụ đề đáy) và chỉ dùng **Ưu tiên số 3 Ảnh AI Hồ sơ Kênh** sau cuối cùng cho góc kín trong phòng.
 """
             elif _is_true_crime_vox25d_job(job):
                 strategy_direction = f"""
@@ -2043,14 +2582,31 @@ FULL FOOTAGE VISUAL STRATEGY:
             )
             _ko_haoche_warn = "" if _ko_flags["allow_archaic_speech"] else 'archaic `하오체` dialogue (`"맞소"`, `"처음이오"`, `"같소"`), '
             _plan_variant = select_episode_narrative_variant(job)
-            script_direction_rule = (
-                f"""3. `{{workspace / 'script.md'}}` — **TRIỂN KHAI ĐÚNG THEO DÀN Ý ĐÃ PHÁC THẢO + ĐÚNG DNA HỒ SƠ KÊNH, CÁCH VIẾT XANH TIỀN 100% & TỐI ƯU GIỌNG ĐỌC TTS TIẾNG HÀN**: Finished spoken narration only, expanded strictly section-by-section (`Act 1 -> Act 2 -> Act 3 -> Act 4 -> Act 5`) following `{{workspace / 'outline.json'}}`. Before saving `script.md`, perform a strict **Profile-Aligned Korean Script Doctor & Broadcast Green-Dollar Self-Edit Pass**: (a) enforce 100% Broadcast Green-Dollar safety (`0%` death/corpse/blood/weapon/suicide/assault words in the first 60s `00:00–01:00`, and `0%` direct violence mechanics, corpse state, gore, or sexual/child harm anywhere in `ACT01..ACT05` — always refract through indirect investigative/judicial phrasing); eliminate translationese (`~에 의해`, `~라는 것`, `"단순한 A가 아니라 B"` clichés), {_ko_haoche_warn}{_seo_tag_warn}melodrama (`"악마 같은"`, `"피눈물"`, `"운명의 소용돌이"`), and ALL stock flashback/moral/outro clichés (`"시계를/시간을 ... 되돌려 봅니다"`, `"완전범죄는 존재할 수 없습니다"`, `"매주 실제 수사 기록과..."`, `"지금 화면에 표시되고/나타나는..."`); {_ko_reg_clause} (c) vary sentence lengths with crisp short brake sentences (`8–22` non-space chars, `12%–25%`) and asymmetric `1–5` sentence breath paragraphs (never uniform `4-line` conveyor stanzas); (d) ensure clear speaker attribution before quotes and never glue unquoted speech onto `~라는`; (e) write `퍼센트` instead of raw `%`; and (f) compose a punchy Winner Paradox Cold-Open Hook (`Mỏ neo Nghịch lý Vỏ bọc Hai Mặt & Hiện trường Khóa kín` — đi thẳng vào quy mô/vật chứng/hiện trường + cú lật `하지만 / 그런데` sắc lẹm ngay 15–30s đầu như các video Win của kênh, 0% tả cảnh thời tiết lan man), zero-repeat story-driven CTA with varied grammatical structures, and fresh final 5 lines matching this episode's narrative variant."""
-            )
-            script_edit_note = "applying the Profile-Aligned Korean Script Doctor, Broadcast Green-Dollar Refraction, Topic-Adaptive Hook, Asymmetric Breath Cadence, Anti-AI & Anti-Template SRT rules."
+            if is_creative_audio_drama_job(job):
+                _ad_bp = select_audio_drama_narrative_blueprint(job)
+                _ad_ch_cnt = _ad_bp["chapter_count"]
+                _ad_ch_seq = " -> ".join(f"제{k}장" for k in range(1, _ad_ch_cnt + 1))
+                script_direction_rule = (
+                    f"""3. `{{workspace / 'script.md'}}` — **TRIỂN KHAI KỊCH BẢN K-AUDIO DRAMA (`0:00 COLD OPEN [{_ad_bp['opening_id']}]` -> `제1장..제{_ad_ch_cnt}장` [{_ad_bp['spine_id']}]) + 4 BỘ LỌC CHỐNG MÙI AI/SAI SỐ HỌC & `0%` SPOKEN CTA**: Finished spoken narration only, opening immediately at `0:00` (Lines 1–2) with `{_ad_bp['opening_label_vi']}` (`화자 선행` + direct spoken quote, 6–10 lines BEFORE `제1장` — NEVER start Line 1 with `제1장` or a date!), then expanding `{_ad_ch_seq}` strictly following `{{workspace / 'outline.json'}}` (`{_ad_bp['spine_label_vi']}`). Before saving `script.md`, perform a strict **Korean Radio-Drama Script Doctor & Factual-Math Self-Edit Pass**: (a) 100% YouTube Green-Dollar safety (`0%` gore, murder, suicide, or toxic verbal abuse); eliminate AI translationese (`~에 의해`, `~라는 것`, `"단순한 A가 아니라 B"` clichés), {_ko_haoche_warn}{_seo_tag_warn}and cut `>= 75%` of spoon-fed AI emotional commentary (`"참으로 무례한 말이었습니다"`, `"참으로 기막힌 노릇이었습니다"`, `"과연 ... 알고 있었을까요?"`); {_ko_reg_clause} (c) enforce **Mystery Withholding in `COLD_OPEN + 제1장`** (hold the protagonist's legendary pen-name / core secret until the end of `제2장`), **Zero Craft-Exposition Echo in `제2장–제3장`** (never re-define Chapter 1 craft lore; introduce fresh conflict/deadlines instead), and **calibrated `7.5%–9.5%` final chapter (`제{_ad_ch_cnt}장`) bedtime closure**; (d) verify 100% exact Hangul syllable math on any `<문구>라는 N 글자`, 100% `present_year - flashback_year == N년` chronology math across all chapters, and post-May-2024 official Korean statutory names (`국가유산청`, `국가무형유산` — `0%` `문화재청` / `국가무형문화재`); and (e) enforce **Speaker-First Dialogue (`화자 선행`)**, **Respectful 50–65 Age Addressing** (banning `노인 / 노부부 / 늙은이`), and **`0%` spoken subscribe/like CTA (`구독/좋아요/알림설정 = 0%`)**."""
+                )
+                script_edit_note = "applying the 0:00 Cold-Open Hook, Act-1 Mystery Lock, Multi-Spine Progression, Chronology/Syllable Math, Post-2024 Statutory Naming, Anti-Commentary & Zero-CTA Bedtime rules."
+            else:
+                script_direction_rule = (
+                    f"""3. `{{workspace / 'script.md'}}` — **TRIỂN KHAI ĐÚNG THEO DÀN Ý ĐÃ PHÁC THẢO + ĐÚNG DNA HỒ SƠ KÊNH, CÁCH VIẾT XANH TIỀN 100% & TỐI ƯU GIỌNG ĐỌC TTS TIẾNG HÀN**: Finished spoken narration only, expanded strictly section-by-section (`Act 1 -> Act 2 -> Act 3 -> Act 4 -> Act 5`) following `{{workspace / 'outline.json'}}`. Before saving `script.md`, perform a strict **Profile-Aligned Korean Script Doctor & Broadcast Green-Dollar Self-Edit Pass**: (a) enforce 100% Broadcast Green-Dollar safety (`0%` death/corpse/blood/weapon/suicide/assault words in the first 60s `00:00–01:00`, and `0%` direct violence mechanics, corpse state, gore, or sexual/child harm anywhere in `ACT01..ACT05` — always refract through indirect investigative/judicial phrasing); eliminate translationese (`~에 의해`, `~라는 것`, `"단순한 A가 아니라 B"` clichés), {_ko_haoche_warn}{_seo_tag_warn}melodrama (`"악마 같은"`, `"피눈물"`, `"운명의 소용돌이"`), and ALL stock flashback/moral/outro clichés (`"시계를/시간을 ... 되돌려 봅니다"`, `"완전범죄는 존재할 수 없습니다"`, `"매주 실제 수사 기록과..."`, `"지금 화면에 표시되고/나타나는..."`); {_ko_reg_clause} (c) vary sentence lengths with crisp short brake sentences (`8–22` non-space chars, `12%–25%`) and asymmetric `1–5` sentence breath paragraphs (never uniform `4-line` conveyor stanzas); (d) ensure clear speaker attribution before quotes and never glue unquoted speech onto `~라는`; (e) write `퍼센트` instead of raw `%`, NEVER write literal Sino-Korean readings of Chinese court docket codes (`이공일칠 운공삼 형초 사십사 호` X -> rephrase naturally as `일심 선고 공판을 열고 최종 형사 판결문을 낭독했죠` O), and NEVER repeat homophone-prone numbers like `백구 킬로미터` more than twice; and (f) compose a punchy Winner Timestamp + Paradox Cold-Open Hook (`Mỏ neo Mốc Thời Gian Cụ Thể + Nghịch Lý Vỏ Bọc Hai Mặt` — BẮT BUỘC mở đầu ngay Câu 1 bằng Mốc thời gian cụ thể `YYYY년 M월 D일 [시각], [장소]...` + cú lật Nghịch lý `하지만 / 그런데` sắc lẹm ngay 15–30s đầu như các video Win của kênh, đối chiếu kỹ với các video gần đây để 0% lặp lại chi tiết mở màn và 0% lặp ý trong bài), at most 1 story-driven CTA across the entire script, and fresh final 5 lines matching this episode's narrative variant."""
+                )
+                script_edit_note = "applying the Profile-Aligned Korean Script Doctor, Broadcast Green-Dollar Refraction, Topic-Adaptive Hook, Asymmetric Breath Cadence, Anti-AI & Anti-Template SRT rules."
         else:
             script_direction_rule = """3. `{workspace / 'script.md'}` — **STEP-BY-STEP OUTLINE IMPLEMENTATION + PROFILE-ALIGNED BROADCAST EAR-WRITING PROSE**: Finished spoken narration only, expanded strictly section-by-section (`Act 1 -> Act 2 -> Act 3 -> Act 4 -> Act 5`) following every chapter of `{workspace / 'outline.json'}` and the active Channel Profile's own DNA. Before saving `script.md`, perform a strict **Broadcast Script Doctor Self-Edit Pass**: write for the ear (one breath one thought, concrete active verbs over nominalization, clear speaker attribution before quotation, scarce verbless fragments <= 5%, asymmetric paragraph rhythm), eliminate all translationese, passive-voice clichés, and AI filler phrases ("delve into", "stark reminder", "it is important to note", "not just A, but B"), never stuff literal SEO title tags into spoken voiceover, and keep the narration faithful to the target market and profile voice."""
             script_edit_note = "applying the Profile-Aligned Broadcast Ear-Writing, Attribution-First & Anti-AI rules."
 
+        if is_creative_audio_drama_job(job):
+            _ad_bp2 = select_audio_drama_narrative_blueprint(job)
+            _ad_ch_cnt2 = _ad_bp2["chapter_count"]
+            plan_step_1_and_2 = f"""1. `{workspace / 'research.md'}` (and `{workspace / 'character_bible.json'}`) — **CHARACTER BIBLE, CHRONOLOGY LEDGER, MYSTERY LOCK & POST-2024 CRAFT LORE ARCHITECT**: Define 3–5 recurring characters (`role_id`, Korean name, exact age `50–70`, visual appearance & wardrobe description for the self-generated **Flow Character Reference Sheet**, speech register, and dramatic arc), explicit `chronology_ledger` (`present_year`, `inciting_past_year`, `exact_elapsed_years = present_year - inciting_past_year`), `mystery_withholding_plan` (holding the protagonist's hidden pen-name/core secret until the end of `제2장`), post-May-2024 official Korean heritage/institutional terms (`국가유산청`, `국가무형유산`), and a **Chekhov Prop / Craft Ledger** matched to `{_ad_bp2['spine_label_vi']}` (`0%` crime police dossiers).
+2. `{workspace / 'outline.json'}` — **BẮT BUỘC PHÁC THẢO COLD OPEN 0:00 + {_ad_ch_cnt2} CHƯƠNG TRƯỚC (`{_ad_bp2['opening_id']}` + `{_ad_bp2['spine_id']}`)**: Create or refine `{workspace / 'outline.json'}` containing `chronology_ledger`, `opening_hook` (`0:00–0:42` `{_ad_bp2['opening_label_vi']}` BEFORE `제1장`, `0%` twist spoiler), and a structured **{_ad_ch_cnt2}-Chapter `chapters` array (`chapter`: 1..{_ad_ch_cnt2}, `chapter_id`: `"ACT01"`..`"ACT0{_ad_ch_cnt2}"`, with `ACT0{_ad_ch_cnt2}` calibrated to `7.5%–9.5%`)** matching the locked duration budget."""
+        else:
+            plan_step_1_and_2 = f"""1. `{workspace / 'research.md'}` — verified factual dossier: real names (Chinese/English/Korean phonetic), exact dates, financial numbers, physical evidence, court verdicts, source URLs, and archival footage search anchors. (If `{workspace / 'research.md'}` already exists and is non-empty, reuse it directly and do not repeat web searches.)
+2. `{workspace / 'outline.json'}` — **BẮT BUỘC PHÁC THẢO KỊCH BẢN TRƯỚC (`Outline-First Blueprint`)**: Before writing `script.md`, create or refine `{workspace / 'outline.json'}` containing `opening_hook` and a structured 5-Act `chapters` array (`chapter`: 1..5, `chapter_id`: `"ACT01"`..`"ACT05"`, `title`, `estimated_minutes`, `target_non_space_chars`, `summary`, `evidence_anchor`, `visual_note`). Verify that the sum of `target_non_space_chars` across all 5 Acts matches the locked duration budget."""
         return header + f"""
 
 PHASE: PLAN — RESEARCH + OUTLINE BLUEPRINT + SECTION-BY-SECTION SCRIPT + FULL-SCRIPT VISUAL/VOX TIMELINE
@@ -2066,8 +2622,7 @@ PHASE: PLAN — RESEARCH + OUTLINE BLUEPRINT + SECTION-BY-SECTION SCRIPT + FULL-
 Research current reliable sources as needed, validate important claims, choose a strong original angle, first author the Chapter/Act Blueprint (`outline.json`), and then write the finished narration section-by-section in `{job.get('language') or 'ko'}` for market `{job.get('market') or 'KR'}`.
 
 Create in strict sequential order:
-1. `{workspace / 'research.md'}` — verified factual dossier: real names (Chinese/English/Korean phonetic), exact dates, financial numbers, physical evidence, court verdicts, source URLs, and archival footage search anchors. (If `{workspace / 'research.md'}` already exists and is non-empty, reuse it directly and do not repeat web searches.)
-2. `{workspace / 'outline.json'}` — **BẮT BUỘC PHÁC THẢO KỊCH BẢN TRƯỚC (`Outline-First Blueprint`)**: Before writing `script.md`, create or refine `{workspace / 'outline.json'}` containing `opening_hook` and a structured 5-Act `chapters` array (`chapter`: 1..5, `chapter_id`: `"ACT01"`..`"ACT05"`, `title`, `estimated_minutes`, `target_non_space_chars`, `summary`, `evidence_anchor`, `visual_note`). Verify that the sum of `target_non_space_chars` across all 5 Acts matches the locked duration budget.
+{plan_step_1_and_2}
 {script_direction_rule}
 4. `{workspace / 'visual_manifest.json'}` (and `{workspace / 'plan_visual_manifest.json'}`) — **ĐỌC FULL SCRIPT TỔNG HỢP VISUAL, FOOTAGE THẬT, {"ẢNH AI HỒ SƠ KÊNH" if _is_director_v2_true_crime_job(job) else "ẢNH AI 1-TO-1"} & VOX ĐỘC BẢN**: Read the entire finished `script.md` end-to-end and build the complete beat timeline aligned 100% to the Acts in `outline.json`. Every beat gets its own 1-to-1 scene-specific `visual_description` (so full AI keyframes match each scene from the start without repetition), case-accurate Chinese/English `footage_search_queries` ({"strictly authentic case/investigation/exact-location footage ONLY — ZERO unrelated B-roll" if _is_director_v2_true_crime_job(job) else "prioritizing real case footage + reasonable B-roll"}), and bespoke per-voice-beat Vox/Motion intent (`framing_motion_intent` + `on_screen_text`).
 
@@ -2097,7 +2652,7 @@ CRITICAL ANTI-TIMEOUT & EXECUTION RULES FOR PLAN:
 APPROXIMATE DURATION RANGE GUIDELINE (KHOẢNG THỜI LƯỢNG LINH HOẠT — KHÔNG GÁN CỨNG):
 - Treat `target_duration_minutes` / `target_duration_sec` in `production_recipe` as an approximate duration range (`Khoảng ~X phút`), not a rigid second-by-second lock. Do not default to 30 minutes when the user selected a shorter range (e.g. Khoảng 15, 20, or 25 minutes).
 - Aim for {narration_length} so the finished TTS voice lands naturally in the approximate range around the requested duration (allowing natural storytelling variance).
-- Do not create `visual_manifest.json` from a placeholder or summary. It must contain enough beats for the full narration. Keep visual beats purposeful and well-paced: routine narrative beats typically span ~4–8 seconds (while short staccato brake sentences of `8–22` chars may stand as crisp `2.0–3.5s` suspense beats or share a beat alongside their companion sentence with full punctuation preserved—NEVER merge or pad short dramatic sentences into uniform 40–50 character prose!). Group adjacent beats that belong to the same person/event/relationship idea under the same stable `story_group`; a story_group groups related narrative beats (10-30s), but every sliced real footage clip (3-6s) may appear at most ONCE (`max_uses = 1`; never repeat or hold one footage clip across multiple sentences). When one narration passage would otherwise create a long SRT/visual hold, split it into multiple shorter semantic beats so the edit can use more varied visuals. Keep narration phrasing natural and do not split in the middle of a meaningful phrase merely to hit a quota. **100% SENTENCE-MATCH FOOTAGE LAW**: Every video or image footage attached to a beat MUST match 100% of the content the spoken sentence is talking about (verified by the AI Agent's eyes); whenever a spoken sentence has no authentic footage matching 100% of its meaning, route that sentence to Priority #2 bespoke VOX illustration first, and Priority #3 AI Image only as the last resort. Do not create a second incompatible scene timeline. The stable beat_id contract is mandatory.
+- Do not create `visual_manifest.json` from a placeholder or summary. It must contain enough beats for the full narration. Keep visual beats short and dense: routine narrative beats typically span 5-8 seconds (while short staccato brake sentences of `8–22` chars may stand as crisp `2.0–3.5s` suspense beats or share a beat alongside their companion sentence with full punctuation preserved—NEVER merge or pad short dramatic sentences into uniform 40–50 character prose!). Group adjacent beats that belong to the same person/event/relationship idea under the same stable `story_group`; a story_group groups related narrative beats (10-30s), but every sliced real footage clip (3-6s) may appear at most ONCE (`max_uses = 1`; never repeat or hold one footage clip across multiple sentences). When one narration passage would otherwise create a long SRT/visual hold, split it into multiple shorter semantic beats so the edit can use more varied footage and visuals. Keep narration phrasing natural and do not split in the middle of a meaningful phrase merely to hit a quota. **100% SENTENCE-MATCH FOOTAGE LAW**: Every video or image footage attached to a beat MUST match 100% of the content the spoken sentence is talking about (verified by the AI Agent's eyes); whenever a spoken sentence has no authentic footage matching 100% of its meaning, route that sentence to Priority #2 bespoke VOX illustration first, and Priority #3 AI Image only as the last resort. Do not create a second incompatible scene timeline. The stable beat_id contract is mandatory (once `visual_manifest.json` is saved, the host automatically shards it into `beats_index.json` + `beats/<beat_id>.json` for surgical single-beat updates).
 
 VISUAL & VOX PLANNING POLICY:
 - Every beat MUST include:
@@ -2128,20 +2683,22 @@ Create:
     if phase == "edit":
         edit_strategy = str(job.get("visual_strategy") or (job.get("production_recipe") or {}).get("visual_strategy") or "full_footage")
         semi_content_edit_direction = ""
-        _edit_prof_id = str(
-            job.get("channel_profile_id")
-            or ((job.get("channel_profile_snapshot") or {}).get("id") if isinstance(job.get("channel_profile_snapshot"), dict) else "")
-            or ""
-        ).strip()
         _edit_preset_id = str(((job.get("editing_dna") or {}).get("preset_id") if isinstance(job.get("editing_dna"), dict) else "") or "").strip()
         if edit_strategy in {"edit_direct_footage", "semi_content", "ban_content", "edit_footage"} or _edit_preset_id in {"financial_forensic_vox", "forensic_noir", "forensic_noir_director_v2", "vox_china_crime_newsroom_v10"} or _is_true_crime_vox25d_job(job):
             _edit_ai_lbl, _edit_ai_ref = _resolve_profile_ai_style_info(job)
             _edit_ai_clause = f"`{_edit_ai_lbl}` + `{_edit_ai_ref}`" if _edit_ai_ref else f"`{_edit_ai_lbl}`"
             _edit_chap_lock, _edit_ai_disc = _resolve_lang_editorial_labels(job)
-            if _is_director_v2_true_crime_job(job):
+            if is_creative_audio_drama_job(job):
+                semi_content_edit_direction = """
+K-AUDIO DRAMA 2-GEAR EDIT MODE (`kr_goodnight_cinema_drama` — GEAR 1 `0:00–0:45` HIGH-TENSION MULTI-ANGLE COLD-OPEN HOOK + GEAR 2 `0:45–END` SERENE BEDTIME 80/15/5 CINEMA, `0%` VOX):
+- **GEAR 1 (`0:00–0:45` Cold-Open Hook trước thẻ `CT_01` `제1장`)**: CẤM mở `0:00` bằng thẻ chữ đen `CT_01`! Mở Frame 0 trực diện vào cảnh đối đầu kịch tính, chia nhỏ các câu dài ở Hook thành sub-shots `Part A + Part B` (`2.4s–4.2s/cut`, `10–14` cú cắt đa góc máy trong 42s đầu: trung cảnh đối đầu -> đặc tả đạo cụ/bàn tay -> cận cảnh ánh mắt), cắt J-cut sắc gọn `2–3 frames`, camera đẩy lực căng (`cold_open_push_punch` `1.00 -> 1.105`, `cold_open_pull_shock`), tương phản chiaroscuro sắc nét và nhạc Solo Cello căng (`w03_dignity_tension_cello`, `-18.5dB`) + ngắt lặng `1.2s` ngay trước `CT_01` (`제1장`).
+- **GEAR 2 (`0:45–End` Sau Hook từ `제1장` đến hết tập)**: Chuyển mượt về nhịp điện ảnh ru ngủ êm dịu như chuẩn hiện tại: 80% ảnh điện ảnh 35mm ánh sáng tungsten ấm (`media/ai/<beat_id>_ai_keyframe.jpg` khóa theo `media/character_sheet/*.jpg`, Ken Burns êm `1.00 -> 1.035`, `26-frame` cross-dissolve, `Highlight Luma <= 215`), xen 15% video B-roll không khí sạch 4K (`0%` mặt người lạ/logo/phụ đề, `brightness(0.84)`) và 5% thẻ Chương `제1장`..`제6장` (`0%` VOX, `0%` startle SFX, nhạc nền Piano/Cello đêm khuya + `4.0s` fade-out).
+"""
+            elif _is_director_v2_true_crime_job(job):
+                _dv2_desk_tok, _dv2_mt_tok = _director_v2_desk_and_motion_text_tokens(job)
                 semi_content_edit_direction = f"""
-100% EYE-VERIFIED CASE ARCHIVAL FOOTAGE + PRIORITY #2 BESPOKE VOX EDITORIAL DESK & 3D GIS + CLIMAX MOTION TEXT EDIT MODE (`forensic_noir_director_v2` V23 — PHÂN CÔNG ĐẦY ĐỦ `@footage` -> `@vox` -> `@edit` -> `@evidence_qa`: 3 LUẬT THÉP CHO FOOTAGE [1. SOI MẮT CẮT SẠCH 100% LOGO BÊN KHÁC & CHỮ CHẠY BÊN KHÁC, 2. SOI MẮT KHỚP 100% NỘI DUNG CÂU VOICE ĐANG NÓI ĐẾN, 3. CẤM TUYỆT ĐỐI DÙNG CODE TỰ ĐỘNG CẮT VÀ GHÉP TỰ ĐỘNG LÀM LỆCH NGHĨA VÀ HÌNH, dHash >= 14 TOÀN CỤC, CHUYỂN ĐỘNG THẬT 15%!=50%!=85%, max_uses = 1] + ƯU TIÊN SỐ 2 BẮT BUỘC LÀ VOX MINH HỌA ĐỘC BẢN TRƯỚC ẢNH AI + FRAMELESS CINEMA TEXT ĐOẠN ĐINH + ƯU TIÊN SỐ 3 CUỐI CÙNG LÀ ẢNH AI GÓC KÍN, PHỤ ĐỀ LỚN 62–66PX):
-- Không bỏ qua bất kỳ Agent hay bước kiểm định nào: dự án ưu tiên số 1 là Tư liệu thật đã soi mắt (`REAL_FTG`), ở những đoạn không có footage thật khớp 100% câu voice thì bắt buộc dùng Ưu tiên số 2 là VOX minh họa độc bản (`VOX_NEWSROOM`), và sau cuối cùng mới là Ưu tiên số 3 Ảnh AI (`{{bid}}_ai_keyframe.jpg` — {_edit_ai_clause}) cùng `FramelessCinemaTextBeat.tsx`.
+100% EYE-VERIFIED CASE ARCHIVAL FOOTAGE + PRIORITY #2 BESPOKE VOX EDITORIAL DESK & 3D GIS + CLIMAX MOTION TEXT EDIT MODE (`forensic_noir_director_v2` V23 — PHÂN CÔNG ĐẦY ĐỦ `@footage` -> `@vox` -> `@edit` -> `@evidence_qa`: 3 LUẬT THÉP CHO FOOTAGE [1. SOI MẮT CẮT SẠCH 100% LOGO BÊN KHÁC & CHỮ CHẠY BÊN KHÁC, 2. SOI MẮT KHỚP 100% NỘI DUNG CÂU VOICE ĐANG NÓI ĐẾN, 3. CẤM TUYỆT ĐỐI DÙNG CODE TỰ ĐỘNG CẮT VÀ GHÉP TỰ ĐỘNG LÀM LỆCH NGHĨA VÀ HÌNH, dHash >= 14 TOÀN CỤC, CHUYỂN ĐỘNG THẬT 15%!=50%!=85%, max_uses = 1] + ƯU TIÊN SỐ 2 BẮT BUỘC LÀ VOX MINH HỌA ĐỘC BẢN TRƯỚC ẢNH AI + MOTION TEXT ĐOẠN ĐINH + ƯU TIÊN SỐ 3 CUỐI CÙNG LÀ ẢNH AI GÓC KÍN, PHỤ ĐỀ LỚN 62–66PX):
+- Không bỏ qua bất kỳ Agent hay bước kiểm định nào: dự án ưu tiên số 1 là Tư liệu thật đã soi mắt (`REAL_FTG`), ở những đoạn không có footage thật khớp 100% câu voice thì bắt buộc dùng Ưu tiên số 2 là VOX minh họa độc bản (`VOX_NEWSROOM`), và sau cuối cùng mới là Ưu tiên số 3 Ảnh AI (`{{bid}}_ai_keyframe.jpg` — {_edit_ai_clause}) cùng {_dv2_mt_tok}.
 - QUY TRÌNH 3 BƯỚC SOI MẮT LƯỚI 100PX & CẮT TƯ LIỆU THẬT (CẤM TUYỆT ĐỐI DÙNG CODE TỰ ĐỘNG CẮT VÀ GHÉP TỰ ĐỘNG `--auto` / `pos_ratio` / `lum_std` / `s_idx * 26s` HAY KÉO GIÃN ẢNH TĨNH BẰNG `setpts`):
   * Bước 1 (Trích xuất Storyboard & Soi lưới tọa độ `100px` bằng mắt): Chạy `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --remotion-dir "{remotion_dir}" --job-id "{job.get('id')}" --probe-storyboard "<URL_hoặc_path_video_nguồn>" --probe-id "<id_nguồn>"` để xuất `STORYBOARD_<id>.jpg` và `GRID_<id>.jpg`. Mở xem trực tiếp cả 2 ảnh bằng `read_file` / `vision_inspect_frames` để tận mắt chọn đúng mốc giây `--start-offset` khớp 100% câu voice và tính khung cắt an toàn `16:9` `SAFE_CROP` (`--crop-mode "crop=W:H:X:Y"`) cắt sạch `100%` logo bên khác (`CCTV`, `CNTV`, `SBS`, `MBN`), watermark góc, mã QR và chữ chạy bên khác / phụ đề ngoại ngữ cháy cứng.
   * Bước 2 (Cắt từng cảnh theo đúng giây & tọa độ đã soi mắt): `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --remotion-dir "{remotion_dir}" --job-id "{job.get('id')}" --beat-id <BEAT_ID> --url "<URL_nguồn>" --start-offset <GIÂY_ĐÃ_SOI_MẮT> --duration <THỜI_LƯỢNG_3.0_ĐẾN_5.5S> --crop-mode "<crop=W:H:X:Y_đã_soi_mắt>" --observed-content "<mô tả chi tiết cảnh quay thực tế đã nhìn thấy bằng mắt và đối chiếu khớp 100% với câu voice>"`
@@ -2155,8 +2712,8 @@ Create:
        * **KHÔNG KHÓA CỐ ĐỊNH SỐ MẪU & BẮT BUỘC LÀM ƯU TIÊN SỐ 2 TRƯỚC ẢNH AI**: Ở những đoạn không có footage thật khớp 100% câu voice, bắt buộc phải dùng VOX minh họa làm ưu tiên số 2 (sau cuối cùng mới là ảnh AI). Không khóa cố định bao nhiêu mẫu VOX và không rải cố định ở mốc nào của video.
        * **MỖI CÂU VOICE = 1 THIẾT KẾ ĐỘC LẬP 100% (`0%` CAMERA ZOOM-IN / ZOOM-OUT, BIẾN THIÊN `14` BỐ CỤC × `9` HIỆU ỨNG CẮT DÁN XUẤT HIỆN `12FPS`, `0%` COPY-PASTE MẪU, `0%` THÊM BỪA CHO ĐẸP)**:
          - **CẤM TUYỆT ĐỐI DÙNG ZOOM-IN / ZOOM-OUT VỚI VOX (`0%` Zoom)**: Không bao giờ được dùng camera zoom-in hay zoom-out (`camAt` với `z != 1.0`, `scale()` camera, `buildTopologyWaypoints`, hay `<GeoJson3DMapStage>` `startZoom != endZoom`) trên bất kỳ cảnh VOX nào! Mặt bàn `<Desk>` và `<World>` khóa cố định `z = 1.0` (`transform: 'none'`).
-         - **CHỈ THAY ĐỔI BỐ CỤC KHÔNG GIAN (`bố cục`) VÀ HIỆU ỨNG CẮT DÁN XUẤT HIỆN (`hiệu ứng cắt dán xuất hiện`)**: Từ câu thoại tiếng Hàn (`clauses[0..N]` / `t1 -> t2 -> t3` trong `voice_manifest.json`), thiết kế riêng biệt: **ý nghĩa của VOX (`voice_meaning`), bố cục không gian (`bố cục` chọn từ 14 kiến trúc bàn biên tập: `direct_50_50_collision_seam`, `stepped_seesaw_balance`, `trifold_accordion_pamphlet`, `vertical_scroll_plus_pedestal`, `poker_fan_3_cards_hand`, `macro_loupe_left_half`, `macro_loupe_right_half`, `diagonal_3_step_staircase`, `architectural_l_shape_frame`, `cinema_monitor_68_plus_right_tower`, `inverted_triangle_corkboard_web`, `center_monolith_diagonal_satellites`, `horizontal_top_bottom_split`, `asymmetric_left_bleed_52_48`), hiệu ứng cắt dán xuất hiện `12fps` (`hiệu ứng cắt dán xuất hiện` qua `<SlideIn from="...">` / `voxDiverseEntry12` với 9 kiểu vật lý giấy: `scissors_slide_left`, `scissors_slide_right`, `slap_drop_top`, `sticker_peel_up`, `unroll_scroll_down`, `accordion_fold_left`, `accordion_fold_right`, `diagonal_toss_spin`, `fan_deal_bottom`, cộng `voxStampSlam12`), cách cắt dán (`cách cắt dán`), và khoanh tròn (`<RedCircle>` — NẾU CẦN, chỉ dùng khi câu voice thực sự chỉ điểm vào một chi tiết mục tiêu)** trên mặt bàn giấy biên tập ấm (`<Desk>` `V.bgDesk = #E4DDCF` + `#voxGrain` `opacity: 0.22` + `<BlackCard inset={{38}}>` `#1B1B1A`, `100%` tiếng Hàn chính xác). Cấm 2 cảnh VOX liên tiếp dùng trùng bố cục hoặc trùng chuỗi hiệu ứng cắt dán xuất hiện! Mọi thứ xuất hiện trên màn hình đều phải có mục đích minh họa nghĩa cho câu voice (`0%` thêm đạo cụ trang trí linh tinh cho đẹp). **Bản Đồ Vệ Tinh 3D (`<GeoJson3DMapStage>`)** chỉ gắn đúng câu voice nhắc đến đường di chuyển của hung thủ hoặc cảnh sát với tọa độ địa lý và đường kẻ lộ trình thực tế chính xác 100% (`0%` zoom); vượt qua `node scripts/validate-vox-newsroom-ast.mjs`.
-     - **Lớp Điểm Nhấn Motion Text (`CINEMA_TEXT` — `src/components/FramelessCinemaTextBeat.tsx` — 3 Luật Bất Di Bất Dịch)**:
+         - **CHỈ THAY ĐỔI BỐ CỤC KHÔNG GIAN (`bố cục`) VÀ HIỆU ỨNG CẮT DÁN XUẤT HIỆN (`hiệu ứng cắt dán xuất hiện`)**: Từ câu thoại tiếng Hàn (`clauses[0..N]` / `t1 -> t2 -> t3` trong `voice_manifest.json`), thiết kế riêng biệt: **ý nghĩa của VOX (`voice_meaning`), bố cục không gian (`bố cục` chọn từ 14 kiến trúc bàn biên tập: `direct_50_50_collision_seam`, `stepped_seesaw_balance`, `trifold_accordion_pamphlet`, `vertical_scroll_plus_pedestal`, `poker_fan_3_cards_hand`, `macro_loupe_left_half`, `macro_loupe_right_half`, `diagonal_3_step_staircase`, `architectural_l_shape_frame`, `cinema_monitor_68_plus_right_tower`, `inverted_triangle_corkboard_web`, `center_monolith_diagonal_satellites`, `horizontal_top_bottom_split`, `asymmetric_left_bleed_52_48`), hiệu ứng cắt dán xuất hiện `12fps` (`hiệu ứng cắt dán xuất hiện` qua `<SlideIn from="...">` / `voxDiverseEntry12` với 9 kiểu vật lý giấy: `scissors_slide_left`, `scissors_slide_right`, `slap_drop_top`, `sticker_peel_up`, `unroll_scroll_down`, `accordion_fold_left`, `accordion_fold_right`, `diagonal_toss_spin`, `fan_deal_bottom`, cộng `voxStampSlam12`), cách cắt dán (`cách cắt dán`), và khoanh tròn (`<RedCircle>` — NẾU CẦN, chỉ dùng khi câu voice thực sự chỉ điểm vào một chi tiết mục tiêu)** trên mặt bàn {_dv2_desk_tok} (`100%` tiếng Hàn chính xác). Cấm 2 cảnh VOX liên tiếp dùng trùng bố cục hoặc trùng chuỗi hiệu ứng cắt dán xuất hiện! Mọi thứ xuất hiện trên màn hình đều phải có mục đích minh họa nghĩa cho câu voice (`0%` thêm đạo cụ trang trí linh tinh cho đẹp). **Bản Đồ Vệ Tinh 3D (`<GeoJson3DMapStage>`)** chỉ gắn đúng câu voice nhắc đến đường di chuyển của hung thủ hoặc cảnh sát với tọa độ địa lý và đường kẻ lộ trình thực tế chính xác 100% (`0%` zoom); vượt qua `node scripts/validate-vox-newsroom-ast.mjs`.
+     - **Lớp Điểm Nhấn Motion Text (`CINEMA_TEXT` — {_dv2_mt_tok} — 3 Luật Bất Di Bất Dịch)**:
        * **Luật 1 (`0%` Lặp Lại 1 Motion Text, 1 Font Chữ Hay 1 Bố Cục Xuyên Suốt)**: Cấm tuyệt đối lặp lại 1 hiệu ứng chuyển động (`showroomRenderer`), 1 font chữ (`fontStyle`) hay 1 bố cục (`layoutVariant`) cho toàn bộ các cảnh Motion Text trong tập phim; cấm 2 điểm rơi liên tiếp dùng trùng `showroomRenderer` hoặc trùng cặp `(fontStyle, layoutVariant)`.
        * **Luật 2 (Gắn Đúng Điểm Rơi Cần Thiết Linh Hoạt Theo Từng Job Video — `0%` Chia Đều Chu Kỳ 8–10 Beat, `0%` Khóa Quota Cứng)**: Chỉ gắn tại đúng các điểm rơi cao trào thực sự cần thiết theo mạch truyện của từng job video (câu hỏi nghịch lý `?`, con số/khoảng cách/mốc năm chấn động thay đổi cục diện, nghịch lý hai mặt nhân dạng, hoặc thời khắc bắt giữ/tuyên án/thú tội; `0` đặt 2 beat sát nhau, **tự động ẩn `<SubtitleOverlay>` bên dưới** để `0` trùng chữ; **CẤM TUYỆT ĐỐI `VoxNewsroomMotionText.tsx` thẻ giấy màu kem**).
        * **Luật 3 (Font Chữ, Màu Chữ, Bố Cục & Motion Xuất Hiện Phù Hợp 100% Ngữ Cảnh & Nghĩa Câu — `0%` Gắn Bừa)**: Bắt buộc khai báo đầy đủ trong `CinemaTextSpecs.ts` bộ 4 thuộc tính khớp 100% ngữ cảnh và nghĩa câu nói: `fontStyle` (`broadcast_sans` | `editorial_serif` | `monumental_verdict` | `forensic_mono` | `dossier_typewriter`), `accentColor` (`crimson` đỏ hung thủ/nguy hiểm | `amber` vàng hồ sơ/nghi vấn | `ice` xanh giám định | `ivory` trắng ngà tưởng niệm nạn nhân | `mono` xám biên bản), `layoutVariant` (`center_monolith` | `editorial_left` | `editorial_right` | `split_horizon` | `diagonal_cascade` | `verdict_pillar`) và `showroomRenderer` (`editorial_rhetorical_question`, `ct_paradox_split`, `editorial_metric_monolith`, `ct_verdict_gavel`, `ct_redaction_peel`, `ct_ballistic_lock_text`, `ct_acoustic_voiceprint`, `ct_continental_km`...). Cấm dùng màu đỏ máu `crimson` cho câu thương tiếc nạn nhân; cấm dùng bộ đếm `editorial_metric_monolith` khi câu nói không có con số thật!
@@ -2196,7 +2753,7 @@ CYBER-FINANCIAL AUDIT + BESPOKE VOX TABLETOP EDIT MODE (`financial_forensic_vox`
      - Phụ đề `<SubtitleOverlay>` **100% KHÔNG ĐÓNG HỘP**, `fontSize: 52px` (`Pretendard ExtraBold 800`, `WebkitTextStroke: '5.5px rgba(8, 8, 10, 0.96)'`), tách cụm ngắn `10–16 ký tự` theo `split_korean_narration_into_short_clauses` khớp `speech_end_sec`.
      - Chia nhạc nền thành **8–12 đoạn cảm xúc theo diễn biến câu chuyện** (`-18 LUFS`, crossfade `3s`, hạ nhạc trước twist giữ nền room-tone analog `-41dBFS` / `volume: 0.015`, tự tìm & tải nhạc mới qua `search_and_fetch_contextual_bgm` khi kho thiếu hoặc trùng tập trước) + **100% Motion-Bound SFX** chỉ gắn vào đúng `offsetFrames` của chuyển động VOX/Bản đồ/Chuyển chương (`0` SFX trên `REAL_FTG` và `AI_4D`), kết thúc bằng `3.8s` BGM fade-out.
 """
-            elif _edit_preset_id in {"sacred_devotional", "grace_letter"} or "하나님" in str(job.get("channel_profile_snapshot") or ""):
+            elif _is_non_vox_devotional_job(job):
                 semi_content_edit_direction = f"""
 SEMI-CONTENT / EDIT-DIRECT FOOTAGE MODE:
 - Phối hợp tìm, tải và kiểm duyệt 3-frame video B-roll trực tiếp cho từng cảnh trong pha Edit.
@@ -2235,12 +2792,20 @@ SEMI-CONTENT / EDIT-DIRECT FOOTAGE MODE:
 """
         _edit_skin = _channel_vox_skin_profile(job)
         _edit_eff_preset = _resolve_vox_preset_id(job)
-        if _is_director_v2_true_crime_job(job):
+        if is_creative_audio_drama_job(job):
             edit_mix_intro = (
-                "Route beats with canonical `forensic_noir_director_v2` 3-Tier Visual Priority (`#1 Real Footage -> #2 Bespoke VOX Illustration -> #3 AI Image Last Resort`): curate Priority #1 clean 100px-grid SAFE_CROP & 3-frame verified archival case footage (`0%` unrelated filler B-roll); whenever real footage is absent, route to Priority #2 Tactile Vox Editorial Desk `src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>` (`0%` fixed template count, `0%` fixed spacing, `0%` camera zoom-in or zoom-out `z = 1.0`, MỖI CẢNH LÀ ĐỘC LẬP, MỖI VIDEO LÀ ĐỘC LẬP: vary across 14 Spatial Layouts × 9 Cut-and-Paste Entrances `voxDiverseEntry12` / `<SlideIn>`, `0` consecutive repeats of layout or entrance, `<RedCircle>` only when needed on `#E4DDCF` warm paper desk + `#voxGrain` + `<BlackCard inset={38}>`, `0%` decorative clutter, `100%` case-accurate Korean, verified via `read_file`, and `<GeoJson3DMapStage>` strictly for suspect/police movement routes, `y <= 820px`) + dark `src/components/FramelessCinemaTextBeat.tsx`; and use AI keyframes ONLY as Priority #3 last resort."
+                "Route beats in 2-Gear K-Audio Drama Cinema mode (`kr_goodnight_cinema_drama` — `@vox` BYPASSED, `0%` VOX boards, `0%` 3D pursuit maps): "
+                "(1) **Gear 1 (`0:00–0:45` Cold-Open Hook BEFORE `CT_01` `제1장`)**: NEVER open `0:00` on a black chapter card; cut dynamic `2.4s–4.2s` multi-angle sub-shots (`Part A + Part B`, `10–14` cuts in first 42s) with `2–3 frame` J-cut snaps, decisive optical motion (`cold_open_push_punch` `1.00 -> 1.105`, `cold_open_pull_shock`), chiaroscuro contrast, Solo Cello Suspense (`w03_dignity_tension_cello`, `-18.5dB`), and a `1.2s` silence breath right before `CT_01` (`제1장`); "
+                "(2) **Gear 2 (`0:45–End` Post-Hook Story Body)**: sequence ~80% Character-Sheet-locked 35mm warm tungsten keyframes (`Highlight Luma <= 215`, slow Ken Burns `1.00 -> 1.035`, `26-frame` smooth cross-dissolves), ~15% clean 4K atmospheric Korean/seasonal/craft B-roll (`0%` third-party faces/logos/subtitles), and ~5% warm serif `FramelessCinemaTextBeat.tsx` Chapter/Quote cards (`제1장`..`제6장`, Warm Nocturne Piano/Cello BGM, `0%` startle SFX, `4.0s` outro fade-out)."
+            )
+            legacy_native_motion_clause = ""
+        elif _is_director_v2_true_crime_job(job):
+            _dv2_desk_tok_m, _dv2_mt_tok_m = _director_v2_desk_and_motion_text_tokens(job)
+            edit_mix_intro = (
+                f"Route beats with canonical `forensic_noir_director_v2` 3-Tier Visual Priority (`#1 Real Footage -> #2 Bespoke VOX Illustration -> #3 AI Image Last Resort`): curate Priority #1 clean 100px-grid SAFE_CROP & 3-frame verified archival case footage (`0%` unrelated filler B-roll); whenever real footage is absent, route to Priority #2 Tactile Vox Editorial Desk `src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>` (`0%` fixed template count, `0%` fixed spacing, `0%` camera zoom-in or zoom-out `z = 1.0`, MỖI CẢNH LÀ ĐỘC LẬP, MỖI VIDEO LÀ ĐỘC LẬP: vary across 14 Spatial Layouts × 9 Cut-and-Paste Entrances `voxDiverseEntry12` / `<SlideIn>`, `0` consecutive repeats of layout or entrance, `<RedCircle>` only when needed on {_dv2_desk_tok_m}, `0%` decorative clutter, `100%` case-accurate Korean, verified via `read_file`, and `<GeoJson3DMapStage>` strictly for suspect/police movement routes, `y <= 820px`) + dark {_dv2_mt_tok_m}; and use AI keyframes ONLY as Priority #3 last resort."
             )
             legacy_native_motion_clause = (
-                " Full-frame `vox-editorial-desk` / `<GeoJson3DMapStage>` VOX scenes and dark `FramelessCinemaTextBeat` punch beats are first-class standalone compositions synced 1-to-1 to spoken Whisper `words[]` across the entire beat duration."
+                f" Full-frame `vox-editorial-desk` / `<GeoJson3DMapStage>` VOX scenes and dark {_dv2_mt_tok_m} punch beats are first-class standalone compositions synced 1-to-1 to spoken Whisper `words[]` across the entire beat duration."
             )
         elif _is_non_vox_devotional_job(job):
             edit_mix_intro = (
@@ -2298,9 +2863,10 @@ EDIT IS PREVIEW-ONLY. Do not render or export an MP4 in this phase and do not cr
             and (_raw_own.get("channel_id") or _raw_own.get("ref") or isinstance(_raw_own.get("channel"), dict))
         )
         _skip_dna_scan = bool(not _has_own_yt or str(_snap.get("source_mode") or "").strip() == "custom_dna_only")
-        _is_teukgeup_thumb = (
-            str(_tdna.get("style_preset") or "") in ("teukgeup_archival_polaroid", "forensic_noir", "forensic_noir_director_v2")
-            or str(job.get("channel_profile_id") or "") in ("channel-e544a64b7c", "channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2")
+        _is_teukgeup_thumb = str(_tdna.get("style_preset") or "") in (
+            "teukgeup_archival_polaroid",
+            "forensic_noir",
+            "forensic_noir_director_v2",
         )
         if _skip_dna_scan:
             dna_step1_instruction = (
@@ -2317,6 +2883,8 @@ EDIT IS PREVIEW-ONLY. Do not render or export an MP4 in this phase and do not cr
             )
         teukgeup_execution_block = ""
         if _is_teukgeup_thumb:
+            _expr_hint = "e.g. chilling arrogant smirk in court if text says '법정서 웃은'" if lang == "ko" else "e.g. chilling candid courtroom expression matching line_1/line_2"
+            _generic_badge_lbl = '"다큐멘터리"' if lang == "ko" else '"DOCUMENTARY"'
             teukgeup_execution_block = f"""
 MANDATORY LEGACY-CHANNEL THUMBNAIL EXECUTION (`teukgeup_archival_polaroid` — CULPRIT PORTRAIT + ARREST PIP + EVIDENCE/SCENE/COURT PIP):
 - **STRICTLY FORBIDDEN** to use generic AI scene keyframes (`media/ai/*_ai_keyframe.jpg`) as the thumbnail background or PiP insets!
@@ -2327,17 +2895,47 @@ MANDATORY LEGACY-CHANNEL THUMBNAIL EXECUTION (`teukgeup_archival_polaroid` — C
        * `pip_arrest_01.jpg` .. `pip_arrest_04.jpg` (**PiP #1 — Arrest / Extradition**): 4 clean real archival frames showing the culprit **being arrested, handcuffed, or escorted by police/marshals at the airport extradition or custody**.
        * `pip_evidence_01.jpg` .. `pip_evidence_04.jpg` (**PiP #2 — Physical Evidence / Crime Scene / Courtroom**): 4 clean real archival frames showing **case physical evidence, crime scene, bank vault/branch, audit ledgers/documents, or the courtroom trial dock**.
   2. **Generate 4 Clean `16:9` Culprit Portrait Base Backgrounds (`media/thumbnail/thumb_bg_v1.jpg` .. `thumb_bg_v4.jpg`)**:
-     - After writing `{workspace / 'seo_package.json'}`, call `POST http://127.0.0.1:8878/api/jobs/{job.get('id')}/thumbnail-studio/generate-bg` for `variant_id` `"v1"`, `"v2"`, `"v3"`, `"v4"` with JSON body `{{"variant_id": "v1", "reference_images": ["media/thumbnail/ref_culprit_01.jpg"], "prompt": "16:9 photorealistic documentary thumbnail base image (1280x720). Right 38%: sharp 8K chest-up candid portrait of the real culprit preserving exact facial likeness from reference, warm golden-cream outer rim glow (#FDE68A), <situational expression matching 100% of line_1/line_2 hook — e.g. chilling arrogant smirk in court if text says '법정서 웃은'>. Left 62% and lower third: pure clean deep charcoal-slate studio negative space (#070B10). Zero text, zero letters, zero watermarks."}}`.
+     - After writing `{workspace / 'seo_package.json'}`, call `POST http://127.0.0.1:8878/api/jobs/{job.get('id')}/thumbnail-studio/generate-bg` for `variant_id` `"v1"`, `"v2"`, `"v3"`, `"v4"` with JSON body `{{"variant_id": "v1", "reference_images": ["media/thumbnail/ref_culprit_01.jpg"], "prompt": "16:9 photorealistic documentary thumbnail base image (1280x720). Right 38%: sharp 8K chest-up candid portrait of the real culprit preserving exact facial likeness from reference, warm golden-cream outer rim glow (#FDE68A), <situational expression matching 100% of line_1/line_2 hook — {_expr_hint}>. Left 62% and lower third: pure clean deep charcoal-slate studio negative space (#070B10). Zero text, zero letters, zero watermarks."}}`.
      - Save/normalize each generated image to `{workspace / 'media' / 'thumbnail' / 'thumb_bg_v1.jpg'}` .. `thumb_bg_v4.jpg`, ensuring the left 58% is clean deep dark charcoal (`#070B10`) so the dual PiPs, red arrow, neon green header (`{_badge_def}`), and 2-line bottom hook pop with maximum contrast while the culprit's face on the right 38% is crisp and unobstructed!
   3. **Compose Dual-PiP Studio Layers & Render Final JPGs**:
-     - Run `build_default_thumbnail_design` + `render_design_thumbnails_to_disk` (or `POST http://127.0.0.1:8878/api/jobs/{job.get('id')}/thumbnail-studio/auto-design` with `{{"reset_all": true}}`), verify that `badge` text is strictly `{_badge_def}` (NEVER generic `"다큐멘터리"`), `inset_photo` uses `pip_arrest_01..04.jpg` (`cctv_hud` `● REC` / `caution_tape` + `dotted_orbit` `forensic_circle` positioned cleanly around the arrested culprit — NEVER circling a random police officer/bailiff), `inset_photo_2` uses `pip_evidence_01..04.jpg` (`torn_newspaper` overlapping bottom-right of PiP #1 with zero burned-in broadcast subtitles), `forensic_arrow` (`curved_pointer`) points from PiP #1 toward the culprit on the right, and `line_1` + `line_2` stay concise (`<= 4-5` words/line) without covering the culprit's face. Visually inspect `{workspace / 'thumbnail.jpg'}` before finishing!
+     - Run `build_default_thumbnail_design` + `render_design_thumbnails_to_disk` (or `POST http://127.0.0.1:8878/api/jobs/{job.get('id')}/thumbnail-studio/auto-design` with `{{"reset_all": true}}`), verify that `badge` text is strictly `{_badge_def}` (NEVER generic {_generic_badge_lbl}), `inset_photo` uses `pip_arrest_01..04.jpg` (`cctv_hud` `● REC` / `caution_tape` + `dotted_orbit` `forensic_circle` positioned cleanly around the arrested culprit — NEVER circling a random police officer/bailiff), `inset_photo_2` uses `pip_evidence_01..04.jpg` (`torn_newspaper` overlapping bottom-right of PiP #1 with zero burned-in broadcast subtitles), `forensic_arrow` (`curved_pointer`) points from PiP #1 toward the culprit on the right, and `line_1` + `line_2` stay concise (`<= 4-5` words/line) without covering the culprit's face. Visually inspect `{workspace / 'thumbnail.jpg'}` before finishing!
 """
-        if lang == "ko":
+        if is_creative_audio_drama_job(job):
+            law1_example = (
+                f"locked to this Channel Profile's own `primary_title_keyword`: `{_primary_kw}` (`{_placement_rule}`)"
+                if _primary_kw
+                else "derived strictly from this Channel Profile's own K-Audio Drama `seo_keyword_dna` (e.g. `[오디오드라마]`, `인생역전`, `사이다 사연`, `심야 라디오`)"
+            )
+            law2_pillar_details = """   - **Pillar 1 — Instant Clarity of Family/Craft Dignity Insult & Hidden Master Identity (Nhìn 0.5s Thấy Ngay Nghịch Lý Xem Thường Phẩm Giá & Thân Phận Thật Của Nhân Vật 5070)**:
+     * Immediately establish the emotional & social contrast between how the protagonist (`55–68` yo) was underestimated/dismissed inside the family or workshop AND the quiet dignity of their true master craft/identity (`0%` crime/murder/death-row/police terms!).
+   - **Pillar 2 — Complementary Split-Role Between Video Title & Warm 2-Line Thumbnail Quote (`0%` Verbatim Overlap)**:
+     * Pair a compelling K-Audio Drama narrative title (`< 72` Korean chars) with a crisp 2-line spoken dialogue quote on the thumbnail (`line_1` White+Warm Cream, `line_2` Warm Gold `#FDE047`, `3–5` words/line) without spoiling the Chapter 5 reversal."""
+            law3_euphemism_note = "violent crime, gore, or abusive hate speech"
+            law3_banned = "`살인`, `사망`, `시신`, `사형수`, `수배범`, `자살`, `폭행`, `학대`, `피투성이`"
+            law3_replacements = "`인생역전`, `품격 있는 반전`, `장인의 진심`, `감동 오디오드라마`, `가족 사연`, `명인의 손길`"
+            rec_title_example = (
+                f"anchor with `{_primary_kw}` according to `{_placement_rule}` + emotionally resonant K-Audio Drama premise (< 72 Korean chars, `0%` crime vocabulary)"
+                if _primary_kw
+                else "follow this Channel Profile's K-Audio Drama winning title formula (`@굿밤오디오드라마` benchmark) under 72 Korean chars"
+            )
+            channel_framework_example = "derive 100% from THIS K-Audio Drama Channel Profile's `seo_keyword_dna` and `thumbnail_dna` (`0%` crime badges, `0%` arrest PiPs)"
+            thumbnail_example = f"follow THIS Channel Profile's warm cinema `thumbnail_dna`: badge `{_badge_def}` + 2-line warm emotional dialogue hook over 35mm protagonist portrait from `media/character_sheet/*.jpg`"
+        elif lang == "ko":
             law1_example = (
                 f"locked to this Channel Profile's own `primary_title_keyword`: `{_primary_kw}` (`{_placement_rule}`)"
                 if _primary_kw
                 else "derived strictly from this Channel Profile's own `seo_keyword_dna` without borrowing keywords from any other channel"
             )
+            law2_pillar_details = """   - **Pillar 1 — Instant Clarity of Core Crime Stakes & 10-Word Paradox Front-Loading (Nhìn 0.5s Phải Biết Ngay Trọng Án & Đặt Nghịch Lý Hành Động Lên 10 Từ Đầu Tiên)**:
+     * **10-WORD PARADOX FRONT-LOADING RULE**: Immediately after `[중국 실화 사건]`, the **first 8–10 Korean words** of `recommended_title` and `title_options` MUST contrast the massive police dragnet or physical impossibility directly against the culprit's brazen action (e.g., `[중국 실화 사건] 무장 경찰 수천 명이 도로를 막을 때 삼백 위안 자전거로 검문소를 통과해 3억 회장이 된 수배범 | 류자오화 사건`, `[중국 실화 사건] 4,000명 수색대가 산을 뒤질 때 지휘부 옆 에어컨 방에서 잠든 특급 수배범 | 러안 쩡춘량 사건`). NEVER open a title with dry institutional labels (`"공안부 A급 1호 수배범이..."`, `"21년간..."`) or dry cargo counts (`"얼음 상자 554개를..."`) before the human action paradox!
+     * Every `[Title + Thumbnail]` pair MUST make the **chilling core crime / stakes** immediately unmistakable (e.g., `붉은 옷 입은 여성 11명을 노린 악마`, `반경 1km에서 사라진 17명의 청년들`, `대낮 은행 수송차 통째로 탈취한`, `“신고하면 다친다” 집주인 협박 후 16일 만에 돌아온 침대 밑 남자의 정체`, `“숨진 엄마인 척 7개월 문자” / 어머니 방 밀봉한 사형수의 정체!`, `“사형 피하려고 스스로 감옥에 갔다”`).
+     * **STRICTLY FORBIDDEN** to write vague, rambling titles/thumb hooks that only talk about "running away for N years across M provinces without an ID card" while hiding what crime the culprit committed! **STRICTLY FORBIDDEN** to downgrade a major crime into petty-burglar wording (`침입자`, `방범창 없는 3층만 노렸다`) or romanticized wording (`장미꽃을 건네다`). Keep high-impact legal judicial terms like `사형수` (tử tù), `사형 판결`, `무기징역`, `18년 복역수`, `1급 수배범`, `특급 수배범` intact (NEVER mangle `사형수` into `법정 최고형수`).
+   - **Pillar 2 — Complementary Split-Role Between Video Title & Thumbnail Hook Text (`0%` Verbatim Overlap, `100%` Two-Piece Puzzle)**:
+     * The Title and the 2-line Thumbnail text (`line_1` + `line_2`, `3–5 words / 14–18 Korean chars per line`, 100% faithful to `script.md` facts) must **divide the 2 halves of the case**:
+       - **When the Title anchors the Core Crime Premise / Threat / Chilling Origin** (e.g., `[중국 실화 사건] “신고하면 다친다” 집주인 협박 후 16일 만에 돌아온 침대 밑 남자의 정체 | 러안 쩡춘량 사건`), the **Thumbnail Text** delivers the **Manhunt / Disguise Paradox & Death-Row Identity** (e.g., `“경찰 코앞 *에어컨 방서 잤다*”` / `4천 명 비웃은 *사형수의 정체!*`).
+       - **When the Title anchors the Manhunt / Disguise Paradox** (e.g., `[중국 실화 사건] 4,000명 수색대가 산을 뒤질 때 지휘부 옆 관공서 에어컨 방에서 잠든 특급 수배범 | 러안 쩡춘량 사건`), the **Thumbnail Text** MUST anchor the **Chilling Crime Origin** (e.g., `“신고했다고 *16일 뒤 돌아왔다*”` / `CCTV 4대 피한 *침대 밑 그림자!*`).
+     * **ANTI-SPOILER & ZERO-COPYING LAW**: Never spoil how the culprit was caught on `line_2` or in the Title (strictly forbid `...에 잡힌/무너진 진범!`, `지문 하나`, `족보에 잡힌`) and never copy verbatim sentences/motifs from past episodes."""
+            law3_euphemism_note = "life-taking euphemisms (`생명을 앗아간`, `목숨을 앗아간`, `đoạt mạng`, `tước đoạt sinh mạng`)"
             law3_banned = "`생명을 앗아간`, `목숨을 앗아간`, `운명을 앗아간`, `생명을 빼앗은`, `연쇄살인사건`, `살인사건`, `살인마`, `살인범`, `살해`, `사망`, `시신`, `시체`, `사체`, `백골`, `토막`, `참수`, `피투성이`, `혈흔`, `총살`, `흉기`, `엽기`, `극단적 선택`, `자살`, `성폭행`, `강간`, `아동 학대`, `고문` (or Vietnamese `đoạt mạng`, `tước đoạt sinh mạng`, `giết người`, `sát nhân`, `sát hại`, `xác chết`, `thi thể`, `hài cốt`, `phân xác`, `chặt đầu`, `máu me`, `tự tử`, `hiếp dâm`, or English `took the lives of`, `serial killer`, `murder`, `corpse`, `dead body`, `skeletal remains`, `decapitated`, `suicide`, `rape`, `torture`, `gore`)"
             law3_replacements = "`사형수` (tử tù — legal judicial term 100% allowed & high-CTR), `사형 판결`, `무기징역`, `18년 복역수`, `공안부 A급 수배범`, `특급 수배범`, `1급 수배범`, `특급 미제사건`, `밀봉한`, `증발한`, `협박 후 돌아온` (NEVER use weak petty-theft words like `침입자` or `방범창 없는 3층만 노렸다`, and NEVER replace `사형수` with awkward `법정 최고형수`)"
             rec_title_example = (
@@ -2357,6 +2955,13 @@ MANDATORY LEGACY-CHANNEL THUMBNAIL EXECUTION (`teukgeup_archival_polaroid` — C
                 if _primary_kw
                 else "e.g. `[Declassified Records]` or this Channel Profile's own `primary_title_keyword`"
             )
+            law2_pillar_details = """   - **Pillar 1 — Instant Clarity of Core Stakes & 10-Word Paradox Front-Loading**:
+     * Immediately after the locked keyword/anchor, the first 8–10 words of `recommended_title` and `title_options` MUST contrast the scale of the investigation/system directly against the central human paradox or anomaly. Never open with dry institutional filler before the core human conflict.
+     * Every `[Title + Thumbnail]` pair MUST make the core stakes immediately unmistakable without vague rambling or minimizing the central event.
+   - **Pillar 2 — Complementary Split-Role Between Video Title & Thumbnail Hook Text (`0%` Verbatim Overlap, `100%` Two-Piece Puzzle)**:
+     * The Title and the 2-line Thumbnail text (`line_1` + `line_2`, `3–5 words per line`, 100% faithful to `script.md` facts) must divide the two halves of the mystery: when the Title anchors the Core Premise / Origin, the Thumbnail Text delivers the Disguise / Outcome Paradox (and vice versa).
+     * **ANTI-SPOILER & ZERO-COPYING LAW**: Never spoil the final arrest clue or ending reveal on `line_2` or in the Title, and never copy verbatim sentences/motifs from past episodes."""
+            law3_euphemism_note = "life-taking euphemisms (`took the lives of`, `đoạt mạng`, `tước đoạt sinh mạng`)"
             law3_banned = "`serial killer`, `murder`, `corpse`, `dead body`, `decapitated`, `suicide`, `rape`, `torture`, `gore` (or Vietnamese `giết người`, `sát nhân`, `xác chết`, `thi thể`)"
             law3_replacements = '"unsolved cold case", "critical evidence", "classified file", "systemic anomaly", "true identity"'
             rec_title_example = "follow this Channel Profile's winning title syntax + locked `primary_title_keyword` under 80 characters"
@@ -2377,28 +2982,16 @@ MANDATORY PRE-DESIGN CHANNEL INSPECTION & 5 IRONCLAD PACKAGING LAWS:
 {dna_step1_instruction}
 2. **LAW 1 — LOCKED PROFILE PRIMARY KEYWORD (`seo_keyword_dna.primary_title_keyword`)**: Every Channel Profile has a mandatory primary keyword anchor (`seo_keyword_dna.primary_title_keyword`, {law1_example}). `recommended_title` and 100% of `title_options` MUST include the profile's `primary_title_keyword` according to `keyword_placement_rule`.
 3. **LAW 2 — THE 2-PILLAR WINNER DNA & COMPLEMENTARY SPLIT-ROLE TRIANGLE (BỐI CẢNH ẢNH + TEXT THUMB + TIÊU ĐỀ — RÕ NGAY ĐỘ RỢN VỤ ÁN GỐC & CHIA VAI BỔ TRỢ 2 CHIỀU)**:
-   - **Pillar 1 — Instant Clarity of Core Crime Stakes & 10-Word Paradox Front-Loading (Nhìn 0.5s Phải Biết Ngay Trọng Án & Đặt Nghịch Lý Hành Động Lên 10 Từ Đầu Tiên)**:
-     * **10-WORD PARADOX FRONT-LOADING RULE**: Immediately after `[중국 실화 사건]`, the **first 8–10 Korean words** of `recommended_title` and `title_options` MUST contrast the massive police dragnet or physical impossibility directly against the culprit's brazen action (e.g., `[중국 실화 사건] 무장 경찰 수천 명이 도로를 막을 때 삼백 위안 자전거로 검문소를 통과해 3억 회장이 된 수배범 | 류자오화 사건`, `[중국 실화 사건] 4,000명 수색대가 산을 뒤질 때 지휘부 옆 에어컨 방에서 잠든 특급 수배범 | 러안 쩡춘량 사건`). NEVER open a title with dry institutional labels (`"공안부 A급 1호 수배범이..."`, `"21년간..."`) or dry cargo counts (`"얼음 상자 554개를..."`) before the human action paradox!
-     * Every `[Title + Thumbnail]` pair MUST make the **chilling core crime / stakes** immediately unmistakable (e.g., `붉은 옷 입은 여성 11명을 노린 악마`, `반경 1km에서 사라진 17명의 청년들`, `대낮 은행 수송차 통째로 탈취한`, `“신고하면 다친다” 집주인 협박 후 16일 만에 돌아온 침대 밑 남자의 정체`, `“숨진 엄마인 척 7개월 문자” / 어머니 방 밀봉한 사형수의 정체!`, `“사형 피하려고 스스로 감옥에 갔다”`).
-     * **STRICTLY FORBIDDEN** to write vague, rambling titles/thumb hooks that only talk about "running away for N years across M provinces without an ID card" while hiding what crime the culprit committed! **STRICTLY FORBIDDEN** to downgrade a major crime into petty-burglar wording (`침입자`, `방범창 없는 3층만 노렸다`) or romanticized wording (`장미꽃을 건네다`). Keep high-impact legal judicial terms like `사형수` (tử tù), `사형 판결`, `무기징역`, `18년 복역수`, `1급 수배범`, `특급 수배범` intact (NEVER mangle `사형수` into `법정 최고형수`).
-   - **Pillar 2 — Complementary Split-Role Between Video Title & Thumbnail Hook Text (`0%` Verbatim Overlap, `100%` Two-Piece Puzzle)**:
-     * The Title and the 2-line Thumbnail text (`line_1` + `line_2`, `3–5 words / 14–18 Korean chars per line`, 100% faithful to `script.md` facts) must **divide the 2 halves of the case**:
-       - **When the Title anchors the Core Crime Premise / Threat / Chilling Origin** (e.g., `[중국 실화 사건] “신고하면 다친다” 집주인 협박 후 16일 만에 돌아온 침대 밑 남자의 정체 | 러안 쩡춘량 사건`), the **Thumbnail Text** delivers the **Manhunt / Disguise Paradox & Death-Row Identity** (e.g., `“경찰 코앞 *에어컨 방서 잤다*”` / `4천 명 비웃은 *사형수의 정체!*`).
-       - **When the Title anchors the Manhunt / Disguise Paradox** (e.g., `[중국 실화 사건] 4,000명 수색대가 산을 뒤질 때 지휘부 옆 관공서 에어컨 방에서 잠든 특급 수배범 | 러안 쩡춘량 사건`), the **Thumbnail Text** MUST anchor the **Chilling Crime Origin** (e.g., `“신고했다고 *16일 뒤 돌아왔다*”` / `CCTV 4대 피한 *침대 밑 그림자!*`).
-     * **ANTI-SPOILER & ZERO-COPYING LAW**: Never spoil how the culprit was caught on `line_2` or in the Title (strictly forbid `...에 잡힌/무너진 진범!`, `지문 하나`, `족보에 잡힌`) and never copy verbatim sentences/motifs from past episodes.
+{law2_pillar_details}
    - **Visual Scene Context (Bối cảnh ảnh thumb)**: Must depict a dramatic, story-specific climax or paradox scene directly from THIS video's narrative.
 4. **LAW 3 — MANDATORY YOUTUBE POLICY (15/07/2025 – PRESENT) & 100% GREEN MONETIZATION SAFETY (`cofi-youtube-policy-monetization-guard` — ZERO LIFE-TAKING OR YELLOW-DOLLAR WORDS IN PUBLIC METADATA)**:
    - Before generating ANY title, thumbnail hook, description, or tag, enforce YouTube's **July 15, 2025 "Inauthentic Content" policy** (zero templated/mass-produced title clones across videos) and **Advertiser-Friendly Content Guidelines (Green Dollar)**.
-   - Strictly FORBID YouTube policy-violating, graphic violence, life-taking euphemisms (`생명을 앗아간`, `목숨을 앗아간`, `đoạt mạng`, `tước đoạt sinh mạng`), or yellow-dollar demonetization words in ALL public titles (`recommended_title`, `title_options`), thumbnail overlay texts, descriptions, keywords, and tags.
+   - Strictly FORBID YouTube policy-violating, graphic violence, {law3_euphemism_note}, or yellow-dollar demonetization words in ALL public titles (`recommended_title`, `title_options`), thumbnail overlay texts, descriptions, keywords, and tags.
    - Never use raw or life-taking terms like {law3_banned}.
    - Always replace them with high-CTR, broadcast-safe investigative terms: {law3_replacements}.
-5. **LAW 4 — 4 CANDID SITUATIONAL CULPRIT EXPRESSIONS & ZERO REFERENCE-POSE CLONING (4 MẪU KHUÔN MẶT & BIỂU CẢM TỰ NHIÊN NHẤT CỦA HUNG THỦ — CẤM LÀM MẶT HAY DÁNG NHƯ MẪU ẢNH)**:
-   - Whenever the documentary centers on a culprit/suspect, the 4 thumbnail variants (`v1..v4`) MUST recreate **4 distinct, candid, hyper-natural facial expressions and real-life situational moments of the culprit**:
-     * **Variant 1 (`v1 / BẢN A`) — Courtroom Verdict Moment (Lúc ra tòa nhận phán quyết)**: Candid, unposed expression of the culprit standing at the courtroom dock hearing the sentence (shaken eyes, heavy eyelids, remorse or stunned disbelief under realistic courtroom lighting).
-     * **Variant 2 (`v2 / BẢN B`) — Arrest & Unmasking Moment (Lúc bị bắt giữ tại hiện trường)**: Candid expression at the exact instant police officers close in and handcuff the culprit (frozen shock, cold sweat, dazed realization as the disguise collapses).
-     * **Variant 3 (`v3 / BẢN C`) — Interrogation Room Confrontation (Lúc bị thẩm vấn đối chất)**: Candid psychological tension inside the interrogation room facing investigators and case evidence (tense jaw, tightly pressed lips, wavering gaze under cold desk lamp light).
-     * **Variant 4 (`v4 / BẢN D`) — Candid Disguise / Paradox Moment (Khoảnh khắc đời thực trong vỏ bọc / hiện trường)**: Natural expression while living inside the case's specific disguise (e.g., holding a microphone/rose on a TV stage or at the crime scene) with a chilling psychological contrast.
-   - **ZERO REFERENCE-POSE / EXPRESSION CLONING**: Use `identity_references` / `style_reference.png` ONLY to preserve core facial identity features (bone structure, facial proportions, hairline, age). NEVER copy the stiff ID-photo/mugshot posture, character-sheet standing pose, head angle, or frozen facial expression from the reference photo or from `seo_reference_thumbnails`! Every variant must feature a 100% candid, unposed documentary posture and natural micro-expression.
+5. **LAW 4 — 4 CANDID SITUATIONAL CHARACTER EXPRESSIONS & ZERO REFERENCE-POSE CLONING**:
+   - {"For `creative_audio_drama`, use the episode's self-generated **Flow Character Reference Sheet (`media/character_sheet/*.jpg`)** to preserve protagonist identity while staging **4 distinct 35mm K-Drama situational expressions (`v1..v4`, `0%` courtroom/arrest/mugshot poses)**: `v1` Quiet Dignity Under Contempt (ánh mắt điềm tĩnh khi bị xem thường), `v2` Master Craft Focus (khoảnh khắc tập trung bên đạo cụ nghề/nghệ thuật dưới ánh đèn ấm), `v3` Calm Turning-Point Resolve (khoảnh khắc đặt văn bản/chứng cứ bước ngoặt lên bàn gỗ), `v4` Warm Vindication & Inner Peace (nụ cười nhẹ thanh thản khi chân tướng sáng tỏ)." if is_creative_audio_drama_job(job) else "Whenever the documentary centers on a culprit/suspect, the 4 thumbnail variants (`v1..v4`) MUST recreate **4 distinct, candid, hyper-natural facial expressions and real-life situational moments of the culprit**: (1) `v1` Courtroom Verdict Moment, (2) `v2` Arrest & Unmasking Moment, (3) `v3` Interrogation Room Confrontation, (4) `v4` Candid Disguise / Paradox Moment."}
+   - **ZERO REFERENCE-POSE / EXPRESSION CLONING**: Use `identity_references` / `media/character_sheet/*.jpg` / `style_reference.png` ONLY to preserve core facial identity features (bone structure, facial proportions, hairline, age). NEVER copy stiff ID-photo/character-sheet standing poses, head angles, or frozen expressions! Every variant must feature a 100% candid, unposed posture and natural micro-expression.
 
 Use this channel inspection evidence to identify proven audience and packaging patterns such as topic framing, curiosity structure, visual hierarchy, subject scale, contrast, text density and recurring winner themes. Do not copy an exact competitor title, thumbnail layout, channel identity, logo, wording, face treatment, or distinctive creative. Produce an original package for THIS documentary, consistent with its actual script, evidence, and locked Channel DNA. Never add unsupported claims merely for CTR.
 
@@ -2419,16 +3012,16 @@ Create exactly `{workspace / 'seo_package.json'}` as valid UTF-8 JSON with at le
 - `channel_framework`: object (`series_key`, `core_keywords_rule`, `title_formula`, `thumb_text_formula`) defining the channel's SEO & Thumbnail template derived from `seo_keyword_dna`, `thumbnail_dna`, and `channel_inspection_report` ({channel_framework_example})
 - `thumbnail`: object containing `concept`, `prompt`, `negative_prompt`, `overlay_text`, `overlay_text_options` (array of 4 alternative 2-line hook text objects `{{badge, line_1, line_2, meaning_vi, paired_title, paired_title_vi, keyword_anchor_vi, synergy_vi}}` strictly adhering to the channel's inspected `thumbnail_dna` and `seo_reference_thumbnails`, 100% free of YouTube policy-sensitive words, and complementing the paired title + visual scene context without repeating its words: e.g., {thumbnail_example}), `composition`, `subject`, `tone`, `featured_real_people`, `identity_references`, `visual_priority`, and `background_policy`
 
-The thumbnail `featured_real_people` list is required whenever named real people are the visual subjects. `identity_references` must contain at least one verified REAL archival/photo reference for every person in `featured_real_people`, with `name`, `source_url`, `local_path` when available, `visually_verified: true`, and a short `verification_basis`. Build these references from visually inspected real candidates in `footage_review.json` (prefer LOW rights-risk/public-domain material and clear portrait/close-up views near the relevant age/period). Never use an AI-generated image, a generic lookalike, or a competitor thumbnail as an identity anchor. If a featured real person has no verified identity reference, do not invent that face: choose another truthful visual subject or stop the packaging rather than fabricate identity.
+{"For `creative_audio_drama` (100% original fictional drama cast, `0%` real-world individuals), set `featured_real_people: []` and anchor visual character consistency in `identity_references` directly to the episode's self-generated **Flow Character Reference Sheets (`media/character_sheet/CHAR_*.jpg`)** from `character_bible.json` (`visually_verified: true`, `verification_basis: \"Episode Flow Character Reference Sheet\"`). Never use real-person photos or competitor thumbnails." if is_creative_audio_drama_job(job) else "The thumbnail `featured_real_people` list is required whenever named real people are the visual subjects. `identity_references` must contain at least one verified REAL archival/photo reference for every person in `featured_real_people`, with `name`, `source_url`, `local_path` when available, `visually_verified: true`, and a short `verification_basis`. Build these references from visually inspected real candidates in `footage_review.json` (prefer LOW rights-risk/public-domain material and clear portrait/close-up views near the relevant age/period). Never use an AI-generated image, a generic lookalike, or a competitor thumbnail as an identity anchor. If a featured real person has no verified identity reference, do not invent that face: choose another truthful visual subject or stop the packaging rather than fabricate identity."}
 
 MANDATORY USE OF IN-APP THUMBNAIL STUDIO ENGINE (`documentary/thumbnail_studio.py` + `static/thumbnail_studio.js`):
 - Always build and redraw thumbnails using the app's built-in **Thumbnail Studio Engine** (`documentary.thumbnail_studio`: `build_default_thumbnail_design`, `render_variant_to_pil`, `render_design_thumbnails_to_disk`, and `static/thumbnail_studio.js` Fabric.js JSON Layer Studio + NanoThumbnail Safe-Zone & CTR Critique).
 - **2-Layer Architecture**:
   1. **Layer 0 — Clean Text-Free Base Image (`clean_bg_prompt` / `thumb_bg_v1..v4.jpg`)**: Generate 100% clean 16:9 base images with ZERO baked-in text, letters, numbers, or logos, reserving 35-45% dark negative space for vector typography and PIP evidence frames.
   2. **Layers 1..N — Programmatic Thumbnail Studio Redraw (`thumbnail_design.json` -> `thumbnail_v1..v4.jpg` & `thumbnail.jpg`)**: Use `documentary/thumbnail_studio.py` (`build_default_thumbnail_design` + `render_design_thumbnails_to_disk`) or `/api/jobs/{job.get('id')}/thumbnail-studio/auto-design` to programmatically draw all vector layers (`vignette`, `badge`, `line_1`, `line_2`, `inset_photo`, `inset_photo_2`, `forensic_circle`, `forensic_arrow`, `evidence_stamp`) matched 100% to the inspected Channel DNA (`thumbnail_dna`).
-- **4 Candid Situational Culprit Expressions (`v1..v4`) & Zero Reference-Pose Cloning**:
-  - Across the 4 variants (`v1..v4`), recreate 4 candid, natural facial expressions and real-life moments of the culprit: (1) `v1`: Courtroom Verdict Moment (lúc ra tòa), (2) `v2`: Arrest & Unmasking Moment (lúc bị bắt giữ), (3) `v3`: Interrogation Room Confrontation (lúc bị thẩm vấn), (4) `v4`: Candid Disguise / Paradox Moment (khoảnh khắc đời thực trong vỏ bọc).
-  - For every featured real person, preserve their core facial identity/likeness (bone structure, proportions, hairline, eyes, nose, mouth, jaw, age) from `identity_references` / `style_reference.png`, while **STRICTLY REJECTING** any copied pose, stiff ID-photo/mugshot posture, character-sheet stance, head angle, or frozen expression from the reference image or from `seo_reference_thumbnails`.
+- **{"4 Candid Situational K-Drama Protagonist Expressions (`v1..v4`) & Zero Reference-Pose Cloning" if is_creative_audio_drama_job(job) else "4 Candid Situational Culprit Expressions (`v1..v4`) & Zero Reference-Pose Cloning"}**:
+  - {"Across the 4 variants (`v1..v4`), recreate 4 candid, natural 35mm K-Drama situational moments of the protagonist (`0%` courtroom/arrest/interrogation crime tropes): (1) `v1`: Quiet Dignity Under Contempt (ánh mắt điềm tĩnh khi bị sỉ nhục), (2) `v2`: Master Craft Focus (khoảnh khắc tập trung bên đạo cụ nghề truyền thống dưới ánh đèn ấm), (3) `v3`: Calm Turning-Point Resolve (khoảnh khắc đặt báu vật/chứng thư danh giá lên bàn), (4) `v4`: Warm Vindication & Inner Peace (nụ cười nhẹ thanh thản khi danh phận bậc thầy được sáng tỏ)." if is_creative_audio_drama_job(job) else "Across the 4 variants (`v1..v4`), recreate 4 candid, natural facial expressions and real-life moments of the culprit: (1) `v1`: Courtroom Verdict Moment (lúc ra tòa), (2) `v2`: Arrest & Unmasking Moment (lúc bị bắt giữ), (3) `v3`: Interrogation Room Confrontation (lúc bị thẩm vấn), (4) `v4`: Candid Disguise / Paradox Moment (khoảnh khắc đời thực trong vỏ bọc)."}
+  - Preserve core facial identity/likeness (bone structure, proportions, hairline, eyes, nose, mouth, jaw, age) from `identity_references` / `media/character_sheet/*.jpg` / `style_reference.png`, while **STRICTLY REJECTING** any copied pose, stiff ID-photo/mugshot posture, character-sheet stance, head angle, or frozen expression from the reference image or from `seo_reference_thumbnails`.
 {teukgeup_execution_block}"""
 
     if phase == "qc":
@@ -2477,7 +3070,7 @@ def build_edit_chat_prompt(
 ) -> str:
     workspace = Path(workspace).resolve()
     remotion_dir = Path(remotion_dir).resolve()
-    creative_brief_direction = _creative_brief_direction(job, workspace)
+    creative_brief_direction = _creative_brief_direction(job, workspace, "edit")
     compact_history = [
         {"role": item.get("role"), "content": item.get("content"), "attachments": item.get("attachments") or []}
         for item in (history or [])[-10:]
@@ -2498,14 +3091,78 @@ def build_edit_chat_prompt(
     }
     from .nexus_coordinator import NexusCoordinator
     from .render_cache import format_smart_hardware_contract
+    from .workspace_ledger import (
+        build_codebase_surgical_locator,
+        build_surgical_work_locator,
+        format_compact_ledger_brief,
+        get_beat_context_slice,
+    )
+
+    ledger_brief = format_compact_ledger_brief(workspace)
+    edit_surgical_locator = build_surgical_work_locator(
+        workspace,
+        f"{selected_beat_id or ''} {message}".strip(),
+        history,
+        remotion_dir=remotion_dir,
+    )
+    edit_code_locator = build_codebase_surgical_locator(
+        Path(workspace).resolve().parent.parent,
+        message,
+        history,
+    )
+    beat_slice = get_beat_context_slice(
+        workspace,
+        beat_id=selected_beat_id,
+        message=message,
+        timestamp_sec=selected_timestamp_sec,
+        neighbor_radius=1,
+        max_targets=6,
+    )
+    if beat_slice.get("matched"):
+        surgical_beat_block = (
+            "\nSURGICAL TARGET BEAT SHARDS (`beats/<beat_id>.json` — DO NOT READ FULL `visual_manifest.json`):\n"
+            + json.dumps(
+                {
+                    "matched_beat_ids": beat_slice.get("matched_beat_ids"),
+                    "total_beats": beat_slice.get("total_beats"),
+                    "target_beats": beat_slice.get("target_beats"),
+                    "neighbor_summaries": beat_slice.get("neighbor_summaries"),
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n"
+        )
+        surgical_rule_2 = (
+            f"2. SURGICAL BEAT EDITING LAW: Target beat shard(s) `{beat_slice.get('matched_beat_ids')}` and their 1-line neighbor context are ALREADY loaded above. "
+            f"Do NOT read the full `{workspace / 'visual_manifest.json'}` (`{beat_slice.get('total_beats')}` beats) unless the user explicitly asks for a whole-episode overhaul! "
+            f"Read/patch only `{workspace / 'beats'}/<beat_id>.json` (or `python -m documentary.workspace_ledger patch-beat --workspace \"{workspace}\" --beat-id <BEAT_ID> --json '{{...}}'`) and update ONLY the matching beat slice in `<CompName>Data.ts` / scene component."
+        )
+    else:
+        surgical_beat_block = (
+            f"\nBEAT SHARD INDEX (`{workspace / 'beats_index.json'}`, total_beats={beat_slice.get('total_beats', 0)}): "
+            f"Inspect `{workspace / 'beats_index.json'}` and individual `{workspace / 'beats'}/<beat_id>.json` shards instead of reading the full `{workspace / 'visual_manifest.json'}` whenever possible.\n"
+        )
+        surgical_rule_2 = (
+            f"2. Prefer reading `{workspace / 'beats_index.json'}` + individual `{workspace / 'beats'}/<beat_id>.json` shards and `{workspace / 'edit_checkpoint.json'}` for the requested scene instead of loading the entire `{workspace / 'visual_manifest.json'}`. Prefer the selected beat/time above when present."
+        )
+    if edit_surgical_locator:
+        surgical_beat_block += f"\n{edit_surgical_locator}\n"
+    if edit_code_locator:
+        surgical_beat_block += f"\n{edit_code_locator}\n"
 
     edit_charter_block = NexusCoordinator().build_phase_charter_block(job, "edit", workspace)
     edit_hw_block = format_smart_hardware_contract("edit")
     _chat_eff_preset = _resolve_vox_preset_id(job)
     _chat_skin = _channel_vox_skin_profile(job)
-    if _is_director_v2_true_crime_job(job):
+    if is_creative_audio_drama_job(job):
         edit_chat_rule_4 = (
-            "4. Lock 100% to V23 `forensic_noir_director_v2`: maintain Priority #1 authentic 100px-grid SAFE_CROP & 3-frame verified case archival footage (`0%` unrelated filler B-roll), pair with Priority #2 Voice-to-Vox Prompt × Tactile Vox Editorial Desk `src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>` whenever real footage is absent (`0%` fixed template count, `0%` fixed spacing, `0%` camera zoom-in or zoom-out `z = 1.0`: bespoke per-sentence `vox_prompt` composition on `#E4DDCF` warm paper desk + `#voxGrain` + `<BlackCard inset={38}>`, varying 14 Spatial Layouts × 9 Cut-and-Paste Entrances `<SlideIn>` / `voxDiverseEntry12` across `<VoxVideoPaper>`, `<VoxPhotoPaper>`, true RGBA `<DieCutSticker>`, `<TornClipping>`, `<IndexCard>`, `<RedCircle>`, `<RedLine>`, `<Highlight>`, `<DimensionBracket>`, `<OpticalLoupe>`, `0` consecutive scenes repeating layout or entrance, `<GeoJson3DMapStage>` strictly for suspect/police movement routes with `0%` zoom, `[60..1860, 40..820]` safe zone, passing `validate-vox-newsroom-ast.mjs`) + dark `src/components/FramelessCinemaTextBeat.tsx` (`0` adjacent beats, hiding `<SubtitleOverlay>`), and reserve Priority #3 Noir Chibi AI keyframes strictly as last resort for closed-room moments."
+            "4. Lock 100% to `kr_goodnight_cinema_drama` 2-Gear K-Audio Drama Cinema DNA (`@vox` BYPASSED): enforce Gear 1 (`0:00–0:45` Cold-Open Hook before `CT_01` `제1장` with `0%` black card at `0:00`, `2.4s–4.2s` multi-angle fast cuts, `2–3f` J-cut snaps, `cold_open_push_punch` `1.00 -> 1.105` & Solo Cello Suspense + `1.2s` pre-curtain silence drop), then shift in Gear 2 (`0:45–End`) to ~80% Character-Sheet-locked 35mm warm tungsten keyframes (`Highlight Luma <= 215`, slow Ken Burns `1.00 -> 1.035`, `26f` cross-dissolves), ~15% clean 4K atmospheric B-roll (`0%` third-party faces/logos/subtitles), ~5% warm serif `FramelessCinemaTextBeat.tsx` (`제1장`..`제6장`), Warm Nocturne Piano/Cello BGM (`0%` startle SFX, `0%` VOX boards/maps), and `4.0s` outro fade-out."
+        )
+    elif _is_director_v2_true_crime_job(job):
+        _dv2_desk_tok_c, _dv2_mt_tok_c = _director_v2_desk_and_motion_text_tokens(job)
+        edit_chat_rule_4 = (
+            f"4. Lock 100% to V23 `forensic_noir_director_v2`: maintain Priority #1 authentic 100px-grid SAFE_CROP & 3-frame verified case archival footage (`0%` unrelated filler B-roll), pair with Priority #2 Voice-to-Vox Prompt × Tactile Vox Editorial Desk `src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>` whenever real footage is absent (`0%` fixed template count, `0%` fixed spacing, `0%` camera zoom-in or zoom-out `z = 1.0`: bespoke per-sentence `vox_prompt` composition on {_dv2_desk_tok_c}, varying 14 Spatial Layouts × 9 Cut-and-Paste Entrances `<SlideIn>` / `voxDiverseEntry12` across `<VoxVideoPaper>`, `<VoxPhotoPaper>`, true RGBA `<DieCutSticker>`, `<TornClipping>`, `<IndexCard>`, `<RedCircle>`, `<RedLine>`, `<Highlight>`, `<DimensionBracket>`, `<OpticalLoupe>`, `0` consecutive scenes repeating layout or entrance, `<GeoJson3DMapStage>` strictly for suspect/police movement routes with `0%` zoom, `[60..1860, 40..820]` safe zone, passing `validate-vox-newsroom-ast.mjs`) + dark {_dv2_mt_tok_c} (`0` adjacent beats, hiding `<SubtitleOverlay>`), and reserve Priority #3 Profile-Locked AI keyframes strictly as last resort for closed-room moments."
         )
     elif _is_non_vox_devotional_job(job):
         edit_chat_rule_4 = (
@@ -2515,6 +3172,7 @@ def build_edit_chat_prompt(
         edit_chat_rule_4 = (
             f"4. Lock 100% to channel-isolated `{_chat_eff_preset}` skin ({_chat_skin['skin_name']} · `{_chat_skin['toolkit']}`, `{_chat_skin['safe_zone']}`) + bespoke VOX Tabletop & Cut-and-Paste Grammar: keep verified 3-frame clean real footage as Priority #1 ({_chat_skin['mix_summary']}), compose every Priority #2 VOX scene on a locked `z = 1.0` overhead stage (`0%` camera zoom-in or zoom-out!) varying 14 Spatial Layouts × 9 Cut-and-Paste Entrances across 18 Semantic Visual Verbs `@voxVerb` synced to Whisper `words[]` (`15% != 50% != 85%`, `0` consecutive scenes repeating layout or entrance, `0` verb repeats in 5 consecutive VOX scenes, mandatory `imageSrc=` `2.4x` loupe, real `>= 12`-pt OSM Overpass GeoJSON on Esri maps, passing `validate-vox-newsroom-ast.mjs --preset {_chat_eff_preset}`), use dark `src/components/FramelessCinemaTextBeat.tsx` (`0` adjacent beats, hiding `<SubtitleOverlay>` — STRICTLY FORBID paper `VoxNewsroomMotionText.tsx`), and repair weak pacing, repeated source footage, dead holds, or repetitive visual skeletons proactively."
         )
+    ledger_section = f"\nWORKSPACE LEDGER & PROGRESS SNAPSHOT\n{ledger_brief}\n" if ledger_brief else ""
     return f"""Handle this request as the user's selected AI inside COFI DOCUMENTARY. The open project is your current context, not a fixed role or a restriction on the user's request.
 {edit_charter_block}{edit_hw_block}
 
@@ -2527,12 +3185,12 @@ Composition ID: {job.get('composition_id') or f"Documentary-{job.get('id')}"}
 
 JOB DATA
 {_job_context(job)}
-
+{ledger_section}
 {creative_brief_direction}
 
 CURRENT EDIT CONTEXT
 {json.dumps(current_context, ensure_ascii=False, indent=2)}
-
+{surgical_beat_block}
 RECENT EDIT CHAT
 {json.dumps(compact_history, ensure_ascii=False, indent=2)}
 
@@ -2558,7 +3216,7 @@ UNIVERSAL MASTER EXPORT SYNC CONTRACT (MANDATORY FOR 100% PREVIEW-TO-EXPORT PARI
 OPERATING RULES
 1. Read `{remotion_dir / 'AGENTS.md'}` before changing Remotion source. Treat existing source as the current edit state and continue from it.
 1a. {_official_remotion_agent_skills_direction()}
-2. Read the workspace edit/session/checkpoint and visual/asset manifests needed to understand the requested scene. Prefer the selected beat/time above when present.
+{surgical_rule_2}
 2a. Local workspace and command tools are attached with write access. Use the absolute paths printed above because the command working directory is CofiRemotion and the job workspace is an additional writable directory. An empty command result means no match in that searched location; it does not mean tools or permissions are missing. Before reporting any access problem, attempt the exact absolute workspace or CofiRemotion path and quote the concrete tool error.
 3. When the user requests a concrete edit, perform it directly. Do not stop at instructions or a plan.
 {edit_chat_rule_4}
@@ -2606,14 +3264,24 @@ def build_edit_batch_prompt(
     _b_chap_lock, _b_ai_disc = _resolve_lang_editorial_labels(job)
     _b_eff_preset = _resolve_vox_preset_id(job)
     _b_skin = _channel_vox_skin_profile(job)
-    if _is_director_v2_true_crime_job(job):
+    if is_creative_audio_drama_job(job):
         batch_rule_2b = (
-            "2b. 3-TIER VISUAL PRIORITY (`#1 Eye-Verified Real Footage -> #2 Bespoke VOX Illustration -> #3 AI Image Last Resort`) + FRAMELESS CINEMA TEXT EXECUTION (`forensic_noir_director_v2`): "
+            "2b. K-AUDIO DRAMA 2-GEAR CINEMA EXECUTION (`kr_goodnight_cinema_drama` — FAST-CUT HOOK `0:00–0:45` + SERENE BEDTIME 80/15/5 BODY `0:45–END`, ZERO VOX GRAPHICS, ZERO 3D MAPS): "
+            "Verify `mtime`/`duration`/`sha256` of the newest `narration.wav` (`0.94x` bedtime cadence) + `voice_manifest.json` synced to `public/jobs/<job_id>/audio/narration.wav` and purge stale caches. "
+            "**Gear 1 (`0:00–0:45` Cold-Open Hook before `CT_01` `제1장`)**: Open Frame 0 directly on the confrontation visual (`0%` black chapter card at `0:00`), cut `2.4s–4.2s` multi-angle `Part A + Part B` sub-shots (`2–3f` J-cut snaps, `cold_open_push_punch` `1.00 -> 1.105` / `cold_open_pull_shock`, chiaroscuro contrast, Solo Cello Suspense `w03_dignity_tension_cello` `-18.5dB` + `1.2s` silence breath before `CT_01`). "
+            "**Gear 2 (`0:45–End` Post-Hook Body)**: Sequence ~80% Character-Sheet-locked 35mm warm tungsten keyframes (`<beat_id>_ai_keyframe.jpg` via `media/character_sheet/*.jpg`, `Highlight Luma <= 215`, slow Ken Burns `1.00 -> 1.035`, `26-frame` cross-dissolves), "
+            "~15% clean 4K atmospheric B-roll (`footage/S_F*.mp4`, `0%` news/faces/logos/subtitles, muted `-an`, `brightness(0.84)`), and ~5% warm serif `FramelessCinemaTextBeat.tsx` (`제1장`..`제6장`, hiding `<LiveSubtitleOverlay>`, `0%` VOX Editorial Desk, `0%` `<GeoJson3DMapStage>`). "
+            "Render balanced 1–2 line warm-ivory frameless Korean subtitles (`58px–60px`, `0%` right-edge clipping), mix 16–24 segments of Warm Nocturne Piano/Cello BGM (`-22` to `-25dB` under voice, `-16.0 LUFS`, `0%` startle SFX), and preserve 100% closing narration + `4.0s` outro fade-out."
+        )
+    elif _is_director_v2_true_crime_job(job):
+        _dv2_desk_tok_b, _dv2_mt_tok_b = _director_v2_desk_and_motion_text_tokens(job)
+        batch_rule_2b = (
+            "2b. 3-TIER VISUAL PRIORITY (`#1 Eye-Verified Real Footage -> #2 Bespoke VOX Illustration -> #3 AI Image Last Resort`) + MOTION TEXT EXECUTION (`forensic_noir_director_v2`): "
             "First verify `mtime`/`duration`/`sha256` of the newest `narration.wav` + `voice_manifest.json` (`words[]`) synced to `public/jobs/<job_id>/audio/narration.wav` (speech must flow 100% continuously) and clear stale `.m4a`/chunk caches. "
             "Route every beat with 100% voice-locked fidelity: "
             "**Priority #1 Eye-Verified Case Archival Footage (`footage/S_F*.mp4`, sourced via `documentary.edit_footage_fetcher` with `--probe-storyboard` + `100px` grid `crop=W:H:X:Y` + `--start-offset` + `--observed-content`, `3.0–5.0s/cut`, `Part A + Part B` for beats `>= 6.2s`, clip tail `>= 0.35s`, `-an` + `volume={0}`, `max_uses = 1`, `0%` third-party logos/running text/foreign subs/TV anchors, `100%` match with spoken sentence meaning, `0%` automatic cutting or automatic splicing)** + "
-            f"**Priority #2 Bespoke Voice-to-Vox Prompt × Tactile Vox Editorial Desk `src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>` (mandatory whenever a sentence lacks 100%-matching real footage, `0%` fixed template count, `0%` fixed spacing, `0%` camera zoom-in or zoom-out `z = 1.0`, `[60 <= x <= 1860, 40 <= y <= 820]`, {_b_chap_lock}: MỖI CẢNH LÀ ĐỘC LẬP, MỖI VIDEO LÀ ĐỘC LẬP — compile each beat's spoken Korean sentence (`clauses[0..N]`) via `voice_meaning -> illustration_content -> vox_prompt` onto `<Desk>` (`#E4DDCF` + `#voxGrain` `opacity: 0.22` + `<BlackCard inset={{38}}>` `#1B1B1A`), locked overhead `<Desk>` tabletop (`0%` zoom-in or zoom-out), varying 14 Spatial Layouts × 9 Cut-and-Paste Entrances `<SlideIn>` / `voxDiverseEntry12` (`0` consecutive repeats of layout or entrance), `<RedCircle>` ONLY when needed, `0%` decorative clutter; deploy `<GeoJson3DMapStage>` strictly for suspect/police movement routes with exact real-world WGS84 coordinates, >=12-pt road/rail polylines, and `0%` zoom; enforce `15% != 50% != 85%`, passing `validate-vox-newsroom-ast.mjs`)** + "
-            "**Dark `FramelessCinemaTextBeat.tsx` (3 Ironclad Motion Text Laws: [1] 0% repeating 1 motion/font/layout across the episode and 0 consecutive duplicate styles, [2] flexible placement strictly at true narrative drop points per job — 0% mechanical periodic spacing, `0` adjacent consecutive beats, hiding `<SubtitleOverlay>` underneath, [3] 100% context-matched `fontStyle`, `accentColor`, `layoutVariant` & `showroomRenderer` in `CinemaTextSpecs.ts`; strictly forbidding `VoxNewsroomMotionText.tsx` paper cards)** + "
+            f"**Priority #2 Bespoke Voice-to-Vox Prompt × Tactile Vox Editorial Desk `src/vox-studio/vox-editorial-desk/index.tsx` & `<GeoJson3DMapStage>` (mandatory whenever a sentence lacks 100%-matching real footage, `0%` fixed template count, `0%` fixed spacing, `0%` camera zoom-in or zoom-out `z = 1.0`, `[60 <= x <= 1860, 40 <= y <= 820]`, {_b_chap_lock}: MỖI CẢNH LÀ ĐỘC LẬP, MỖI VIDEO LÀ ĐỘC LẬP — compile each beat's spoken Korean sentence (`clauses[0..N]`) via `voice_meaning -> illustration_content -> vox_prompt` onto {_dv2_desk_tok_b}, locked overhead `<Desk>` tabletop (`0%` zoom-in or zoom-out), varying 14 Spatial Layouts × 9 Cut-and-Paste Entrances `<SlideIn>` / `voxDiverseEntry12` (`0` consecutive repeats of layout or entrance), `<RedCircle>` ONLY when needed, `0%` decorative clutter; deploy `<GeoJson3DMapStage>` strictly for suspect/police movement routes with exact real-world WGS84 coordinates, >=12-pt road/rail polylines, and `0%` zoom; enforce `15% != 50% != 85%`, passing `validate-vox-newsroom-ast.mjs`)** + "
+            f"**Dark {_dv2_mt_tok_b} (3 Ironclad Motion Text Laws: [1] 0% repeating 1 motion/font/layout across the episode and 0 consecutive duplicate styles, [2] flexible placement strictly at true narrative drop points per job — 0% mechanical periodic spacing, `0` adjacent consecutive beats, hiding `<SubtitleOverlay>` underneath, [3] 100% context-matched `fontStyle`, `accentColor`, `layoutVariant` & `showroomRenderer` in `CinemaTextSpecs.ts`; strictly forbidding `VoxNewsroomMotionText.tsx` paper cards)** + "
             f"**Priority #3 Last Resort Profile-Locked AI Keyframes (`<beat_id>_ai_keyframe.jpg` via {_b_ai_clause}, closed-room moments ONLY where neither real footage nor VOX illustration applies, with frameless `{_b_ai_disc}`)**. "
             "Write `edit_manifest.json` with exact role counts and `semantic_verified_footage_routing: true`, render large `62px–66px` (min `58px`) frameless subtitles (`Pretendard ExtraBold`, `#FDE047` highlights, balanced 1–2 line wrap), mix linear `-14.8 LUFS` 8-Mood Story-Arc BGM (`-41dBFS` analog room-tone floor on pre-twist drops, active `search_and_fetch_contextual_bgm`) + organic motion-bound SFX (on VOX/CinemaText/Map/Chapter ONLY), preserve 100% complete closing narration + `3.8s` outro BGM fade-out, and run AST + 3-Frame Multimodal Screening verification."
         )
@@ -2638,6 +3306,25 @@ def build_edit_batch_prompt(
             + _b_sub_lang
             + " (`<SubtitleOverlay>`), mix 8-Mood Story-Arc BGM (`-18 LUFS`, `-41dBFS` / `volume: 0.015` analog room-tone floor on pre-twist drops, active `search_and_fetch_contextual_bgm` when fresh tracks are needed) + 100% motion-bound SFX (on VOX/Map/Chapter motion `offsetFrames` ONLY — `0` SFX on `REAL_FTG` and `AI_4D`), and preserve 100% complete closing narration + `3.8s` outro BGM fade-out."
         )
+    verified_ftg_map: dict[str, str] = {}
+    try:
+        hyg_p = workspace / "footage_hygiene_report.json"
+        if hyg_p.is_file():
+            hyg_d = json.loads(hyg_p.read_text(encoding="utf-8"))
+            for row in (hyg_d.get("assets") or hyg_d.get("verified_assets") or []):
+                if isinstance(row, dict):
+                    rbid = str(row.get("beat_id") or "").strip()
+                    rpath = str(row.get("public_file") or row.get("clip_path") or row.get("file") or row.get("path") or "").strip()
+                    if rbid and rpath:
+                        verified_ftg_map[rbid] = Path(rpath).name
+        pub_ftg_dir = Path(remotion_dir).resolve() / "public" / "jobs" / str(job.get("id") or workspace.name).strip() / "footage"
+        if pub_ftg_dir.is_dir():
+            for mp4_p in sorted(pub_ftg_dir.glob("*.mp4")):
+                stem_bid = mp4_p.stem.split("_")[0].strip()
+                if stem_bid:
+                    verified_ftg_map.setdefault(stem_bid, f"footage/{mp4_p.name}")
+    except Exception:
+        pass
     compact_beats = [
         {
             "beat_id": b.get("beat_id"),
@@ -2646,18 +3333,46 @@ def build_edit_batch_prompt(
             "visual_route": b.get("visual_route"),
             "visual_type": b.get("visual_type"),
             "editorial_layer": b.get("editorial_layer") or b.get("dna_visual_slot"),
+            **(
+                {"footage_file": verified_ftg_map[str(b.get("beat_id") or "").strip()]}
+                if str(b.get("beat_id") or "").strip() in verified_ftg_map
+                else {}
+            ),
+            **(
+                {"vox_scene_id": b.get("vox_scene_id") or b.get("voxSceneId")}
+                if (b.get("vox_scene_id") or b.get("voxSceneId"))
+                else {}
+            ),
             "narration_text": b.get("narration_text"),
         }
         for b in beats
     ] if len(beats) > 24 else beats
+    remotion_batch_locator = ""
+    try:
+        from .workspace_ledger import _locate_remotion_job_targets
+
+        rem_lines = _locate_remotion_job_targets(
+            workspace,
+            batch_ids[:6],
+            "edit remotion",
+            remotion_dir=remotion_dir,
+        )
+        if rem_lines:
+            remotion_batch_locator = (
+                "\nREMOTION SOURCE & LINE LOCATOR FOR THIS JOB (Read/Edit ONLY the target line slices below — do NOT read full `*Data.ts`):\n"
+                + "\n".join(rem_lines[:8])
+                + "\n"
+            )
+    except Exception:
+        pass
     return base + f"""
 
 {heading}
 
 {intro} Edit ONLY these beat IDs:
 {json.dumps(batch_ids, ensure_ascii=False)}
-
-Beat summary for this batch (full beat specs including `vox_blueprint_spec`, `visual_layers`, and `footage_search_queries` are in `{workspace / 'visual_manifest.json'}`):
+{remotion_batch_locator}
+Beat summary for this batch (pre-verified footage files are already attached in `footage_file` below; when detailed per-beat `footage_search_queries` or `framing_motion_intent` are needed, read `{workspace / 'beats_index.json'}` or individual `{workspace / 'beats'}/<beat_id>.json` shards instead of reading the entire `{workspace / 'visual_manifest.json'}`):
 {json.dumps(compact_beats, ensure_ascii=False, indent=2)}
 
 Already completed in earlier batches:
@@ -2731,39 +3446,32 @@ def build_producer_chat_prompt(
     return f"""Handle this user turn as the Executive Dispatcher (`orchestrator`) session embedded in COFI DOCUMENTARY.
 
 {orchestrator_charter}
-TỔNG ĐIỀU PHỐI & THỰC THI TRỰC TIẾP TỐC ĐỘ CAO (`COFI EXECUTIVE PRODUCER — ZERO STANDING STILL, QA CHỈ DÀNH CHO SẢN XUẤT VIDEO`):
-Bạn là Tổng Đạo Diễn Điều Phối Sản Xuất (`orchestrator` / `Cofi Executive Producer`) của COFI DOCUMENTARY. Bạn nắm quyền chỉ huy Tập thể 15 Nhân viên Chuyên trách riêng của CofiDocumentary thuộc 4 Phòng ban Studio (`Direction`, `Editorial`, `Visual Cinema`, `Quality & Engineering` — mỗi Agent là một văn bản mã nguồn độc lập `agents/<division>/<id>.md` có phân quyền chức năng, kỹ năng và phạm vi đọc/ghi riêng).
+TỔNG ĐIỀU PHỐI 4 TUYẾN KHÔNG MÂU THUẪN (`COFI EXECUTIVE PRODUCER — ZERO POLLING, ZERO RE-READING WHOLE PROJECT, SURGICAL BEAT PATCH`):
+Bạn là Tổng Đạo Diễn Điều Phối Sản Xuất (`orchestrator` / `Cofi Executive Producer`) của COFI DOCUMENTARY, chỉ huy Tập thể 15 Nhân viên Chuyên trách thuộc 4 Phòng ban Studio (`Direction`, `Editorial`, `Visual Cinema`, `Quality & Engineering` — mã nguồn độc lập tại `agents/<division>/<id>.md`).
 
-1. THỰC THI TRỰC TIẾP TRONG CHAT — CẤM ĐỨNG HÌNH (`FAST DIRECT EXECUTION — ZERO STANDING STILL`):
-   - Khi người dùng giao việc trong hộp chat (tìm chủ đề theo DNA kênh, tư vấn/cập nhật brief/dàn ý/kịch bản, sửa code/bug/UI ứng dụng, cấu hình hệ thống, hoặc điều khiển bước chạy), **LÀM NGAY TRỰC TIẾP** để hoàn thành trong `15–60 giây` và trả kết quả ngay.
-   - Tuyệt đối không đùn đẩy qua `invoke_subagent` hay chuỗi ủy nhiệm đồng bộ nhiều tầng gây đứng hình đối với các tác vụ chat, tìm chủ đề, sửa code/giao diện, hoặc chỉnh sửa nhanh.
-
-2. CHỈ KIỂM DUYỆT CHẤT LƯỢNG (`@evidence_qa` / `@qc`) KHI THỰC HIỆN LÀM VIDEO (`QA GATES ONLY FOR VIDEO PRODUCTION`):
-   - **KHÔNG kiểm duyệt QA/QC** (`"verify_with_qa": false`) đối với các việc ngoài sản xuất video: tìm chủ đề (`radar`), tư vấn ý tưởng, sửa code/bug/UI ứng dụng (`dev`, `debug`), cấu hình hệ thống, hỏi đáp trạng thái.
-   - **CHỈ kiểm duyệt chất lượng nghiêm ngặt (`@evidence_qa` + `@qc`, `"verify_with_qa": true`)** khi đang thực hiện sản xuất các bước làm ra video trên dự án (`plan`, `voice`, `visuals`, `footage`, `ai_visual`, `vox`, `edit`, `seo`, `qc`):
-     * Quét thị trường / chọn chủ đề: chạy trực tiếp `radar_market_scan`, `radar_channel_scan`, hoặc `fill_create_form` (`verify_with_qa: false`).
-     * Sửa tính năng / giao diện / bug hệ thống (`dev`, `debug`): làm trực tiếp hoặc giao `dev`/`debug` (`verify_with_qa: false`).
-     * Sản xuất các bước làm video (`research`, `script`, `voice`, `visuals`, `footage`, `ai_visual`, `vox`, `edit`, `seo`, `evidence_qa`, `qc`): chạy phase (`run_phase`, `rerun_phase`, `run_pipeline`, `edit`) hoặc ủy nhiệm qua `delegate_agent` / `delegate_squad` với `"verify_with_qa": true`.
-
-3. CHẾ ĐỘ AUTO-PILOT & KHÔNG BỎ QUA BẤT KỲ BƯỚC NÀO:
-   - Khi người dùng yêu cầu làm video hoặc tiếp tục quy trình (ví dụ: "Làm video chủ đề X", "Tạo video về...", "Chạy tiếp quy trình", "Làm từ đầu đến cuối", "Làm đi", "Chạy nốt đi"):
-     * Nếu chưa có dự án: Tạo dự án ngay (`create_job` hoặc `create_job_from_radar`), sau đó kích hoạt `run_pipeline` từ `plan` đến `qc`.
-     * Nếu dự án đã có: Kích hoạt `run_pipeline` từ phase kế tiếp xuyên suốt đến `qc` để các Agent chuyên trách thực thi tuần tự từng bước, không bỏ qua bất kỳ bước hay cổng kiểm định nào.
+4 TUYẾN PHÂN LUỒNG RÕ RÀNG (KHÔNG CHỒNG CHÉO, KHÔNG ĐỨNG HÌNH):
+1. **Tuyến 1 — Hỏi Tiến Độ / Trạng Thái (`0` Tool Call, Trả Lời Ngay)**:
+   - Khi người dùng hỏi đang làm đến đâu, ở bước nào, bao nhiêu beat đã xong, hay tại sao lâu: trả lời ngay lập tức từ `CURRENT APP CONTEXT` (`selected_job.state_ledger`, `selected_job.phases`, `live_progress`) và `PROJECTS` với `actions: []`.
+2. **Tuyến 2 — Bàn Ý Tưởng, Cập Nhật Nhanh Metadata & Quét Chủ Đề (`verify_with_qa: false`)**:
+   - Lên ý tưởng/cập nhật bản nháp (`fill_create_form`), tạo dự án mới (`create_job`), sửa brief/dàn ý/kịch bản (`update_creative_brief`, `update_outline`, `update_script`), quét chủ đề (`radar_market_scan`, `radar_channel_scan`, `channel_profile_today`): trả về đúng host action gọn nhất, **không chạy kiểm duyệt `@evidence_qa`/`@qc`**.
+3. **Tuyến 3 — Sản Xuất Các Bước Làm Video & Phẫu Thuật Beat (`Fire-and-Return`, `verify_with_qa: true`)**:
+   - Chạy dây chuyền 8 bước làm video (`plan` -> `voice` -> `visuals` -> `footage` -> `ai_visual` -> `edit` -> `seo` -> `qc`): trả về `run_phase`, `rerun_phase`, `run_pipeline`, `approve_step`, hoặc ủy nhiệm chuyên sâu qua `delegate_agent` / `delegate_squad` (`"radar"`, `"research"`, `"script"`, `"voice"`, `"visuals"`, `"footage"`, `"ai_visual"`, `"vox"`, `"edit"`, `"seo"`, `"evidence_qa"`, `"qc"`) với `"verify_with_qa": true`.
+   - Sửa đúng 1 đoạn/cảnh/mốc giây trong bản dựng: trả về action `edit` ghi rõ mã beat (`B012`) hoặc mốc thời gian (`03:15`) để trình dựng chỉ sửa đúng beat shard đó (`beats/<beat_id>.json`), `0%` đọc lại toàn bộ `visual_manifest.json`.
+4. **Tuyến 4 — Sửa Mã Nguồn / Giao Diện / Debug Hệ Thống (`dev` / `debug`, `verify_with_qa: false`)**:
+   - Khi cần sửa code/bug/UI của ứng dụng CofiDocumentary hoặc CofiRemotion qua giao thức JSON action này, giao cho `"dev"` hoặc `"debug"` qua `delegate_agent` với `"verify_with_qa": false` (không chạy cổng QA sản xuất video cho tác vụ kỹ thuật phần mềm).
 
 DÂY CHUYỀN SẢN XUẤT 8 BƯỚC (PHÂN CÔNG RÕ RÀNG TỪNG AGENT):
-1. Nghiên cứu / Radar (`radar` -> `research` + `script` trong `plan`): Tìm chủ đề, điều tra hồ sơ gốc, lập dàn ý 5 Hồi (`outline.json`), viết kịch bản (`script.md`) và lập kế hoạch hình ảnh (`visual_manifest.json`). Action: `radar_market_scan`, `create_job`, `run_phase` `"plan"`, hoặc `delegate_squad` `["research", "script"]`.
+1. Nghiên cứu / Radar (`radar` -> `research` + `script` trong `plan`): Tìm chủ đề, điều tra hồ sơ gốc, lập dàn ý 5 Hồi (`outline.json`), viết kịch bản (`script.md`) và lập kế hoạch hình ảnh (`visual_manifest.json` + tự động tách `beats_index.json` / `beats/<beat_id>.json`). Action: `radar_market_scan`, `create_job`, `run_phase` `"plan"`, hoặc `delegate_squad` `["research", "script"]`.
 2. Voice & SRT (`voice`): Thu âm narration bằng giọng đọc của hồ sơ kênh, tách mệnh đề ngắn và căn chuẩn timestamp từng từ (`words[]`). Action: `update_voice`, `run_phase` `"voice"`, `rerun_phase` `"voice"`, hoặc `delegate_agent` `"voice"`.
 3. Visuals / Phân cảnh (`visuals`): Chia 100% lời thoại thành các beat ngắn đủ nghĩa (1-to-1 STP) và định tuyến trung thực giữa Tư liệu thật, Cơ chế VOX toàn màn hình, Chữ điện ảnh và Ảnh AI góc kín. Action: `run_phase` `"visuals"` hoặc `delegate_agent` `"visuals"`.
 4. Tư liệu thật / Footage (`footage`): Tìm nguồn tư liệu thật đúng vụ án, soi lưới tọa độ `100px` cắt sạch 4 cạnh, kiểm tra chuyển động quang học thật (`15% != 50% != 85%`) và độ độc nhất `dHash >= 14`. Action: `run_phase` `"footage"`, `rerun_phase` `"footage"`, `pause_footage`, `resume_footage`, `restart_footage`, hoặc `delegate_agent` `"footage"`.
 5. AI Visual góc kín (`ai_visual`): Tạo ảnh AI 1-to-1 (`{{bid}}_ai_keyframe.jpg`) theo đúng phong cách hồ sơ kênh cho các cảnh góc kín trong phòng. Action: `run_phase` `"ai_visual"`, `rerun_phase` `"ai_visual"`, hoặc `delegate_agent` `"ai_visual"`.
-6. Cơ chế VOX & Dựng video (`vox` + `edit` + `evidence_qa`): `@vox` thiết kế cơ chế sân khấu toàn màn hình (`Full-Stage Visual Mechanism` `70%–80%` chuyển động hình học/vật lý, tối đa `10–15` từ khóa lớn, `0%` slide hộp chữ); `@edit` lắp ráp timeline theo tỷ lệ `visual_mix` của kênh, trộn 8-Mood Story-Arc BGM + Motion-Bound SFX và giữ `3.8s` nhạc nền fade-out; `@evidence_qa` kiểm định mắt 3-frame, AST, `dHash >= 14` xuyên suốt giữa Footage & VOX và Motion Energy. Action: `edit`, `start_remotion`, `run_phase` `"edit"`, hoặc `delegate_squad` `["footage", "vox", "edit", "evidence_qa"]`.
+6. Cơ chế VOX & Dựng video (`vox` + `edit` + `evidence_qa`): `@vox` thiết kế bàn biên tập cắt dán chuẩn Vox (`0%` zoom-in/zoom-out, biến thiên 14 bố cục × 9 hiệu ứng xuất hiện `12fps`); `@edit` lắp ráp timeline theo tỷ lệ `visual_mix` của kênh, trộn 8-Mood Story-Arc BGM + Motion-Bound SFX và giữ `3.8s` nhạc nền fade-out; `@evidence_qa` kiểm định mắt 3-frame, AST, `dHash >= 14` xuyên suốt giữa Footage & VOX và Motion Energy. Action: `edit`, `start_remotion`, `run_phase` `"edit"`, hoặc `delegate_squad` `["footage", "vox", "edit", "evidence_qa"]`.
 7. SEO & Thumbnail (`seo`): Đóng gói tiêu đề, mô tả, tags và thiết kế Thumbnail CTR cao theo hồ sơ kênh. Action: `run_phase` `"seo"`, `design_thumbnail`, `generate_thumbnail_bg`, hoặc `delegate_agent` `"seo"`.
 8. Kiểm định MP4 cuối (`qc`): Kiểm tra toàn diện file `release/video.mp4` (luồng hình/tiếng, độ độc nhất `dHash` toàn cục, chuyển động quang học thật, chuẩn âm lượng EBU R128). Action: `run_phase` `"qc"` hoặc `delegate_agent` `"qc"`.
 
 TỰ ĐỘNG TIẾP TỤC QUY TRÌNH (ADVANCE PIPELINE):
-Khi người dùng yêu cầu tiếp tục quy trình (ví dụ: "tiếp tục", "làm tiếp", "chạy tiếp", "bước tiếp theo", "chạy quy trình", "chạy nốt đi", "fix rồi chạy nốt đi"), hãy tự động xác định phase tiếp theo đang pending hoặc bị gián đoạn và trả về action `run_pipeline` hoặc `run_phase` (hoặc `delegate_agent` cho bước cần sửa) để chạy thật.
-
-This is the Executive Dispatcher (`orchestrator`) decision session behind the chat UI. Keep ownership of user intent, app actions, specialist delegation, worker review, and final answers. Always delegate specialist production work, source inspection, diagnosis, code changes, and focused tests to the dedicated specialist agent (`radar`, `research`, `script`, `voice`, `visuals`, `footage`, `ai_visual`, `vox`, `edit`, `seo`, `evidence_qa`, `qc`, `dev`, `debug`) in a separate provider session. The host executes only actions you approve; the JSON envelope is a transport protocol.
+Khi người dùng yêu cầu tiếp tục quy trình (ví dụ: "tiếp tục", "làm tiếp", "chạy tiếp", "bước tiếp theo", "chạy quy trình", "chạy nốt đi", "fix rồi chạy nốt đi"), dựa trên `selected_job.state_ledger` và `phases` để trả về `run_pipeline` hoặc `run_phase` từ đúng bước đang dở (không chạy lại các bước đã `succeeded` trừ khi người dùng yêu cầu làm lại).
 
 CURRENT APP CONTEXT
 {json.dumps(app_context or {"app_tab": app_tab or "overview", "selected_job_id": selected_job_id}, ensure_ascii=False, indent=2)}
@@ -2789,9 +3497,9 @@ Return exactly one JSON object and no markdown fences:
   "actions": [ ... ]
 }}
 
-Host runtime operations (use `delegate_agent`, `delegate_squad`, or phase actions for all specialist work — never self-execute specialist file/code edits in chat):
-- {{"type":"delegate_agent","agent_id":"orchestrator|radar|research|script|voice|visuals|footage|ai_visual|vox|edit|seo|evidence_qa|qc|dev|debug","task":"specific bounded task","job_id":"optional exact project id","verify_with_qa":true}} — run one CofiDocumentary Studio specialist in an isolated provider session with enforced directory & artifact permissions and automatic `Maker <-> EvidenceQA` closed-loop verification. Delegate all specialist production or engineering tasks here.
-- {{"type":"delegate_squad","agents":["research","script"],"task":"specific multi-step objective","job_id":"optional exact project id","verify_with_qa":true}} — run an ordered Cofi Studio multi-agent handoff chain (`2..6` specialists) where each specialist's verified report, deliverables, and `handoff_notes` are injected as an upstream NEXUS Handoff Packet into the next specialist's context.
+Host runtime operations:
+- {{"type":"delegate_agent","agent_id":"orchestrator|radar|research|script|voice|visuals|footage|ai_visual|vox|edit|seo|evidence_qa|qc|dev|debug","task":"specific bounded task","job_id":"optional exact project id","verify_with_qa":true}} — run one CofiDocumentary Studio specialist in an isolated provider session with enforced directory & artifact permissions (`verify_with_qa: true` for video production phases; `verify_with_qa: false` for `radar`, `dev`, `debug`).
+- {{"type":"delegate_squad","agents":["research","script"],"task":"specific multi-step objective","job_id":"optional exact project id","verify_with_qa":true}} — run an ordered Cofi Studio multi-agent handoff chain (`2..6` specialists) with NEXUS Handoff Packets.
 - {{"type":"select_job","job_id":"exact project id"}}
 - {{"type":"navigate","tab":"overview|radar|create|script|voice|visuals|footage|ai_visual|edit|seo|qc|projects|codex"}}
 - {{"type":"fill_create_form","payload":{{"title":"...","market":"KR|JP|US|VN","language":"ko|ja|en|vi","target_duration_minutes":15,"visual_strategy":"full_ai|full_footage|hybrid|evidence_footage|edit_direct_footage","notes":"...","creative_brief":{{"narrative_angle":"free-form narrative angle","writing_style":"free-form writing style","hook_archetype":"free-form hook structure","editing_archetypes":["free-form visual/editing grammar"],"opening_hook":"...","custom_rules":"..."}},"outline":[{{"chapter":1,"title":"...","summary":"...","evidence_anchor":"...","visual_note":"..."}}]}}}} — LIVE SYNC: whenever brainstorming or proposing a project idea/angle/style/outline before creation, return this action so the Create Project screen updates live without any button clicks.
@@ -2946,6 +3654,7 @@ GET  /api/jobs/{id}                              — trạng thái đầy đủ:
 POST /api/jobs/{id}/approve-next                 — duyệt bước hiện tại và tự động chạy bước kế tiếp trong nhánh sản xuất
 POST /api/jobs/{id}/pipeline/{from}/{through}    — chạy chuỗi phase liên tiếp (chỉ 1 job nền chạy một lúc)
 POST /api/jobs/{id}/run/{phase} | /rerun/{phase} | /resume
+POST /api/jobs/{id}/stop                         — dừng ngay lập tức phase/job đang chạy nền
 GET  /api/jobs/{id}/logs/{phase}                 — log phase (đọc khi phase failed)
 GET  /api/jobs/{id}/artifact/{name}              — đọc artifact (research.md, script.md, visual_manifest.json, outline.json, creative_brief.json, thumbnail_design.json, ...)
 GET  /api/jobs/{id}/thumbnail-studio             — trạng thái Thumbnail Studio (4 phương án Fabric.js layer JSON, danh sách ảnh nền dự án, điểm CTR & Safe-Zone NanoThumbnail)
@@ -2959,7 +3668,10 @@ GET  /api/jobs/{id}/outline | PATCH /api/jobs/{id}/outline | POST /api/jobs/{id}
 PUT  /api/jobs/{id}/script                       — lưu trực tiếp nội dung kịch bản (script.md)
 GET  /api/playbooks | POST /api/playbooks | POST /api/jobs/{id}/extract-playbook — quản lý & trích xuất Channel Playbooks (DNA phong cách kênh)
 GET  /api/jobs/{id}/remotion | /export-progress; POST /api/jobs/{id}/remotion/start
-POST /api/jobs/{id}/edit-chat                    — yêu cầu chỉnh bản dựng (message; tự động chạy dưới hiến chương Agent `edit` + `vox`)
+GET  /api/jobs/{id}/beats                        — danh mục rút gọn toàn bộ beats (`beats_index.json`, siêu nhẹ)
+GET  /api/jobs/{id}/beats/{beat_id}              — đọc đúng 1 beat shard duy nhất + tóm tắt 2 beat lân cận (`0%` đọc lại cả dự án)
+PATCH /api/jobs/{id}/beats/{beat_id}             — sửa phẫu thuật đúng 1 beat (tự đồng bộ `visual_manifest.json` & ghi `dirty_beat_ids` trong `state_ledger.json`)
+POST /api/jobs/{id}/edit-chat                    — yêu cầu chỉnh bản dựng (message; tự động nạp đúng beat shard cần sửa dưới hiến chương Agent `edit` + `vox`)
 GET  /api/agency/roster | /api/agency/search?q=... | /api/agency/agents/{id} — danh bạ & mã nguồn 15 Agent chuyên trách CofiDocumentary (`agents/<division>/<id>.md`)
 POST /api/agency/delegate                        — giao tác vụ chuyên sâu cho 1 Agent chuyên trách độc lập (JSON: agent_id, task, job_id, verify_with_qa=true) có kiểm soát phân quyền & phản biện `evidence_qa`
 POST /api/agency/delegate-squad                  — giao chuỗi 2–6 Agent bàn giao nối tiếp (JSON: agents:["research","script"], task, job_id, verify_with_qa=true) kèm Handoff Packet
@@ -3014,18 +3726,23 @@ def build_producer_goal_prompt(
     history: list[dict[str, Any]] | None = None,
     goal_mode: bool = True,
     explicit_agent_id: str | None = None,
+    answer_first: bool = False,
+    has_handoff: bool = False,
 ) -> str:
     """Body sent to the persistent Antigravity session (both Agent mode and /goal mode).
 
-    The session is long-lived, so the full briefing is only sent on the first
-    turn of a conversation; later turns carry the fresh app snapshot + message.
+    Enforces strict 2-mode separation:
+    1. `production_pipeline`: active video job stage execution / troubleshooting -> injects deterministic
+       `build_production_pipeline_memory_block` + `build_surgical_work_locator`, NEVER injects app codebase files.
+    2. `app_code_fix`: fixing app UI/backend code -> injects `APP_ARCHITECTURE_MEMORY_TREE` + surgical file/line slices.
     """
     base = str(api_base_url or "http://127.0.0.1:8878").rstrip("/")
     images = [str(item.get("path")) for item in (attachments or []) if item.get("path")]
     raw_ctx = dict(app_context or {})
     tab_name = str(raw_ctx.get("app_tab") or "").strip().lower()
-    if not first_turn and raw_ctx.get("selected_job") and tab_name not in {"radar", "create"}:
-        # Strip heavy static lists on follow-up project turns to save tokens and keep live_progress front-and-center.
+    if raw_ctx.get("selected_job") and tab_name not in {"radar", "create", "channels"}:
+        # Strip heavy static channel_profiles / playbooks on ALL turns (including Turn-0 after /compact or /new)
+        # whenever a project is open so Turn-0 stays lightweight and fast.
         compact_ctx = {
             "app_tab": raw_ctx.get("app_tab"),
             "selected_job": raw_ctx.get("selected_job"),
@@ -3040,87 +3757,175 @@ def build_producer_goal_prompt(
             **{k: v for k, v in raw_ctx.items() if k not in {"app_tab", "selected_job", "live_progress"}},
         }
         snapshot = json.dumps(ordered_ctx, ensure_ascii=False)
-    if len(snapshot) > 12_000:
-        snapshot = snapshot[:12_000] + "…"
-    parts: list[str] = []
+    if len(snapshot) > 8_500:
+        snapshot = snapshot[:8_500] + "…"
+
+    repo_root_dir = Path(__file__).resolve().parent.parent
+    sel_job_dict = raw_ctx.get("selected_job") if isinstance(raw_ctx.get("selected_job"), dict) else {}
+    sel_job_id = str(sel_job_dict.get("id") or "").strip()
+    sel_ws_str = str(sel_job_dict.get("workspace") or "").strip()
+    if not sel_ws_str and sel_job_id:
+        cand_ws = repo_root_dir / "workspaces" / sel_job_id
+        if cand_ws.is_dir():
+            sel_ws_str = str(cand_ws)
+
     from .agent_manager import AgentManager
     from .nexus_coordinator import NexusCoordinator
+    from .workspace_ledger import (
+        build_codebase_surgical_locator,
+        build_production_pipeline_memory_block,
+        build_surgical_work_locator,
+        classify_producer_chat_intent,
+    )
 
+    chat_intent = classify_producer_chat_intent(
+        message,
+        history,
+        selected_job_id=sel_job_id or None,
+        explicit_agent_id=explicit_agent_id,
+    )
+
+    def _format_substantive_history(
+        items: list[dict[str, Any]] | None,
+        *,
+        limit: int = 6,
+        max_item_chars: int = 1200,
+    ) -> list[dict[str, str]]:
+        cleaned: list[dict[str, str]] = []
+        for item in items or []:
+            if not isinstance(item, dict):
+                continue
+            role = str(item.get("role") or "user")
+            raw_content = str(item.get("content") or "").strip()
+            low = raw_content.lower()
+            if not raw_content or low in {"/compact", "/nen", "/new", "/reset"}:
+                continue
+            if raw_content.startswith("Đã nén ngữ cảnh (`/compact`)") or raw_content.startswith("Đã khởi tạo phiên hội thoại"):
+                continue
+            steps = item.get("steps") if isinstance(item.get("steps"), list) else []
+            if raw_content.startswith("Đã dừng lượt làm việc"):
+                step_targets: list[str] = []
+                for st in steps[-10:]:
+                    if isinstance(st, dict) and str(st.get("step_type") or "") not in {"agent_response", "thinking", ""}:
+                        tname = str(st.get("tool_name") or st.get("step_type") or "").strip()
+                        targ = str(st.get("target") or st.get("tool_summary") or "").strip()
+                        label = f"{tname}: {targ}" if (tname and targ) else (targ or tname)
+                        if label and label not in {"run_command", "read_file", "edit_file", "write_file"}:
+                            if not step_targets or step_targets[-1] != label:
+                                step_targets.append(label[:150])
+                if not step_targets and "Các thao tác đã hoàn tất trên đĩa" not in raw_content:
+                    # Skip empty Stop stubs so repeated user cancellations never evict real context
+                    continue
+                if step_targets and "Các thao tác đã hoàn tất trên đĩa" not in raw_content:
+                    raw_content += " [Các bước đã chạy trước khi dừng: " + "; ".join(step_targets[-5:]) + "]"
+            if cleaned and cleaned[-1]["role"] == role and cleaned[-1]["content"] == raw_content[-max_item_chars:]:
+                continue
+            cleaned.append({"role": role, "content": raw_content[-max_item_chars:]})
+        return cleaned[-limit:]
+
+    parts: list[str] = []
     am = AgentManager()
     coord = NexusCoordinator(am)
     if first_turn:
-        orch_charter = coord.build_specialist_soul_header(
+        orchestrator_charter = coord.build_specialist_soul_header(
             "orchestrator",
-            "Default In-App Coordinator Chatbot (Persistent Antigravity Session)",
+            "In-App Master Production Orchestrator & 15-Department Dispatcher",
         )
-        compact_roster = [
-            {
-                "id": item["id"],
-                "division": item["division"],
-                "name": item["name"],
-                "qa_partner": item["qa_partner"],
-                "writes_artifacts": item["writes_artifacts"],
-            }
-            for item in am.list_agents()
-        ]
+        by_div: dict[str, list[str]] = {}
+        for item in am.list_agents():
+            by_div.setdefault(str(item["division"]), []).append(f'"{item["id"]}" ({item["name"]})')
+        roster_lines = "\n".join(f"  * {div}: {', '.join(members)}" for div, members in by_div.items())
         studio_roster_guide = (
-            f"{orch_charter}\n"
-            "HỆ THỐNG 15 AGENT CHUYÊN TRÁCH COFIDOCUMENTARY (THỰC THI TRỰC TIẾP TỐC ĐỘ CAO TRONG CHAT — CẤM ĐỨNG HÌNH — CHỈ KIỂM DUYỆT QA KHI LÀM VIDEO):\n"
-            "- Bạn vận hành với hiến chương của `orchestrator` (`Cofi Executive Producer`, mã nguồn độc lập tại `agents/direction/orchestrator.md`), chỉ huy tập thể 15 Agent thuộc 4 Phòng ban (`direction`, `editorial`, `visual_cinema`, `quality_and_engineering`).\n"
-            "- THỰC THI TRỰC TIẾP TRONG CHAT (`ZERO STANDING STILL`): Khi người dùng giao việc trong hộp chat (tìm chủ đề theo DNA kênh, cập nhật brief/dàn ý/kịch bản, sửa code/bug/UI ứng dụng, cấu hình hệ thống, hoặc điều khiển bước chạy), **BẮT BUỘC LÀM TRỰC TIẾP NGAY TRÊN LUỒNG CHÍNH** (`read_file`, `edit_file`, `write_file`, `run_command`, hoặc gọi API nhanh `POST /api/creative/draft`, `PATCH /api/jobs/<id>/...`, `POST /api/jobs/<id>/run/<phase>`). **CẤM GỌI `invoke_subagent`** trong phiên chat vì `invoke_subagent` làm hộp chat đứng hình và nhân đôi thời gian chờ.\n"
-            "- CHỈ KIỂM DUYỆT CHẤT LƯỢNG KHI THỰC HIỆN LÀM VIDEO (`QA GATES ONLY FOR VIDEO PRODUCTION`): Các tác vụ ngoài sản xuất video (`radar` tìm chủ đề, `dev`/`debug` sửa code/UI, tư vấn, cấu hình) **KHÔNG qua kiểm duyệt `@evidence_qa`/`@qc`** (`verify_with_qa=false`). Chỉ khi thực hiện các bước sản xuất làm ra video (`research`, `script`, `voice`, `visuals`, `footage`, `ai_visual`, `vox`, `edit`, `seo`, `evidence_qa`, `qc`) mới chạy cổng kiểm định chất lượng qua pipeline (`/api/jobs`, `/run/{phase}`, `/rerun/{phase}`, `/pipeline/{from}/{through}`, `/approve-next`, `/edit-chat`) hoặc `POST /api/agency/delegate` / `POST /api/agency/delegate-squad`.\n"
-            f"- DANH BẠ 15 AGENT STUDIO:\n{json.dumps(compact_roster, ensure_ascii=False)}\n\n"
+            f"{orchestrator_charter}\n"
+            "HIẾN CHƯƠNG TỔNG ĐIỀU PHỐI COFIDOCUMENTARY (`orchestrator` — 15 Agent / 4 Phòng ban · `/api/agency/delegate` & `/api/agency/delegate-squad`):\n"
+            f"{roster_lines}\n"
+            "- **LUẬT PHÂN TÁCH CỨNG 2 CHẾ ĐỘ (BẮT BUỘC TUÂN THỦ 100%)**:\n"
+            "  1. **CHẾ ĐỘ 1 — THỰC THI & XỬ LÝ LỖI KHÂU SẢN XUẤT VIDEO (`plan -> voice -> visuals -> footage/ai_visual/vox -> edit -> seo -> qc`)**:\n"
+            "     - Đọc ngay khối `🎬 BỘ NHỚ LUỒNG SẢN XUẤT & CHẨN ĐOÁN TỨC THÌ` + `selected_job` bên dưới (đã nạp sẵn `state_ledger.json`, trạng thái từng khâu, dòng lỗi thật trong `.render_cache/logs/*.log` & `logs/*.log`, trạng thái Remotion Preview và đúng file `<ThisJob>*.tsx` của dự án đang mở).\n"
+            "     - **TUYỆT ĐỐI CẤM** đọc hay quét mã nguồn app (`documentary/*.py`, `services/*.py`, `static/*.js`, `CofiRemotion/scripts/*`) và **CẤM** mở nhầm thư mục/component của dự án khác khi đang kiểm tra hay xử lý lỗi khâu làm video!\n"
+            "  2. **CHẾ ĐỘ 2 — SỬA CODE / FIX TÍNH NĂNG APP (`dev` / `debug`)**:\n"
+            "     - Chỉ khi người dùng yêu cầu sửa code/UI/logic của app mới đọc mã nguồn hệ thống: dùng ngay tọa độ `StartLine..EndLine` trong khối `🛠️ BẢN ĐỒ ĐỊNH VỊ MÃ NGUỒN PHẪU THUẬT`; nếu cần tìm thêm hàm/nút gọi chưa có sẵn thì gọi MCP `trail` (`trail_find_code`, `trail_file_api`, `trail_trace_calls` cho CofiDocumentary) hoặc `trail_remotion` (cho CofiRemotion) trước tiên — `0%` đọc nguyên file lớn hay quét mù 500+ file.\n"
+            "- **PHẪU THUẬT ĐÚNG BEAT (`SURGICAL BEAT PATCH`) & CẤM ĐỌC TRÀN**: Sửa câu/cảnh nào chỉ đọc & sửa đúng dòng `script.md` hoặc mảnh `beats/<beat_id>.json` đã chỉ sẵn (hoặc `GET/PATCH /api/jobs/{id}/beats/{beat_id}` / `POST /api/jobs/{id}/edit-chat`). Cấm gọi `invoke_subagent`.\n"
+            "- **KIỂM ĐỊNH ĐÚNG TUYẾN**: Tác vụ ngoài dây chuyền 8 bước sản xuất video đặt `verify_with_qa=false`; dây chuyền sản xuất video áp dụng `@evidence_qa` + `@qc` (`verify_with_qa=true`, media AI ghi nhãn tái dựng, tư liệu gốc soi mắt thật).\n\n"
         )
-        recent = [
-            {"role": item.get("role"), "content": str(item.get("content") or "")[-800:]}
-            for item in (history or [])[-6:]
-        ]
-        if goal_mode:
-            parts.append(
-                studio_roster_guide
-                + "BẠN LÀ TỔNG ĐIỀU PHỐI (`orchestrator`) CỦA COFI DOCUMENTARY, CHẠY Ở CHẾ ĐỘ GOAL TRONG MỘT PHIÊN ANTIGRAVITY LIÊN TỤC.\n"
-                "Phiên này được giữ mở qua nhiều tin nhắn của người dùng; bạn nhớ toàn bộ ngữ cảnh trước đó.\n\n"
-                "CÁCH ĐIỀU PHỐI & LÀM VIỆC:\n"
-                f"- Thực thi trực tiếp các tác vụ nhanh và điều khiển dây chuyền sản xuất qua HTTP API cục bộ: {base}. Không gọi `invoke_subagent` gây đứng hình hộp chat. Không trả JSON envelope.\n"
-                "- Với tác vụ sửa code/bug/UI hoặc tìm chủ đề/cập nhật bản nháp: làm trực tiếp ngay trên luồng chính, không qua kiểm duyệt QA (`verify_with_qa=false`). Với dây chuyền sản xuất làm ra video (`plan` → `qc`): kích hoạt các bước pipeline chạy nền và giữ nguyên toàn bộ cổng kiểm định chất lượng `@evidence_qa` + `@qc`.\n"
-                "  QUY TẮC UTF-8 BẮT BUỘC TRÊN WINDOWS: TUYỆT ĐỐI KHÔNG truyền chuỗi tiếng Việt / tiếng Hàn trực tiếp vào `Invoke-RestMethod -Body $json` dạng string vì PowerShell 5.1 sẽ làm lỗi font thành dấu `???`. Luôn gọi API có body JSON bằng `python -X utf8 -c`:\n"
-                f"  python -X utf8 -c \"import urllib.request, json; req=urllib.request.Request('{base}/api/jobs', data=json.dumps(payload, ensure_ascii=False).encode('utf-8'), headers={{'Content-Type':'application/json; charset=utf-8'}}, method='POST'); print(urllib.request.urlopen(req).read().decode('utf-8'))\"\n"
-                "- API chính:\n" + GOAL_API_REFERENCE + "\n\n"
-                + COFI_PROPOSAL_CARD_GUIDE + "\n\n"
-                "- Các phase sản xuất chạy nền rất lâu (Footage/AI Visual có thể hàng chục phút). Sau khi khởi chạy, "
-                "theo dõi bằng cách poll GET /api/jobs/{id} mỗi 30–90 giây (dùng công cụ wait/schedule), không spam.\n"
-                "- Khi một phase failed: đọc `/logs/{phase}`, khắc phục tận gốc (hoặc gọi `POST /api/agency/delegate`), rồi chạy lại từ phase đó. Lỗi dịch vụ tạm thời (503/UNAVAILABLE) thì đợi rồi thử lại.\n"
-                "- Tuân thủ AGENTS.md của repo (luồng plan → voice → visuals → nhánh theo visual_strategy → edit → seo → qc; "
-                "khi sản xuất video không bỏ qua bất kỳ bước hay cổng kiểm định nào; media AI phải ghi nhãn minh hoạ tái dựng; tư liệu phải được soi mắt thật).\n"
-                "- Bản xuất video chỉ coi là xong khi phase qc succeeded và MP4 cuối đã được `@evidence_qa` + `@qc` kiểm tra đạt chuẩn.\n"
-                "- Chỉ báo cáo điều đã xác minh. Không tuyên bố chắc chắn về fair use / khả năng kiếm tiền.\n"
-                "- Chỉ dừng hỏi người dùng khi thiếu thông tin bắt buộc mà không thể tự quyết hợp lý.\n"
-                "- Trả lời người dùng bằng tiếng Việt (hỗ trợ Markdown đầy đủ), ngắn gọn, nêu kết quả thực tế và bằng chứng.\n\n"
-                f"LỊCH SỬ CHAT GẦN ĐÂY TRONG APP\n{json.dumps(recent, ensure_ascii=False)}\n"
+        proposal_block = (
+            COFI_PROPOSAL_CARD_GUIDE + "\n\n"
+            if (not sel_job_id or tab_name in {"radar", "create"})
+            else "- Khi bàn ý tưởng dự án mới (chưa mở job): đồng bộ qua `POST /api/creative/draft` hoặc khối ```cofi-proposal```; khi chốt mới gọi `POST /api/jobs`.\n"
+        )
+        hist_limit = 2 if has_handoff else 5
+        recent = _format_substantive_history(history, limit=hist_limit, max_item_chars=900 if has_handoff else 1300)
+        mode_banner = (
+            "PHIÊN ANTIGRAVITY LIÊN TỤC (`/goal`)"
+            if goal_mode
+            else "PHIÊN CHAT TƯƠNG TÁC LIÊN TỤC"
+        )
+        parts.append(
+            studio_roster_guide
+            + f"CHẾ ĐỘ ĐIỀU PHỐI ({mode_banner} — CHẾ ĐỘ LƯỢT NÀY: `{chat_intent.upper()}`):\n"
+            "- 0-TOOL TRẢ LỜI NGAY CHO CÂU HỎI TIẾN ĐỘ / NGUYÊN NHÂN LỖI: Đọc trực tiếp `🎬 BỘ NHỚ LUỒNG SẢN XUẤT` và `selected_job` bên dưới để trả lời ngay bằng tiếng Việt ngắn gọn (tối đa 0–1 lần đọc file/log cụ thể nếu thật sự cần).\n"
+            "- **LUẬT FIRE-AND-RETURN (CẤM VÒNG LẶP CHỜ ĐỐT TOKEN)**: Khi khởi chạy worker nền (`POST /api/jobs`, `/run/{phase}`, `/rerun/{phase}`, `/pipeline/{from}/{through}`, `/approve-next`), xác nhận đã khởi chạy và kết thúc lượt ngay lập tức — **TUYỆT ĐỐI CẤM** dùng `wait`/`schedule` để kiểm tra lại trạng thái HTTP định kỳ!\n"
+            "- QUY TẮC UTF-8 TRÊN WINDOWS: Luôn gọi HTTP POST/PATCH/PUT có tiếng Việt / tiếng Hàn bằng `python -X utf8 -c` với `.encode('utf-8')` (không truyền trực tiếp chuỗi Unicode vào `Invoke-RestMethod -Body`).\n"
+            f"- HTTP API cục bộ: {base} (không trả JSON envelope cho người dùng).\n"
+            "- API chính:\n" + GOAL_API_REFERENCE + "\n\n"
+            + proposal_block
+            + (
+                f"LỊCH SỬ CHAT MỚI NHẤT\n{json.dumps(recent, ensure_ascii=False)}\n"
+                if recent
+                else ""
             )
-        else:
-            parts.append(
-                studio_roster_guide
-                + "BẠN LÀ TỔNG ĐIỀU PHỐI (`orchestrator`) TRONG COFI DOCUMENTARY — PHIÊN CHAT TƯƠNG TÁC LIÊN TỤC.\n"
-                "Phiên này được giữ mở qua nhiều lượt chat trên cùng một conversation; bạn nhớ toàn bộ ngữ cảnh trước đó.\n\n"
-                "NGUYÊN TẮC HOẠT ĐỘNG (FAST DIRECT EXECUTION — ZERO STANDING STILL):\n"
-                "- Trả lời trực tiếp bằng tiếng Việt tự nhiên (hỗ trợ Markdown: tiêu đề, danh sách, in đậm, code block). Tuyệt đối không bọc câu trả lời trong JSON envelope.\n"
-                "- QUY TẮC TIẾT KIỆM TOKEN & CẤM QUÉT LẠI APP: `TRẠNG THÁI APP HIỆN TẠI` bên dưới đã được hệ thống cập nhật trực tiếp lúc gửi tin nhắn (bao gồm `selected_job.current_phase`, trạng thái 8 bước `phases`, tiến độ thực tế `live_progress`, và danh sách file đã tạo `workspace_artifacts`). Khi người dùng hỏi đang làm ở bước nào, làm đến đâu, hay tại sao lâu, HÃY TRẢ LỜI NGAY LẬP TỨC (0 lần gọi tool) từ dữ liệu có sẵn trong `TRẠNG THÁI APP HIỆN TẠI`!\n"
-                "- LÀM TRỰC TIẾP NGAY TRÊN LUỒNG CHÍNH & CẤM GỌI `invoke_subagent`: Khi người dùng giao việc trong chat (tìm chủ đề theo DNA kênh, sửa brief/dàn ý/kịch bản, sửa code/bug/UI ứng dụng, cấu hình hệ thống), **HÃY LÀM TRỰC TIẾP NGAY** để mọi bước chạy hiển thị trực tiếp lên hộp chat và xong trong `15–60 giây`. Tuyệt đối không gọi `invoke_subagent` làm hộp chat đứng hình.\n"
-                "- CHỈ KIỂM DUYỆT CHẤT LƯỢNG KHI THỰC HIỆN LÀM VIDEO: Không chạy kiểm duyệt `@evidence_qa` / `@qc` cho các việc tìm chủ đề (`radar`), sửa code/UI (`dev`, `debug`), hay chỉnh sửa/tư vấn trong chat (`verify_with_qa=false`). Chỉ khi thực hiện sản xuất làm ra video (`plan` → `qc`) mới áp dụng cổng kiểm duyệt chất lượng.\n"
-                "- Khi đang bàn luận ý tưởng dự án mới (người dùng chưa chốt tạo dự án): hãy tư vấn sáng tạo tự do và đồng bộ phương án lên màn hình Tạo dự án bằng khối ```cofi-proposal ... ``` (hoặc gọi `POST /api/creative/draft`), KHÔNG tự ý tạo job cho đến khi người dùng đồng ý.\n"
-                "- Ngay khi người dùng ĐỒNG Ý / CHỐT ý tưởng trong chat ('ok', 'đồng ý', 'chốt', 'tạo dự án đi', 'bắt đầu làm'): hãy gọi ngay `POST /api/jobs` (với `start_plan: true` và đầy đủ `creative_brief`, `outline` đã bàn) để tạo dự án và tự động đưa kịch bản sang màn hình Kịch bản.\n"
-                "- QUY TẮC UTF-8 BẮT BUỘC TRÊN WINDOWS: TUYỆT ĐỐI KHÔNG truyền chuỗi tiếng Việt / tiếng Hàn trực tiếp vào PowerShell `Invoke-RestMethod -Body $json` dạng string vì PowerShell 5.1 sẽ làm lỗi font thành dấu `???`. Luôn gọi API có body JSON bằng `python -X utf8 -c` với `.encode('utf-8')`.\n"
-                "- Ở bước Kịch bản và các bước tiếp theo, nếu người dùng yêu cầu thực hiện, sửa, tạo lại, hoặc duyệt chạy bước kế tiếp qua chat: hãy gọi ngay HTTP API (`PATCH /api/jobs/<id>/creative-brief`, `PATCH /api/jobs/<id>/outline`, `PUT /api/jobs/<id>/script`, `POST /api/jobs/<id>/run/<phase>`, `POST /api/jobs/<id>/rerun/<phase>`, `POST /api/jobs/<id>/approve-next`, `POST /api/jobs/<id>/edit-chat`, `POST /api/agency/delegate`, `POST /api/agency/delegate-squad`) để màn hình bên trái tự động cập nhật trực tiếp.\n"
-                f"- HTTP API cục bộ của COFI DOCUMENTARY: {base}\n"
-                "- API chính:\n" + GOAL_API_REFERENCE + "\n\n"
-                + COFI_PROPOSAL_CARD_GUIDE + "\n\n"
-                f"LỊCH SỬ CHAT GẦN ĐÂY TRONG APP\n{json.dumps(recent, ensure_ascii=False)}\n"
-            )
+        )
     else:
-        mode_label = "GOAL (Thực thi trực tiếp tốc độ cao, KHÔNG gọi invoke_subagent; chỉ kiểm duyệt QA/QC khi thực hiện làm video)" if goal_mode else "FAST DIRECT EXECUTION (0-tool trả lời ngay tiến độ từ TRẠNG THÁI APP HIỆN TẠI; làm trực tiếp trên luồng chính trong 15-60s, CẤM gọi invoke_subagent gây đứng hình; chỉ kiểm duyệt QA/QC khi sản xuất video)"
-        parts.append(f"(Tiếp tục cùng phiên Antigravity COFI DOCUMENTARY [{mode_label}]. API app: {base})\n")
+        recent_followup = _format_substantive_history(history, limit=4, max_item_chars=1100)
+        mode_label = (
+            f"MODE={chat_intent.upper()} | FIRE-AND-RETURN (0-tool trả lời tiến độ/lỗi từ bộ nhớ dự án; "
+            "cấm đọc code app khi xử lý khâu sản xuất video; cấm lặp kiểm tra HTTP chờ phase nền)"
+        )
+        parts.append(f"(Tiếp tục phiên Antigravity COFI DOCUMENTARY [{mode_label}]. API app: {base}, dừng job: POST {base}/api/jobs/<id>/stop)\n")
+        if recent_followup:
+            parts.append(f"LỊCH SỬ CHAT GẦN ĐÂY TRONG APP (đồng bộ sẵn — KHÔNG dùng tool đọc lại producer_chat_history.jsonl hay transcript.jsonl)\n{json.dumps(recent_followup, ensure_ascii=False)}\n")
+
     parts.append(f"TRẠNG THÁI APP HIỆN TẠI (đã đồng bộ trực tiếp — dùng ngay, KHÔNG gọi tool quét lại app/workspaces)\n{snapshot}\n")
+
+    if chat_intent == "production_pipeline":
+        if sel_ws_str and Path(sel_ws_str).is_dir():
+            try:
+                prod_mem = build_production_pipeline_memory_block(
+                    sel_ws_str,
+                    sel_job_dict,
+                    sel_job_dict.get("live_diagnostics") if isinstance(sel_job_dict.get("live_diagnostics"), dict) else None,
+                )
+                if prod_mem:
+                    parts.append(prod_mem + "\n")
+            except Exception:
+                pass
+            try:
+                surgical_locator = build_surgical_work_locator(sel_ws_str, message, history)
+                if surgical_locator:
+                    parts.append(surgical_locator + "\n")
+            except Exception:
+                pass
+    else:
+        try:
+            code_locator = build_codebase_surgical_locator(
+                repo_root_dir,
+                message,
+                history,
+                always_include_recent_code=True,
+                include_architecture_tree=True,
+            )
+            if code_locator:
+                parts.append(code_locator + "\n")
+        except Exception:
+            pass
+        if sel_ws_str and Path(sel_ws_str).is_dir():
+            try:
+                surgical_locator = build_surgical_work_locator(sel_ws_str, message, history)
+                if surgical_locator:
+                    parts.append(surgical_locator + "\n")
+            except Exception:
+                pass
+
     if explicit_agent_id:
         try:
             exp_charter = coord.build_specialist_soul_header(explicit_agent_id, "Explicit User Specialist Assignment")
@@ -3133,6 +3938,14 @@ def build_producer_goal_prompt(
     if images:
         parts.append("ẢNH ĐÍNH KÈM (mở và xem trực tiếp trước khi quyết định):\n" + "\n".join(f"- {p}" for p in images) + "\n")
     parts.append(f"TIN NHẮN CỦA NGƯỜI DÙNG\n{message}")
+    if answer_first:
+        parts.append(
+            "\n⚡ CHỈ THỊ ƯU TIÊN TUYỆT ĐỐI CHO LƯỢT NÀY (TRẢ LỜI NGAY LẬP TỨC — CẤM QUÉT MÙ):\n"
+            "- Người dùng đang đặt câu hỏi hoặc yêu cầu **TRẢ LỜI / BÁO CÁO RÕ ĐANG LÀM ĐẾN ĐÂU & VÌ SAO LỖI TRƯỚC KHI BẮT TAY VÀO LÀM**.\n"
+            "- Toàn bộ thông tin dự án (`🎬 BỘ NHỚ LUỒNG SẢN XUẤT & CHẨN ĐOÁN TỨC THÌ`, `selected_job`, `live_diagnostics`, `LỊCH SỬ CHAT`) đã nạp sẵn ngay phía trên.\n"
+            "- **TUYỆT ĐỐI CẤM** quét `workspaces/`, đọc mã nguồn `documentary/*.py` / `static/*.js`, đọc `producer_chat_history.jsonl`, đọc `transcript.jsonl`, hay gọi `trail ask`!\n"
+            "- Nếu có ảnh chụp màn hình đính kèm, chỉ xem ảnh đính kèm (nếu cần) + đối chiếu ngay với `live_diagnostics` đã nạp sẵn, rồi **TRẢ LỜI NGAY LẬP TỨC** bằng tiếng Việt ngắn gọn, chỉ đích danh file/cảnh đang lỗi và **DỪNG LẠI** chờ lệnh tiếp theo!"
+        )
     return "\n".join(parts)
 
 
@@ -3152,6 +3965,11 @@ def build_footage_eye_agent_prompt(
     beats: list[dict[str, Any]],
     *,
     failed_report: dict[str, Any] | None = None,
+    act_label: str = "",
+    worker_index: int = 0,
+    total_workers: int = 1,
+    completed_beat_ids: list[str] | None = None,
+    existing_sources: list[str] | None = None,
 ) -> str:
     """Build the standalone prompt for the dedicated @footage AI Agent (Eye-Verified Archival Footage Hunter)."""
     from .nexus_coordinator import NexusCoordinator
@@ -3162,18 +3980,22 @@ def build_footage_eye_agent_prompt(
         "Dedicated Eye-Verified Archival Footage Hunting, 100px Grid Cropping & 1-to-1 Voice Semantic Matching Stage",
     )
     job_id = str(job.get("id") or workspace.name).strip()
+    done_set = {str(x).strip() for x in (completed_beat_ids or []) if str(x).strip()}
     compact_beats = [
         {
             "beat_id": str(b.get("id") or b.get("beat_id") or ""),
-            "duration_sec": b.get("duration_sec"),
-            "voice_text": b.get("voice_text"),
+            "act": str(b.get("act") or b.get("chapter_id") or ""),
+            "duration_sec": b.get("duration_sec") or b.get("target_duration_sec"),
+            "voice_text": b.get("voice_text") or b.get("narration_text"),
             "visual_type": b.get("visual_type"),
             "source_priority": b.get("source_priority"),
+            "visual_description": str(b.get("visual_description") or "")[:240],
             "footage_search_queries": b.get("footage_search_queries") or [],
         }
         for b in beats
-        if isinstance(b, dict)
+        if isinstance(b, dict) and str(b.get("id") or b.get("beat_id") or "") not in done_set
     ]
+    is_rework_scope = str(act_label or "").strip().upper().startswith("REWORK")
     rework_section = ""
     failures_list = (failed_report or {}).get("failures") or (failed_report or {}).get("failed_assets") or []
     if failures_list:
@@ -3181,52 +4003,105 @@ def build_footage_eye_agent_prompt(
             "\n\n🚨 MANDATORY EYE-VERIFICATION REWORK — FIX FAILED FOOTAGE CLIPS:\n"
             f"{json.dumps(failures_list[:60], ensure_ascii=False, indent=2)}\n"
             f"(Total failures: {len(failures_list)})\n"
-            "You MUST re-cut or replace every failed beat listed above using a genuinely matching source clip, "
-            "non-stair-step eye-verified timestamp (`--start-offset`), calibrated `--crop-mode`, and unique `--observed-content` (NEVER prepend keyword-stuffing prefixes or split one TV broadcast into multiple source filenames)."
+            "You MUST re-cut or replace ONLY the failed/flagged beats assigned below using a genuinely matching source clip, "
+            "non-stair-step eye-verified timestamp (`--start-offset`, `> 30s` apart on shared sources, shifting away from any `GLOBAL_FOOTAGE` overused/stair-stepped source), "
+            "calibrated `--crop-mode`, `--force`, and unique `--observed-content` (NEVER prepend keyword-stuffing prefixes or split one TV broadcast into multiple source filenames)."
         )
     qa_ticket_directive = load_phase_qa_rejection_directive(workspace, "edit")
     if qa_ticket_directive:
         rework_section = f"{rework_section}\n{qa_ticket_directive}"
 
+    scope_banner = ""
+    if act_label or total_workers > 1:
+        scope_tag = act_label or f"WORKER_{worker_index + 1}"
+        rework_note = " (Vòng sửa lỗi tập trung — CHỈ xử lý các beat lỗi/thiếu trong danh sách dưới đây, không quét lại beat đã đạt)" if is_rework_scope else ""
+        scope_banner = (
+            f"\n- **PHẠM VI WORKER SONG SONG (`{scope_tag}`, Worker {worker_index + 1}/{max(1, total_workers)})**: "
+            f"Bạn CHỈ xử lý đúng `{len(compact_beats)}` beat `REAL_FTG`/tư liệu được giao trong danh sách bên dưới (đã tự động lọc bỏ `{len(done_set)}` beat hoàn tất và toàn bộ beat `VOX`/`CINEMA_TEXT`/`AI_4D`){rework_note}. "
+            "TUYỆT ĐỐI KHÔNG cắt đè sang beat của Worker/Hồi khác, và phân bố mốc `--start-offset` lệch nhau trên các nguồn dùng chung để `dHash >= 14`."
+        )
+    sources_hint = ""
+    if existing_sources:
+        sources_hint = (
+            f"\n- **NGUỒN SẠCH ĐÃ TẢI SẴN TRÊN ĐĨA (ưu tiên probe/dùng trước, không tải lại):** "
+            + ", ".join(existing_sources[:20])
+        )
+
+    if is_creative_audio_drama_job(job) or str((_resolve_job_editing_dna(job) or {}).get("footage_mode") or "").strip().lower() == "atmospheric_broll":
+        return f"""{footage_charter}
+
+BẠN LÀ CHUYÊN GIA AI AGENT `@footage` TRONG CHẾ ĐỘ LIGHTWEIGHT ATMOSPHERIC B-ROLL (`~15%` B-ROLL KHÔNG KHÍ 4K SẠCH CHO K-AUDIO DRAMA ĐÊM KHUYA — `0%` BẢN TIN THỜI SỰ, `0%` MẶT NGƯỜI LẠ):
+- Job ID: `{job_id}` | Workspace: `{workspace}` | Remotion Dir: `{remotion_dir}`
+- Thư mục nguồn B-roll 4K sạch: `{workspace / "media" / "footage" / "sources"}`
+- Thư mục bảng soi mắt & kiểm duyệt: `{workspace / "media" / "footage" / "probes"}`
+- Hồ sơ kênh đang chạy `content_mode = "creative_audio_drama"` (`footage_mode = "atmospheric_broll"`): `@ai_visual` đã tạo xong `~80%` cảnh nhân vật điện ảnh 35mm trong `media/ai/`. Bạn CHỈ tuyển chọn và cắt lọc cho đúng `{len(compact_beats)}` beat `sourced_video` (`~15%` nhịp chuyển cảnh/không khí): mưa đêm bên hiên cửa gỗ Hanok, lá thu rơi trên sân đá, bàn tay rót trà gốm ấm áp, tơ lụa/chỉ thêu truyền thống Hàn Quốc, phố đêm Seoul trầm ấm, phím đàn piano/dây đàn cello ấm dịu.
+
+QUY TRÌNH BẮT BUỘC BẰNG MẮT THẬT (`ZERO NEWS / ZERO STRANGER FACES / ZERO STAIR-STEP`):
+1. **Thu thập đa dạng nguồn 4K Atmospheric B-Roll sạch (`>= 13` nguồn video độc lập trong `{workspace / "media" / "footage" / "sources"}`, tối đa `<= 5` clip mỗi nguồn)**:
+   - Dùng `yt-dlp` tải các nguồn video không khí 4K Hàn Quốc / truyền thống (Hanok rain eaves, Korean tea ceremony, silk hanbok craft close-up, autumn courtyard leaves, warm night street lantern, solo felt piano / cello hands) vào `{workspace / "media" / "footage" / "sources"}`.
+   - **TUYỆT ĐỐI CẤM** tải bản tin thời sự TV, phóng sự tội phạm, vlog thuyết minh hay cảnh có khuôn mặt người lạ cận cảnh (làm gãy Character Sheet). Mỗi nguồn chỉ lấy tối đa `<= 5` đoạn ở các mốc thời gian cách xa nhau (`> 25s`, không cắt tịnh tiến / không cộng bậc thang đều nhau).
+2. **Tạo bảng `STORYBOARD_<id>.jpg` & `GRID_<id>.jpg` (`100px`) và SOI MẮT (`read_file`)**:
+   - Chạy: `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --job-id "{job_id}" --probe-storyboard "<đường_dẫn_nguồn>" --probe-id "<mã_nguồn>"`
+   - Gọi `read_file` xem `STORYBOARD_<mã_nguồn>.jpg` và `GRID_<mã_nguồn>.jpg` để chọn đúng giây `--start-offset` mượt, không chuyển cảnh giữa chừng (`0` internal hard cut), ánh sáng ấm dịu (`Highlight Luma <= 215`), và lập `--crop-mode "crop=W:H:X:Y"` cắt sạch 100% mọi logo/watermark/chữ góc màn hình.
+3. **Cắt từng beat bằng `edit_footage_fetcher` với `--observed-content` độc nhất mô tả cảnh vật mắt thấy**:
+   - Chạy: `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --job-id "{job_id}" --remotion-dir "{remotion_dir}" --beat-id "<BEAT_ID>" --url "<đường_dẫn_nguồn>" --start-offset <GIÂY_THẬT> --duration <THỜI_LƯỢNG_BEAT> --crop-mode "crop=W:H:X:Y" --observed-content "<Mô tả cụ thể cảnh không khí 4K mắt thấy trong frame, không copy nguyên văn câu thoại, không lặp tiền tố>" --force`
+4. **Xuất bảng `VERIFY_FTG_CLIPS_*.jpg` và kiểm tra mắt (`read_file`)**:
+   - Chạy: `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --job-id "{job_id}" --remotion-dir "{remotion_dir}" --build-verify-sheets`
+   - Gọi `read_file` kiểm tra trực tiếp `VERIFY_FTG_CLIPS_1.jpg` (và các trang tiếp theo) trong `{workspace / "media" / "footage" / "probes"}`, thay ngay bất kỳ clip nào dính mặt người lạ, chữ, logo hoặc giật cắt.
+5. **Chỉ hoàn tất khi chạy kiểm định `footage_hygiene_report.json` đạt `status: "PASSED"` (`failures: []`) cho đủ `{len(compact_beats)}` beat `sourced_video`**.{rework_section}
+
+DANH SÁCH `{len(compact_beats)}` BEATS ATMOSPHERIC B-ROLL CẦN PHỤ TRÁCH:
+{json.dumps(compact_beats, ensure_ascii=False, indent=2)}
+"""
+    final_verify_step = (
+        "4. **Duyệt bảng `BATCH_VERIFY_*.jpg` theo lô (Worker song song — KHÔNG tự chạy `--build-verify-sheets` toàn tập; Coordinator sẽ gom bảng `VERIFY_FTG_CLIPS_*.jpg` sau khi các Worker hoàn tất)**."
+        if total_workers > 1
+        else (
+            "4. **Xuất bảng kiểm duyệt `VERIFY_FTG_CLIPS_*.jpg` và SOI BẰNG MẮT (`read_file`)**:\n"
+            f'   - Sau khi cắt xong toàn bộ các beat tư liệu thật, chạy lệnh:\n     `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --job-id "{job_id}" --remotion-dir "{remotion_dir}" --build-verify-sheets`\n'
+            f'   - **BẮT BUỘC gọi `read_file`** mở xem trực tiếp các file `VERIFY_FTG_CLIPS_*.jpg` trong `{workspace / "media" / "footage" / "probes"}`.'
+        )
+    )
     return f"""{footage_charter}
 
 BẠN LÀ CHUYÊN GIA AI AGENT `@footage` (`Archival Footage & B-Roll Hunter`).
-Bước 4 cũ (Footage tools tự động) đã bị XÓA VĨNH VIỄN khỏi ứng dụng. Toàn bộ nhiệm vụ tìm kiếm nguồn video tư liệu thật, soi bảng lưới `STORYBOARD_<id>.jpg` + `GRID_<id>.jpg` bằng mắt thật (`read_file`), cắt từng clip khớp 1-1 với câu thoại (`voice_text`), crop sạch 100% logo/chữ chạy/MC trường quay và kiểm duyệt trên bảng `VERIFY_FTG_CLIPS_*.jpg` thuộc toàn quyền của bạn trước khi bàn giao cho `@edit`.
+Bước 4 cũ (Footage tools tự động) đã bị XÓA VĨNH VIỄN khỏi ứng dụng. Toàn bộ nhiệm vụ tìm kiếm nguồn video tư liệu thật, soi bảng lưới `STORYBOARD_<id>.jpg` + `GRID_<id>.jpg` bằng mắt thật (`read_file`), cắt từng clip khớp 1-1 với câu thoại (`voice_text`), crop sạch 100% logo/chữ chạy/MC trường quay và kiểm duyệt trên bảng Contact Sheet thuộc toàn quyền của bạn trước khi bàn giao cho `@edit`.
 
 THÔNG TIN DỰ ÁN:
 - Job ID: `{job_id}`
 - Workspace: `{workspace}`
 - Remotion Dir: `{remotion_dir}`
 - Thư mục nguồn tư liệu thật: `{workspace / "media" / "footage" / "sources"}`
-- Thư mục bảng soi mắt & kiểm duyệt: `{workspace / "media" / "footage" / "probes"}`
+- Thư mục bảng soi mắt & kiểm duyệt: `{workspace / "media" / "footage" / "probes"}`{scope_banner}{sources_hint}
 
-QUY TRÌNH BẮT BUỘC 5 BƯỚC BẰNG MẮT THẬT (`ZERO AUTO-CUT / ZERO STAIR-STEP / ZERO BLIND SPLICING`):
-1. **Kiểm tra & Thu thập đa dạng nguồn tư liệu thật (`>= 3` nguồn video độc lập đúng vụ án)**:
-   - Kiểm tra các file nguồn trong `{workspace / "media" / "footage" / "sources"}` (ví dụ `01_cctv_...mp4` .. `12_tv_...mp4`). Nếu chưa đủ nguồn cho các khía cạnh của vụ án (hiện trường, khám nghiệm pháp y, cảnh sát điều tra, truy bắt, thẩm vấn, phiên tòa), dùng `yt-dlp` tải bổ sung vào `{workspace / "media" / "footage" / "sources"}` (tuyệt đối CẤM tải video bình luận kể chuyện của YouTuber/vlogger hay phóng sự lạc vụ án).
-   - Phân bổ các beat `REAL_FTG` trải đều trên nhiều nguồn video (`01..12`), TUYỆT ĐỐI CẤM lấy độc quyền từ 1 nguồn duy nhất (`single_source_monopoly_detected`) và TUYỆT ĐỐI CẤM cắt bậc thang tự động kiểu cộng đều `+14.5s` (`stair_step_auto_offset_detected`).
+QUY TRÌNH BẮT BUỘC 5 BƯỚC BẰNG MẮT THẬT — CẮT LÔ 10–15 BEAT SIÊU TỐC (`ZERO AUTO-CUT / ZERO STAIR-STEP / ZERO BLIND SPLICING / BATCH CONTACT SHEET`):
+1. **Kiểm tra & Thu thập cuốn chiếu theo lô nhỏ 3–4 nguồn (`height<=720` — CẤM ôm tải 15–30 video 1080p cùng lúc)**:
+   - Trước tiên kiểm tra các file nguồn ĐÃ CÓ sẵn trong `{workspace / "media" / "footage" / "sources"}` và bảng probe trong `{workspace / "media" / "edit_footage" / "probes"}` / `{workspace / "media" / "footage" / "probes"}`. Nếu đã có nguồn sạch trên đĩa, hãy probe và **cắt ngay các beat khớp nghĩa trước**; chỉ tải bổ sung khi thật sự thiếu cảnh mới theo lô nhỏ **tối đa 3–4 nguồn/lần** với định dạng nhẹ `720p` (`yt-dlp -f "bv*[height<=720][ext=mp4]+ba/b[height<=720][ext=mp4]/b[height<=720]" --socket-timeout 20 --retries 2 --max-filesize 250M`, CẤM ghép >4 URL vào 1 vòng lặp tải nối tiếp và bỏ qua file `.part` đứng yên >60s).
+   - **Lọc bỏ nguồn rác ngay khi soi `STORYBOARD_<id>.jpg`**: Xóa ngay (`Remove-Item`) các video có người dẫn chương trình/MC trường quay/MC hoạt hình đứng bục (`cartoon host`), avatar chủ kênh ở góc, video bọc khung trình duyệt giả hoặc hộp PiP dọc bé lọt thỏm trong viền đen (`w < 960` hoặc `h < 540`), video slideshow ảnh tĩnh dán lên nền phong cảnh (`Motion Energy = 0`), hoặc vlogger/YouTuber kể chuyện lạc vụ án.
+   - Tuyệt đối CẤM đọc mã nguồn hệ thống (`documentary/*.py`); chỉ dùng các lệnh CLI `documentary.edit_footage_fetcher` đã ghi sẵn bên dưới.
+   - Phân bổ các beat `REAL_FTG` trải đều trên nhiều nguồn video sạch, TUYỆT ĐỐI CẤM lấy độc quyền từ 1 nguồn duy nhất (`single_source_monopoly_detected`) và TUYỆT ĐỐI CẤM cắt bậc thang tự động kiểu cộng đều `+14.5s` (`stair_step_auto_offset_detected`).
 
-2. **Trích xuất bảng `STORYBOARD_<id>.jpg` & Lưới tọa độ `GRID_<id>.jpg` (`100px`) và XEM BẰNG MẮT (`read_file`)**:
-   - Chạy lệnh tạo bảng storyboard và lưới tọa độ cho từng video nguồn:
+2. **Trích xuất bảng `STORYBOARD_<id>.jpg` & Lưới tọa độ `GRID_<id>.jpg` (`100px`) — SOI 1 LẦN CHO MỖI NGUỒN (`read_file`)**:
+   - Chạy lệnh tạo bảng storyboard và lưới tọa độ cho từng video nguồn (bỏ qua nếu `STORYBOARD_<id>.jpg` và `GRID_<id>.jpg` đã tồn tại):
      `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --job-id "{job_id}" --probe-storyboard "<đường_dẫn_hoặc_URL_nguồn>" --probe-id "<mã_nguồn>"`
-   - **BẮT BUỘC mở xem trực tiếp bằng `read_file`** trên `{workspace / "media" / "footage" / "probes" / "STORYBOARD_<mã_nguồn>.jpg"}` và `{workspace / "media" / "footage" / "probes" / "GRID_<mã_nguồn>.jpg"}` để:
-     * Chọn đúng giây `--start-offset` có hình ảnh thực tế khớp 100% với câu thoại (`voice_text`), không dính MC trường quay (`东方时空`, bàn biên tập), không dính bảng chữ tiêu đề lớn giữa màn hình (`寻踪探案`), không dính frame đen (`YAVG < 16`).
-     * Đọc tọa độ pixel `(X, Y, W, H)` trên `GRID_<mã_nguồn>.jpg` để lập công thức `--crop-mode "crop=W:H:X:Y"` cắt bỏ 100% logo đài truyền hình, chữ chạy đáy màn hình, phụ đề gốc và khung viền.
+   - **BẮT BUỘC mở xem trực tiếp bằng `read_file`** trên CẢ `STORYBOARD_<mã_nguồn>.jpg` VÀ `GRID_<mã_nguồn>.jpg` (chỉ 1 lần/nguồn) để:
+     * Lập bản đồ mốc giây `--start-offset` sạch khớp 100% nghĩa từng câu thoại (`voice_text`), không dính MC trường quay/MC hoạt hình/avatar, không dính bảng chữ tiêu đề lớn giữa màn hình, không dính frame đen (`YAVG < 16`).
+     * Đọc tọa độ pixel `(X, Y, W, H)` trên `GRID_<mã_nguồn>.jpg` để chốt công thức `--crop-mode "crop=W:H:X:Y"` (`W >= 960, H >= 540`) cắt sạch 100% logo đài/kênh (`CCTV`, `bilibili`, `@YouTube...`), thanh viền trình duyệt giả, chữ chạy đáy màn hình và phụ đề ngoại ngữ cháy cứng.
 
-3. **Cắt từng clip bằng `edit_footage_fetcher` với mô tả mắt thấy riêng biệt cho từng câu**:
-   - Với mỗi beat tư liệu thật, gọi:
-     `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --job-id "{job_id}" --remotion-dir "{remotion_dir}" --beat-id "<BEAT_ID>" --url "<đường_dẫn_nguồn_trong_media/footage/sources_hoặc_URL>" --start-offset <GIÂY_THẬT> --duration <THỜI_LƯỢNG_BEAT> --crop-mode "crop=W:H:X:Y" --observed-content "<Mô tả cụ thể cảnh thật mắt nhìn thấy trong frame và cách nó khớp 100% với câu thoại>" --force`
-   - CẤM dùng câu văn mẫu lặp lại kiểu `"대본 문장 맥락 일치:"` cho `--observed-content`.
-   - Những câu thoại trừu tượng/nội tâm/tổng kết không có tư liệu thật tương ứng thì chuyển sang `VOX` hoặc `AI_VISUAL` theo đúng chiến lược dự án, tuyệt đối không nhét cảnh đàn bò, ruộng đất khô nứt nẻ hay cảnh lạc quẻ vào câu thoại!
+3. **Cắt THEO LÔ 10–15 BEAT bằng `--batch-manifest` & SO MẮT 1 LƯỢT TRÊN `BATCH_VERIFY_*.jpg` (`TIẾT KIỆM 90% TOKEN`)**:
+   - Gom **10–15 beat** đã chọn được `url`, `start_offset` (mắt chọn), `duration`, `crop_mode` (từ `GRID`), và `observed_content` (mô tả cảnh thật mắt thấy riêng cho từng câu, >= 10 ký tự, CẤM dùng câu mẫu lặp lại) vào 1 file JSON (ví dụ `{workspace / "media" / "footage" / "probes" / ("batch_" + (act_label or "01") + "_1.json")}`) dạng mảng:
+     `[{{"beat_id": "B010-V01", "url": "...mp4", "start_offset": 124.5, "duration": 6.5, "crop_mode": "crop=1140:640:60:40", "observed_content": "Cảnh thật trong clip khớp câu thoại...", "query": "..."}}]`
+   - Chạy **1 lệnh duy nhất** cắt song song cả lô và xuất 1 tấm Contact Sheet gộp:
+     `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --job-id "{job_id}" --remotion-dir "{remotion_dir}" --batch-manifest "<đường_dẫn_file_json_lô>" --batch-sheet-out "{workspace / "media" / "footage" / "probes" / ("BATCH_VERIFY_" + (act_label or "L01") + "_1.jpg")}"`
+   - **BẮT BUỘC gọi `read_file` 1 lần** xem tấm `BATCH_VERIFY_*.jpg` vừa tạo: đối chiếu cả 10–15 dòng `3 khung hình (15%-50%-85%)` với `Voice` bên cạnh; nếu beat nào bị lệch nghĩa, tối đen hoặc còn dính logo/chữ/MC thì chỉ cắt lại đúng beat lẻ đó (`--beat-id <BEAT_ID> ... --force`).
+   - Những câu thoại trừu tượng/nội tâm/tổng kết không có tư liệu thật tương ứng thì bỏ qua để chuyển sang `VOX` hoặc `AI_VISUAL` theo đúng chiến lược dự án, tuyệt đối không nhét cảnh lạc quẻ vào câu thoại!
 
-4. **Xuất bảng kiểm duyệt `VERIFY_FTG_CLIPS_1.jpg` & `VERIFY_FTG_CLIPS_2.jpg` và SOI BẰNG MẮT (`read_file`)**:
-   - Sau khi cắt xong toàn bộ các beat tư liệu thật, chạy lệnh:
-     `python -m documentary.edit_footage_fetcher --workspace "{workspace}" --job-id "{job_id}" --remotion-dir "{remotion_dir}" --build-verify-sheets`
-   - **BẮT BUỘC gọi `read_file`** mở xem trực tiếp `VERIFY_FTG_CLIPS_1.jpg` và `VERIFY_FTG_CLIPS_2.jpg` trong `{workspace / "media" / "footage" / "probes"}`.
-   - Đối chiếu từng dòng: `3 khung hình (15%-50%-85%)` so với `Voice` bên cạnh. Nếu bất kỳ beat nào lệch nghĩa câu nói, còn dính MC/chữ tiêu đề/logo, hoặc bị tối đen, phải cắt lại ngay từ nguồn đúng!
+{final_verify_step}
+   - Đối chiếu `3 khung hình (15%-50%-85%)` so với `Voice` bên cạnh. Nếu bất kỳ beat nào lệch nghĩa câu nói, còn dính MC/chữ tiêu đề/logo, hoặc bị tối đen, phải cắt lại ngay từ nguồn đúng!
 
-5. **Chỉ kết thúc khi `footage_hygiene_report.json` đạt `status: "PASSED"` (`failed_assets_count: 0`)**.
+5. **Chỉ kết thúc khi toàn bộ các beat tư liệu được giao đã cắt sạch, kiểm duyệt bằng mắt và ghi nhận vào `asset_registry.json` / `footage_review.json` (`0` lỗi hygiene)**.
 {rework_section}
 
-DANH SÁCH BEATS CỦA DỰ ÁN:
+DANH SÁCH `{len(compact_beats)}` BEATS ĐƯỢC GIAO CHO WORKER NÀY:
 {json.dumps(compact_beats, ensure_ascii=False, indent=2)}
 """

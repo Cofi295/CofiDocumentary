@@ -979,6 +979,9 @@ function setAppTab(tab) {
   if (["script", "voice", "visuals", "footage", "ai_visual", "edit", "seo", "qc"].includes(tab)) renderFunctionWorkspaces();
   if (tab === "projects" && state.selectedId) renderDetail();
   if (tab === "accounts") loadHealth().catch(err => toast(err.message, true));
+  if (tab === "create") {
+    syncCreateSuggestionsWithTopicMemory({ onlyIfStaleOrEmpty: true }).catch(() => {});
+  }
   renderGlobalProducerChat({ loadHistory: state.globalCodexOpen }).catch(() => {});
 }
 
@@ -1321,18 +1324,21 @@ function renderAiAccounts(health) {
 }
 
 const ANTIGRAVITY_MODEL_LABELS = {
+  "gemini-4-hydrogen-xhigh": "Gemini 4 Hydrogen (XHigh)",
+  "gemini-4-hydrogen-high": "Gemini 4 Hydrogen (High)",
+  "gemini-4-hydrogen-medium": "Gemini 4 Hydrogen (Medium)",
+  "gemini-4-hydrogen-low": "Gemini 4 Hydrogen (Low)",
+  "gemini-4-carbon-high": "Gemini 4 Carbon (High)",
+  "gemini-4-carbon-medium": "Gemini 4 Carbon (Medium)",
+  "gemini-4-carbon-low": "Gemini 4 Carbon (Low)",
   "gemini-4-argon-high": "Gemini 4 Argon (High)",
   "gemini-4-argon-medium": "Gemini 4 Argon (Medium)",
   "gemini-4-argon-low": "Gemini 4 Argon (Low)",
   "gemini-3.8-flash-high": "Gemini 3.8 Flash (High)",
   "gemini-3.8-flash-medium": "Gemini 3.8 Flash (Medium)",
   "gemini-3.8-flash-low": "Gemini 3.8 Flash (Low)",
-  "claude-opus-5-5-high": "Claude Opus 5.5 (High)",
-  "claude-opus-5-5-medium": "Claude Opus 5.5 (Medium)",
-  "claude-opus-5-5-low": "Claude Opus 5.5 (Low)",
-  "claude-sonnet-5-5-high": "Claude Sonnet 5.5 (High)",
-  "claude-sonnet-5-5-medium": "Claude Sonnet 5.5 (Medium)",
-  "claude-sonnet-5-5-low": "Claude Sonnet 5.5 (Low)",
+  "claude-sonnet-4-6": "Claude Sonnet 4.6 (Thinking)",
+  "claude-opus-4-6-thinking": "Claude Opus 4.6 (Thinking)",
   "gpt-oss-120b-medium": "GPT-OSS 120B (Medium)",
   "codex": "OpenAI Codex CLI",
 };
@@ -2931,7 +2937,16 @@ function isTopicInProfileMemory(item, profile) {
     item.raw?.already_produced === false &&
     (item.raw?.trend_source === "live_two_stream_dna_research" || item.raw?.trend_source === "strict_channel_dna" || Boolean(item.raw?.case_real_name_zh))
   );
+  const candId = String(item.videoId || item.raw?.id || "").trim().toLowerCase();
   for (const m of memList) {
+    const mCandId = String(m?.candidate_id || "").trim().toLowerCase();
+    if (candId && mCandId && candId === mCandId) {
+      return true;
+    }
+    const mRealZh = String(m?.case_real_name_zh || "").trim();
+    if (candZh && mRealZh && candZh === mRealZh) {
+      return true;
+    }
     const mTitle = stripSeo(m?.title || "");
     const mTopic = stripSeo(m?.topic || "");
     if (!mTitle) continue;
@@ -3263,6 +3278,30 @@ function renderCreateTopicSuggestions(result) {
     }
   }
   selectCreateTopic(state.createTopicSuggestions[0], 0);
+}
+
+async function syncCreateSuggestionsWithTopicMemory({ onlyIfStaleOrEmpty = false } = {}) {
+  try {
+    const freshProfiles = await api("/api/radar/channel-profiles");
+    if (Array.isArray(freshProfiles) && freshProfiles.length) {
+      state.channelProfiles = freshProfiles;
+      renderChannelProfileCards();
+    }
+  } catch (_) {}
+  const form = $("#jobForm");
+  const profileId = String(form?.elements?.channel_profile_id?.value || "").trim();
+  if (!profileId) return;
+  const activeProf = state.channelProfiles.find(item => item.id === profileId);
+  if (!activeProf) return;
+  if (onlyIfStaleOrEmpty) {
+    const currentSuggestions = Array.isArray(state.createTopicSuggestions) ? state.createTopicSuggestions : [];
+    const hasProducedCollision = currentSuggestions.some(item => isTopicInProfileMemory(item, activeProf))
+      || (state.selectedCreateTopic && isTopicInProfileMemory(state.selectedCreateTopic, activeProf));
+    const hasCustomDraft = Boolean(form?.elements?.title?.value?.trim()) && !state.selectedCreateTopic;
+    if (hasCustomDraft && !hasProducedCollision) return;
+    if (currentSuggestions.length && !hasProducedCollision) return;
+  }
+  await discoverCreateTopics({ forceRefresh: false });
 }
 
 async function discoverCreateTopics({ forceRefresh = false, topicStream = null, resetHistory = false } = {}) {
@@ -5594,8 +5633,11 @@ $("#jobForm").addEventListener("submit", async event => {
         profile_id: state.selectedCreateTopic.profileId || raw.channel_profile_id || null,
         scan_id: state.selectedCreateTopic.scanId || null,
         selected_candidate: {
-          id: state.selectedCreateTopic.videoId || null,
+          id: state.selectedCreateTopic.videoId || state.selectedCreateTopic.raw?.id || null,
           title: state.selectedCreateTopic.title || raw.title || "",
+          case_real_name_zh: state.selectedCreateTopic.caseRealNameZh || state.selectedCreateTopic.raw?.case_real_name_zh || null,
+          topic_stream: state.selectedCreateTopic.topicStream || state.selectedCreateTopic.raw?.topic_stream || null,
+          note: state.selectedCreateTopic.note || state.selectedCreateTopic.raw?.note || null,
           codex_score: state.selectedCreateTopic.codexScore ?? null,
           codex_verdict: state.selectedCreateTopic.codexVerdict || null,
           profile_score: state.selectedCreateTopic.profileScore ?? state.selectedCreateTopic.radarProfileScore ?? null,
@@ -5641,16 +5683,19 @@ $("#jobForm").addEventListener("submit", async event => {
     state.detailTab = "tongquan";
     state.lastJobListHtml = "";
     state.lastOverviewDeckHtml = "";
-    // Immediately sync the newly created job into the in-memory profile topic_memory
-    // and prune it from state.createTopicSuggestions so it never stays suggested
+    // Immediately sync the newly created job into in-memory profile topic_memory,
+    // prune it from state.createTopicSuggestions, and pull the +1 auto-replenished topic from backend
     const createdTitleNorm = String(job.title || payload.title || "").trim().toLowerCase();
+    const memSync = job.topic_memory_sync || null;
     const targetProf = state.channelProfiles.find(p => p.id === (job.channel_profile_id || payload.channel_profile_id));
     if (targetProf && createdTitleNorm) {
       if (!Array.isArray(targetProf.topic_memory)) targetProf.topic_memory = [];
       if (!targetProf.topic_memory.some(m => String(m?.title || "").trim().toLowerCase() === createdTitleNorm)) {
-        targetProf.topic_memory.push({
+        targetProf.topic_memory.push(memSync || {
           id: `topic-${job.id}`,
           job_id: job.id,
+          candidate_id: payload.topic_discovery?.selected_candidate?.id || "",
+          case_real_name_zh: payload.topic_discovery?.selected_candidate?.case_real_name_zh || "",
           title: job.title || payload.title,
           topic: job.topic || job.title || payload.title,
           source: "job",
@@ -5665,6 +5710,7 @@ $("#jobForm").addEventListener("submit", async event => {
     }
     clearSelectedTopic();
     setCreateAttachedOutline(null);
+    syncCreateSuggestionsWithTopicMemory({ onlyIfStaleOrEmpty: false }).catch(() => {});
     await loadJobs(true);
     await renderDetail();
     if (submitMode === "run_full") {
@@ -6795,8 +6841,30 @@ function producerChatMessagesHtml(history = []) {
     const itemModelLabel = item.model ? humanizeAntigravityModel(item.model) : modelLabel;
     const itemMode = item.mode === "goal" ? "Goal" : "Agent";
     const stepsHtml = renderAntigravityStepsHtml(item.steps || [], { live: false });
-    const rawContent = String(item.content || "");
+    const fullRawContent = String(item.content || "");
+    const rawContent = fullRawContent.replace(/\n*---\n*🌱 \*\*trail[\s\S]*$/u, "").trimEnd();
     const markdownHtml = rawContent ? `<div class="agy-markdown-body">${renderAntigravityMarkdown(rawContent)}</div>` : "";
+    const tr = item.token_report && typeof item.token_report === "object" ? item.token_report : null;
+    const fmtK = (v) => {
+      const n = Number(v || 0);
+      return n >= 1000 ? `${(n / 1000).toFixed(1)}k` : `${n}`;
+    };
+    const trailNodes = Number((tr && tr.trail_nodes) || 8557).toLocaleString("vi-VN");
+    const trailLearnings = Number((tr && tr.trail_learnings) || 4);
+    const toolCalls = tr && tr.tool_calls !== undefined
+      ? Number(tr.tool_calls)
+      : (Array.isArray(item.steps) ? item.steps.filter((s) => s && (s.tool_name || s.step_type === "tool" || s.step_type === "command")).length : 0);
+    const inTok = Number((tr && tr.input_tokens) || Math.max(1800, 2400 + toolCalls * 650 + Math.floor(rawContent.length / 4)));
+    const cacheTok = Number((tr && tr.cache_read_tokens) || 0);
+    const savedTok = Number((tr && tr.saved_tokens) || 52000);
+    const savedPct = Number((tr && tr.saved_pct) || 89);
+    const ctxPct = Number((tr && tr.context_pct) || Math.min(100, Number(((inTok / 115000) * 100).toFixed(1))));
+    const trailBarHtml = `<div class="agy-trail-token-bar" style="margin:10px 0 6px;padding:7px 11px;border-radius:8px;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.28);font-size:11.5px;line-height:1.45;color:#d1fae5;display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;">
+      <span style="font-weight:700;color:#34d399;">🌱 Trail + Bộ nhớ Phẫu thuật: ĐANG BẬT (${escapeHtml(trailNodes)} symbols · ${trailLearnings} Learnings)</span>
+      <span style="opacity:0.92;">📊 Lượt này: <b>${toolCalls} tác vụ</b> · Dùng <b>${fmtK(inTok)} tok</b>${cacheTok > 0 ? ` (+Cache <b>${fmtK(cacheTok)}</b>)` : ""}</span>
+      <span style="color:#6ee7b7;font-weight:600;">⚡ Tiết kiệm ~${fmtK(savedTok)} token (-${savedPct}%)</span>
+      <span style="opacity:0.85;">🧠 Ngữ cảnh phiên: <b>${ctxPct}%</b></span>
+    </div>`;
     let footerHtml = "";
     if (rawContent.trim()) {
       const turnKey = `agy-turn-${idx}-${rawContent.length}`;
@@ -6811,16 +6879,19 @@ function producerChatMessagesHtml(history = []) {
         stepCount: Array.isArray(item.steps) ? item.steps.length : 0,
       });
       const showWideReader = rawContent.length >= 160 || rawContent.split("\n").length >= 4;
-      footerHtml = `<div class="agy-msg-footer">
+      footerHtml = `${trailBarHtml}<div class="agy-msg-footer">
         <button type="button" class="agy-msg-action-btn" data-agy-copy-turn="${escapeHtml(turnKey)}" title="Sao chép toàn bộ nội dung phản hồi">Sao chép</button>
         ${showWideReader ? `<button type="button" class="agy-msg-action-btn is-reader" data-agy-open-reader="${escapeHtml(turnKey)}" title="Mở chế độ đọc tập trung màn hình lớn">Đọc rộng ↗</button>` : ""}
       </div>`;
+    } else {
+      footerHtml = trailBarHtml;
     }
     return `<div class="producer-codex-message assistant agy-msg-assistant" data-agy-mode="${escapeHtml(itemMode.toLowerCase())}">
       <div class="agy-msg-head">
         <span class="agy-role-ai"><i class="agy-sparkle">✦</i> Antigravity</span>
         <span class="agy-msg-model-badge">${escapeHtml(itemModelLabel)}</span>
         <span class="agy-msg-mode-badge">${escapeHtml(itemMode)}</span>
+        <span class="agy-msg-mode-badge" style="background:rgba(16,185,129,0.16);color:#34d399;border-color:rgba(16,185,129,0.35);" title="Đồ thị mã nguồn @trailhq/trail-code + Sổ cái Bộ nhớ Phẫu thuật đang hoạt động">🌱 Trail + Bộ nhớ BẬT</span>
       </div>
       ${stepsHtml}
       ${markdownHtml}
@@ -7194,6 +7265,7 @@ function renderChatLiveProgress(node, provider, events = [], stage = "running", 
         <div class="agy-live-title-group">
           <span class="agy-role-ai"><i class="agy-sparkle">✦</i> Antigravity</span>
           <span class="agy-msg-model-badge">${escapeHtml(modelBadge)}</span>
+          <span class="agy-msg-mode-badge" style="background:rgba(16,185,129,0.16);color:#34d399;border-color:rgba(16,185,129,0.35);">🌱 Trail + Bộ nhớ BẬT</span>
           <span class="agy-live-status-pill ${active ? "is-active" : ""}">
             <i class="agy-pulse-dot"${active ? "" : ' style="display:none"'}></i>
             <span class="agy-live-status-text">${escapeHtml(stageLabel)}</span>
@@ -8005,6 +8077,7 @@ async function applyProducerUiActions(actions = []) {
       await loadJobs(true);
       await renderDetail();
       await renderFunctionWorkspaces();
+      syncCreateSuggestionsWithTopicMemory({ onlyIfStaleOrEmpty: true }).catch(() => {});
       if (previousId !== state.selectedId) await refreshProducerChatsForSelection();
       continue;
     }

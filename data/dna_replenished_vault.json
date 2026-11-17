@@ -1,49 +1,58 @@
 {
-  "version": "2.0",
-  "updated_at": "2026-11-13T05:37:55.303643+00:00",
+  "version": 2,
+  "updated_at": "2026-11-17T00:08:39.241422+00:00",
+  "replenish_ratio_per_produced_video": 2,
+  "dynamic_cases": [],
   "profiles": {
     "channel-e544a64b7c": {
       "profile_id": "channel-e544a64b7c",
-      "last_synced_produced_count": 28,
-      "replenished_total": 170,
-      "last_newly_replenished_count": 2,
-      "total_vault_size": 116,
-      "available_unproduced_total": 109,
+      "last_synced_produced_count": 52,
+      "replenished_total": 104,
+      "last_newly_replenished_count": 6,
+      "total_vault_size": 96,
+      "available_unproduced_total": 80,
       "available_by_stream": {
-        "financial_crime": 66,
-        "major_violent_crime": 43
+        "financial_crime": 44,
+        "major_violent_crime": 36
       },
-      "curated_active_count": 10,
-      "updated_at": "2026-11-11T07:13:00.716217+00:00"
+      "curated_active_count": 12,
+      "updated_at": "2026-11-16T21:40:11.305436+00:00"
     },
     "channel-kr-truecrime-director-v2": {
       "profile_id": "channel-kr-truecrime-director-v2",
-      "last_synced_produced_count": 46,
-      "replenished_total": 768,
-      "last_newly_replenished_count": 30,
-      "total_vault_size": 116,
-      "available_unproduced_total": 103,
+      "last_synced_produced_count": 53,
+      "replenished_total": 546,
+      "last_newly_replenished_count": 0,
+      "total_vault_size": 96,
+      "available_unproduced_total": 79,
       "available_by_stream": {
-        "financial_crime": 64,
-        "major_violent_crime": 39
+        "financial_crime": 44,
+        "major_violent_crime": 35
       },
       "curated_active_count": 10,
-      "updated_at": "2026-11-13T05:37:55.303263+00:00"
+      "updated_at": "2026-11-17T00:08:39.241177+00:00"
     },
     "channel-kr-financial-fugitive-director-v2": {
       "profile_id": "channel-kr-financial-fugitive-director-v2",
-      "last_synced_produced_count": 1,
-      "replenished_total": 103,
-      "last_newly_replenished_count": 0,
-      "total_vault_size": 116,
-      "available_unproduced_total": 115,
+      "last_synced_produced_count": 52,
+      "replenished_total": 104,
+      "last_newly_replenished_count": 40,
+      "total_vault_size": 96,
+      "available_unproduced_total": 80,
       "available_by_stream": {
-        "financial_crime": 67,
-        "major_violent_crime": 48
+        "financial_crime": 44,
+        "major_violent_crime": 36
       },
       "curated_active_count": 10,
-      "updated_at": "2026-11-11T07:13:02.826720+00:00"
+      "updated_at": "2026-11-16T20:55:16.051891+00:00"
+    },
+    "channel-kr-goodnight-drama-50m": {
+      "profile_id": "channel-kr-goodnight-drama-50m",
+      "last_synced_produced_count": 1,
+      "replenished_total": 0,
+      "last_newly_replenished_count": 0,
+      "curated_active_count": 0,
+      "updated_at": "2026-11-15T19:51:13.474643+00:00"
     }
-  },
-  "dynamic_cases": []
+  }
 }

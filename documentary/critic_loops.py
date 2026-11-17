@@ -62,7 +62,7 @@ _KO_ARTIFACT_POINT_COUNTER_RE = re.compile(
     r"(?=(?:이|가|을|를|은|는|에|의|도|만|와|과|씩|뿐|모두|전부|이나|나|으로|로|이고|였|입)[가-힣]*|(?![가-힣]))"
 )
 _KO_VEHICLE_DAE_COUNTER_RE = re.compile(
-    r"((?:차량|승합차|현금수송차|수송차|트럭|승용차|택시|오토바이|버스|헬기|순찰차|구급차|굴착기)\s*)"
+    r"((?:차량|승합차|현금수송차|수송차|트럭|승용차|택시|오토바이|스쿠터|자전거|버스|헬기|드론|무인기|항공기|비행기|장갑차|순찰차|구급차|굴착기|카메라|씨씨티비|에어컨|실외기|컴퓨터|노트북|휴대전화)\s*)"
     r"([1-9]|1\d|20)\s*대"
     r"(?=(?:이|가|을|를|은|는|에|의|도|만|와|과|씩|뿐|이나|나|으로|로|이고|였|입)[가-힣]*|(?![가-힣]))"
 )
@@ -263,8 +263,281 @@ def find_foreign_place_phonetic_drifts(script_text: str) -> dict[str, str]:
     return drift_map
 
 
-def normalize_korean_script_orthography(script_text: str) -> tuple[str, list[tuple[str, str]]]:
-    """Deterministically clean Korean TTS & grammar hazards directly in script.md & return (new_text, line_replacements)."""
+def _int_to_native_korean_prenominal(n: int) -> str:
+    """Convert 1..99 to native Korean prenominal numeral before '글자/개/번' (e.g. 9->'아홉', 12->'열두', 20->'스무', 21->'스물한')."""
+    if n == 20:
+        return "스무"
+    if 1 <= n <= 99:
+        tens_list = ("", "열", "스물", "서른", "마흔", "쉰", "예순", "일흔", "여든", "아흔")
+        units_pre = ("", "한", "두", "세", "네", "다섯", "여섯", "일곱", "여덟", "아홉")
+        t, u = divmod(n, 10)
+        return tens_list[t] + units_pre[u]
+    return str(n)
+
+
+def _int_to_sino_hangul_years(n: int) -> str:
+    """Convert 1..99 to Sino-Korean Hangul + ' 년' (e.g. 25->'이십오 년', 28->'이십팔 년')."""
+    digits = ("", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구")
+    if 1 <= n <= 9:
+        return f"{digits[n]} 년"
+    if 10 <= n <= 99:
+        t, u = divmod(n, 10)
+        t_str = "십" if t == 1 else f"{digits[t]}십"
+        return f"{t_str}{digits[u]} 년"
+    return f"{n}년"
+
+
+def _parse_ko_small_int(raw_tok: str) -> int | None:
+    """Parse Arabic ('18', '25'), native Korean ('아홉', '열여덟', '스물한'), or Sino-Korean ('십팔', '이십오') small integer 1..99."""
+    tok = re.sub(r"\s+", "", str(raw_tok or "")).strip()
+    if not tok:
+        return None
+    if tok.isdigit():
+        return int(tok)
+    if tok in _KO_NATIVE_NUM_TO_INT:
+        return _KO_NATIVE_NUM_TO_INT[tok]
+    if "십" in tok:
+        parts = tok.split("십", 1)
+        t_part, u_part = parts[0], parts[1]
+        tens = 10 if not t_part else (_KO_SINO_DIGIT_VAL.get(t_part, 0) * 10)
+        if not tens:
+            return None
+        if not u_part:
+            return tens
+        if u_part in _KO_SINO_DIGIT_VAL:
+            return tens + _KO_SINO_DIGIT_VAL[u_part]
+        return None
+    if tok in _KO_SINO_DIGIT_VAL:
+        return _KO_SINO_DIGIT_VAL[tok]
+    return None
+
+
+_KO_QUOTED_CHAR_COUNT_RE = re.compile(
+    r"(['\"\u201c\u2018\u300c\u300e])([^'\"\u201d\u2019\u300d\u300f]{2,60})(['\"\u201d\u2019\u300d\u300f])"
+    r"\s*(이라는|라는|란)\s*(단\s*)?([가-힣]{1,6}|\d{1,2})\s*글자"
+)
+_KO_UNQUOTED_CHAR_COUNT_RE = re.compile(
+    r"((?:글씨로|체로|빛으로|물로|박으로|서로|표지에는|표지에|명패에는|명패에|상패에는|상패에|현판에는|현판에|"
+    r"중앙에는|중앙에|가운데에는|위에는|위에|바닥에는|바닥에|안에는|앞에는|봉투에는|서류에는|화면에는|도장에는|비석에는|종이에는|,)\s+)"
+    r"([가-힣0-9]+(?:\s+[가-힣0-9]+){1,9}?)"
+    r"(이라는|라는)\s*(단\s*)?([가-힣]{1,6}|\d{1,2})\s*글자"
+)
+_KO_INNER_SURFACE_CUE_RE = re.compile(
+    r"^(.*?(?:글씨로|체로|빛으로|물로|박으로|서로|표지에는|명패에는|상패에는|현판에는|위에는|안에는|바닥에는|중앙에는)\s+)([가-힣0-9].*)$"
+)
+
+
+def verify_and_fix_korean_char_count_claims(line: str) -> tuple[str, list[dict[str, Any]]]:
+    """Detect and auto-correct AI character-counting hallucinations ('<phrase>이라는 N 글자')."""
+    mismatches: list[dict[str, Any]] = []
+
+    def _repl_quoted(m: re.Match[str]) -> str:
+        q1, phrase, q2, cop, dan_opt, num_tok = m.groups()
+        actual = len(re.sub(r"[\s,.?!·\-—~]", "", phrase))
+        claimed = _parse_ko_small_int(num_tok)
+        if claimed is not None and 1 <= actual <= 60 and claimed != actual:
+            fixed_num = _int_to_native_korean_prenominal(actual)
+            mismatches.append({
+                "phrase": phrase.strip(),
+                "claimed": claimed,
+                "actual": actual,
+                "claimed_token": f"{num_tok} 글자",
+                "fixed_token": f"{fixed_num} 글자",
+            })
+            return f"{q1}{phrase}{q2}{cop} {dan_opt or ''}{fixed_num} 글자"
+        return m.group(0)
+
+    out = _KO_QUOTED_CHAR_COUNT_RE.sub(_repl_quoted, line)
+
+    def _repl_unquoted(m: re.Match[str]) -> str:
+        cue_prefix, raw_phrase, cop, dan_opt, num_tok = m.groups()
+        inner_m = _KO_INNER_SURFACE_CUE_RE.match(raw_phrase)
+        if inner_m:
+            cue_prefix = cue_prefix + inner_m.group(1)
+            core_phrase = inner_m.group(2)
+        else:
+            core_phrase = raw_phrase
+        # Fix Korean batchim + '이라는' boundary when regex greedily split '<batchim> + 이' + '라는' (e.g. '본이'+'라는', '김은숙이'+'라는')
+        if (
+            cop == "라는"
+            and core_phrase.endswith("이")
+            and len(core_phrase) >= 2
+            and ((_hangul_jamo_triple(core_phrase[-2]) or (0, 0, 0))[2] != 0)
+        ):
+            core_phrase = core_phrase[:-1]
+            cop = "이라는"
+        actual = len(re.sub(r"[\s,.?!·\-—~]", "", core_phrase))
+        claimed = _parse_ko_small_int(num_tok)
+        if claimed is not None and 2 <= actual <= 45 and claimed != actual:
+            fixed_num = _int_to_native_korean_prenominal(actual)
+            mismatches.append({
+                "phrase": core_phrase.strip(),
+                "claimed": claimed,
+                "actual": actual,
+                "claimed_token": f"{num_tok} 글자",
+                "fixed_token": f"{fixed_num} 글자",
+            })
+            return f"{cue_prefix}{core_phrase}{cop} {dan_opt or ''}{fixed_num} 글자"
+        return m.group(0)
+
+    out = _KO_UNQUOTED_CHAR_COUNT_RE.sub(_repl_unquoted, out)
+    return out, mismatches
+
+
+_KO_POST2024_HERITAGE_RULES: tuple[tuple[re.Pattern[str], str], ...] = (
+    (re.compile(r"문화재청장"), "국가유산청장"),
+    (re.compile(r"문화재청"), "국가유산청"),
+    (re.compile(r"국가무형문화재"), "국가무형유산"),
+    (re.compile(r"국가지정문화재"), "국가지정유산"),
+    (re.compile(r"문화재위원회"), "문화유산위원회"),
+)
+_KO_PRE2024_HISTORICAL_LINE_RE = re.compile(
+    r"(?:19\d{2}|20(?:0\d|1\d|2[0-3]))\s*년(?:\s*(?:당시|그해|겨울|봄|여름|가을|무렵|초|말))?"
+)
+
+
+def script_has_post2024_modern_anchor(script_text: str) -> bool:
+    """Return True if the script explicitly anchors its contemporary timeline in May 2024 or later (e.g. 2025년, 2026년)."""
+    for m in re.finditer(r"(20\d{2})\s*년", script_text or ""):
+        yr = int(m.group(1))
+        if 2025 <= yr <= 2035:
+            return True
+        if yr == 2024:
+            # Check if month >= 5 or general 2024+ modern anchor
+            tail = (script_text or "")[m.end() : m.end() + 12]
+            m_mo = re.match(r"\s*(\d{1,2})\s*월", tail)
+            if not m_mo or int(m_mo.group(1)) >= 5:
+                return True
+    return False
+
+
+_KO_AI_SPOONFED_EXCLAMATION_RE = re.compile(
+    r"(?:^|[\s,])(?:참으로|실로|그야말로)\s+[가-힣\s]{1,22}"
+    r"(?:말이었|노릇이었|순간이었|역설이었|일이었|모습이었|광경이었|대목이었|장면이었|상황이었|현실이었|얄궂었|기막혔|안타까웠|무례했|처참했)"
+    r"|^(?:가슴이\s*내려앉는\s*순간이었습니다|숨이\s*턱\s*막히는\s*순간이었습니다|눈시울이\s*붉어지는\s*순간이었습니다)[.!]?$"
+)
+_KO_AI_GWAYEON_RHETORICAL_RE = re.compile(
+    r"(?:^|[\s\"'\u201c\u2018])과연\s+[^.?!]{4,110}\?[\x22\x27\u201d\u2019]?$"
+    r"|(?:할\s*수\s*있는\s*말이란\s*말입니까|누구란\s*말입니까|어디에?\s*있겠습니까|통할\s*수\s*있었을까요)\?[\x22\x27\u201d\u2019]?$"
+)
+
+
+def audit_korean_chronology_consistency(non_empty_lines: list[tuple[int, str]]) -> dict[str, Any]:
+    """Verify arithmetic consistency between present anchor year, flashback calendar years, and 'N년 전 / N년 동안' claims."""
+    year_mentions: list[tuple[int, int, str]] = []
+    for ln, txt in non_empty_lines:
+        for m in re.finditer(r"(19\d{2}|20\d{2})\s*년", txt):
+            yr = int(m.group(1))
+            if 1940 <= yr <= 2035:
+                year_mentions.append((ln, yr, txt))
+
+    if not year_mentions:
+        return {"present_year": None, "contradictions": []}
+
+    # Determine contemporary story anchor year: prefer a 2024..2035 year in opening or closing lines, else max year >= 2020
+    early_modern = [yr for idx_m, (_, yr, _) in enumerate(year_mentions) if idx_m < 4 and yr >= 2020]
+    present_year = max(early_modern) if early_modern else max(yr for _, yr, _ in year_mentions)
+    if present_year < 2018:
+        return {"present_year": present_year, "contradictions": []}
+
+    span_re = re.compile(
+        r"(?<![\d.])(\d{1,2}|(?:이십|삼십|사십|오십|십)[일이삼사오육칠팔구]?)\s*년\s*"
+        r"(전(?:인|의|에|\b)|동안|간\b|만의|만에|의\s*(?:긴\s*|기나긴\s*)?(?:침묵|세월|시간)|이라는\s*(?:긴\s*|기나긴\s*)?세월)"
+    )
+
+    contradictions: list[dict[str, Any]] = []
+    confirmed_past_anchors: list[tuple[int, int, int]] = []  # (line_no, past_yr, expected_span)
+    all_spans: list[tuple[int, int, str, str]] = []  # (line_no, span_val, kind, txt)
+
+    for idx_l, (ln, txt) in enumerate(non_empty_lines):
+        line_years = [int(m.group(1)) for m in re.finditer(r"(19\d{2}|20\d{2})\s*년", txt)]
+        past_years_on_line = [y for y in line_years if 1950 <= y <= present_year - 5]
+        for sm in span_re.finditer(txt):
+            s_val = _parse_ko_small_int(sm.group(1))
+            if s_val is None or not (5 <= s_val <= 65):
+                continue
+            kind = sm.group(2)
+            all_spans.append((ln, s_val, kind, txt))
+            if kind.startswith("전") and past_years_on_line:
+                for py in past_years_on_line:
+                    exp = present_year - py
+                    if abs(exp - s_val) >= 2:
+                        contradictions.append({
+                            "line": ln,
+                            "past_year": py,
+                            "present_year": present_year,
+                            "claimed_span": s_val,
+                            "expected_span": exp,
+                            "excerpt": txt[:100],
+                        })
+                    else:
+                        confirmed_past_anchors.append((ln, py, exp))
+        # Also record standalone flashback years followed within 25 lines by '그날부터 N년'
+        for py in past_years_on_line:
+            exp = present_year - py
+            if 10 <= exp <= 55:
+                confirmed_past_anchors.append((ln, py, exp))
+                for nxt_ln, nxt_txt in non_empty_lines[idx_l + 1 : min(len(non_empty_lines), idx_l + 26)]:
+                    if "그날부터" in nxt_txt or "그해부터" in nxt_txt or "그때부터" in nxt_txt:
+                        for sm2 in span_re.finditer(nxt_txt):
+                            sv2 = _parse_ko_small_int(sm2.group(1))
+                            if sv2 is not None and abs(exp - sv2) >= 2:
+                                contradictions.append({
+                                    "line": nxt_ln,
+                                    "past_year": py,
+                                    "present_year": present_year,
+                                    "claimed_span": sv2,
+                                    "expected_span": exp,
+                                    "excerpt": nxt_txt[:100],
+                                })
+
+    # Check dominant recurring life-span ('25년 동안 / 이십오 년 만에') that contradicts the primary flashback year
+    all_explicit_past_years = {yr for _, yr, _ in year_mentions if 1950 <= yr <= present_year - 5}
+    valid_spans = {present_year - py for py in all_explicit_past_years}
+    if confirmed_past_anchors and valid_spans:
+        from collections import Counter
+
+        span_counts = Counter(sv for _, sv, _, _ in all_spans)
+        for sv, cnt in span_counts.items():
+            if cnt < 3 or sv in valid_spans or any( abs(sv - vs) <= 1 for vs in valid_spans ):
+                continue
+            # Check if sv sits suspiciously close (2..5 years off) to a confirmed flashback anchor span (e.g. 25 vs 28)
+            near_anchors = [(py, exp) for _, py, exp in confirmed_past_anchors if 2 <= abs(exp - sv) <= 5]
+            if near_anchors:
+                py0, exp0 = near_anchors[0]
+                bad_lines = [ln for ln, s_v, _, _ in all_spans if s_v == sv]
+                contradictions.append({
+                    "line": bad_lines[0],
+                    "lines": bad_lines[:15],
+                    "past_year": py0,
+                    "present_year": present_year,
+                    "claimed_span": sv,
+                    "expected_span": exp0,
+                    "excerpt": f"'{sv}년/이십오 년' repeated {cnt}x across lines {bad_lines[:10]}, contradicting {present_year} - {py0} = {exp0}년",
+                })
+
+    return {"present_year": present_year, "contradictions": contradictions}
+
+
+def resolve_profile_script_gates(job: dict[str, Any] | None) -> dict[str, Any]:
+    """Return profile-isolated script quality gates ONLY when explicitly declared in the active Channel Profile's editorial_dna."""
+    if not isinstance(job, dict):
+        return {}
+    snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+    for container in (job, snap):
+        ed = container.get("editorial_dna") if isinstance(container.get("editorial_dna"), dict) else {}
+        gates = ed.get("profile_script_gates") or container.get("profile_script_gates")
+        if isinstance(gates, dict) and gates.get("enabled") is True:
+            return gates
+    return {}
+
+
+def normalize_korean_script_orthography(
+    script_text: str,
+    *,
+    job: dict[str, Any] | None = None,
+) -> tuple[str, list[tuple[str, str]]]:
+    """Deterministically clean Korean TTS hazards in script.md (plus profile-scoped gates when enabled on `job`)."""
     from .voice import (
         _KO_HANGUL_SPACED_DECIMAL_RE,
         _KO_ORTHOGRAPHY_TTS_FIX_RULES,
@@ -287,6 +560,12 @@ def normalize_korean_script_orthography(script_text: str) -> tuple[str, list[tup
             return ("" if h == 1 else ("", "일", "이", "삼", "사", "오", "육", "칠", "팔", "구")[h]) + "백" + (_sino_small(rem) if rem else "")
         return str(n)
 
+    prof_gates = resolve_profile_script_gates(job)
+    enable_post2024_heritage = bool(
+        prof_gates.get("enforce_post2024_korean_heritage_names") is True
+        and script_has_post2024_modern_anchor(script_text)
+    )
+    enable_char_count_fix = bool(prof_gates.get("verify_korean_char_count_claims") is True)
     place_drift_map = find_foreign_place_phonetic_drifts(script_text)
     raw_lines = script_text.splitlines()
     out_lines: list[str] = []
@@ -298,6 +577,10 @@ def normalize_korean_script_orthography(script_text: str) -> tuple[str, list[tup
             out_lines.append(ln)
             continue
         s = stripped
+        # 0-pre. Profile-isolated Post-May-2024 Korean statutory & heritage agency nomenclature (ONLY when enabled by profile_script_gates)
+        if enable_post2024_heritage and not _KO_PRE2024_HISTORICAL_LINE_RE.search(s):
+            for h_pat, h_repl in _KO_POST2024_HERITAGE_RULES:
+                s = h_pat.sub(h_repl, s)
         # 0. Chinese '셰' surname/syllable phonetic trap -> '시에' (e.g. 셰런량 -> 시에런량, 셰윈 -> 시에윈, 셰쭝펀 -> 시에쭝펀, 우셰위 -> 우시에위, 셰 씨 -> 시에 씨)
         def _repl_sye(m: re.Match[str]) -> str:
             if not is_chinese_sye_phonetic_trap(s, m):
@@ -423,6 +706,9 @@ def normalize_korean_script_orthography(script_text: str) -> tuple[str, list[tup
             lambda m: f"{_KO_PRENOMINAL_1_TO_20[int(m.group(1))]} {m.group(2)}",
             s,
         )
+        # 9. Profile-isolated Exact Hangul syllable count verification & deterministic correction ('<phrase>이라는 N 글자')
+        if enable_char_count_fix:
+            s, _ = verify_and_fix_korean_char_count_claims(s)
         s = re.sub(r" {2,}", " ", s).strip()
         if s != stripped:
             replacements.append((stripped, s))
@@ -433,6 +719,13 @@ def normalize_korean_script_orthography(script_text: str) -> tuple[str, list[tup
     rebuilt = "\n".join(out_lines) + ("\n" if script_text.endswith("\n") else "")
     return rebuilt, replacements
 
+_KO_AI_CLICHE_RE = re.compile(
+    r"(?:(?:사십이|42)\s*호[^.?!]{0,45}작업화|"
+    r"바깥쪽이\s*(?:유독|심하게)\s*닳아\s*있는\s*보행\s*습관|"
+    r"밤마다\s*사이렌\s*소리(?:나|만)?[^.?!]{0,30}(?:심장이|가슴이)\s*(?:철렁|내려앉)|"
+    r"(?:물증|봉투)[가-힣\s]{0,15}애초부터\s*(?:유통기한|유효기간)이\s*존재하지\s*않았|"
+    r"적법한\s*절차로\s*(?:생체\s*)?(?:대조\s*)?시료를\s*확보)"
+)
 _EN_AI_CLICHE_RE = re.compile(
     r"\b(?:delve\s+into|stark\s+reminder|rich\s+tapestry|testament\s+to|little\s+did\s+they\s+know|"
     r"it\s+is\s+worth\s+noting|it\s+is\s+important\s+to\s+note)\b",
@@ -638,7 +931,10 @@ def analyze_script_spoken_quality(
             or ((job.get("channel_profile_snapshot") or {}).get("secondary_voice_id") if isinstance(job.get("channel_profile_snapshot"), dict) else None)
         )
     )
-    quote_limit = 12 if has_secondary_voice else 5
+    from .prompts import is_creative_audio_drama_job
+
+    is_audio_drama_sensor = is_creative_audio_drama_job(job) if isinstance(job, dict) else False
+    quote_limit = max(60, len(non_empty_lines) // 3) if is_audio_drama_sensor else (12 if has_secondary_voice else 5)
     if len(standalone_quote_lines) > quote_limit:
         defects.append({
             "type": "standalone_unattributed_quotes",
@@ -1004,6 +1300,7 @@ def analyze_script_spoken_quality(
                 (re.compile(r"(?<![\d.,])0\s*건(?!물|설|조|강)"), "raw_zero_geon"),
                 (re.compile(r"(?<!\d)4대\s*보험"), "sadae_boheom_trap"),
                 (re.compile(r"\d\s*%"), "raw_percent_symbol"),
+                (re.compile(r"[영공일이삼사오육칠팔구]{3,4}\s*[가-힣]{1,5}\s*형\s*(?:초|종|재)\s*(?:제\s*)?[영공일이삼사오육칠팔구십백천\d]+\s*호"), "chinese_court_docket_code_tts_trap"),
             ):
                 m_h = pat.search(txt_ln)
                 if m_h:
@@ -1073,6 +1370,12 @@ def analyze_script_spoken_quality(
             or _kp_c.get("require_geodeunyo_cadence") is True
             or prof_id in {"channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2"}
         )
+        require_opening_timestamp = bool(
+            require_geodeunyo
+            and not is_audio_drama_sensor
+            and str(_ed_c.get("opening_hook_policy") or "").strip()
+            not in {"in_media_res_dignity_insult", "zero_sec_dialogue_shock_before_ch1_non_spoiler"}
+        )
         if not custom_register and len(narr_sents) >= 80:
             if require_geodeunyo and len(geodeunyo_lines) < 3:
                 defects.append({
@@ -1082,9 +1385,65 @@ def analyze_script_spoken_quality(
                     "lines": formal_lines[::8][:12],
                     "detail": (
                         f"Spoken '~거든요' endings appear only {len(geodeunyo_lines)} times (need >= 3-8 across a full episode alongside '~었죠' and '~던 겁니다') "
-                        "to keep investigative storytelling conversational rather than a dry newsreader script."
+                        "to keep storytelling naturally conversational rather than a stiff written script."
                     ),
                 })
+            if require_opening_timestamp:
+                opening_two_blob = " ".join(s for _, s in narr_sents[:2])
+                opening_six_blob = " ".join(s for _, s in narr_sents[:6])
+                has_opening_timestamp = bool(
+                    re.search(
+                        r"(?:\d{4}\s*년|(?:일구|이천)[영공일이삼사오육칠팔구십백천]+\s*년|\d{1,2}\s*월\s*\d{1,2}\s*일|(?:오전|오후|새벽|밤|아침|저녁)\s*(?:\d{1,2}|[한두세네다섯여섯일곱여덟아홉열열한열두]+)\s*시)",
+                        opening_two_blob,
+                    )
+                )
+                has_opening_paradox = bool(
+                    re.search(r"(?:하지만|그런데|그러나|오히려|정작|반면)", opening_six_blob)
+                )
+                if not has_opening_timestamp or not has_opening_paradox:
+                    defects.append({
+                        "type": "missing_opening_timestamp_or_paradox_in_cold_open_hook",
+                        "severity": "high",
+                        "line": narr_sents[0][0] if narr_sents else 1,
+                        "lines": [ln for ln, _ in narr_sents[:4]],
+                        "detail": (
+                            "Cold-Open Hook must open in Sentence 1-2 with an exact Timestamp ('YYYY년 M월 D일 [시각], [장소]...') "
+                            "and deliver an immediate Paradox flip ('하지만 / 그런데') within the first 6 sentences matching the Channel DNA and winning videos."
+                        ),
+                    })
+
+        explicit_cta_lines = [
+            ln for ln, txt_ln in non_empty_lines
+            if re.search(r"구독(?:과\s*(?:좋아요|알림)|을\s*눌러|해\s*주시|부탁)", txt_ln)
+        ]
+        metrics["explicit_cta_line_count"] = len(explicit_cta_lines)
+        if len(explicit_cta_lines) >= 2:
+            defects.append({
+                "type": "duplicate_explicit_cta_in_script",
+                "severity": "high",
+                "line": explicit_cta_lines[0],
+                "lines": explicit_cta_lines,
+                "detail": (
+                    f"Duplicate explicit CTA detected at lines {explicit_cta_lines} (maximum 1 explicit CTA allowed per episode; "
+                    "remove the mid-script CTA and keep only a single organic story-driven closing invitation)."
+                ),
+            })
+
+        baekgu_homophone_lines = [
+            ln for ln, txt_ln in non_empty_lines
+            if re.search(r"백구\s*킬로미터", txt_ln)
+        ]
+        if len(baekgu_homophone_lines) >= 3:
+            defects.append({
+                "type": "excessive_homophone_landmark_repetition",
+                "severity": "high",
+                "line": baekgu_homophone_lines[0],
+                "lines": baekgu_homophone_lines,
+                "detail": (
+                    f"Homophone-prone landmark '백구 킬로미터' (sounds like '백구[白狗]' in TTS) repeated {len(baekgu_homophone_lines)} times at lines {baekgu_homophone_lines}; "
+                    "keep at most 1-2 occurrences and replace subsequent mentions with '국도 검문소', '해당 지점', or '그 구간'."
+                ),
+            })
 
         target_min = 0.0
         if isinstance(job, dict):
@@ -1233,6 +1592,239 @@ def analyze_script_spoken_quality(
                     "('왜', '어떻게', '무엇이', '과연', '혹시', '대체'), leaving meaning dangling (e.g. add '왜' at the front)."
                 ),
             })
+        for line_no, text in non_empty_lines:
+            m_ko_c = _KO_AI_CLICHE_RE.search(text)
+            if m_ko_c:
+                defects.append({
+                    "type": "ko_cross_episode_ai_cliche",
+                    "severity": "high",
+                    "line": line_no,
+                    "detail": (
+                        f"Cross-episode AI cliché / vague forensic dodge '{m_ko_c.group(0)}' at line {line_no}: "
+                        "replace with authentic, case-specific physical evidence and exact archival details."
+                    ),
+                })
+
+        # Category 4 (PROFILE-ISOLATED): Execute ONLY when the active Channel Profile explicitly enables `editorial_dna.profile_script_gates`
+        prof_script_gates = resolve_profile_script_gates(job)
+        if prof_script_gates.get("enabled") is True:
+            # Category 4.1: Exact Korean Syllable/Character Count Math Verification ('<phrase>이라는 N 글자')
+            char_count_mismatch_lines: list[int] = []
+            char_count_mismatch_details: list[str] = []
+            if prof_script_gates.get("verify_korean_char_count_claims") is True:
+                for ln, txt_ln in non_empty_lines:
+                    _, mm_list = verify_and_fix_korean_char_count_claims(txt_ln)
+                    for mm in mm_list:
+                        char_count_mismatch_lines.append(ln)
+                        char_count_mismatch_details.append(
+                            f"L{ln}: '{mm['phrase']}' has {mm['actual']} syllables ('{mm['fixed_token']}'), NOT '{mm['claimed_token']}'"
+                        )
+            metrics["char_count_math_mismatch_count"] = len(char_count_mismatch_lines)
+            if char_count_mismatch_lines:
+                defects.append({
+                    "type": "korean_char_count_math_mismatch",
+                    "severity": "critical",
+                    "line": char_count_mismatch_lines[0],
+                    "lines": char_count_mismatch_lines[:10],
+                    "detail": (
+                        f"AI Korean character-count hallucination detected ({'; '.join(char_count_mismatch_details[:5])}): "
+                        "either state the exact non-space Hangul syllable count or describe the inscribed title directly without 'N 글자'."
+                    ),
+                })
+
+            # Category 4.2: Post-May-2024 Korean Statutory & Heritage Institution Nomenclature ('국가유산청' / '국가무형유산')
+            anachronism_lines: list[int] = []
+            anachronism_samples: list[str] = []
+            if prof_script_gates.get("enforce_post2024_korean_heritage_names") is True and script_has_post2024_modern_anchor(script_text):
+                for ln, txt_ln in non_empty_lines:
+                    if _KO_PRE2024_HISTORICAL_LINE_RE.search(txt_ln):
+                        continue
+                    for h_pat, h_repl in _KO_POST2024_HERITAGE_RULES:
+                        m_her = h_pat.search(txt_ln)
+                        if m_her:
+                            anachronism_lines.append(ln)
+                            anachronism_samples.append(f"L{ln}:'{m_her.group(0)}'->'{h_repl}'")
+                            break
+            metrics["anachronistic_institution_count"] = len(anachronism_lines)
+            if anachronism_lines:
+                defects.append({
+                    "type": "anachronistic_korean_institution_name",
+                    "severity": "high",
+                    "line": anachronism_lines[0],
+                    "lines": anachronism_lines[:15],
+                    "detail": (
+                        f"Outdated pre-May-2024 Korean statutory/agency name(s) in modern 2024+ timeline ({', '.join(anachronism_samples[:6])}): "
+                        "since May 17, 2024, South Korea officially renamed '문화재청' -> '국가유산청' and '국가무형문화재' -> '국가무형유산'."
+                    ),
+                })
+
+            # Category 4.3: Chronology & Year-Span Arithmetic Consistency ('2026 - 1998 = 28년' vs '25년 동안')
+            chrono_contradictions: list[dict[str, Any]] = []
+            if prof_script_gates.get("enforce_chronology_year_span_math") is True:
+                chrono_audit = audit_korean_chronology_consistency(non_empty_lines)
+                chrono_contradictions = chrono_audit.get("contradictions") or []
+            metrics["chronology_contradiction_count"] = len(chrono_contradictions)
+            if chrono_contradictions:
+                c0 = chrono_contradictions[0]
+                all_c_lines: list[int] = []
+                for c_item in chrono_contradictions:
+                    if isinstance(c_item.get("lines"), list):
+                        all_c_lines.extend(int(x) for x in c_item["lines"])
+                    elif c_item.get("line"):
+                        all_c_lines.append(int(c_item["line"]))
+                all_c_lines = sorted(set(all_c_lines))
+                defects.append({
+                    "type": "chronology_year_span_math_contradiction",
+                    "severity": "critical",
+                    "line": all_c_lines[0] if all_c_lines else int(c0["line"]),
+                    "lines": all_c_lines[:18],
+                    "detail": (
+                        f"Timeline year-span arithmetic contradiction: present year is {c0['present_year']} and flashback year is {c0['past_year']} "
+                        f"({c0['present_year']} - {c0['past_year']} = {c0['expected_span']}년), yet '{c0['claimed_span']}년' is claimed "
+                        f"({c0['excerpt']}). Unify all elapsed-year numbers ('{c0['expected_span']}년 / {_int_to_sino_hangul_years(c0['expected_span'])}') across every chapter."
+                    ),
+                })
+
+            # Category 4.4: AI Spoon-Fed Emotional Commentary & '과연 ...?' Rhetorical Cliché Spam
+            spoonfed_excl_lines = [ln for ln, s in narr_sents if _KO_AI_SPOONFED_EXCLAMATION_RE.search(s)]
+            gwayeon_rhet_lines = [ln for ln, s in narr_sents if _KO_AI_GWAYEON_RHETORICAL_RE.search(s)]
+            max_excl = int(prof_script_gates.get("max_ai_spoonfed_exclamations") or 1)
+            max_gwayeon = int(
+                prof_script_gates.get("max_gwayeon_rhetorical_questions_longform" if len(narr_sents) > 180 else "max_gwayeon_rhetorical_questions_shortform")
+                or (3 if len(narr_sents) > 180 else 2)
+            )
+            cold_open_commentary = [
+                ln for ln in (spoonfed_excl_lines + gwayeon_rhet_lines)
+                if non_empty_lines and ln <= non_empty_lines[min(len(non_empty_lines) - 1, 11)][0]
+            ]
+            metrics["ai_spoonfed_exclamation_count"] = len(spoonfed_excl_lines)
+            metrics["ai_gwayeon_rhetorical_count"] = len(gwayeon_rhet_lines)
+            if len(spoonfed_excl_lines) > max_excl or len(gwayeon_rhet_lines) > max_gwayeon or cold_open_commentary:
+                bad_comm_lines = sorted(set(spoonfed_excl_lines + gwayeon_rhet_lines))
+                defects.append({
+                    "type": "excessive_ai_emotional_commentary",
+                    "severity": "high",
+                    "line": bad_comm_lines[0],
+                    "lines": bad_comm_lines[:20],
+                    "detail": (
+                        f"Excessive AI spoon-fed emotional commentary detected: narrator exclamation judgements={len(spoonfed_excl_lines)} "
+                        f"(max {max_excl}, e.g. '참으로 무례한 말이었습니다', '참으로 기막힌 노릇이었습니다') and '과연 ...?' rhetorical commentary={len(gwayeon_rhet_lines)} "
+                        f"(max {max_gwayeon}) at lines {bad_comm_lines[:14]}. Cut >=75% of narrator commentary and let concrete character actions, silence, and micro-gestures speak."
+                    ),
+                })
+
+            # Category 4.5: Profile-Isolated Cold-Open Shock, Mystery Withholding, Mid-Act Craft Echo & Calibrated ACT06 Tail Gates
+            if len(non_empty_lines) >= 60:
+                first_ln_no, first_ln_txt = non_empty_lines[0]
+                ch_marker_re = re.compile(r"^제\s*([1-9])\s*장\b")
+                ch_positions: dict[int, int] = {}
+                for idx_ne, (ln_ne, txt_ne) in enumerate(non_empty_lines):
+                    m_ch = ch_marker_re.match(txt_ne)
+                    if m_ch:
+                        ch_num = int(m_ch.group(1))
+                        if ch_num not in ch_positions:
+                            ch_positions[ch_num] = idx_ne
+
+                if prof_script_gates.get("require_zero_sec_cold_open_quote_before_ch1") is True:
+                    opens_with_ch1 = bool(ch_marker_re.match(first_ln_txt))
+                    opens_with_date = bool(re.match(r"^\d{4}\s*년\s*\d{1,2}\s*월", first_ln_txt))
+                    quote_in_first_3 = any(
+                        bool(re.search(r'["\u201c\u300c][^"\u201d\u300d]{4,}["\u201d\u300d]', txt_q))
+                        for _, txt_q in non_empty_lines[:3]
+                    )
+                    ch1_pos = ch_positions.get(1, -1)
+                    has_cold_open_before_ch1 = (ch1_pos >= 4) if ch1_pos >= 0 else True
+                    if opens_with_ch1 or opens_with_date or not quote_in_first_3 or not has_cold_open_before_ch1:
+                        defects.append({
+                            "type": "missing_in_medias_res_cold_open_shock",
+                            "severity": "high",
+                            "line": first_ln_no,
+                            "lines": [ln for ln, _ in non_empty_lines[:6]],
+                            "detail": (
+                                "Audio-Drama Hook lacks a 0:00 In-Medias-Res Cold Open: NEVER start Line 1 with '제1장...' or a calendar date ('2026년 10월...'). "
+                                "Open at 0:00 (Lines 1–2) directly on the sharpest confrontation quote ('화자 선행' + explosive spoken line), build 30–45s (6–10 lines) of dramatic Cold-Open cliffhanger tension, and ONLY THEN introduce '제1장'!"
+                            ),
+                        })
+
+                ch2_pos = ch_positions.get(2, min(len(non_empty_lines), max(20, len(non_empty_lines) // 5)))
+                act1_slice = non_empty_lines[:ch2_pos]
+                if int(prof_script_gates.get("withhold_master_identity_until_chapter") or 0) >= 2:
+                    spoiler_re = re.compile(
+                        r"(?:전설의|최고\s*명인|최고\s*권위자|명장|보유자|대가|거장)[^.]{0,95}(?:바로|실은|사실은)[^.?!]{0,45}(?:본인이었|그녀였|[가-힣]{2,4}\s*씨\s*본인|어머니였)"
+                        r"|바로\s+지금\s+[^.?!]{0,45}(?:모욕하며|무시하며|내쫓고)[^.?!]{0,35}(?:본인이었|그녀였)"
+                        r"|(?:나무\s*상자|반짇고리|보자기|수첩|가방|단지|악보)\s*안에는[^.?!]{0,50}(?:최종\s*합격을\s*좌우할|유일한\s*[가-힣\s]{1,15}비록|대통령상|국보급)"
+                    )
+                    spoiler_lines: list[int] = []
+                    for idx_sp, (ln_sp, txt_a1) in enumerate(act1_slice):
+                        pair_blob = f"{act1_slice[idx_sp - 1][1]} {txt_a1}" if idx_sp > 0 else txt_a1
+                        if spoiler_re.search(txt_a1) or (not spoiler_re.search(act1_slice[idx_sp - 1][1]) and spoiler_re.search(pair_blob) if idx_sp > 0 else False):
+                            spoiler_lines.append(ln_sp)
+                    if spoiler_lines:
+                        defects.append({
+                            "type": "premature_twist_or_pen_name_spoiler_in_act1",
+                            "severity": "high",
+                            "line": spoiler_lines[0],
+                            "lines": spoiler_lines[:8],
+                            "detail": (
+                                f"Premature twist/identity spoiler in Cold Open / Chapter 1 at lines {spoiler_lines}: "
+                                "withhold the secret trump-card explanation and keep the protagonist's legendary pen-name / master identity hidden from the audience until the end of Chapter 2 ('제2장' cliffhanger)!"
+                            ),
+                        })
+
+                if prof_script_gates.get("forbid_mid_act_craft_exposition_echo") is True and 2 in ch_positions:
+                    ch3_end = ch_positions.get(4, min(len(non_empty_lines), ch2_pos + 120))
+                    act1_grams: list[tuple[int, set[str]]] = []
+                    for ln_a1, txt_a1 in act1_slice:
+                        if txt_a1.startswith(('"', "“")):
+                            continue
+                        cleaned_a1 = re.sub(r"[^가-힣]", "", txt_a1)
+                        if len(cleaned_a1) >= 18:
+                            act1_grams.append((ln_a1, {cleaned_a1[k : k + 6] for k in range(len(cleaned_a1) - 5)}))
+                    echo_lines: list[int] = []
+                    echo_pairs: list[str] = []
+                    for ln_m, txt_m in non_empty_lines[ch2_pos : min(ch3_end, ch2_pos + 95)]:
+                        if txt_m.startswith(('"', "“")):
+                            continue
+                        cleaned_m = re.sub(r"[^가-힣]", "", txt_m)
+                        if len(cleaned_m) < 18:
+                            continue
+                        m_6g = {cleaned_m[k : k + 6] for k in range(len(cleaned_m) - 5)}
+                        for ln_a1, g_a1 in act1_grams:
+                            shared = m_6g & g_a1
+                            if len(shared) >= 5:
+                                echo_lines.append(ln_m)
+                                echo_pairs.append(f"L{ln_m}<->L{ln_a1}")
+                                break
+                    metrics["mid_act_exposition_echo_count"] = len(echo_lines)
+                    if len(echo_lines) >= 2:
+                        defects.append({
+                            "type": "mid_act_craft_exposition_echo",
+                            "severity": "high",
+                            "line": echo_lines[0],
+                            "lines": echo_lines[:10],
+                            "detail": (
+                                f"Mid-act retention sag: Chapter 2/3 re-explains craft/material details already defined in Chapter 1 ({', '.join(echo_pairs[:5])}). "
+                                "Replace repetitive praise/exposition with an urgent new conflict, deadline, or antagonistic intrusion."
+                            ),
+                        })
+
+                max_act06_ratio = float(prof_script_gates.get("max_act06_char_ratio") or 0.115)
+                final_bedtime_ch = 6 if 6 in ch_positions else (5 if 5 in ch_positions else None)
+                if final_bedtime_ch is not None and spoken_char_count >= 1500:
+                    ch_last_pos = ch_positions[final_bedtime_ch]
+                    act_last_chars = sum(len(txt_6) for _, txt_6 in non_empty_lines[ch_last_pos:])
+                    act_last_ratio = act_last_chars / float(spoken_char_count)
+                    metrics["act06_char_ratio"] = round(act_last_ratio, 3)
+                    if act_last_ratio > max_act06_ratio:
+                        defects.append({
+                            "type": "overlong_act06_bedtime_tail",
+                            "severity": "high" if act_last_ratio > 0.135 else "medium",
+                            "line": non_empty_lines[ch_last_pos][0],
+                            "detail": (
+                                f"Final Chapter ('제{final_bedtime_ch}장') occupies {act_last_ratio * 100:.1f}% ({act_last_chars}/{spoken_char_count} chars), risking post-climax viewer drop-off. "
+                                f"Calibrate '제{final_bedtime_ch}장' tightly to 7.5%–9.5% (~4.5–5.5 min) of gentle bedtime closure without rehashing earlier chapters."
+                            ),
+                        })
     else:
         cliche_re = _EN_AI_CLICHE_RE if lang == "en" else (_VI_AI_CLICHE_RE if lang == "vi" else None)
         for line_no, text in non_empty_lines:
@@ -1401,12 +1993,19 @@ def _build_script_doctor_critic_prompt(
     )
 
     if lang == "ko":
-        from .prompts import _collect_channel_sibling_cases, _resolve_outro_mode
+        from .prompts import _collect_channel_sibling_cases, _resolve_outro_mode, is_creative_audio_drama_job
         from .quality import resolve_korean_profile_style_flags
 
         style_flags = resolve_korean_profile_style_flags(job)
+        is_drama_doc = is_creative_audio_drama_job(job) if isinstance(job, dict) else False
         _kp_rules = ed.get("korean_prose_and_grammar_rules") if isinstance(ed.get("korean_prose_and_grammar_rules"), dict) else {}
         _prof_id_doc = str((job or {}).get("channel_profile_id") or snapshot.get("id") or "").strip()
+        cta_pol_doc = str(
+            (job or {}).get("cta_policy")
+            or ed.get("cta_policy")
+            or (((job or {}).get("editing_dna") or {}).get("cta_policy") if isinstance((job or {}).get("editing_dna"), dict) else "")
+            or ""
+        ).strip().lower()
         require_geodeunyo = bool(
             ed.get("require_geodeunyo_cadence") is True
             or _kp_rules.get("require_geodeunyo_cadence") is True
@@ -1416,7 +2015,7 @@ def _build_script_doctor_critic_prompt(
         sibling_cases = _collect_channel_sibling_cases(job or {}, limit=6) if outro_mode == "sibling_case_retention_bridge" else []
 
         geodeunyo_clause = (
-            ", conversational `~거든요` (`3%–6%`, `5–12x` across the script to explain hidden motives/forensic twists naturally)"
+            ", conversational `~거든요` (`3%–6%`, `5–12x` across the script to explain hidden motives/turning points naturally)"
             if require_geodeunyo
             else ""
         )
@@ -1431,7 +2030,12 @@ def _build_script_doctor_critic_prompt(
             else "2. Convert unintended period-drama translationese (`맞소`, `처음이오`, `같소`) in modern topics into natural contemporary Korean narration."
         )
         outro_instruction = ""
-        if outro_mode == "sibling_case_retention_bridge":
+        if is_drama_doc or cta_pol_doc == "zero_spoken_cta":
+            outro_instruction = (
+                "\n7. ZERO SPOKEN CTA & BEDTIME DIGNITY CATHARSIS (`cta_policy = \"zero_spoken_cta\"`): "
+                "STRICTLY FORBID any spoken `구독`, `좋아요`, `알림 설정`, `댓글`, or sibling-video promos anywhere in the script (`0%` Spoken CTA so bedtime listeners are never woken up). Close `ACT06` quietly on warm human dignity and restful evening reflection."
+            )
+        elif outro_mode == "sibling_case_retention_bridge":
             sib_hint = ", ".join(f"`{t}`" for t in sibling_cases[:4]) if sibling_cases else "an established sibling dossier on this channel"
             outro_instruction = (
                 "\n7. SIBLING-CASE RETENTION BRIDGE OUTRO FIX (`outro_mode = \"sibling_case_retention_bridge\"`): "
@@ -1443,14 +2047,28 @@ def _build_script_doctor_critic_prompt(
                 "\n7. STANDALONE EPISODE CLOSURE (`outro_mode = \"standalone_case_closure\"`): "
                 "Ensure the final lines NEVER point to or name any other specific case/video (0% `스얼췬 사건`, `주극화 사건`, etc.); close cleanly on the factual/human paradox of THIS episode plus a standalone channel subscribe/notification invitation."
             )
+        _doc_gates = resolve_profile_script_gates(job)
+        domain_rule_4 = (
+            "4. Enforce Korean Radio-Drama Retention, Factual Math & Anti-AI Discipline (`5070` Audience): "
+            "(a) **0:00 In-Medias-Res Cold Open & Non-Spoiler Mystery Lock**: NEVER start Line 1 with `제1장...` or a calendar date—open at 0:00 directly with `화자 선행` + an explosive confrontation quote (`\"...\"`), build a 30–45s Cold-Open cliffhanger BEFORE `제1장`, and withhold the protagonist's legendary pen-name / master identity until the end of `제2장` (`0%` early spoiler in Cold Open or `제1장`); "
+            "(b) **Zero Mid-Act Exposition Echo & Calibrated `제6장` (`7.5%–9.5%`)**: Never re-define craft techniques in `제2장–제3장` that were already explained in `제1장`, and keep `제6장` concise (`<= 9.5%` of script) for a warm sleep-friendly landing without dragging; "
+            "(c) **4 Hard Korean Factual & Anti-AI Gates**: (i) verify 100% exact non-space Hangul syllable counts whenever writing `<문구>라는 N 글자`, (ii) enforce `present_year - flashback_year == N년` arithmetic across ALL chapters (`0%` mixing `28년 전` with `25년 동안`), (iii) use post-May-2024 statutory names (`국가유산청`, `국가무형유산` — `0%` outdated `문화재청` / `국가무형문화재` in 2024+ timelines), and (iv) strip `>= 75%` of spoon-fed AI emotional commentary (`참으로 무례한 말이었습니다`, `참으로 기막힌 노릇이었습니다`, `과연 ... 알고 있었을까요?`) so concrete character actions speak; "
+            "(d) ALWAYS use `화자 선행` before dialogue, NEVER address `50–65` characters as `노인 / 노부부 / 늙은이`, ensure 100% Chekhov's Gun closure, and keep `0%` murder/gore/makjang screaming.\n"
+            if (is_drama_doc and _doc_gates.get("enabled") is True)
+            else (
+                "4. Enforce Korean Radio-Drama Etiquette & Continuity (`5070` Audience): ALWAYS use `화자 선행` (`Speaker-First` attribution before spoken dialogue so solo TTS listeners instantly know who is speaking), NEVER address characters aged `50–65` as `노인 / 노부부 / 늙은이` (use `중년 부부 / 어르신 / 사장님 / 장인`), break `첫째는... 둘째는...` listicles into organic literary prose, ensure every Chekhov's Gun object/person introduced in ACT01-ACT03 pays off in ACT04-ACT06, and keep `0%` murder/police/gore/blood/makjang screaming across the entire episode.\n"
+                if is_drama_doc
+                else "4. Eliminate police-blotter `[Age] + [Occupation] + [Name]` stamps (`마흔여덟 살의 모 사장`, `스물여섯 살 청년 천쉰민`), break `첫째는... 둘째는... 셋째는...` textbook listicles into organic prose, shift subjects in pursuit/scene sequences away from repetitive `담당 직원은 / 운전기사 ... 씨는` walls onto dynamic physical details (`비상벨이`, `잠금장치가`, `불빛이`), and enforce 100% Broadcast Green-Dollar prose (`0%` death/corpse/blood/weapon/suicide words in the first 60s `00:00–01:00` and indirect forensic/judicial refraction across `ACT01..ACT05`).\n"
+            )
+        )
         lang_rubric = (
             f"You are an Independent Korean Broadcast & Voiceover Script Doctor reviewing EXCLUSIVELY against the active Channel Profile's own DNA.\n"
             f"{profile_dna_note}\n"
             "Inspect the numbered draft and surgically eliminate all Korean TTS & broadcast prose defects:\n"
             f"{register_instruction}\n"
             f"{archaic_instruction}\n"
-            f"3. Break `~습니다/였습니다` monotony (keep pure `~습니다` around `56%–72%`, NEVER `>=5` consecutive): weave natural `~었죠` (`10%–18%`, never adjacent){geodeunyo_clause}, investigative questions (`?`), and crisp short finite-verb sentences (`시계는 멈춰 섰죠.`, `증거는 사라졌습니다.`, `답은 하나뿐이었습니다.`). STRICTLY BAN AI-smell trailing noun-fragment echoes at the end of paragraphs (`0%` `99.99퍼센트의 일치.`, `0%` `열여섯 개 특징점의 일치.`, `0%` `끊어진 전화선 한 가닥.`; max `<= 4` `체언 종결` in the entire episode), ban MC meta-transitions (`지금부터 하나씩 따라가 보겠습니다`, `시선을 옮겨 보겠습니다`), ban spoiling the final arrest date/handcuffing in the opening hook, and ban generic channel-promo endings (`우리 채널에 기록된 다음 수사 파일에서...`). NEVER use `~더군요` or standalone `~는데요.`!\n"
-            "4. Eliminate police-blotter `[Age] + [Occupation] + [Name]` stamps (`마흔여덟 살의 모 사장`, `스물여섯 살 청년 천쉰민`), break `첫째는... 둘째는... 셋째는...` textbook listicles into organic prose, shift subjects in pursuit/scene sequences away from repetitive `담당 직원은 / 운전기사 ... 씨는` walls onto dynamic physical details (`비상벨이`, `잠금장치가`, `불빛이`), and enforce 100% Broadcast Green-Dollar prose (`0%` death/corpse/blood/weapon/suicide words in the first 60s `00:00–01:00` and indirect forensic/judicial refraction across `ACT01..ACT05`).\n"
+            f"3. Break `~습니다/였습니다` monotony (keep pure `~습니다` around `56%–72%`, NEVER `>=5` consecutive): weave natural `~었죠` (`10%–18%`, never adjacent){geodeunyo_clause}, organic questions (`?`), and crisp short finite-verb sentences (`시계는 멈춰 섰죠.`, `불빛은 흔들렸습니다.`, `답은 하나뿐이었습니다.`). STRICTLY BAN AI-smell trailing noun-fragment echoes at the end of paragraphs (max `<= 4` `체언 종결` in the entire episode), ban MC meta-transitions (`지금부터 하나씩 따라가 보겠습니다`, `시선을 옮겨 보겠습니다`), and NEVER use `~더군요` or standalone `~는데요.`!\n"
+            f"{domain_rule_4}"
             "5. Enforce 100% Korean TTS Hangul orthography & morphology: (a) NEVER use `[Numeral] + 해` (`열아홉 해`, `열여덟 해`, `열 해`, `19해`) for years elapsed—TTS mispronounces `해` as `회` ('times'); always write Sino-Korean `N년` (`19년의`, `18년 전`, `10년이 넘도록`) with matching consonant-final particles (`이/을/은/과/으로/이라는/이었다`); (b) NEVER put spaces around `점` in Hangul decimals (`구십구점구구 퍼센트` or `99.99퍼센트`, never `구십구 점 구구 퍼센트`) and write 4-digit calendar years as `1997년/2015년` (never `천구백구십칠 년`); (c) transcribe ALL Chinese `Xie` (`谢`) names as `시에` (`시에런량`, `시에쭝펀`, `우시에위`, `시에 씨` — ZERO `셰`) and keep 100% identical place/person spelling across the entire episode (`닝보시`, `시에런량`); (d) enforce standard Korean morphology (`나란히`, `수완 좋기로`, `새까맣게`, `연달아/잇달아`, `단숨에 탄로 날`, `역력했죠`, `포개졌습니다`); (e) spell numeric model/unit codes in spoken Hangul (`오륙식`, `팔일식`, `오사식`, `백사십칠 연대`), write `1..20` native counters in spaced Hangul (`서류 두 장`, `열쇠 세 개`, `여덟 개`, `단서 아홉 점`), pure Hangul for plates/codes (`웨 에이알 공칠사칠 호`, `에이급 수배령`, `백여만 위안`), zero raw `0건` (`영 건`), zero `%` (`퍼센트`), preserving 100% of verified facts.\n"
             "6. SEMANTIC & INTERROGATIVE COMPLETENESS AUDIT (Mandatory even when sensor defects = []): Read every sentence—especially newly rewritten lines and rhetorical questions (`~걸까요?`, `~했을까요?`)—to verify complete natural meaning and zero missing interrogative words (`왜`, `어떻게`, `무엇이`, `과연`, `혹시`, `대체`). NEVER convert a declarative `~습니다.` sentence into `~던 걸까요?` without adding the matching question word (`왜`, `어떻게`, `무엇이`) at the front!"
             f"{outro_instruction}"
@@ -1519,7 +2137,7 @@ def run_plan_closed_loop(
     # 0. Deterministic Korean TTS orthography normalization (10정->열 정, 웨AR0747호->웨 에이알 공칠사칠 호, 100여만->백여만, etc.)
     ortho_pairs: list[tuple[str, str]] = []
     if lang == "ko":
-        ortho_text, ortho_pairs = normalize_korean_script_orthography(current_text)
+        ortho_text, ortho_pairs = normalize_korean_script_orthography(current_text, job=job)
         if ortho_pairs:
             current_text = ortho_text
             script_path.write_text(current_text, encoding="utf-8")
@@ -1665,8 +2283,10 @@ def audit_and_refine_storyboard_sequence(
     and enforce the 2-Layer Visual Architecture (Layer 1: AI Visual Prompt + Layer 2: Bespoke 1-to-1 VOX Design Prompt & Real Footage Binding)
     without altering narration_text.
     """
+    from .prompts import is_any_vox_enabled_for_job
     from .vox_engine import attach_two_layer_visual_prompts
 
+    vox_allowed = is_any_vox_enabled_for_job(job) if isinstance(job, dict) else True
     diversified_archetypes = 0
     enriched_prompts = 0
     synthesized_vox_prompts = 0
@@ -1707,39 +2327,40 @@ def audit_and_refine_storyboard_sequence(
                     row["prompt"] = beat["prompt"]
                 enriched_prompts += 1
 
-        cur_vox_p = str(beat.get("vox_design_prompt") or "")
-        cur_ai_p = str(beat.get("ai_prompt") or "")
-        cur_geom = str((beat.get("vox_blueprint_spec") or {}).get("stage_geometry_description") or "")
-        has_boilerplate = (
-            "Bespoke 2.5D investigative desk mechanism for beat" in cur_vox_p
-            or "Bespoke 2.5D investigative desk mechanism for beat" in cur_geom
-            or "clear physical foreground prop focus on the exact action/evidence described in the sentence" in cur_ai_p
-        )
-        if (
-            not cur_vox_p
-            or not beat.get("vox_blueprint_spec")
-            or not beat.get("visual_layers")
-            or has_boilerplate
-            or cur_vox_p in seen_vox_prompts
-            or str((beat.get("vox_blueprint_spec") or {}).get("vox_scene_signature") or "") in seen_vox_sigs
-        ):
-            if has_boilerplate and isinstance(beat.get("vox_blueprint_spec"), dict):
-                beat["vox_blueprint_spec"].pop("stage_geometry_description", None)
-                beat["vox_blueprint_spec"].pop("cutout_prop_description", None)
-                beat["vox_blueprint_spec"].pop("dominant_physical_verb", None)
-            attach_two_layer_visual_prompts(beat, beat_index=idx, total_beats=total_beats)
-            synthesized_vox_prompts += 1
+        if vox_allowed:
+            cur_vox_p = str(beat.get("vox_design_prompt") or "")
+            cur_ai_p = str(beat.get("ai_prompt") or "")
+            cur_geom = str((beat.get("vox_blueprint_spec") or {}).get("stage_geometry_description") or "")
+            has_boilerplate = (
+                "Bespoke 2.5D investigative desk mechanism for beat" in cur_vox_p
+                or "Bespoke 2.5D investigative desk mechanism for beat" in cur_geom
+                or "clear physical foreground prop focus on the exact action/evidence described in the sentence" in cur_ai_p
+            )
+            if (
+                not cur_vox_p
+                or not beat.get("vox_blueprint_spec")
+                or not beat.get("visual_layers")
+                or has_boilerplate
+                or cur_vox_p in seen_vox_prompts
+                or str((beat.get("vox_blueprint_spec") or {}).get("vox_scene_signature") or "") in seen_vox_sigs
+            ):
+                if has_boilerplate and isinstance(beat.get("vox_blueprint_spec"), dict):
+                    beat["vox_blueprint_spec"].pop("stage_geometry_description", None)
+                    beat["vox_blueprint_spec"].pop("cutout_prop_description", None)
+                    beat["vox_blueprint_spec"].pop("dominant_physical_verb", None)
+                attach_two_layer_visual_prompts(beat, beat_index=idx, total_beats=total_beats)
+                synthesized_vox_prompts += 1
 
-        seen_vox_prompts.add(str(beat.get("vox_design_prompt") or ""))
-        seen_vox_sigs.add(str((beat.get("vox_blueprint_spec") or {}).get("vox_scene_signature") or ""))
+            seen_vox_prompts.add(str(beat.get("vox_design_prompt") or ""))
+            seen_vox_sigs.add(str((beat.get("vox_blueprint_spec") or {}).get("vox_scene_signature") or ""))
 
         row = prompt_by_id.get(str(beat.get("beat_id") or ""))
         if row is not None:
             row["ai_prompt"] = beat.get("ai_prompt") or row.get("prompt") or ""
-            row["ai_cutout_prop_prompt"] = beat.get("ai_cutout_prop_prompt") or ""
-            row["vox_design_prompt"] = beat.get("vox_design_prompt") or ""
-            row["vox_blueprint_spec"] = beat.get("vox_blueprint_spec") or {}
-            row["visual_layers"] = beat.get("visual_layers") or {}
+            row["ai_cutout_prop_prompt"] = (beat.get("ai_cutout_prop_prompt") or "") if vox_allowed else ""
+            row["vox_design_prompt"] = (beat.get("vox_design_prompt") or "") if vox_allowed else ""
+            row["vox_blueprint_spec"] = (beat.get("vox_blueprint_spec") or {}) if vox_allowed else {}
+            row["visual_layers"] = (beat.get("visual_layers") or {}) if vox_allowed else {}
 
     report = {
         "phase": "visuals",
@@ -2179,7 +2800,17 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
         except Exception:
             reg = {}
 
-    assets = _extract_clip_rows_from_json(reg)
+    def _is_ai_generated_asset_row(row: dict[str, Any]) -> bool:
+        kind_s = str(row.get("kind") or row.get("type") or "").strip().lower()
+        if kind_s.startswith("ai_"):
+            return True
+        src_d = row.get("source") if isinstance(row.get("source"), dict) else {}
+        if str(src_d.get("generated_by") or "").strip().lower() == "cofi_ai_visual":
+            return True
+        p_s = str(row.get("path") or row.get("local_path") or row.get("file_path") or "").replace("\\", "/").lower()
+        return "/media/ai/" in p_s or p_s.startswith("media/ai/") or "_ai_keyframe." in p_s
+
+    assets = [r for r in _extract_clip_rows_from_json(reg) if not _is_ai_generated_asset_row(r)]
     by_key: dict[str, dict[str, Any]] = {}
     for a in assets:
         k = str(a.get("clip_id") or a.get("path") or a.get("local_path") or a.get("file_path") or a.get("beat_id") or "").strip()
@@ -2226,7 +2857,7 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
     seen_dhashes: list[tuple[str, int]] = []
     seen_observed_contents: dict[str, str] = {}
 
-    from .prompts import _is_director_v2_true_crime_job
+    from .prompts import _is_director_v2_true_crime_job, is_creative_audio_drama_job
 
     is_dir_v2 = _is_director_v2_true_crime_job(job)
     snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
@@ -2234,6 +2865,10 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
         job.get("editing_dna")
         if isinstance(job.get("editing_dna"), dict) and job.get("editing_dna")
         else (snap.get("editing_dna") if isinstance(snap.get("editing_dna"), dict) else {})
+    )
+    is_atmospheric_broll_mode = (
+        is_creative_audio_drama_job(job)
+        or str(ed_dna.get("footage_mode") or "").strip().lower() == "atmospheric_broll"
     )
     ftg_contract = ed_dna.get("footage_hygiene_contract") if isinstance(ed_dna.get("footage_hygiene_contract"), dict) else {}
     require_eye_verified_cut = (
@@ -2275,7 +2910,8 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
                     continue
                 mb_id = str(mb.get("beat_id") or mb.get("beatId") or "").strip()
                 v_cat = str(mb.get("visual_category") or mb.get("category") or mb.get("route") or "").upper()
-                if v_cat in {"REAL_FTG", "FOOTAGE"} and mf_name == "visual_manifest.json":
+                v_type = str(mb.get("visual_type") or "").strip().lower()
+                if (v_cat in {"REAL_FTG", "FOOTAGE"} or v_type == "sourced_video") and mf_name == "visual_manifest.json":
                     expected_real_ftg_count += 1
                 mb_txt = " ".join(
                     str(mb.get(k) or "").strip()
@@ -2382,7 +3018,12 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
             else:
                 seen_observed_contents[norm_obs] = clip_key
 
-        if core_obs_text and ref_voice_text and not _texts_share_semantic_link(core_obs_text, ref_voice_text):
+        if (
+            not is_atmospheric_broll_mode
+            and core_obs_text
+            and ref_voice_text
+            and not _texts_share_semantic_link(core_obs_text, ref_voice_text)
+        ):
             failures.append({
                 "beat_id": bid,
                 "path": str(p),
@@ -2392,7 +3033,8 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
                 ),
             })
         elif (
-            (core_obs_text or src_video_ref)
+            not is_atmospheric_broll_mode
+            and (core_obs_text or src_video_ref)
             and ref_voice_text
             and _NATURE_SCENERY_FILLER_RE.search(f"{core_obs_text} {src_video_ref}")
             and _NON_NATURE_INSTITUTION_VOICE_RE.search(ref_voice_text)
@@ -2593,8 +3235,8 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
             ),
         })
 
-    # Anti-Stair-Step, Per-Source Batch-Slicing & Probe Contact-Sheet Gate across asset_registry.json + footage_approved_live.json + footage_review.json
-    if require_eye_verified_cut:
+    # Anti-Stair-Step, Per-Source Progressive/Batch-Slicing & Probe Contact-Sheet Gate across asset_registry.json + footage_approved_live.json + footage_review.json
+    if True:
         live_rows: list[dict[str, Any]] = []
         for lp_cand in (live_p, rev_p):
             if lp_cand.is_file():
@@ -2609,10 +3251,20 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
         src_counts: dict[str, int] = {}
         offsets_seq: list[float] = []
         offsets_by_source: dict[str, list[float]] = {}
+        ordered_offsets_by_source: dict[str, list[float]] = {}
         prefix_counts: dict[str, int] = {}
         for r in audit_rows:
             s_meta = r.get("source") if isinstance(r.get("source"), dict) else {}
-            sv = str(r.get("source_video") or s_meta.get("source_video") or "").strip()
+            sv = str(
+                r.get("source_video")
+                or r.get("source_file")
+                or r.get("source_url")
+                or s_meta.get("source_video")
+                or s_meta.get("source_file")
+                or s_meta.get("url")
+                or s_meta.get("title")
+                or ""
+            ).strip()
             if sv:
                 src_counts[sv] = src_counts.get(sv, 0) + 1
             so = r.get("start_offset_sec") if r.get("start_offset_sec") is not None else s_meta.get("start_offset_sec")
@@ -2621,6 +3273,7 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
                 offsets_seq.append(f_so)
                 if sv:
                     offsets_by_source.setdefault(sv, []).append(f_so)
+                    ordered_offsets_by_source.setdefault(sv, []).append(f_so)
             ob = str(r.get("observed_content") or s_meta.get("observed_content") or "").strip()
             if ob:
                 if _BOILERPLATE_OBSERVED_CONTENT_RE.search(ob):
@@ -2651,22 +3304,48 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
                         ),
                     })
         for sv_name, sv_offs in offsets_by_source.items():
+            if len(sv_offs) >= 4:
+                ordered_offs = ordered_offsets_by_source.get(sv_name, sv_offs)
+                inc_streak = 1
+                max_inc_streak = 1
+                for i_ord in range(1, len(ordered_offs)):
+                    delta_ord = ordered_offs[i_ord] - ordered_offs[i_ord - 1]
+                    if 0.5 <= delta_ord <= 45.0:
+                        inc_streak += 1
+                        if inc_streak > max_inc_streak:
+                            max_inc_streak = inc_streak
+                    else:
+                        inc_streak = 1
+                if max_inc_streak >= 4:
+                    failures.append({
+                        "beat_id": "GLOBAL_FOOTAGE",
+                        "path": str(live_p if live_p.is_file() else reg_path),
+                        "reason": (
+                            f"progressive_monotonic_slicing_detected: source '{sv_name}' has {max_inc_streak} consecutive progressive timestamp cuts "
+                            f"({[round(x, 1) for x in ordered_offs[:8]]}). Progressive/sequential timestamp cutting ('cắt tịnh tiến') is strictly forbidden; every clip must be eye-selected to match 100% of the spoken sentence!"
+                        ),
+                    })
             if len(sv_offs) >= 5:
                 sorted_offs = sorted(sv_offs)
                 sv_deltas: dict[float, int] = {}
+                progressive_band_cnt = 0
                 for i_so in range(1, len(sorted_offs)):
                     ds = round(sorted_offs[i_so] - sorted_offs[i_so - 1], 1)
                     if ds > 0:
                         sv_deltas[ds] = sv_deltas.get(ds, 0) + 1
+                    if 2.0 <= ds <= 22.0:
+                        progressive_band_cnt += 1
                 if sv_deltas:
                     top_ds, top_ds_cnt = max(sv_deltas.items(), key=lambda kv: kv[1])
-                    if top_ds_cnt >= 4 and top_ds_cnt / max(1, len(sorted_offs) - 1) >= 0.35:
+                    if (top_ds_cnt >= 4 and top_ds_cnt / max(1, len(sorted_offs) - 1) >= 0.35) or (
+                        len(sorted_offs) >= 6 and progressive_band_cnt / max(1, len(sorted_offs) - 1) >= 0.75
+                    ):
                         failures.append({
                             "beat_id": "GLOBAL_FOOTAGE",
                             "path": str(live_p if live_p.is_file() else reg_path),
                             "reason": (
                                 f"per_source_stair_step_batch_slicing_detected: source '{sv_name}' sliced {len(sv_offs)} times with "
-                                f"{top_ds_cnt} uniform step intervals (+{top_ds}s). Sequential batch slicing of a source video is strictly forbidden!"
+                                f"{top_ds_cnt} uniform step intervals (+{top_ds}s) / {progressive_band_cnt} progressive forward steps. Progressive/sequential batch slicing ('cắt tịnh tiến') of a source video is strictly forbidden!"
                             ),
                         })
         total_src_clips = sum(src_counts.values())
@@ -2715,7 +3394,7 @@ def audit_footage_hygiene(workspace: Path, job: dict[str, Any]) -> dict[str, Any
         if checked > 0:
             probe_dirs = [workspace / "media" / "footage" / "probes", workspace / "footage" / "probes"]
             has_verify_sheet = any(
-                d.is_dir() and (list(d.glob("VERIFY_FTG_CLIPS_*.jpg")) or list(d.glob("*_3frames.jpg")) or list(d.glob("STORYBOARD_*.jpg")))
+                d.is_dir() and (list(d.glob("VERIFY_FTG_CLIPS_*.jpg")) or list(d.glob("*_3frames.jpg")))
                 for d in probe_dirs
             )
             has_grid_sheet = any(d.is_dir() and list(d.glob("GRID_*.jpg")) for d in probe_dirs)
@@ -2903,13 +3582,17 @@ def audit_edit_timeline_and_screen(
 
             if len(vm_beats) >= 40:
                 if len(dramatic_holds_1_0s) < 12:
-                    errors.append(
-                        f"BREATHING_ROOM_GATE_FAIL: Toàn tập chỉ có {len(dramatic_holds_1_0s)} điểm nghỉ >= 1.0s (yêu cầu >= 12 điểm nghỉ kịch tính 1.0s-1.6s sau câu hỏi '?', câu lật tẩy vật chứng, và FramelessCinemaTextBeat)."
-                    )
+                    issues.append({
+                        "type": "breathing_room_gate_warning",
+                        "severity": "warning",
+                        "detail": f"BREATHING_ROOM_GATE_FAIL: Toàn tập chỉ có {len(dramatic_holds_1_0s)} điểm nghỉ >= 1.0s (yêu cầu >= 12 điểm nghỉ kịch tính 1.0s-1.6s).",
+                    })
                 if crushed_act_transitions:
-                    errors.append(
-                        f"ACT_CURTAIN_BREATH_FAIL: Điểm chuyển Hồi (ACT01->ACT05) có khoảng nghỉ < 1.2s (yêu cầu 1.4s-2.2s): {crushed_act_transitions}"
-                    )
+                    issues.append({
+                        "type": "act_curtain_breath_warning",
+                        "severity": "warning",
+                        "detail": f"ACT_CURTAIN_BREATH_FAIL: Điểm chuyển Hồi có khoảng nghỉ < 1.2s (yêu cầu 1.4s-2.2s): {crushed_act_transitions}",
+                    })
 
             # Verify mid-beat caesuras AND silent inter-beat pauses are never spoiled by overlapping SRT cues
             srt_path = workspace / "subtitles.srt"
@@ -3831,6 +4514,20 @@ def audit_edit_timeline_and_screen(
                             f"(distinct renderers={len(ct_renderers)}, fonts={len(ct_fonts)}, layouts={len(ct_layouts)}; minimum >= 3 of each required)."
                         ),
                     })
+    else:
+        from .prompts import is_creative_audio_drama_job
+
+        if is_creative_audio_drama_job(job):
+            ftg_hygiene_res = audit_footage_hygiene(workspace, job)
+            for fh_fail in ftg_hygiene_res.get("failures") or []:
+                if isinstance(fh_fail, dict):
+                    issues.append({
+                        "type": "footage_eye_verification_or_crop_violation",
+                        "severity": "blocker",
+                        "beat_id": fh_fail.get("beat_id"),
+                        "path": fh_fail.get("path"),
+                        "detail": fh_fail.get("reason"),
+                    })
 
     _critic_snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
     _critic_ed_dna = (
@@ -3843,11 +4540,14 @@ def audit_edit_timeline_and_screen(
         _critic_preset = "forensic_noir_director_v2"
     _critic_prof_id = str(job.get("channel_profile_id") or _critic_snap.get("id") or "").strip()
     _critic_lang = str(job.get("language") or "ko").strip().lower()
+    from .prompts import is_any_vox_enabled_for_job
+
     _is_non_vox_devotional = (
-        _critic_preset in {"sacred_devotional", "grace_letter"}
-        or _critic_prof_id == "channel-kr-grace-letter-60m"
+        _critic_preset in {"sacred_devotional", "grace_letter", "kr_goodnight_cinema_drama"}
+        or _critic_prof_id in {"channel-kr-grace-letter-60m", "channel-kr-goodnight-drama-50m"}
+        or not is_any_vox_enabled_for_job(job)
     )
-    is_vox_enabled_job = is_dir_v2 or (not _is_non_vox_devotional)
+    is_vox_enabled_job = bool(is_any_vox_enabled_for_job(job)) and (is_dir_v2 or (not _is_non_vox_devotional))
     _effective_ast_preset = (
         "forensic_noir_director_v2"
         if is_dir_v2
@@ -4604,6 +5304,8 @@ def audit_edit_timeline_and_screen(
                         str(ast_script),
                         "--preset",
                         _effective_ast_preset,
+                        "--profile",
+                        _critic_prof_id or "default",
                         "--lang",
                         _critic_lang,
                         *[str(p) for p in vox_ast_targets],

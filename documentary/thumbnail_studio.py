@@ -1516,7 +1516,8 @@ YOUTUBE_POLICY_REPLACEMENTS_ALL: list[tuple[str, str]] = [
     ("선혈", "결정적 흔적"),
     ("혈흔", "미세 흔적"),
     ("총살", "최종 집행"),
-    ("법정 최고형수", "사형수"),
+    ("사형수", "중형 확정범"),
+    ("사형", "법정 최고형"),
     ("극단적 선택", "스스로 멈춘 진술"),
     ("자살", "스스로 멈춘 진술"),
     ("성폭행", "중대 범죄"),
@@ -1605,7 +1606,7 @@ def _enforce_title_primary_keyword(title: str, primary_kw: str, placement_rule: 
         return t
     if rule == "suffix_pipe":
         return f"{t} | {kw}"
-    if kw in ("중국 실화 사건", "중국 첨단사기 실화 사건") or rule in ("prefix_bracket", "smart_seo_flexible"):
+    if kw in ("중국 실화 사건", "중국 첨단사기 실화 사건", "중국 희대의 사기 실화") or rule in ("prefix_bracket", "smart_seo_flexible"):
         # Replace generic brackets like [중국에서 있었던 실제 사례] or legacy [중국 사기 실화] if present
         t = re.sub(r"^\[[^\]]*중국[^\]]*\]\s*", "", t).strip()
         if kw not in t:
@@ -2303,12 +2304,12 @@ def _extract_overlay_options(seo_pack: dict[str, Any], job: dict[str, Any]) -> l
         or framework.get("series_key")
         or seo_dna.get("primary_title_keyword")
         or (snap_seo_dna.get("primary_title_keyword") if isinstance(snap_seo_dna, dict) else "")
-        or ("중국 첨단사기 실화 사건" if is_cyber_fin else ("금고추적 · 중국 실화사건" if is_fin_fugitive_prof else neutral_lang_badge))
+        or ("중국 첨단사기 실화 사건" if is_cyber_fin else ("금고추적 · 희대의 사기" if is_fin_fugitive_prof else neutral_lang_badge))
     ).strip()
     if is_cyber_fin and ("특급수배" in default_badge or default_badge == "중국 사기 실화"):
         default_badge = "중국 첨단사기 실화 사건"
     elif is_fin_fugitive_prof and "특급수배" in default_badge:
-        default_badge = str(snap_tdna.get("badge_text_default") or "금고추적 · 중국 실화사건").strip()
+        default_badge = str(snap_tdna.get("badge_text_default") or "금고추적 · 희대의 사기").strip()
 
     hooks_meta = [
         {
@@ -3116,7 +3117,7 @@ def build_default_thumbnail_design(
                         lyr["visible"] = False
                 elif lid == "badge":
                     _is_fin_fug = str(job.get("channel_profile_id") or "") == "channel-kr-financial-fugitive-director-v2"
-                    _fallback_badge = "금고추적 · 중국 실화사건" if _is_fin_fug else "특급수배 · 중국 실화사건"
+                    _fallback_badge = "금고추적 · 희대의 사기" if _is_fin_fug else "특급수배 · 중국 실화사건"
                     _generic_badges = {"다큐멘터리", "DOCUMENTARY", "PHÓNG SỰ", "중국 실화 사건"}
                     _cand_opt_badge = str(opt.get("badge") or "").strip()
                     if _cand_opt_badge in _generic_badges:
@@ -3131,7 +3132,7 @@ def build_default_thumbnail_design(
                         or _fallback_badge
                     ).strip()
                     if _is_fin_fug and "특급수배" in _raw_badge_txt:
-                        _raw_badge_txt = str(channel_dna.get("badge_text_default") or "금고추적 · 중국 실화사건").strip()
+                        _raw_badge_txt = str(channel_dna.get("badge_text_default") or "금고추적 · 희대의 사기").strip()
                     badge_txt_locked = (
                         str(channel_dna.get("badge_text_default") or "중국 첨단사기 실화 사건").strip()
                         if is_cyber_fin_dna

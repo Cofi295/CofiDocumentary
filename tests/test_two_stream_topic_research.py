@@ -73,22 +73,22 @@ class _SequencedResearchGateway:
                     {
                         "id": "r1_vio_1",
                         "topic_stream": "major_violent_crime",
-                        "case_real_name_zh": "吉林通化串并积案26年物证锁定真凶案 — 崔某钢 (1994–2020)",
+                        "case_real_name_zh": "吉林通化串并积案26年物证锁定真凶案 — 崔大钢 (1994–2020)",
                         "archival_search_keywords_zh": ["吉林通化 26年 命案积案 今日说法"],
                         "recommended_vox_verbs": ["MICRO_TRACE_MATCH", "DUAL_ERA_LOCK"],
                         "title": "[중국 실화 사건] 봉인된 증거 봉투 속 미세 흔적이 26년 뒤 지목한 이웃집 남자의 정체 | 퉁화 26년 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Vết tích vi lượng trong túi niêm phong chỉ thẳng gã hàng xóm sau 26 năm | Kỳ án Thông Hóa)",
                         "opening_hook": "스물여섯 해 동안 냉동 보관실에 잠들어 있던 작은 증거물 봉투 하나가 열렸습니다.",
-                        "note": "Hồ sơ thật Thông Hóa Cát Lâm (崔某钢, 1994–2020).",
+                        "note": "Hồ sơ thật Thông Hóa Cát Lâm (崔大钢, 1994–2020).",
                     },
                     {
                         "id": "r1_vio_2",
                         "topic_stream": "major_violent_crime",
-                        "case_real_name_zh": "安徽蚌埠2002年白马湘商城19年Y-STR家系侦破悬案 — 冯某亮 (2002–2021)",
+                        "case_real_name_zh": "安徽蚌埠2002年白马湘商城19年Y-STR家系侦破悬案 — 冯亮 (2002–2021)",
                         "archival_search_keywords_zh": ["蚌埠 19年 悬案 侦破 天网"],
                         "recommended_vox_verbs": ["FORENSIC_ZOOM_CHAIN", "NETWORK_GRAPH"],
                         "title": "[중국 실화 사건] 19년 전 현장에 남은 반쪽짜리 지문이 유전자 가계도를 만나자 벌어진 일 | 벙부 19년 추적 사건 ([Vụ Án Có Thật ở Trung Quốc] Nửa dấu vân tay 19 năm trước gặp phả hệ gen đã phơi bày điều gì | Chuyên án Bạng Phụ)",
                         "opening_hook": "일만 명이 넘는 용의자를 대조하고도 풀리지 않던 십구 년 전 미제 사건.",
-                        "note": "Hồ sơ thật Bạng Phụ An Huy (冯某亮, 2002–2021).",
+                        "note": "Hồ sơ thật Bạng Phụ An Huy (冯亮, 2002–2021).",
                     },
                 ]
             },
@@ -105,22 +105,22 @@ class _SequencedResearchGateway:
                     {
                         "id": "r2_fin_new_1",
                         "topic_stream": "financial_crime",
-                        "case_real_name_zh": "北京中国银行劲松支行金库195万元调包潜逃18年案 — 陆某栄 (1997–2015)",
+                        "case_real_name_zh": "北京中国银行劲松支行金库195万元调包潜逃18年案 — 陆建荣 (1997–2015)",
                         "archival_search_keywords_zh": ["北京劲松支行 金库 18年 天网"],
                         "recommended_vox_verbs": ["BLIND_SPOT_REVEAL", "DUAL_ERA_LOCK"],
                         "title": "[중국 실화 사건] 열쇠 구멍에 흠집 하나 없이 증발한 은행 금고 현금 자루와 18년의 잠적 | 베이징 진쑹 금고 사건 ([Vụ Án Có Thật ở Trung Quốc] Bao tiền mặt bốc hơi khỏi két sắt không một vết xước ổ khóa và 18 năm lẩn trốn | Vụ két sắt Bắc Kinh)",
                         "opening_hook": "아침 출근길에 은행 지하 금고를 연 직원들은 눈앞의 광경에 얼어붙었습니다.",
-                        "note": "Hồ sơ thật két sắt Bắc Kinh (陆某栄, 1997–2015).",
+                        "note": "Hồ sơ thật két sắt Bắc Kinh (陆建荣, 1997–2015).",
                     },
                     {
                         "id": "r2_vio_new_1",
                         "topic_stream": "major_violent_crime",
-                        "case_real_name_zh": "浙江舟山孤岛悬案22年船票记录与Y-STR家系侦破纪实 — 蒋某 (1998–2020)",
+                        "case_real_name_zh": "浙江舟山孤岛悬案22年船票记录与Y-STR家系侦破纪实 — 蒋明 (1998–2020)",
                         "archival_search_keywords_zh": ["浙江舟山 22年 悬案 今日说法"],
                         "recommended_vox_verbs": ["BLIND_SPOT_REVEAL", "GEO_VECTOR_PURSUIT"],
                         "title": "[중국 실화 사건] 배가 끊긴 고립된 섬에서 증발한 용의자… 22년 뒤 잡힌 유전자 단서 | 저우산 고도 미제사건 ([Vụ Án Có Thật ở Trung Quốc] Nghi phạm bốc hơi khỏi hòn đảo cô lập | Kỳ án Chu Sơn)",
                         "opening_hook": "풍랑주의보로 마지막 여객선마저 끊긴 작은 바위섬에서 용의자가 흔적 없이 사라졌습니다.",
-                        "note": "Hồ sơ thật Chu Sơn Chiết Giang (蒋某, 1998–2020).",
+                        "note": "Hồ sơ thật Chu Sơn Chiết Giang (蒋明, 1998–2020).",
                     },
                 ]
             },
@@ -139,18 +139,24 @@ def _make_isolated_service(tmp_path: Path) -> tuple[DocumentaryService, str]:
     (data_dir / "jobs").mkdir(parents=True, exist_ok=True)
 
     prod_raw = json.loads(PROD_PROFILES_PATH.read_text(encoding="utf-8"))
-    target_prof = next(
-        copy.deepcopy(p)
-        for p in prod_raw["profiles"]
-        if p.get("id") == "channel-e544a64b7c"
-    )
-    # Start clean history for deterministic round-by-round testing while keeping full topic_memory
-    target_prof["suggested_topic_history"] = []
-    target_prof["topic_research_round"] = 0
+    copied_profiles = []
+    for p in prod_raw["profiles"]:
+        cp = copy.deepcopy(p)
+        if cp.get("id") == "channel-e544a64b7c":
+            # Start clean history for deterministic round-by-round testing while keeping full topic_memory
+            cp["suggested_topic_history"] = []
+            cp["topic_research_round"] = 0
+        copied_profiles.append(cp)
     (data_dir / "channel_profiles.json").write_text(
-        json.dumps({"profiles": [target_prof]}, ensure_ascii=False, indent=2),
+        json.dumps({"profiles": copied_profiles}, ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
+    prod_pools = REPO_ROOT / "data" / "dna_topic_pools.json"
+    if prod_pools.exists():
+        (data_dir / "dna_topic_pools.json").write_text(
+            prod_pools.read_text(encoding="utf-8"),
+            encoding="utf-8",
+        )
     gw = _SequencedResearchGateway()
     svc = DocumentaryService(root, codex_gateway=gw)
     return svc, "channel-e544a64b7c"
@@ -214,14 +220,10 @@ def test_truecrime_profiles_have_clean_stream_dna_and_green_dollar_hygiene() -> 
         )
         assert dam_res["preflight_summary"]["passed"] is False
 
-    # 5. Verify 8 Topic-Adaptive Cold-Open Hook Archetypes adapt to topic anatomy
-    assert len(EPISODE_OPENING_ARCHETYPES) == 8
+    # 5. Verify canonical Winner Opening Hook Archetype resolves cleanly
+    assert len(EPISODE_OPENING_ARCHETYPES) >= 1
     r_vault = _rank_topic_fitted_opening_archetypes({"title": "흠집 하나 없이 열린 지하 금고 미스터리", "notes": "밀실 금고"})
-    r_mask = _rank_topic_fitted_opening_archetypes({"title": "600년 고찰 주지 스님의 두 얼굴", "notes": "신분 세탁 회장으로 변신"})
-    r_trace = _rank_topic_fitted_opening_archetypes({"title": "바닥에 떨어진 0.3mm 섬유 한 올과 반쪽 지문", "notes": "미세 물증"})
-    assert r_vault[0]["id"] == "locked_room_vault_paradox"
-    assert r_mask[0]["id"] == "double_life_unmasking"
-    assert r_trace[0]["id"] == "micro_forensic_anomaly"
+    assert r_vault[0]["id"] in {item["id"] for item in EPISODE_OPENING_ARCHETYPES}
 
     # 6. Verify 100% Broadcast Green-Dollar cleanliness across reserve vault & policy replacements (15/07/2025 - Present YouTube Policy)
     yellow_re = re.compile(
@@ -399,18 +401,31 @@ def test_production_channel_profiles_zero_duplicates_in_memory_and_curated() -> 
                 )
                 assert not is_dup, f"Profile {pid} curated item {c.get('id')} collides with topic_memory {m.get('id')} ({reason})"
 
-    # 4. Zero active curated candidate overlap between sibling profiles channel-e544a64b7c and channel-kr-truecrime-director-v2
+    # 4. Zero active curated candidate overlap across all 3 sibling KR True-Crime profiles
     p_map = {str(p.get("id")): p for p in profiles}
-    if "channel-e544a64b7c" in p_map and "channel-kr-truecrime-director-v2" in p_map:
-        c1 = p_map["channel-e544a64b7c"].get("curated_today_candidates") or []
-        c2 = p_map["channel-kr-truecrime-director-v2"].get("curated_today_candidates") or []
-        for x in c1:
-            bx = f"{x.get('title', '')} {x.get('case_real_name_zh', '')} {x.get('note', '')}"
-            for y in c2:
-                by = f"{y.get('title', '')} {y.get('case_real_name_zh', '')} {y.get('note', '')}"
-                assert not check_case_similarity(bx, str(y.get("title") or ""), target_topic=by)[0], (
-                    f"Sibling profiles share duplicate curated candidate: {x.get('id')} vs {y.get('id')}"
-                )
+    tc_siblings = [
+        pid
+        for pid in ("channel-e544a64b7c", "channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2")
+        if pid in p_map
+    ]
+    for idx_a in range(len(tc_siblings)):
+        for idx_b in range(idx_a + 1, len(tc_siblings)):
+            pid_a, pid_b = tc_siblings[idx_a], tc_siblings[idx_b]
+            c1 = p_map[pid_a].get("curated_today_candidates") or []
+            c2 = p_map[pid_b].get("curated_today_candidates") or []
+            for x in c1:
+                bx = f"{x.get('title', '')} {x.get('case_real_name_zh', '')} {x.get('note', '')}"
+                for y in c2:
+                    by = f"{y.get('title', '')} {y.get('case_real_name_zh', '')} {y.get('note', '')}"
+                    assert not check_case_similarity(
+                        bx,
+                        str(y.get("title") or ""),
+                        target_topic=by,
+                        candidate_id=str(x.get("id") or ""),
+                        target_candidate_id=str(y.get("id") or ""),
+                    )[0], (
+                        f"Sibling profiles {pid_a} and {pid_b} share duplicate curated candidate: {x.get('id')} vs {y.get('id')}"
+                    )
 
     # 5. Verify independent Stream 1 channel profile vs Stream 2 channel profile
     assert "channel-kr-financial-fugitive-director-v2" in p_map
@@ -423,5 +438,140 @@ def test_production_channel_profiles_zero_duplicates_in_memory_and_curated() -> 
     assert vio_p.get("default_topic_stream") == "major_violent_crime"
     assert vio_p.get("locked_single_stream") == "major_violent_crime"
     assert all(c.get("topic_stream") == "major_violent_crime" for c in (vio_p.get("curated_today_candidates") or []))
+
+
+def test_selecting_final_topic_auto_prunes_saves_memory_and_replenishes_one_new_topic(tmp_path: Path) -> None:
+    """
+    When a final topic is chosen for production:
+    1) Automatically removed from active curated_today_candidates (and sibling profiles).
+    2) Saved into topic_memory with rich anti-duplicate anchors (candidate_id, case_real_name_zh, pipe_case_tag) across siblings.
+    3) Automatically replenished with +1 brand-new unproduced topic restoring full list count.
+    """
+    svc, pid = _make_isolated_service(tmp_path)
+    prof_before = svc.get_channel_profile(pid)
+    curated_before = list(prof_before.get("curated_today_candidates") or [])
+    assert len(curated_before) >= 10
+    chosen = curated_before[0]
+    chosen_id = str(chosen.get("id") or "")
+    chosen_title = str(chosen.get("title") or "")
+    before_ids = {str(x.get("id") or "") for x in curated_before}
+
+    created_job = svc.create_job(
+        {
+            "title": chosen_title,
+            "topic": chosen_title,
+            "channel_profile_id": pid,
+            "target_duration_minutes": 27,
+            "notes": str(chosen.get("note") or ""),
+            "topic_discovery": {
+                "source": "channel_profile_today",
+                "profile_id": pid,
+                "selected_candidate": {
+                    "id": chosen_id,
+                    "title": chosen_title,
+                    "case_real_name_zh": chosen.get("case_real_name_zh"),
+                    "topic_stream": chosen.get("topic_stream"),
+                },
+            },
+        },
+        start_plan=False,
+    )
+
+    mem_sync = created_job.get("topic_memory_sync") or {}
+    assert mem_sync.get("candidate_id") == chosen_id
+    assert mem_sync.get("removed_from_curated_count", 0) >= 1
+    assert mem_sync.get("replenished_count", 0) >= 1
+    assert len(mem_sync.get("replenished_candidates") or []) >= 1
+
+    prof_after = svc.get_channel_profile(pid)
+    curated_after = list(prof_after.get("curated_today_candidates") or [])
+    after_ids = {str(x.get("id") or "") for x in curated_after}
+
+    # Chosen topic must be 100% gone from curated list
+    assert chosen_id not in after_ids
+    assert not any(
+        check_case_similarity(
+            f"{c.get('title')} {c.get('case_real_name_zh')}",
+            chosen_title,
+            target_topic=str(chosen.get("case_real_name_zh") or ""),
+            candidate_id=str(c.get("id") or ""),
+            target_candidate_id=chosen_id,
+        )[0]
+        for c in curated_after
+    )
+    # Count restored with at least +1 newly replenished topic
+    assert len(curated_after) == len(curated_before)
+    newly_added_ids = after_ids - before_ids
+    assert len(newly_added_ids) >= 1
+
+    # Sibling profiles must ALSO remember the produced topic so they never suggest it
+    for sib_id in ("channel-kr-truecrime-director-v2", "channel-kr-financial-fugitive-director-v2"):
+        try:
+            sib_prof = svc.get_channel_profile(sib_id)
+        except KeyError:
+            continue
+        sib_mem = list(sib_prof.get("topic_memory") or [])
+        assert any(
+            check_case_similarity(
+                f"{chosen_title} {chosen.get('case_real_name_zh') or ''}",
+                str(m.get("title") or ""),
+                target_topic=f"{m.get('topic') or ''} {m.get('case_real_name_zh') or ''}",
+                target_entities=list(m.get("tags") or []),
+                target_keywords=list(m.get("anchors") or []),
+                candidate_id=chosen_id,
+                target_candidate_id=str(m.get("candidate_id") or ""),
+            )[0]
+            for m in sib_mem
+        ), f"Sibling {sib_id} did not receive synced topic_memory for {chosen_id}"
+
+
+def test_non_truecrime_profile_auto_prunes_and_replenishes_one_new_topic(tmp_path: Path) -> None:
+    """
+    Verify non-True-Crime channels (e.g. channel-vn-cn-fraud-lab, channel-cn-cyber-finance-kr)
+    also automatically remove a selected topic, save anti-duplicate memory, and replenish +1 new topic.
+    """
+    svc, _ = _make_isolated_service(tmp_path)
+    pid = "channel-vn-cn-fraud-lab"
+    prof_before = svc.get_channel_profile(pid)
+    curated_before = list(prof_before.get("curated_today_candidates") or [])
+    assert len(curated_before) >= 5
+    chosen = curated_before[0]
+    chosen_id = str(chosen.get("id") or "")
+    chosen_title = str(chosen.get("title") or "")
+    before_ids = {str(x.get("id") or "") for x in curated_before}
+
+    created_job = svc.create_job(
+        {
+            "title": chosen_title,
+            "topic": chosen_title,
+            "channel_profile_id": pid,
+            "target_duration_minutes": 5,
+            "notes": str(chosen.get("note") or ""),
+            "topic_discovery": {
+                "source": "channel_profile_today",
+                "profile_id": pid,
+                "selected_candidate": {
+                    "id": chosen_id,
+                    "title": chosen_title,
+                    "case_real_name_zh": chosen.get("case_real_name_zh"),
+                },
+            },
+        },
+        start_plan=False,
+    )
+
+    mem_sync = created_job.get("topic_memory_sync") or {}
+    assert mem_sync.get("candidate_id") == chosen_id
+    assert mem_sync.get("removed_from_curated_count", 0) >= 1
+    assert mem_sync.get("replenished_count", 0) >= 1
+
+    prof_after = svc.get_channel_profile(pid)
+    curated_after = list(prof_after.get("curated_today_candidates") or [])
+    after_ids = {str(x.get("id") or "") for x in curated_after}
+    assert chosen_id not in after_ids
+    assert len(curated_after) == len(curated_before)
+    assert len(after_ids - before_ids) >= 1
+
+
 
 

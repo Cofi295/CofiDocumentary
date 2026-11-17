@@ -438,16 +438,104 @@ STORY_ARC_BGM_MOOD_POOLS: dict[str, dict[str, Any]] = {
 
 DEFAULT_BGM_POOLS: dict[str, dict[str, Any]] = STORY_ARC_BGM_MOOD_POOLS
 
+WARM_NOCTURNE_CHAMBER_BGM_POOLS: dict[str, dict[str, Any]] = {
+    "w01_warm_evening_piano": {
+        "label": "Đêm Khuya Ấm Áp / Piano Độc Tấu Khởi Sự",
+        "search_queries": [
+            "warm solo piano nocturne gentle instrumental",
+            "calm acoustic piano evening reflection",
+        ],
+        "keywords": ["밤", "불빛", "찻잔", "온기", "시작", "골목", "저녁", "창가", "조용히"],
+        "tracks": {
+            "bgm_warm_nocturne_piano_01.mp3": {
+                "description": "Warm Evening Solo Piano — Gentle 3200K nocturnal opening & quiet household scene",
+                "keywords": ["밤", "창가", "온기", "차분한", "시작"],
+            },
+        },
+    },
+    "w02_quiet_endurance_strings": {
+        "label": "Nhẫn Nhịn & Hy Sinh Thầm Lặng (Cello & Dây Ấm)",
+        "search_queries": [
+            "emotional cello chamber strings warm acoustic",
+            "gentle melancholic cello piano duet instrumental",
+        ],
+        "keywords": ["세월", "인내", "침묵", "어머니", "아버지", "손길", "눈물", "마음", "기다림"],
+        "tracks": {
+            "bgm_warm_endurance_cello_02.mp3": {
+                "description": "Quiet Endurance Cello & Strings — Dignified family sacrifice & unspoken patience",
+                "keywords": ["세월", "인내", "어머니", "손길", "침묵"],
+            },
+        },
+    },
+    "w03_dignity_tension_cello": {
+        "label": "Va Chạm Phẩm Giá & Hiểu Lầm Gia Đình (Chamber Restraint)",
+        "search_queries": [
+            "reflective cello low strings dramatic restraint chamber",
+            "minimalist acoustic piano cello tension calm",
+        ],
+        "keywords": ["오해", "모욕", "갈등", "며느리", "아들", "시선", "차가운", "말", "상처"],
+        "tracks": {
+            "bgm_warm_dignity_chamber_03.mp3": {
+                "description": "Restrained Chamber Cello — Quiet interpersonal tension without harsh percussion",
+                "keywords": ["오해", "갈등", "시선", "상처", "침묵"],
+            },
+        },
+    },
+    "w04_craft_and_truth_reveal": {
+        "label": "Tay Nghề Thâm Niên & Sự Thật Hé Lộ (Acoustic Piano & Harp)",
+        "search_queries": [
+            "warm hopeful piano acoustic guitar chamber instrumental",
+            "gentle revelation solo piano strings warm",
+        ],
+        "keywords": ["장인", "진실", "편지", "통장", "증명", "수첩", "비밀", "드러나", "반전"],
+        "tracks": {
+            "bgm_warm_truth_reveal_04.mp3": {
+                "description": "Warm Acoustic Piano & Strings — Quiet dignity reversal & craft mastery revelation",
+                "keywords": ["장인", "진실", "증명", "편지", "반전"],
+            },
+        },
+    },
+    "w05_catharsis_warm_chamber": {
+        "label": "Thức Tỉnh Lương Tri & Hóa Giải Nhân Văn",
+        "search_queries": [
+            "heartfelt piano cello reconciliation warm soundtrack",
+            "tender emotional acoustic strings resolution",
+        ],
+        "keywords": ["고개", "사과", "후회", "용서", "깨달음", "품격", "위로", "따뜻한"],
+        "tracks": {
+            "bgm_warm_catharsis_duet_05.mp3": {
+                "description": "Warm Piano & Cello Catharsis — Restored human dignity & quiet moral awakening",
+                "keywords": ["위로", "품격", "후회", "용서", "따뜻한"],
+            },
+        },
+    },
+    "w06_goodnight_lullaby_closure": {
+        "label": "Dư Âm Đêm Khuya & Giấc Ngủ Bình Yên (4.0s Fade)",
+        "search_queries": [
+            "peaceful bedtime solo piano lullaby ambient warm",
+            "soft nocturnal acoustic piano sleep calm",
+        ],
+        "keywords": ["평안", "새벽", "여운", "마무리", "편안한 밤", "쉼", "등불"],
+        "tracks": {
+            "bgm_warm_goodnight_closure_06.mp3": {
+                "description": "Peaceful Bedtime Piano Nocturne — Warm closing resonance with 4.0s fade-out",
+                "keywords": ["평안", "여운", "마무리", "밤", "쉼"],
+            },
+        },
+    },
+}
+
 # Flattened view for backward-compatible lookups
 CONTEXTUAL_BGM_CATALOG: dict[str, dict[str, Any]] = {}
-for _mood_id, _pool in STORY_ARC_BGM_MOOD_POOLS.items():
-    for _fname, _tmeta in _pool["tracks"].items():
-        CONTEXTUAL_BGM_CATALOG[_fname] = {
-            "mood": _mood_id,
-            "mood_label": _pool["label"],
-            "description": _tmeta["description"],
-            "keywords": list(dict.fromkeys(list(_tmeta.get("keywords", [])) + list(_pool.get("keywords", [])[:6]))),
-            "commons_source": _tmeta.get("commons_source"),
+for _pool_group in (STORY_ARC_BGM_MOOD_POOLS, WARM_NOCTURNE_CHAMBER_BGM_POOLS):
+    for _mood_id, _pool in _pool_group.items():
+        for _fname, _tmeta in _pool["tracks"].items():
+            CONTEXTUAL_BGM_CATALOG[_fname] = {
+                "mood": _mood_id,
+                "mood_label": _pool["label"],
+                "description": _tmeta["description"],
+                "keywords": list(dict.fromkeys(list(_tmeta.get("keywords", [])) + list(_pool.get("keywords", [])[:6]))),
+                "commons_source": _tmeta.get("commons_source"),
             "local_seed_source": _tmeta.get("local_seed_source"),
         }
 
@@ -1087,6 +1175,74 @@ def _is_foreign_case_bgm_track(
     return False
 
 
+def _resolve_channel_bgm_policy(channel_profile_id: str) -> str:
+    cid = str(channel_profile_id or "").strip()
+    if not cid or cid == "default_channel":
+        return ""
+    try:
+        prof_path = Path(__file__).resolve().parent.parent / "data" / "channel_profiles.json"
+        if prof_path.is_file():
+            raw = json.loads(prof_path.read_text(encoding="utf-8"))
+            for p in raw.get("profiles") or []:
+                if isinstance(p, dict) and str(p.get("id") or "") == cid:
+                    ed_dna = p.get("editing_dna") if isinstance(p.get("editing_dna"), dict) else {}
+                    pol = str(ed_dna.get("bgm_genre_policy") or "").strip().lower()
+                    if pol:
+                        return pol
+                    if str(p.get("content_mode") or "").strip().lower() == "creative_audio_drama":
+                        return "warm_nocturne_chamber"
+    except Exception:
+        pass
+    return ""
+
+
+def _profile_enables_cold_open_cello_hook(channel_profile_id: str) -> bool:
+    cid = str(channel_profile_id or "").strip()
+    if not cid:
+        return False
+    try:
+        prof_path = Path(__file__).resolve().parent.parent / "data" / "channel_profiles.json"
+        if prof_path.is_file():
+            raw = json.loads(prof_path.read_text(encoding="utf-8"))
+            for p in raw.get("profiles") or []:
+                if isinstance(p, dict) and str(p.get("id") or "") == cid:
+                    ed_dna = p.get("editing_dna") if isinstance(p.get("editing_dna"), dict) else {}
+                    hc = ed_dna.get("cold_open_hook_choreography") if isinstance(ed_dna.get("cold_open_hook_choreography"), dict) else {}
+                    return bool(hc.get("enabled") is True and hc.get("bgm_segment0_cello_tension") is True)
+    except Exception:
+        pass
+    return False
+
+
+def infer_warm_nocturne_mood(narration_text: str, progress_ratio: float = 0.0, *, is_cold_open_hook: bool = False) -> str:
+    if is_cold_open_hook:
+        return "w03_dignity_tension_cello"
+    text = (narration_text or "").lower()
+    best_mood = "w01_warm_evening_piano"
+    best_score = -1
+    for mood_id, pool in WARM_NOCTURNE_CHAMBER_BGM_POOLS.items():
+        score = 0
+        for kw in pool.get("keywords", []):
+            if kw.lower() in text:
+                score += 3
+        if mood_id == "w01_warm_evening_piano" and progress_ratio < 0.16:
+            score += 2
+        elif mood_id == "w02_quiet_endurance_strings" and 0.12 <= progress_ratio <= 0.42:
+            score += 2
+        elif mood_id == "w03_dignity_tension_cello" and 0.30 <= progress_ratio <= 0.62:
+            score += 2
+        elif mood_id == "w04_craft_and_truth_reveal" and 0.52 <= progress_ratio <= 0.80:
+            score += 2
+        elif mood_id == "w05_catharsis_warm_chamber" and 0.74 <= progress_ratio <= 0.92:
+            score += 2
+        elif mood_id == "w06_goodnight_lullaby_closure" and progress_ratio > 0.88:
+            score += 4
+        if score > best_score:
+            best_score = score
+            best_mood = mood_id
+    return best_mood
+
+
 def build_story_arc_bgm_schedule(
     beats: list[dict[str, Any]],
     fps: int = 30,
@@ -1095,6 +1251,7 @@ def build_story_arc_bgm_schedule(
     target_segments: int = 10,
     auto_fetch_if_unfit: bool = True,
     topic_keywords: list[str] | None = None,
+    bgm_genre_policy: str = "",
 ) -> dict[str, Any]:
     """Build a dynamic 8-12 segment Story-Arc BGM schedule with:
     - Organic narrative-arc / Act-boundary weighted segment lengths (0% equal-frame division)
@@ -1109,6 +1266,10 @@ def build_story_arc_bgm_schedule(
     if not beats:
         return {"segments": [], "silence_drop_windows": []}
 
+    effective_bgm_policy = (bgm_genre_policy or _resolve_channel_bgm_policy(channel_profile_id)).strip().lower()
+    is_warm_nocturne = effective_bgm_policy == "warm_nocturne_chamber"
+    active_mood_pools = WARM_NOCTURNE_CHAMBER_BGM_POOLS if is_warm_nocturne else STORY_ARC_BGM_MOOD_POOLS
+
     total_beats = len(beats)
     last_beat_end_frame = int(
         beats[-1].get("endFrame")
@@ -1117,8 +1278,10 @@ def build_story_arc_bgm_schedule(
     )
     total_dur_sec = max(60.0, float(beats[-1].get("end_sec") or (last_beat_end_frame / max(1, fps))))
     total_frames = max(int(round(total_dur_sec * fps)), last_beat_end_frame, 900)
-    # Calculate ideal segment count (~2.5-3.0 minutes per segment, clamped between 6 and 12)
-    num_segments = max(6, min(12, target_segments or int(round(total_dur_sec / 165.0))))
+    max_seg_cap = 28 if total_dur_sec > 2400.0 else 12
+    computed_target = int(round(total_dur_sec / (195.0 if is_warm_nocturne else 165.0)))
+    effective_req_segments = computed_target if (total_dur_sec > 2400.0 and target_segments == 10) else (target_segments or computed_target)
+    num_segments = max(6, min(max_seg_cap, effective_req_segments))
 
     # Build organic narrative-arc weights (never equal-frame `total_frames / N` division)
     raw_weights = [
@@ -1126,8 +1289,20 @@ def build_story_arc_bgm_schedule(
         + (((i * 3 + len(job_id)) % 5) - 2) * 0.004
         for i in range(num_segments)
     ]
-    weight_sum = sum(raw_weights) or float(num_segments)
-    norm_weights = [w / weight_sum for w in raw_weights]
+    enable_seg0_cello_hook = bool(
+        is_warm_nocturne
+        and _profile_enables_cold_open_cello_hook(channel_profile_id)
+        and total_dur_sec >= 1200.0
+        and num_segments >= 8
+    )
+    if enable_seg0_cello_hook:
+        # Carve Segment 0 as a dedicated ~42s Cold-Open Suspense Cello Hook (0:00–0:45 before 제1장) ONLY when enabled by profile
+        hook_share = max(0.010, min(0.022, 42.0 / total_dur_sec))
+        rem_sum = sum(raw_weights[1:]) or 1.0
+        norm_weights = [hook_share] + [w * (1.0 - hook_share) / rem_sum for w in raw_weights[1:]]
+    else:
+        weight_sum = sum(raw_weights) or float(num_segments)
+        norm_weights = [w / weight_sum for w in raw_weights]
 
     # Map weights to beat index ranges and non-uniform frame spans
     beat_ranges: list[tuple[int, int]] = []
@@ -1180,13 +1355,18 @@ def build_story_arc_bgm_schedule(
         mid_ratio = ((b_start + b_end) / 2.0) / max(1, total_beats)
 
         # Determine dominant mood for this story segment
-        mood_id = infer_beat_story_mood(combined_text, progress_ratio=mid_ratio)
+        is_seg0_drama_hook = bool(enable_seg0_cello_hook and seg_idx == 0)
+        mood_id = (
+            infer_warm_nocturne_mood(combined_text, progress_ratio=mid_ratio, is_cold_open_hook=is_seg0_drama_hook)
+            if is_warm_nocturne
+            else infer_beat_story_mood(combined_text, progress_ratio=mid_ratio)
+        )
         # Ensure adjacent segments shift mood or perspective
-        if segments and segments[-1]["mood"] == mood_id and len(STORY_ARC_BGM_MOOD_POOLS[mood_id]["tracks"]) <= 2:
-            mood_keys = list(STORY_ARC_BGM_MOOD_POOLS.keys())
+        if segments and segments[-1]["mood"] == mood_id and len(active_mood_pools[mood_id]["tracks"]) <= 2:
+            mood_keys = list(active_mood_pools.keys())
             mood_id = mood_keys[(mood_keys.index(mood_id) + 1) % len(mood_keys)]
 
-        pool = STORY_ARC_BGM_MOOD_POOLS[mood_id]
+        pool = active_mood_pools[mood_id]
         available_tracks = [
             (fname, tmeta)
             for fname, tmeta in pool["tracks"].items()
@@ -1222,7 +1402,7 @@ def build_story_arc_bgm_schedule(
             fetched_rel = search_and_fetch_contextual_bgm(
                 mood=mood_id,
                 context_query=search_q,
-                target_filename=f"bgm_{mood_id[:2]}_{job_id[-4:]}_{seg_idx + 1}.mp3",
+                target_filename=f"bgm_{mood_id[:3]}_{job_id[-4:]}_{seg_idx + 1}.mp3",
             )
             if fetched_rel:
                 cand_name = Path(fetched_rel).name
@@ -1234,20 +1414,30 @@ def build_story_arc_bgm_schedule(
             _, chosen_fname, chosen_tmeta = scored_candidates[0]
             chosen_desc = chosen_tmeta.get("description", mood_id)
 
-        # Fallback to any unused track across all pools if still None (excluding foreign case slugs)
-        if not chosen_fname:
-            for fname, cmeta in CONTEXTUAL_BGM_CATALOG.items():
-                if (
-                    fname not in used_in_episode
-                    and (bgm_dir / fname).exists()
-                    and not _is_foreign_case_bgm_track(fname, job_id=job_id, topic_keywords=topic_keywords)
-                ):
-                    chosen_fname = fname
-                    chosen_desc = cmeta.get("description", "")
-                    break
+        if is_warm_nocturne:
+            # Never fall back to dark forensic crime drones on warm nocturne channels!
+            if not chosen_fname:
+                default_warm_tracks = list(pool["tracks"].items())
+                chosen_fname = f"bgm_warm_nocturne_{(seg_idx % 6) + 1:02d}.mp3" if not default_warm_tracks else default_warm_tracks[0][0]
+                if chosen_fname in used_in_episode:
+                    chosen_fname = f"bgm_warm_nocturne_seg_{seg_idx + 1:02d}.mp3"
+                chosen_desc = (default_warm_tracks[0][1].get("description") if default_warm_tracks else "") or pool["label"]
+        else:
+            # Fallback to any unused track across dark forensic pools if still None (excluding foreign case slugs)
+            if not chosen_fname:
+                for fname, cmeta in CONTEXTUAL_BGM_CATALOG.items():
+                    if (
+                        not str(cmeta.get("mood") or "").startswith("w0")
+                        and fname not in used_in_episode
+                        and (bgm_dir / fname).exists()
+                        and not _is_foreign_case_bgm_track(fname, job_id=job_id, topic_keywords=topic_keywords)
+                    ):
+                        chosen_fname = fname
+                        chosen_desc = cmeta.get("description", "")
+                        break
 
-        if not chosen_fname:
-            chosen_fname = "bgm_emerging_mysteries.mp3"
+            if not chosen_fname:
+                chosen_fname = "bgm_emerging_mysteries.mp3"
 
         used_in_episode.add(chosen_fname)
 
@@ -1268,9 +1458,10 @@ def build_story_arc_bgm_schedule(
                 "startFrame": start_frame,
                 "endFrame": max(start_frame + 90, end_frame),
                 "durationInFrames": max(90, end_frame - start_frame),
-                "crossfadeFrames": 90,  # 3.0s smooth crossfade
-                "baseVolume": 0.072,
-                "swellVolume": 0.128,
+                "crossfadeFrames": 120 if is_warm_nocturne else 90,
+                "baseVolume": 0.056 if is_warm_nocturne else 0.072,
+                "swellVolume": 0.098 if is_warm_nocturne else 0.128,
+                "bgmGenrePolicy": effective_bgm_policy or "forensic_noir",
                 "label": f"Seg {seg_idx + 1:02d} [{pool['label']}] · {chosen_desc}",
                 "start_beat_id": start_bid,
                 "end_beat_id": end_bid,
@@ -1280,27 +1471,42 @@ def build_story_arc_bgm_schedule(
             }
         )
 
-    # Identify 2-3 Dramatic Pre-Twist Drops (2.5-4.0s at -41dBFS / volume 0.015 analog room-tone floor)
-    twist_keywords = [
-        "경악",
-        "충격",
-        "일치",
-        "99.9",
-        "바로 옆 동네",
-        "1.5킬로미터",
-        "문을 열",
-        "새벽 6시",
-        "자백",
-        "단 하나의 DNA",
-        "사형",
-        "굴착기",
-        "4.5m",
-        "백골",
-        "유골",
-        "트랙 아래",
-        "진실",
-        "체포",
-    ]
+    # Identify 2-3 Dramatic Pre-Twist / Emotional Reflection Drops
+    twist_keywords = (
+        [
+            "진실",
+            "편지",
+            "통장",
+            "장인",
+            "고개를 숙",
+            "눈시울",
+            "비로소",
+            "사실은",
+            "그날 밤",
+            "품격",
+        ]
+        if is_warm_nocturne
+        else [
+            "경악",
+            "충격",
+            "일치",
+            "99.9",
+            "바로 옆 동네",
+            "1.5킬로미터",
+            "문을 열",
+            "새벽 6시",
+            "자백",
+            "단 하나의 DNA",
+            "사형",
+            "굴착기",
+            "4.5m",
+            "백골",
+            "유골",
+            "트랙 아래",
+            "진실",
+            "체포",
+        ]
+    )
     twist_candidates: list[tuple[int, int, str, str]] = []
     for idx, b in enumerate(beats):
         if idx < int(total_beats * 0.08) or idx > int(total_beats * 0.93):
@@ -1880,6 +2086,9 @@ def select_motion_bound_sfx_for_beat(
         or "vox/" in img_file.lower()
         or "vox_" in img_file.lower()
     )
+
+    if beat.get("zero_startle_sfx") is True or str(beat.get("bgm_genre_policy") or "").strip().lower() == "warm_nocturne_chamber":
+        return []
 
     if not is_vox_scene and not is_cinema_text:
         return []

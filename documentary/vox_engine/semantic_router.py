@@ -764,7 +764,7 @@ class VoxSemanticRouter:
                 selected_vox_indices.add(idx)
                 continue
 
-            if vtype == "cinema_text" or vroute == "cinema_text" or intent.startswith(("[CINEMA_TEXT", "FramelessCinemaTextBeat")):
+            if vtype == "cinema_text" or vroute == "cinema_text" or intent.startswith(("[CINEMA_TEXT", "FramelessCinemaTextBeat", "FinancialMotionTextBeat")):
                 continue
 
             if intent.startswith(("AUTHENTIC_CASE_ARCHIVAL_FOOTAGE_BACKBONE", "[REAL_FTG")) or src_prio in {"must_real", "footage_only"}:
@@ -854,6 +854,12 @@ _GEO_SATELLITE_MAP_NEEDED_RE = re.compile(
     r"(escape\s*route|escape\s*vector|fled\s*to|infiltrat|extradit|police\s*pursuit|dragnet|stakeout\s*route|"
     r"도주\s*경로|도주\s*루트|탈출\s*경로|잠입|도피\s*행각|압송|호송|추적망|포위망|수색망.*확대|기동대.*출동|건너가|넘어가|숨어들었|"
     r"검문소.*통과|검문소.*뚫|국도를\s*따라|산악.*도주|산길로\s*도주|이동\s*경로|"
+    r"반경\s*[\d이삼사오육칠팔구십]+\s*(?:킬로미터|km|미터|m)\b|"
+    r"(?:동|서|남|북|동남|동북|서남|서북)쪽으로.*?(?:도로|길|킬로미터|km|향해|이어)|"
+    r"(?:비포장도로|시골길|국도|고속도로|도로가?).*?(?:이어|달리|향해|뻗어)|"
+    r"(?:이십|십|삼십|사십|\d+)\s*(?:킬로미터|km)\s*(?:떨어진|시골길|거리|이어|달리)|"
+    r"(?:무장\s*경력|기동대|수색대|형사대대|경찰).*?(?:급파|출동|투입|배치)|"
+    r"실종\s*지도를?\s*펼쳐|"
     r"đường\s*trốn|lộ\s*trình\s*đào\s*tẩu|lẩn\s*trốn\s*từ|xâm\s*nhập\s*vào|áp\s*giải|truy\s*kích|khép\s*vòng\s*vây|mở\s*rộng\s*truy\s*xét)",
     re.IGNORECASE,
 )
@@ -1260,6 +1266,7 @@ def _infer_sentence_specific_vox_mechanism(
     visual_description: str = "",
     purpose: str = "",
     prev_vox_spec: dict[str, Any] | None = None,
+    framing_motion_intent: str = "",
 ) -> dict[str, Any]:
     """Derives a 100% independent per-sentence VOX design specification (`MỖI CẢNH LÀ ĐỘC LẬP. MỖI VIDEO LÀ ĐỘC LẬP`):
     - 0% Camera Zoom-In / Zoom-Out (`camera_zoom_policy: "FORBIDDEN_0_PERCENT_ZOOM_IN_OR_ZOOM_OUT"`).
@@ -1294,8 +1301,15 @@ def _infer_sentence_specific_vox_mechanism(
         else "No `<RedCircle>` needed for this sentence (use `<Highlight>` / `<Underline>` / `<TwistedRedYarn>` without unnecessary circles)"
     )
 
-    if _is_voice_movement_or_pursuit_sentence(text):
-        is_police_route = bool(re.search(r"(압송|호송|추적|포위|출동|잠복|수색망|공안|형사|경찰|검거)", text))
+    planned_geo_intent = (
+        "GeoJson3DMapStage" in str(framing_motion_intent or "")
+        or "parabolic_3d_gis_flyto" in str(purpose or "")
+        or "3d_gis" in str(purpose or "").lower()
+    )
+    if _is_voice_movement_or_pursuit_sentence(text) or (
+        planned_geo_intent and not _GEO_NON_MOVEMENT_EXCLUDE_RE.search(text)
+    ):
+        is_police_route = bool(re.search(r"(압송|호송|추적|포위|출동|잠복|수색망|공안|형사|경찰|검거|급파|파출소|실종\s*지도)", text))
         map_actor = "police_pursuit_or_extradition" if is_police_route else "suspect_escape_or_infiltration"
         grammar = "BESPOKE_3D_SATELLITE_ROUTE_MAP"
         verb = f"GEO_ROUTE_TRACE_{bid_tag}"
@@ -1303,11 +1317,13 @@ def _infer_sentence_specific_vox_mechanism(
         entry_reveal = "constant_altitude_route_trace -> pin_drop_lock -> sat_loupe_cutout_pop"
         stage_component = "GeoJson3DMapStage"
         layout_variant = map_actor
+        coord_pairs = re.findall(r"\d{1,3}\.\d+°[NS],\s*\d{1,3}\.\d+°[EW]", str(framing_motion_intent or ""))
+        coord_hint = f" [Locked WGS84 anchors: {' -> '.join(coord_pairs)}]" if coord_pairs else ""
         geom = (
             f"[<GeoJson3DMapStage> · {map_actor} · 0% CAMERA ZOOM-IN/ZOOM-OUT (`startZoom === endZoom`)] "
             f"100% voice-matched Esri satellite map (Web Mercator 0.00px lock + authentic road/rail polyline >=12 vertices, 0% synthetic sine curve): "
             f"t1 locks origin pin for '{c1}', t2 traces exact real-world route corridor for '{c2}', "
-            f"and t3 pops in destination cutout & 4x `satLoupe` for '{c3}'."
+            f"and t3 pops in destination cutout & 4x `satLoupe` for '{c3}'.{coord_hint}"
         )
         prop_desc = f"High-resolution Esri satellite plate & authentic road/rail GeoJSON route matching '{c1} -> {c3}' for {beat_id}."
         ftg_role = f"Verified geographic route & landmark plate for `{beat_id}` ({map_actor})"
@@ -1427,14 +1443,31 @@ def build_bespoke_vox_design_prompt(
         visual_description=str(beat.get("visual_description") or ""),
         purpose=str(beat.get("purpose") or ""),
         prev_vox_spec=prev_vox_spec,
+        framing_motion_intent=str(beat.get("framing_motion_intent") or ""),
     )
 
     clip_id = f"S_F{beat_index + 1:03d}"
     footage_path = str(beat.get("footage_path") or f"footage/{clip_id}.mp4").strip()
     queries = list(beat.get("footage_search_queries") or [narration[:60]])
-    micro_labels = [t for t in (metrics[:2] + focus_tags[:2]) if t][:3]
+    existing_spec = beat.get("vox_blueprint_spec") if isinstance(beat.get("vox_blueprint_spec"), dict) else {}
+    raw_labels = list(existing_spec.get("micro_labels_ko") or []) or (metrics[:2] + focus_tags[:2])
+    micro_labels: list[str] = []
+    for lbl in raw_labels:
+        clean_lbl = re.sub(r"\s+", " ", str(lbl or "")).strip()
+        if clean_lbl and clean_lbl not in micro_labels:
+            micro_labels.append(clean_lbl)
+        if len(micro_labels) >= 3:
+            break
+    if len(micro_labels) < 2:
+        for fallback_clause in (c1, c2, c3):
+            words_fb = [w for w in re.split(r"\s+", fallback_clause.strip()) if w]
+            cand_fb = " ".join(words_fb[:3])[:18].strip()
+            if cand_fb and cand_fb not in micro_labels:
+                micro_labels.append(cand_fb)
+            if len(micro_labels) >= 2:
+                break
     if not micro_labels:
-        micro_labels = [c1[:14], c2[:14]]
+        micro_labels = [c1[:14]]
 
     vox_scene_signature = f"VOX_BROADCAST_{beat_id.replace('-', '_')}_{mech['dominant_verb']}"
     ai_cutout_prop_prompt = (
@@ -1454,7 +1487,6 @@ def build_bespoke_vox_design_prompt(
         f"5. ZERO-TRUNCATION LABELS (KR): {' | '.join(micro_labels)} (0% text ellipsis, 0px bounding-box overlap, y <= 785px)."
     )
 
-    existing_spec = beat.get("vox_blueprint_spec") if isinstance(beat.get("vox_blueprint_spec"), dict) else {}
     vox_blueprint_spec: dict[str, Any] = {
         **existing_spec,
         "beat_id": beat_id,
@@ -1488,7 +1520,7 @@ def build_bespoke_vox_design_prompt(
             {"phase": "t2", "window": list(w1), "clause_ko": c2, "role": "dominant_physical_verb"},
             {"phase": "t3", "window": list(w2), "clause_ko": c3, "role": "visible_consequence_reticle_lock"},
         ],
-        "micro_labels_ko": existing_spec.get("micro_labels_ko") or micro_labels,
+        "micro_labels_ko": micro_labels,
         "max_korean_words_cap": 15,
         "min_geometry_screen_share": 0.80,
     }

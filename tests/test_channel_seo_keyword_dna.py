@@ -58,8 +58,8 @@ def test_canonical_channel_profiles_contain_seo_dna():
             "rule": "smart_seo_flexible",
         },
         "channel-kr-financial-fugitive-director-v2": {
-            "primary": "중국 실화 사건",
-            "meaning_vi": "Vụ Án Có Thật ở Trung Quốc",
+            "primary": "중국 희대의 사기 실화",
+            "meaning_vi": "Siêu Lừa Đảo Có Thật ở Trung Quốc",
             "rule": "smart_seo_flexible",
         },
         "channel-1e24de3ab5": {

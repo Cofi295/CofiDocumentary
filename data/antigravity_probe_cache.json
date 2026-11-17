@@ -1,5 +1,5 @@
 {
-  "cached_at_epoch": 1794575901.0291579,
+  "cached_at_epoch": 1794890905.3620403,
   "executable": "B:\\ALL_TOOLS\\agy\\bin\\agy_real.exe",
   "status": {
     "ready": true,
@@ -79,6 +79,6 @@
         "label": "GPT-OSS 120B (Medium)"
       }
     ],
-    "selected_model": "gemini-4-carbon-high"
+    "selected_model": "gemini-4-hydrogen-high"
   }
 }

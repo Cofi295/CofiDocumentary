@@ -312,14 +312,20 @@ def test_all_8_production_profiles_have_unique_1_of_1_voices_and_rhythm_dna() ->
     profiles = profile_service.list_profiles()
     assert len(profiles) >= 8
 
-    voice_ids: set[str] = set()
+    voice_owner_by_id: dict[str, str] = {}
     archetypes_seen: set[str] = set()
     for p in profiles:
+        pid = str(p.get("id") or "").strip()
         vid = str(p.get("voice_id") or "").strip()
-        assert vid, f"Profile {p.get('id')} is missing voice_id!"
+        assert vid, f"Profile {pid} is missing voice_id!"
         assert vid == str(p.get("default_voice_id") or "").strip()
-        assert vid not in voice_ids, f"Duplicate voice_id {vid} across profiles!"
-        voice_ids.add(vid)
+        if vid in voice_owner_by_id:
+            prev_pid = voice_owner_by_id[vid]
+            assert prev_pid in profile_service._sibling_profile_ids(pid), (
+                f"Duplicate voice_id {vid} across unrelated profiles {prev_pid} and {pid}!"
+            )
+        else:
+            voice_owner_by_id[vid] = pid
 
         sig = p.get("voice_signature") or {}
         rhythm = p.get("rhythm_dna") or {}
@@ -328,7 +334,10 @@ def test_all_8_production_profiles_have_unique_1_of_1_voices_and_rhythm_dna() ->
         archetypes_seen.add(str(rhythm.get("archetype_id")))
 
         if str(p.get("default_language") or p.get("language") or "").startswith("ko"):
-            assert sig.get("base_voice_id") == "09c70cc1-cc86-4905-b65b-3967209c3175"
+            if str(sig.get("source_mode") or "").strip().lower() == "user_sample":
+                assert sig.get("base_voice_id") in {vid, "09c70cc1-cc86-4905-b65b-3967209c3175"}
+            else:
+                assert sig.get("base_voice_id") == "09c70cc1-cc86-4905-b65b-3967209c3175"
 
     # All 8 distinct archetypes are represented across the 8 profiles!
     assert len(archetypes_seen) >= 8

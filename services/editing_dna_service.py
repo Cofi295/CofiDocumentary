@@ -278,7 +278,7 @@ BUILTIN_EDITING_PRESETS: dict[str, dict[str, Any]] = {
         },
         "editing_archetypes": [
             "AUTHENTIC_CASE_ARCHIVAL_FOOTAGE_BACKBONE: >=50% (~50%–56% số beat, min_footage_floor = 0.50, semantic_verified_footage_routing: chỉ dùng tư liệu thật khi khớp ngữ nghĩa 100% với voice_text, 0% footage đệm lạc đề; beat thiếu tư liệu khớp nghĩa tự động chuyển sang VOX tối đa 35% hoặc AI_4D tối đa 28%) tư liệu thật của chính vụ án, công an điều tra, pháp y, tòa án & đúng địa danh lịch sử; bắt buộc chạy --probe-storyboard để nhìn bằng mắt thật (read_file) trên bảng STORYBOARD_<id>.jpg + lưới tọa độ 100px (GRID_<id>.jpg), chọn đúng giây start_offset_sec khớp câu thoại, căn chỉnh crop=W:H:X:Y (hoặc focus_top / focus_bottom / focus_left / focus_right / forensic_v2_clean) focus đúng trọng tâm chủ thể & cắt sạch 4 cạnh, ghi rõ --observed-content (eye_verified=true, 0% cắt mù hàng loạt blind_auto_offset, 0% copy clip từ dự án khác), bỏ qua >=28s đầu & >=22s cuối video gốc và kiểm duyệt mắt 3 frame (15%-50%-85% trên VERIFY_FTG_CLIPS_*.jpg) đảm bảo 0% Intro/Outro, 0% người dẫn chương trình/MC trường quay, 0% tên kênh/logo/watermark, 0% phụ đề ngoại ngữ và 0% mã QR (max_uses=1, dHash>=14, 3.0–5.0s/cut, Part A + Part B cho beat >= 6.2s)",
-            "TACTILE_VOX_EDITORIAL_DESK_AND_3D_GIS_VOX: 18%–24% (tối đa 28%, hoặc lên tới 35% khi semantic_verified_footage_routing động chuyển beat thiếu footage khớp nghĩa sang VOX, ~38–46 cảnh/tập 27p) Thiết kế VOX Chuẩn Báo Chí Điều Tra (Voice-to-Vox Prompt Compiler × Fixed-Style Tactile Editorial Desk src/vox-studio/vox-editorial-desk/index.tsx + 10 Editorial Desk Archetypes + Bản Đồ Vệ Tinh 3D <GeoJson3DMapStage>): (1) Quy trình 3 bước cho từng câu voice (t1 -> t2 -> t3): phân tích nghĩa câu nói (voice_meaning) -> xác định chi tiết vật lý cần minh họa bổ trợ (illustration_content) -> sinh vox_prompt độc bản 1-to-1; (2) Khóa cố định phong cách bàn biên tập cắt dán thủ công (FIXED_VOX_STYLE: mặt bàn giấy biên tập ấm #E4DDCF + hạt giấy tĩnh #voxGrain opacity: 0.22 + thẻ đen tương phản <BlackCard inset={38}> #1B1B1A cho cú ngoặt kịch tính + 3 màu trung tính #EEEDED/#1B1B1A/#171716 + 2 màu nhấn #B8433F đỏ manh mối & #DACF08 vàng dạ quang multiply + camera 30fps <World cam={camAt(...)}> với dịch chuyển camera thực tế non-static camera delta + đạo cụ cắt dán/nét vẽ tay 12fps step12/p12: <SlideIn>, <VoxVideoPaper>, <VoxPhotoPaper>, <DieCutSticker> tách nền RGBA thật sự, <TornClipping>, <IndexCard>, <Stamp>, <Label>, <Highlight>, <RedLine>, <RedCircle>, <Underline>, <DimensionBracket>, <OpticalLoupe>, <Tape> luân phiên 10 Editorial Desk Archetypes; 0% đóng khung dashboard hộp chữ cứng nhắc như BroadcastCleanSpatialDiagram hay STEP 01/02); (3) Định vị tọa độ chính xác trên lưới 100px (read_file) đảm bảo mọi vòng khoanh đỏ, mũi tên, thước đo và kính lúp khóa trúng 100% chi tiết vật lý mục tiêu (0px lệch, giữ 30%–40% khoảng trống thở trong [60..1860, 40..820]); (4) Bản đồ vệ tinh 3D Quỹ đạo Parabol FlyTo (<GeoJson3DMapStage> khóa Web Mercator 0.00px + đường thực OSRM/OSM >= 12 đỉnh + bóng đổ 3D tuyến đường + kính lúp vệ tinh 4x + mảnh cắt dán tư liệu thật bật lên tại điểm mốc) cho các câu địa lý/lộ trình.",
+            "TACTILE_VOX_EDITORIAL_DESK_AND_3D_GIS_VOX: 18%–24% (tối đa 28%, hoặc lên tới 35% khi semantic_verified_footage_routing động chuyển beat thiếu footage khớp nghĩa sang VOX, ~38–46 cảnh/tập 27p) Thiết kế VOX Chuẩn Báo Chí Điều Tra (Voice-to-Vox Prompt Compiler × Fixed-Style Tactile Editorial Desk src/vox-studio/vox-editorial-desk/index.tsx + 10 Editorial Desk Archetypes + Bản Đồ Vệ Tinh 3D <GeoJson3DMapStage>): (1) Quy trình 4 bước cho từng câu voice: đọc hiểu câu nói (voice_meaning & illustration_content) -> vẽ vật chứng bằng Google Flow & tách nền RGBA -> đặt Video/Ảnh tư liệu thật ở trung tâm kèm vật chứng cắt dán xung quanh -> tùy biến chuyển động xuất hiện & cách nhấn mạnh theo bối cảnh câu nói; (2) Khóa cố định phong cách bàn biên tập cắt dán thủ công (FIXED_VOX_STYLE: mặt bàn giấy biên tập ấm #E4DDCF + hạt giấy tĩnh #voxGrain opacity: 0.22 + thẻ đen tương phản <BlackCard inset={38}> #1B1B1A cho cú ngoặt kịch tính + 3 màu trung tính #EEEDED/#1B1B1A/#171716 + 2 màu nhấn #B8433F đỏ manh mối & #DACF08 vàng dạ quang multiply + góc máy bàn khóa tĩnh z = 1.0, transform: 'none', 0% zoom-in/zoom-out + đạo cụ cắt dán/nét vẽ tay 12fps step12/p12: <SlideIn>, <VoxVideoPaper>, <VoxPhotoPaper>, <DieCutSticker> tách nền RGBA thật sự, <TornClipping>, <IndexCard>, <Stamp>, <Label>, <Highlight>, <RedLine>, <RedCircle>, <Underline>, <DimensionBracket>, <OpticalLoupe>, <Tape> luân phiên 10 Editorial Desk Archetypes; 0% đóng khung dashboard hộp chữ cứng nhắc như BroadcastCleanSpatialDiagram hay STEP 01/02); (3) Định vị tọa độ chính xác trên lưới 100px (read_file) đảm bảo mọi vòng khoanh đỏ, mũi tên, thước đo và kính lúp khóa trúng 100% chi tiết vật lý mục tiêu (0px lệch, giữ khoảng trống cân đối trong [60..1860, 40..820]); (4) Bản đồ vệ tinh 3D Quỹ đạo Parabol FlyTo (<GeoJson3DMapStage> khóa Web Mercator 0.00px + đường thực OSRM/OSM >= 12 đỉnh + bóng đổ 3D tuyến đường + kính lúp vệ tinh 4x + mảnh cắt dán tư liệu thật bật lên tại điểm mốc) cho đúng câu lộ trình di chuyển.",
             "NATURAL_EDITORIAL_CINEMA_TEXT_BEAT: 8%–12% (tối đa 16%, ~18–24 beat/tập 27p) CofiRemotion/src/components/FramelessCinemaTextBeat.tsx Typography biên tập viên tự nhiên (editorial_punch_statement, editorial_metric_monolith, editorial_rhetorical_question) trên nền ảnh tư liệu thật làm tối dịu ở câu hỏi nghịch lý, con số chấn động hoặc điểm gãy chuyển Hồi (không đặt 2 beat liền kề, tự động ẩn <SubtitleOverlay> bên dưới)",
             "CLOSED_ROOM_PROFILE_AI_RECONSTRUCTION: 12%–18% (tối đa 22%, hoặc lên tới 28% khi semantic_verified_footage_routing) Ảnh AI dự phòng 1-to-1 ({bid}_ai_keyframe.jpg, max_uses=1) chỉ dùng cho hành vi/tâm lý góc kín không có máy quay thật kèm nhãn minh bạch không khung '재연 · 이해를 돕기 위한 이미지'",
         ],
@@ -319,7 +319,7 @@ BUILTIN_EDITING_PRESETS: dict[str, dict[str, Any]] = {
         },
         "editorial_rules": [
             "Curate >= 50% (~50%–56%, min_footage_floor = 0.50) authentic case archival footage when 100% semantically matched to voice_text under semantic_verified_footage_routing (0% filler/mismatched footage; any beat without 100% semantically matching real footage dynamically routes to VOX up to 35% or AI_4D up to 28%), probed via --probe-storyboard (STORYBOARD_*.jpg + 100px GRID_*.jpg), focal-cropped onto the visual subject (crop=W:H:X:Y / focus_top/bottom/left/right) with --observed-content (eye_verified = true, 0% blind_auto_offset, 0% cross-project clip copy) and verified on 15%-50%-85% contact sheets so ZERO third-party intros, studio hosts/anchors, channel logos/watermarks, burned-in foreign subtitles/text, QR codes, or unrelated B-roll appear",
-            "Choreograph 18%–24% TACTILE_VOX_EDITORIAL_DESK_AND_3D_GIS_VOX scenes (src/vox-studio/vox-editorial-desk/index.tsx, warm editorial paper desk #E4DDCF + #voxGrain opacity: 0.22 + <BlackCard inset={38}> #1B1B1A + 3 neutrals #EEEDED/#1B1B1A/#171716 + 2 accents #B8433F & #DACF08 + 30fps <World cam={camAt(...)}> with non-static camera delta + 12fps step12 paper/ink props + 10 Editorial Desk Archetypes + <GeoJson3DMapStage>) tailored 1-to-1 to each spoken sentence and verified on the 100px grid via read_file.",
+            "Choreograph 18%–24% TACTILE_VOX_EDITORIAL_DESK_AND_3D_GIS_VOX scenes (src/vox-studio/vox-editorial-desk/index.tsx, warm editorial paper desk #E4DDCF + #voxGrain opacity: 0.22 + <BlackCard inset={38}> #1B1B1A + 3 neutrals #EEEDED/#1B1B1A/#171716 + 2 accents #B8433F & #DACF08 + locked desk camera z = 1.0, transform: 'none', 0% zoom-in/zoom-out + 12fps step12 paper/ink props + 10 Editorial Desk Archetypes + <GeoJson3DMapStage>) tailored 1-to-1 to each spoken sentence and verified on the 100px grid via read_file.",
             "Deploy dark FramelessCinemaTextBeat.tsx (~8%–12%) at climax turning points and preserve 100% closing narration + 3.8s BGM fade-out",
         ],
     },
@@ -363,7 +363,7 @@ BUILTIN_EDITING_PRESETS: dict[str, dict[str, Any]] = {
         },
         "editing_archetypes": [
             "CLEAN_CASE_FOOTAGE_BACKBONE (~50%–56%, min_footage_floor = 0.50, semantic_verified_footage_routing): Tư liệu thật của vụ án & bối cảnh cùng quốc gia sạch 3-frame khi khớp ngữ nghĩa 100% với voice_text (0% footage đệm lạc đề; beat thiếu tư liệu khớp nghĩa tự động chuyển sang VOX tối đa 35% hoặc AI_4D tối đa 28%, 12%-50%-85%, 3.0–4.8s/cut, max_uses=1, 0% logo/phụ đề ngoại ngữ/MC)",
-            "TACTILE_VOX_EDITORIAL_DESK_AND_3D_GIS_VOX (~18%–24%, tối đa 28% hoặc 35% khi semantic_verified_footage_routing): Bàn Biên Tập Cắt Dán Chuẩn Vox (src/vox-studio/vox-editorial-desk/index.tsx: nền bàn giấy ấm #E4DDCF + #voxGrain opacity: 0.22 + <BlackCard inset={38}> #1B1B1A + 3 màu trung tính #EEEDED/#1B1B1A/#171716 + 2 màu nhấn #B8433F & #DACF08 + camera 30fps <World cam={camAt(...)}> non-static camera delta + đạo cụ cắt dán/nét vẽ 12fps step12 + 10 Editorial Desk Archetypes + <GeoJson3DMapStage> vùng an toàn [60..1860, 40..820])",
+            "TACTILE_VOX_EDITORIAL_DESK_AND_3D_GIS_VOX (~18%–24%, tối đa 28% hoặc 35% khi semantic_verified_footage_routing): Bàn Biên Tập Cắt Dán Chuẩn Vox (src/vox-studio/vox-editorial-desk/index.tsx: nền bàn giấy ấm #E4DDCF + #voxGrain opacity: 0.22 + <BlackCard inset={38}> #1B1B1A + 3 màu trung tính #EEEDED/#1B1B1A/#171716 + 2 màu nhấn #B8433F & #DACF08 + góc máy bàn khóa tĩnh z = 1.0, transform: 'none', 0% zoom-in/zoom-out + đạo cụ cắt dán/nét vẽ 12fps step12 + 10 Editorial Desk Archetypes + <GeoJson3DMapStage> vùng an toàn [60..1860, 40..820])",
             "FRAMELESS_CINEMA_TEXT_BEAT (~8%–12%): Chữ điện ảnh tối không khung ở câu hỏi nghịch lý & điểm chuyển Hồi (0 đặt 2 beat sát nhau, tự ẩn SubtitleOverlay)",
             "CLOSED_ROOM_4D_FACELESS_AI (~12%–18%, tối đa 28% khi semantic_verified_footage_routing): Ảnh AI 4D Faceless Forensic ({bid}_ai_keyframe.jpg, max_uses=1) cho hành vi góc kín kèm nhãn '재연 · 이해를 돕기 위한 이미지'",
             "BROADCAST_SUBTITLE_AND_SOUND_DIRECTOR: Phụ đề 52px Pretendard ExtraBold không đóng hộp (#FDE047 highlight); 8-Mood Story-Arc BGM (-18 LUFS, nền -41dBFS khi hạ nhạc trước twist) + Motion-Bound SFX; câu kết trọn vẹn + 3.8s BGM fade-out",
@@ -386,7 +386,7 @@ BUILTIN_EDITING_PRESETS: dict[str, dict[str, Any]] = {
             "subtitle_safe_zone_max_y": 835,
         },
         "color_grade": {
-            "tone_preset": "warm_newsprint_investigative_noir",
+            "tone_preset": "cold_forensic_noir",
             "lut_name": "newsroom_contrast_clean",
             "vignette_opacity": 0.65,
             "film_grain": 0.06,
@@ -408,7 +408,7 @@ BUILTIN_EDITING_PRESETS: dict[str, dict[str, Any]] = {
         "editorial_rules": [
             "All crime depictions must strictly follow After-the-Storm forensic framing (100% YouTube Green Monetization, zero graphic gore)",
             "Latest Voice Sync Law: Verify mtime, duration, and sha256 of newest narration.wav + voice_manifest.json, sync to public/jobs/<job_id>/audio/narration.wav, rebuild subtitles.srt + clauseWindows, and clear stale .m4a/chunk caches before editing or exporting",
-            "Choreograph all Vox scenes via VOX_COMPOSABLE_LEGO_GRAMMAR_DIRECTOR_V13: loose tactile dossier props × 18 Semantic Visual Verbs (@voxVerb) × 8 Free-Space Camera Topologies (@voxCamera) synced to Whisper words[] (0 verb repeats in 5 scenes, 0 camera repeats in 3 scenes, <= 3 full-page wrappers, y <= 835px)",
+            "Choreograph all Vox desk scenes on src/vox-studio/vox-editorial-desk/index.tsx with locked camera z = 1.0 (transform: 'none', 0% zoom-in/zoom-out), Flow-generated RGBA evidence cutouts + authentic center media, 12fps step12 staggered entry motions synced to Whisper words[] (y <= 835px), and 3D satellite flights via <GeoJson3DMapStage> on movement beats",
             "REMOTION_MASTER_EDITOR_ROLE: Curate ~55%-60% 3-frame verified clean case & contextual footage (3.0-4.8s/cut, max_uses=1, 0% logos/foreign subs/TV anchors) and reserve 1-to-1 AI keyframes (10%-15%) strictly for closed-room moments with frameless '재연 · 이해를 돕기 위한 이미지' disclosure",
             "BROADCAST_SUBTITLE_AND_SOUND_DIRECTOR: 52px frameless Pretendard ExtraBold subtitles, 8-Mood Story-Arc BGM (-18 LUFS, 3s crossfades, -41dBFS pre-twist floor), 100% motion-bound SFX on Vox/Satellite Maps/Chapter transitions only, and 100% complete closing narration + 3.8s outro BGM fade-out",
         ],
@@ -629,6 +629,85 @@ BUILTIN_EDITING_PRESETS: dict[str, dict[str, Any]] = {
             "BROADCAST_SUBTITLE_AND_SOUND_DIRECTOR: 52px frameless Pretendard ExtraBold subtitles, 8-Mood Story-Arc BGM (-18 LUFS, 3s crossfades, -41dBFS room-tone floor on pre-twist drops, active fetch via search_and_fetch_contextual_bgm), 100% motion-bound SFX, and intact closing narration + 3.8s outro fade-out",
         ],
     },
+    "kr_goodnight_cinema_drama": {
+        "preset_id": "kr_goodnight_cinema_drama",
+        "name": "K-Audio Drama Bedtime 35mm Character Cinema (80% AI + 15% Atmospheric B-Roll + 5% Chapter Props)",
+        "version": 1,
+        "content_mode": "creative_audio_drama",
+        "visual_priority_mode": "ai_cinema_character_drama",
+        "vox_enabled": False,
+        "vox_desk_enabled": False,
+        "vox_satellite_enabled": False,
+        "financial_vox_enabled": False,
+        "footage_mode": "atmospheric_broll",
+        "character_reference_mode": "self_generated_flow_master_sheet_per_episode",
+        "bgm_genre_policy": "warm_nocturne_chamber",
+        "pacing": {
+            "target_beat_duration_sec": 6.2,
+            "typical_pacing_sec": 6.2,
+            "shot_range_sec": [4.5, 6.5],
+            "average_beat_duration_sec": 6.0,
+            "max_routine_shot_sec": 6.5,
+            "pacing_curve": "warm_bedtime_dual_reversal_arc",
+            "pacing_wpm": 116.0,
+        },
+        "visual_mix": {
+            "footage": 0.15,
+            "ai": 0.80,
+            "motion": 0.05,
+            "footage_ratio": 0.15,
+            "ai_visual_ratio": 0.80,
+            "motion_overlay_ratio": 0.05,
+            "preferred_routing": "hybrid",
+        },
+        "editing_archetypes": [
+            "kdrama_character_cinema_30fps",
+            "atmospheric_broll_4k",
+            "warm_literary_chapter_curtain",
+        ],
+        "subtitle_style": {
+            "font_family": "Pretendard ExtraBold, Noto Serif KR, sans-serif",
+            "font_size": 64,
+            "font_size_px": 64,
+            "color": "#FFFBEB",
+            "base_color": "#FFFBEB",
+            "highlight_color": "#FCD34D",
+            "stroke_color": "rgba(12, 10, 9, 0.92)",
+            "stroke_width": 5.0,
+            "stroke_width_px": 5.0,
+            "background": "transparent",
+            "frameless": True,
+            "clause_max_chars": 16,
+            "position": "bottom_center",
+            "subtitle_safe_zone_max_y": 845,
+        },
+        "color_grade": {
+            "tone_preset": "warm_tungsten_amber_bedtime_35mm",
+            "lut_name": "kdrama_warm_nocturne_low_glare",
+            "max_highlight_luma": 215,
+            "vignette_opacity": 0.42,
+        },
+        "audio_rules": {
+            "bgm_volume_db": -22.5,
+            "ducking_db": -14.0,
+            "music_ducking_db": -14.0,
+            "target_lufs": -16.0,
+            "sfx_chapter_hit": False,
+            "sfx_hit_on_chapter": False,
+            "zero_startle_sfx": True,
+            "telemetry_beeps": False,
+            "sfx_motion_bound_vox_map_only": True,
+            "outro_tail_hold_sec": 4.0,
+            "outro_bgm_fade_out_sec": 4.0,
+            "zero_closing_narration_cutoff": True,
+            "tension_drone_under_interrogation": False,
+        },
+        "editorial_rules": [
+            "PRIORITY #1 K-DRAMA 35MM CHARACTER CINEMA (80%): Generate per-episode Flow Character Reference Sheets first (media/character_sheet/) to lock character faces, ages (50-65), and wardrobes; render gentle 30fps push-in/pull-out/rack-focus cinema shots capped at max_highlight_luma <= 215 for bedtime eye comfort",
+            "LIGHTWEIGHT CLEAN ATMOSPHERIC B-ROLL (15%) & LITERARY CHAPTER CURTAINS (5%): Intercut clean 4K rain/hanok/workshop/tea/evening-alley B-roll (0% human faces, 0% news anchors, 0% crime footage) and 6 warm literary chapter curtains — 0% VOX crime desk, 0% 3D pursuit maps",
+            "WARM NOCTURNE SOUND & SENIOR SUBTITLES: 64px warm ivory (#FFFBEB) & amber (#FCD34D) frameless subtitles, 18-26 non-repeating Felt Piano / Cello / Chamber Strings BGM segments (-16 LUFS, 3.5s crossfades, 0% startle/gavel SFX), 0% spoken CTA, and 4.0s sacred outro fade-out",
+        ],
+    },
 }
 
 
@@ -771,8 +850,22 @@ class EditingDnaService:
             "vignette_opacity": 0.78,
         }
 
-        # Select closest preset ID
-        if ai_ratio >= 0.65:
+        # Select closest preset ID (preserve non-crime drama/devotional presets before forensic fallback)
+        existing_ed = job_meta.get("editing_dna") if isinstance(job_meta.get("editing_dna"), dict) else {}
+        existing_preset = str(existing_ed.get("preset_id") or "").strip()
+        job_content_mode = str(
+            job_meta.get("content_mode")
+            or ((job_meta.get("channel_profile_snapshot") or {}).get("content_mode") if isinstance(job_meta.get("channel_profile_snapshot"), dict) else "")
+            or existing_ed.get("content_mode")
+            or ""
+        ).strip().lower()
+        if existing_preset == "kr_goodnight_cinema_drama" or job_content_mode == "creative_audio_drama":
+            preset_id = "kr_goodnight_cinema_drama"
+            name = "K-Audio Drama Bedtime 35mm Character Cinema"
+        elif existing_preset in {"sacred_devotional", "grace_letter"} or job_content_mode == "devotional_essay":
+            preset_id = existing_preset or "sacred_devotional"
+            name = "Sacred Devotional Contemplative Sanctuary"
+        elif ai_ratio >= 0.65:
             preset_id = "forensic_noir"
             name = "Forensic Noir Full-AI True Crime"
         elif footage_ratio >= 0.55:

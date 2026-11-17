@@ -2491,6 +2491,15 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
         except RuntimeError as exc:
             raise HTTPException(status_code=409, detail=str(exc)) from exc
 
+    @api.post("/api/jobs/{job_id}/stop")
+    def stop_job(job_id: str):
+        try:
+            return service.stop_job(job_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Không tìm thấy job") from exc
+        except (ValueError, RuntimeError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from exc
+
     @api.post("/api/jobs/{job_id}/pipeline/{from_phase}/{through_phase}")
     def run_pipeline(job_id: str, from_phase: str, through_phase: str):
         try:
@@ -2679,6 +2688,47 @@ def create_app(service: DocumentaryService | None = None) -> FastAPI:
             raise HTTPException(status_code=404, detail="Không tìm thấy job") from exc
         except RuntimeError as exc:
             raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+    @api.get("/api/jobs/{job_id}/beats")
+    def list_job_beats(
+        job_id: str,
+        q: str | None = Query(default=None),
+        timestamp: float | None = Query(default=None),
+        dirty_only: bool = Query(default=False),
+        limit: int = Query(default=250, ge=1, le=1000),
+    ):
+        try:
+            return service.list_job_beats(
+                job_id,
+                query=q,
+                timestamp_sec=timestamp,
+                dirty_only=dirty_only,
+                limit=limit,
+            )
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail="Không tìm thấy job") from exc
+
+    @api.get("/api/jobs/{job_id}/beats/{beat_id}")
+    def get_job_beat(job_id: str, beat_id: str):
+        try:
+            return service.get_job_beat(job_id, beat_id)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @api.patch("/api/jobs/{job_id}/beats/{beat_id}")
+    def patch_job_beat(job_id: str, beat_id: str, body: dict[str, Any] = Body(...)):
+        try:
+            if isinstance(body.get("updates"), dict):
+                updates = dict(body["updates"])
+                reason = str(body.get("reason") or "").strip()
+            else:
+                updates = {k: v for k, v in body.items() if k != "_reason"}
+                reason = str(body.get("_reason") or "").strip()
+            return service.patch_job_beat(job_id, beat_id, updates, reason=reason)
+        except KeyError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
 
     @api.get("/api/jobs/{job_id}/edit-chat")
     def edit_chat_history(job_id: str):

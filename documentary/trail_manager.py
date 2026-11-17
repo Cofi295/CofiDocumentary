@@ -256,7 +256,21 @@ class TrailCodeManager:
         learnings = self.list_learnings()
 
         wired_agents: list[str] = []
-        if (Path.home() / ".gemini" / "skills" / "trail" / "SKILL.md").exists():
+        agy_skill_ok = (
+            (Path.home() / ".gemini" / "config" / "skills" / "trail" / "SKILL.md").exists()
+            or (Path("B:/.agents/skills/trail/SKILL.md")).exists()
+        )
+        mcp_cfg_path = Path.home() / ".gemini" / "config" / "mcp_config.json"
+        agy_mcp_ok = False
+        if mcp_cfg_path.is_file():
+            try:
+                mcp_raw = json.loads(mcp_cfg_path.read_text(encoding="utf-8"))
+                trail_srv = (mcp_raw.get("mcpServers") or {}).get("trail") or {}
+                trail_args = [str(a) for a in (trail_srv.get("args") or [])]
+                agy_mcp_ok = (not trail_srv.get("disabled")) and any("CofiDocumentary" in a for a in trail_args)
+            except Exception:
+                pass
+        if agy_skill_ok and agy_mcp_ok:
             wired_agents.append("Antigravity")
         if (Path.home() / ".codex" / "hooks" / "graft" / "graft-hooks.cjs").exists() or (self.doc_root / "AGENTS.md").exists():
             wired_agents.append("Codex")
@@ -343,6 +357,80 @@ class TrailCodeManager:
             "synced_at": datetime.now(timezone.utc).isoformat(),
         }
 
+    def _resolve_node_and_trail_js(self) -> tuple[str | None, str | None]:
+        node_candidates = [
+            r"C:\Program Files\nodejs\node.exe",
+            r"B:\ALL_TOOLS\nodejs\node.exe",
+            shutil.which("node.exe") if os.name == "nt" else None,
+            shutil.which("node"),
+        ]
+        node_bin = next((str(Path(c)) for c in node_candidates if c and Path(c).is_file()), None)
+        appdata = os.getenv("APPDATA", "")
+        js_candidates = [
+            str(Path(appdata) / "npm" / "node_modules" / "@trailhq" / "trail-code" / "dist" / "bin" / "trail.js") if appdata else None,
+            str(self.doc_root / "node_modules" / "@trailhq" / "trail-code" / "dist" / "bin" / "trail.js"),
+            str(self.remotion_root / "node_modules" / "@trailhq" / "trail-code" / "dist" / "bin" / "trail.js"),
+        ]
+        trail_js = next((str(Path(c)) for c in js_candidates if c and Path(c).is_file()), None)
+        return node_bin, trail_js
+
+    def query_code_graph(
+        self,
+        query: str,
+        *,
+        include_remotion: bool = False,
+        limit: int = 4,
+        max_chars: int = 1500,
+    ) -> dict[str, Any]:
+        """Run a $0 local `trail ask` lookup via node.exe (CREATE_NO_WINDOW) to pre-feed exact code spans."""
+        clean_q = re.sub(r"\s+", " ", str(query or "")).strip()[:220]
+        if len(clean_q) < 3:
+            return {"ok": False, "tokens_saved": 0, "snippet": ""}
+        node_bin, trail_js = self._resolve_node_and_trail_js()
+        if not node_bin or not trail_js:
+            return {"ok": False, "tokens_saved": 0, "snippet": ""}
+
+        target_root = self.remotion_root if include_remotion and self.remotion_root.is_dir() else self.doc_root
+        if not (target_root / ".trail" / "cache").exists():
+            return {"ok": False, "tokens_saved": 0, "snippet": ""}
+
+        try:
+            res = subprocess.run(
+                [node_bin, trail_js, "ask", clean_q, "--source", "-n", str(max(1, min(limit, 6)))],
+                cwd=str(target_root),
+                timeout=3.2,
+                **self._subprocess_kwargs(),
+            )
+        except Exception:
+            return {"ok": False, "tokens_saved": 0, "snippet": ""}
+
+        raw_out = (res.stdout or "").strip()
+        if res.returncode != 0 or not raw_out:
+            return {"ok": False, "tokens_saved": 0, "snippet": ""}
+
+        saved_tok = 0
+        m_saved = re.search(r"tokens saved\s*[≈~]?\s*([\d,]+)", raw_out, re.IGNORECASE)
+        if m_saved:
+            try:
+                saved_tok = int(m_saved.group(1).replace(",", ""))
+            except ValueError:
+                saved_tok = 0
+
+        cleaned_lines: list[str] = []
+        for line in raw_out.splitlines():
+            if line.strip().startswith("[trail]"):
+                continue
+            cleaned_lines.append(line)
+        body = "\n".join(cleaned_lines).strip()
+        if len(body) > max_chars:
+            body = body[: max_chars - 3].rstrip() + "..."
+        return {
+            "ok": bool(body),
+            "repo": target_root.name,
+            "tokens_saved": saved_tok,
+            "snippet": body,
+        }
+
     def build_prompt_context(self, phase: str, language: str = "ko") -> str:
         """Return a compact, high-signal Trail-Code context & learnings block for producer prompts."""
         learnings = self.list_learnings()
@@ -351,9 +439,9 @@ class TrailCodeManager:
 
         lines = [
             "",
-            "## [TRAIL-CODE CONTEXT GRAPH & LEARNINGS — TIẾT KIỆM TOKEN]",
-            "- Repo đã được lập chỉ mục bằng **Trail-Code** tại `.trail/cache/` và `.trail/learnings/`.",
-            "- **QUY TẮC TIẾT KIỆM TOKEN**: Tuyệt đối KHÔNG đọc toàn bộ các file lớn (`documentary/service.py`, `documentary/quality.py`, `documentary/thumbnail_studio.py`, `scripts/turbo-nvenc-export.mjs`). Hãy dùng ngay các quyết định đã ghim trong `.trail/learnings/` dưới đây hoặc chạy `trail ask \"<câu hỏi>\" --source` / `trail skeleton <file>`.",
+            "## [TRAIL-CODE CONTEXT GRAPH & LEARNINGS — BẮT BUỘC DÙNG ĐỂ TIẾT KIỆM TOKEN]",
+            "- Repo đã được lập chỉ mục bằng **Trail-Code** (`.trail/cache/` + `.trail/learnings/`) và gắn sẵn 2 MCP server **`trail`** (`CofiDocumentary`) & **`trail_remotion`** (`CofiRemotion`).",
+            "- **QUY TẮC BẮT BUỘC**: Tuyệt đối KHÔNG chạy `Select-String`/`rg` quét mù hay đọc nguyên các file lớn (`documentary/service.py`, `documentary/quality.py`, `documentary/critic_loops.py`, `documentary/thumbnail_studio.py`, `scripts/turbo-nvenc-export.mjs`). Hãy dùng ngay các quyết định trong `.trail/learnings/` dưới đây; nếu cần tra thêm hàm/schema thì gọi thẳng 1 bước `call_mcp_tool(ServerName=\"trail\" | \"trail_remotion\", ToolName=\"trail_file_api\" | \"trail_find_code\", Arguments={\"file\": \"...\"} | {\"query\": \"...\", \"limit\": 5})`.",
         ]
 
         lang = str(language or "ko").strip().lower()

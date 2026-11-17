@@ -1481,6 +1481,17 @@ class BackgroundRenderCache:
                     if returncode == 0 and video.exists() and video.stat().st_size > 0 and audio.exists() and audio.stat().st_size > 0:
                         break
         if returncode != 0 or not video.exists() or video.stat().st_size <= 0 or not audio.exists() or audio.stat().st_size <= 0:
+            returncode = self._run_process(
+                command,
+                self.remotion_dir,
+                log,
+                low_priority=use_low_priority,
+                affinity_mask=affinity_mask,
+                process_slot=self._processes,
+                slot_key=slot_key,
+                append_log=True,
+            )
+        if returncode != 0 or not video.exists() or video.stat().st_size <= 0 or not audio.exists() or audio.stat().st_size <= 0:
             chunk["status"] = "failed"
             chunk["error"] = f"Remotion chunk render exited with code {returncode}"
             return

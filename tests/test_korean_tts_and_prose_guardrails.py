@@ -40,9 +40,12 @@ def _build_clean_80_sentence_episode() -> list[dict[str, str]]:
     ]
     beats: list[dict[str, str]] = []
     for idx in range(80):
+        line = templates[idx % len(templates)]
+        if idx % 10 == 2 and idx in {12, 32, 52, 72}:
+            line = "모든 것이 정지된 순간이었거든요."
         beats.append({
             "beat_id": f"B{idx + 1:03d}",
-            "narration_text": templates[idx % len(templates)],
+            "narration_text": line,
         })
     return beats
 
@@ -363,4 +366,23 @@ def test_channel_profiles_json_has_zero_conflicting_legacy_korean_rules():
     raw = Path("B:/ALL_TOOLS/CofiDocumentary/data/channel_profiles.json").read_text(encoding="utf-8")
     for forbidden in ("dual_layer_", "십사쩜육", "체언 종결은 전편 2~5회", "셰 씨는 첫 소개 후", "<= 6–8"):
         assert forbidden not in raw
+
+
+def test_hancheung_adverb_and_drone_nine_units_never_corrupted_to_digits():
+    raw_script = "\n".join([
+        "밤하늘에는 체온을 잡아내는 열화상 드론 9대가 떠올랐고, 상공에는 열화상 드론 아홉 대가 선회했죠.",
+        "밤이 찾아오면 포위망의 압박은 한층 더 집요해졌습니다.",
+    ]) + "\n"
+    cleaned, _ = normalize_korean_script_orthography(raw_script)
+    assert "열화상 드론 아홉 대가 떠올랐고, 상공에는 열화상 드론 아홉 대가 선회했죠." in cleaned
+    assert "포위망의 압박은 한층 더 집요해졌습니다." in cleaned
+    assert "1층 더" not in cleaned
+    assert "9대" not in cleaned
+
+    tts_out = normalize_korean_tts_text(cleaned)
+    assert "한층 더" in tts_out
+    assert "일층 더" not in tts_out
+    assert "열화상 드론 아홉 대가" in tts_out
+    assert "구대가" not in tts_out
+
 

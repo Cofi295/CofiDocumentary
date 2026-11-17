@@ -26,10 +26,25 @@ from typing import Any, Callable
 GOAL_COMPLETE_MARKER = "<!-- GOAL_COMPLETE -->"
 TRANSIENT_MARKERS = (
     "unavailable", "503", "502", "504", "overloaded", "deadline exceeded",
+    "stream idle timeout", "idle timeout", "không phản hồi bước đầu tiên",
     "eligibility check failed", "send failed", "temporarily", "try again",
     "connection reset", "econnreset", "internal error", "rate limit", "429",
-    "resource_exhausted", "resource exhausted",
+    "resource_exhausted", "resource exhausted", "invalid model selection",
 )
+LEGACY_MODEL_ALIASES: dict[str, str] = {
+    "claude-sonnet-5-5-high": "claude-sonnet-4-6",
+    "claude-sonnet-5-5-medium": "claude-sonnet-4-6",
+    "claude-sonnet-5-5-low": "claude-sonnet-4-6",
+    "claude-opus-5-5-high": "claude-opus-4-6-thinking",
+    "claude-opus-5-5-medium": "claude-opus-4-6-thinking",
+    "claude-opus-5-5-low": "claude-opus-4-6-thinking",
+}
+HEALTHY_FALLBACK_MODELS: tuple[str, ...] = (
+    "gemini-4-hydrogen-high",
+    "gemini-3.8-flash-high",
+    "claude-sonnet-4-6",
+)
+FIRST_STEP_STALL_TIMEOUT_SEC = float(os.getenv("COFI_GOAL_FIRST_STEP_TIMEOUT", "28.0"))
 QUOTA_MARKERS = ("quota exhausted", "out of credits", "no credits", "usage limit reached")
 CONTEXT_LIMIT_MARKERS = (
     "context window",
@@ -83,9 +98,9 @@ class GoalTurnResult:
 
 
 class AntigravityGoalSession:
-    DEFAULT_MAX_CONTEXT_TOKENS = 65_000
-    DEFAULT_MAX_STEPS = 80
-    HANDOFF_MAX_CHARS = 6000
+    DEFAULT_MAX_CONTEXT_TOKENS = 115_000
+    DEFAULT_MAX_STEPS = 600
+    HANDOFF_MAX_CHARS = 10_000
 
     def __init__(self, gateway: Any, workspace: str | Path, label: str):
         self.gateway = gateway
@@ -97,7 +112,19 @@ class AntigravityGoalSession:
         self.session_path = self.meta_dir / "gemini_session.json"
         self.log_path = self.meta_dir / "goal_events.jsonl"
         self.proc: subprocess.Popen | None = None
-        self._extra_dirs: list[str] = []
+        default_extra: list[str] = []
+        uploads_cand = self.workspace / "data" / "chat_uploads"
+        if (self.workspace / "documentary").is_dir():
+            try:
+                uploads_cand.mkdir(parents=True, exist_ok=True)
+            except OSError:
+                pass
+        if uploads_cand.is_dir():
+            default_extra.append(str(uploads_cand))
+        remotion_cand = self.workspace.parent / "CofiRemotion"
+        if remotion_cand.is_dir():
+            default_extra.append(str(remotion_cand))
+        self._extra_dirs: list[str] = default_extra
         self._events: "queue.Queue[dict[str, Any] | None]" = queue.Queue()
         self._turn_lock = threading.Lock()
         self._proc_lock = threading.RLock()
@@ -174,7 +201,7 @@ class AntigravityGoalSession:
             max_steps = self.DEFAULT_MAX_STEPS
         if self.total_context_tokens >= max_tokens:
             return True
-        if self.step_index >= max_steps:
+        if self.step_index >= max_steps and self.total_context_tokens >= 75_000:
             return True
         return False
 
@@ -190,16 +217,158 @@ class AntigravityGoalSession:
                     continue
         return ""
 
+    @staticmethod
+    def _format_tool_step_detail(upd: dict[str, Any]) -> str:
+        tool_name = str(upd.get("tool_name") or upd.get("step_type") or "").strip()
+        summary = str(upd.get("tool_summary") or upd.get("summary") or "").strip()
+        tinfo = upd.get("tool_info") if isinstance(upd.get("tool_info"), dict) else {}
+        params = tinfo.get("parameters") if isinstance(tinfo.get("parameters"), dict) else {}
+        path_val = str(
+            params.get("Path")
+            or params.get("AbsolutePath")
+            or params.get("TargetFile")
+            or upd.get("target")
+            or ""
+        ).strip()
+        start_line = params.get("StartLine")
+        end_line = params.get("EndLine")
+        line_suffix = ""
+        if start_line is not None or end_line is not None:
+            line_suffix = f"#L{start_line or 1}-L{end_line or start_line}"
+        if path_val:
+            norm_path = path_val.replace("\\", "/")
+            if "/workspaces/" in norm_path:
+                norm_path = "workspaces/" + norm_path.split("/workspaces/", 1)[1]
+            elif "/documentary/" in norm_path:
+                norm_path = "documentary/" + norm_path.split("/documentary/", 1)[1]
+            label = f"{tool_name}: {norm_path}{line_suffix}"
+            if summary and summary.lower() != tool_name.lower():
+                label += f" ({summary})"
+            return label[:220]
+        if tool_name == "call_mcp_tool":
+            srv = str(params.get("ServerName") or "").strip()
+            tname = str(params.get("ToolName") or "").strip()
+            args_obj = params.get("Arguments") if isinstance(params.get("Arguments"), dict) else {}
+            out_path = str(args_obj.get("output_path") or args_obj.get("save_path") or args_obj.get("video_path") or "").strip()
+            if out_path:
+                out_path = Path(out_path).name
+            mcp_desc = "/".join(x for x in (srv, tname) if x) or "mcp"
+            if out_path:
+                mcp_desc += f" -> {out_path}"
+            return f"call_mcp_tool ({mcp_desc})"[:220]
+        cmd_val = str(params.get("CommandLine") or "").strip()
+        if summary and summary.lower() not in {"run_command", "read_file", "edit_file", "write_file", "tool"}:
+            return f"{tool_name}: {summary}"[:220] if tool_name else summary[:220]
+        if cmd_val:
+            first_line = " ".join(cmd_val.splitlines()).strip()
+            return f"{tool_name}: {first_line[:160]}"[:220]
+        return (summary or tool_name)[:160]
+
     def _build_local_handoff_summary(self, extra_context: str = "") -> str:
         sections: list[str] = []
-        previous = self.load_handoff_summary()
-        if previous:
-            sections.append(f"Tóm tắt tích lũy trước đó:\n{previous[-2000:]}")
+        target_ws: Path | None = None
+        try:
+            from .workspace_ledger import (
+                collect_job_live_diagnostics,
+                format_compact_ledger_brief,
+                format_compact_repo_code_brief,
+                resolve_job_workspace_for_meta,
+                sync_workspace_ledger,
+            )
+
+            target_ws = resolve_job_workspace_for_meta(self.workspace, self.meta_dir)
+            if target_ws is not None:
+                job_json_path = self.workspace / "data" / "jobs" / target_ws.name / "job.json"
+                if not job_json_path.is_file():
+                    job_json_path = self.workspace / "data" / "jobs" / f"{target_ws.name}.json"
+                fresh_job = None
+                if job_json_path.is_file():
+                    try:
+                        fresh_job = json.loads(job_json_path.read_text(encoding="utf-8", errors="replace"))
+                    except Exception:
+                        fresh_job = None
+                sync_workspace_ledger(target_ws, fresh_job)
+                ledger_brief = format_compact_ledger_brief(target_ws)
+                if ledger_brief:
+                    sections.append(f"Sổ cái tiến độ dự án (`state_ledger.json`):\n{ledger_brief}")
+                diag = collect_job_live_diagnostics(target_ws, fresh_job)
+                rc_logs = diag.get("root_cause_log_excerpts") if isinstance(diag, dict) else None
+                if isinstance(rc_logs, dict) and rc_logs:
+                    diag_lines = ["Chẩn đoán lỗi thực tế trên đĩa hiện tại (`live_diagnostics`):"]
+                    for lrel, exs in rc_logs.items():
+                        diag_lines.append(f"- `{lrel}`: " + " | ".join(exs[:4]))
+                    sections.append("\n".join(diag_lines))
+            else:
+                repo_brief = format_compact_repo_code_brief(self.workspace)
+                if repo_brief:
+                    sections.append(f"Sổ cái mã nguồn hệ thống (`repo_code_index.json`):\n- {repo_brief}")
+        except Exception:
+            pass
+
+        # Include recent substantive user/assistant exchanges from producer_chat_history.jsonl
+        # Never let repeated Stop ("Đã dừng lượt làm việc") or short pings ("trả lời đi") evict the user's real task!
+        meta_ping_re = re.compile(
+            r"(?i)^\s*(?:trả lời đi|tra loi di|tiếp tục|tiep tuc|làm đi|fix đi|sao lâu thế\??|nhanh lên)\s*[.!?\s]*$"
+        )
+        history_candidates: list[Path] = []
+        if target_ws is not None:
+            history_candidates.append(target_ws / "producer_chat_history.jsonl")
+        history_candidates.append(self.workspace / "data" / "producer_chat_history.jsonl")
+        history_candidates.append(self.workspace / ".producer" / "producer_chat_history.jsonl")
+        chat_lines: list[str] = []
+        last_substantive_user: str = ""
+        history_tool_steps: list[str] = []
+        for hpath in history_candidates:
+            if not hpath.is_file():
+                continue
+            try:
+                raw_rows = hpath.read_text(encoding="utf-8", errors="replace").splitlines()[-40:]
+                for raw_row in raw_rows:
+                    try:
+                        item = json.loads(raw_row)
+                    except json.JSONDecodeError:
+                        continue
+                    if not isinstance(item, dict):
+                        continue
+                    role = str(item.get("role") or "user").upper()
+                    content = str(item.get("content") or "").strip()
+                    for st in (item.get("steps") or [])[-12:]:
+                        if isinstance(st, dict) and str(st.get("step_type") or "") not in {"agent_response", "thinking", "user_input", ""}:
+                            detail = self._format_tool_step_detail(st)
+                            if detail and detail not in {"run_command", "read_file", "edit_file", "write_file", "user_input"}:
+                                if not history_tool_steps or history_tool_steps[-1] != detail:
+                                    history_tool_steps.append(detail)
+                    low = content.lower()
+                    if not content or low in {"/compact", "/nen", "/new", "/reset"}:
+                        continue
+                    if (
+                        content.startswith("Đã nén ngữ cảnh (`/compact`)")
+                        or content.startswith("Đã khởi tạo phiên hội thoại")
+                        or content.startswith("Đã dừng lượt làm việc theo yêu cầu")
+                    ):
+                        continue
+                    if role == "USER" and not meta_ping_re.match(content):
+                        last_substantive_user = f"[USER]: {content[:700]}"
+                    chat_lines.append(f"[{role}]: {content[:700]}")
+                if chat_lines or history_tool_steps:
+                    break
+            except OSError:
+                continue
+        if chat_lines or last_substantive_user:
+            tail_chat = chat_lines[-6:]
+            if last_substantive_user and last_substantive_user not in tail_chat:
+                tail_chat = [last_substantive_user, *tail_chat[-5:]]
+            sections.append("Lịch sử trao đổi & yêu cầu gần nhất trong dự án:\n" + "\n".join(tail_chat))
+
         recent_responses: list[str] = []
-        recent_tools: list[str] = []
+        recent_tools: list[str] = list(history_tool_steps[-10:])
+        last_thinking = ""
+        in_progress_thinking_after_last_result = False
         if self.log_path.exists():
             try:
-                tail_lines = self.log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-200:]
+                if self.conversation_id:
+                    self._sync_transcript_steps(self.conversation_id)
+                tail_lines = self.log_path.read_text(encoding="utf-8", errors="replace").splitlines()[-260:]
                 for raw in tail_lines:
                     try:
                         evt = json.loads(raw)
@@ -207,34 +376,52 @@ class AntigravityGoalSession:
                         continue
                     if not isinstance(evt, dict):
                         continue
+                    cid = self._conversation_id_of(evt)
+                    if cid and cid != self._transcript_cid:
+                        self._sync_transcript_steps(cid)
                     kind = str(evt.get("event") or evt.get("type") or "").lower()
                     if kind == "step_update":
                         upd = evt.get("step_update") if isinstance(evt.get("step_update"), dict) else {}
+                        self._enrich_step_update_from_transcript(upd)
                         step_type = str(upd.get("step_type") or "")
-                        if step_type and step_type not in {"agent_response", "thinking"}:
-                            summary = str(upd.get("summary") or upd.get("tool_name") or step_type).strip()
-                            if summary and (not recent_tools or recent_tools[-1] != summary):
-                                recent_tools.append(summary[:160])
+                        if step_type == "agent_response":
+                            th = str(upd.get("thinking") or "").strip()
+                            if th:
+                                last_thinking = th[-700:]
+                                in_progress_thinking_after_last_result = True
+                            cnt = str(upd.get("content") or upd.get("text_delta") or "").strip()
+                            if cnt and len(cnt) >= 40:
+                                recent_responses.append(cnt[-900:])
+                        elif step_type and step_type not in {"thinking", "system_message", "user_input"}:
+                            detail = self._format_tool_step_detail(upd)
+                            if detail and detail not in {"run_command", "read_file", "edit_file", "write_file", "user_input"}:
+                                if not recent_tools or recent_tools[-1] != detail:
+                                    recent_tools.append(detail)
                     elif kind == "result":
                         res = evt.get("result") if isinstance(evt.get("result"), dict) else {}
                         resp = str(res.get("response") or "").replace(GOAL_COMPLETE_MARKER, "").strip()
                         if resp:
-                            recent_responses.append(resp[-1200:])
+                            recent_responses.append(resp[-900:])
+                            in_progress_thinking_after_last_result = False
             except OSError:
                 pass
         if recent_tools:
-            sections.append("Các bước công cụ đã thực thi gần nhất:\n- " + "\n- ".join(recent_tools[-10:]))
+            sections.append("Các thao tác công cụ cụ thể vừa thực hiện trên đĩa:\n- " + "\n- ".join(recent_tools[-12:]))
+        if last_thinking and (in_progress_thinking_after_last_result or not recent_responses):
+            sections.append(f"Chẩn đoán / suy luận kỹ thuật vừa tìm ra trước khi dừng hoặc nén:\n{last_thinking}")
         if recent_responses:
-            sections.append("Phản hồi / kết quả gần nhất của phiên trước:\n" + "\n---\n".join(recent_responses[-3:]))
+            sections.append("Phản hồi hoàn tất gần nhất của phiên trước:\n" + recent_responses[-1])
         if extra_context.strip():
-            sections.append(f"Ngữ cảnh bổ sung:\n{extra_context.strip()[-1500:]}")
+            clean_extra = extra_context.strip()
+            if not clean_extra.startswith("Đã dừng lượt làm việc theo yêu cầu"):
+                sections.append(f"Ghi chú bàn giao tức thì:\n{clean_extra[-1200:]}")
         summary = "\n\n".join(sections).strip()
         if not summary:
-            summary = f"Phiên làm việc trước ({self.conversation_id or 'goal'}) đã đạt giới hạn ngữ cảnh sau {self.turn_count} lượt / {self.step_index} bước."
+            summary = f"Phiên làm việc trước ({self.conversation_id or 'goal'}) đã bàn giao ngữ cảnh sau {self.turn_count} lượt / {self.step_index} bước."
         return summary[:self.HANDOFF_MAX_CHARS]
 
-    def compact_and_rotate(self, reason: str = "context_guard", extra_context: str = "") -> str:
-        old_cid = self.conversation_id
+    def save_checkpoint_handoff(self, extra_context: str = "") -> str:
+        """Persist an up-to-date `handoff_summary.txt` without rotating or dropping `conversation_id`."""
         handoff = self._build_local_handoff_summary(extra_context=extra_context)
         for directory in {self.meta_dir, self.shared_meta_dir}:
             try:
@@ -242,6 +429,11 @@ class AntigravityGoalSession:
                 (directory / "handoff_summary.txt").write_text(handoff, encoding="utf-8")
             except OSError:
                 pass
+        return handoff
+
+    def compact_and_rotate(self, reason: str = "context_guard", extra_context: str = "") -> str:
+        old_cid = self.conversation_id
+        handoff = self.save_checkpoint_handoff(extra_context=extra_context)
         if old_cid:
             try:
                 self.meta_dir.mkdir(parents=True, exist_ok=True)
@@ -281,6 +473,10 @@ class AntigravityGoalSession:
     def has_conversation(self) -> bool:
         return bool(self.conversation_id)
 
+    def _effective_model(self) -> str:
+        raw = str(getattr(self, "_model_override", "") or getattr(self.gateway, "default_model", "") or "").strip()
+        return LEGACY_MODEL_ALIASES.get(raw.lower(), raw)
+
     # --------------------------------------------------------------- process
     def _args(self) -> list[str]:
         executable = self.gateway._antigravity_runtime_executable()
@@ -292,7 +488,7 @@ class AntigravityGoalSession:
             "--input-format", "stream-json",
             "--output-format", "stream-json",
         ]
-        model = str(getattr(self.gateway, "default_model", "") or "").strip()
+        model = self._effective_model()
         if model:
             args.extend(["--model", model])
         effort = str(os.getenv("COFI_GOAL_EFFORT") or "").strip().lower()
@@ -309,7 +505,7 @@ class AntigravityGoalSession:
 
     def _ensure(self, extra_dirs: list[str]) -> None:
         with self._proc_lock:
-            desired_model = str(getattr(self.gateway, "default_model", "") or "").strip()
+            desired_model = self._effective_model()
             wanted = [d for d in extra_dirs if d and Path(d).is_dir()]
             missing = [d for d in wanted if d.lower() not in {x.lower() for x in self._extra_dirs}]
             model_changed = bool(desired_model and self._launched_model and desired_model != self._launched_model)
@@ -499,6 +695,19 @@ class AntigravityGoalSession:
                     if tool_summary and not update.get("tool_summary"):
                         update["tool_summary"] = tool_summary
                         changed = True
+                    if args:
+                        tinfo = update.get("tool_info")
+                        if not isinstance(tinfo, dict):
+                            tinfo = {}
+                            update["tool_info"] = tinfo
+                        params = tinfo.get("parameters")
+                        if not isinstance(params, dict):
+                            params = {}
+                            tinfo["parameters"] = params
+                        for k in ("Path", "AbsolutePath", "TargetFile", "StartLine", "EndLine", "CommandLine", "ServerName", "ToolName", "Arguments", "Url", "query", "Pattern"):
+                            if k in args and k not in params:
+                                params[k] = args[k]
+                                changed = True
                 break
         return changed
 
@@ -626,21 +835,73 @@ class AntigravityGoalSession:
             return GoalTurnResult("exited", error=f"Không gửi được tin nhắn tới Antigravity: {exc}", conversation_id=self.conversation_id, compacted=compacted)
         text_parts: list[str] = []
         subagent_offsets: dict[str, int] = {}
+        last_step_input_tokens: int | None = None
+        last_step_cache_read_tokens: int | None = None
+        agent_response_done = False
+        steps_in_turn = 0
+        turn_started_mono = time.monotonic()
+        saw_real_activity = False
+        error_step_messages: list[str] = []
+        last_error_step_mono: float | None = None
+        active_model_name = self._effective_model() or "default"
         while True:
             if cancel_event is not None and cancel_event.is_set():
                 self.stop()
-                return GoalTurnResult("cancelled", conversation_id=self.conversation_id, compacted=compacted)
+                if last_step_input_tokens is not None or last_step_cache_read_tokens is not None:
+                    self.input_tokens = int(last_step_input_tokens or self.input_tokens or 0)
+                    self.cache_read_tokens = int(last_step_cache_read_tokens or self.cache_read_tokens or 0)
+                partial_text = "".join(text_parts).replace(GOAL_COMPLETE_MARKER, "").strip()
+                self._save_session_state(
+                    last_cancelled_at=time.time(),
+                    last_response_excerpt=partial_text[-1200:] if partial_text else "",
+                )
+                self.save_checkpoint_handoff(extra_context=partial_text[-1000:] if partial_text else "")
+                return GoalTurnResult(
+                    "cancelled",
+                    response=partial_text,
+                    conversation_id=self.conversation_id,
+                    compacted=compacted,
+                )
             try:
                 event = events.get(timeout=0.5)
             except queue.Empty:
                 self._poll_active_subagents(subagent_offsets, on_line)
+                now_mono = time.monotonic()
+                if last_error_step_mono is not None and (now_mono - last_error_step_mono) >= 3.0 and not text_parts:
+                    self.stop()
+                    err_summary = error_step_messages[-1] if error_step_messages else f"Model '{active_model_name}' trả về lỗi upstream (stream idle timeout)."
+                    return GoalTurnResult(
+                        "error",
+                        response="",
+                        error=err_summary,
+                        conversation_id=self.conversation_id,
+                        compacted=compacted,
+                    )
+                if not saw_real_activity and (now_mono - turn_started_mono) >= FIRST_STEP_STALL_TIMEOUT_SEC:
+                    self.stop()
+                    return GoalTurnResult(
+                        "error",
+                        response="",
+                        error=f"Model '{active_model_name}' quá tải hoặc treo kết nối (không phản hồi bước đầu tiên sau {int(FIRST_STEP_STALL_TIMEOUT_SEC)}s — stream idle timeout).",
+                        conversation_id=self.conversation_id,
+                        compacted=compacted,
+                    )
                 continue
             if event is None:
                 code = proc.poll()
                 self.proc = None
+                streamed_clean = "".join(text_parts).replace(GOAL_COMPLETE_MARKER, "").strip()
+                if streamed_clean and (GOAL_COMPLETE_MARKER in "".join(text_parts) or (agent_response_done and len(streamed_clean) >= 60)):
+                    return GoalTurnResult(
+                        "success",
+                        streamed_clean,
+                        conversation_id=self.conversation_id,
+                        goal_complete=GOAL_COMPLETE_MARKER in "".join(text_parts),
+                        compacted=compacted,
+                    )
                 return GoalTurnResult(
                     "exited",
-                    response="".join(text_parts).strip(),
+                    response=streamed_clean,
                     error=f"Antigravity CLI đã thoát (mã {code}).",
                     conversation_id=self.conversation_id,
                     compacted=compacted,
@@ -655,10 +916,42 @@ class AntigravityGoalSession:
                 raw_step = event.get("step_index") or update.get("step_index")
                 if isinstance(raw_step, int) and raw_step > self.step_index:
                     self.step_index = raw_step
+                step_usage = update.get("usage") if isinstance(update.get("usage"), dict) else {}
+                if step_usage:
+                    steps_in_turn += 1
+                    try:
+                        last_step_input_tokens = max(0, int(step_usage.get("input_tokens") or 0))
+                        last_step_cache_read_tokens = max(0, int(step_usage.get("cache_read_tokens") or 0))
+                    except (TypeError, ValueError):
+                        pass
                 if self._enrich_step_update_from_transcript(update):
                     line = json.dumps(event, ensure_ascii=False)
-                if update.get("step_type") == "agent_response" and isinstance(update.get("text_delta"), str):
-                    text_parts.append(update["text_delta"])
+                stype_low = str(update.get("step_type") or "").lower()
+                if stype_low in {"agent_response", "tool", "command", "mcp"}:
+                    saw_real_activity = True
+                    last_error_step_mono = None
+                elif stype_low == "error_message":
+                    raw_step_int = raw_step if isinstance(raw_step, int) else -1
+                    trow = self._transcript_steps.get(raw_step_int) if raw_step_int >= 0 else None
+                    err_txt = str((trow or {}).get("content") or update.get("error") or "API stream idle timeout").strip()
+                    error_step_messages.append(err_txt)
+                    last_error_step_mono = time.monotonic()
+                    if len(error_step_messages) >= 2 and not text_parts:
+                        self.stop()
+                        return GoalTurnResult(
+                            "error",
+                            response="",
+                            error=err_txt,
+                            conversation_id=self.conversation_id,
+                            compacted=compacted,
+                        )
+                if update.get("step_type") == "agent_response":
+                    if isinstance(update.get("text_delta"), str):
+                        text_parts.append(update["text_delta"])
+                    if str(update.get("state") or "").upper() == "DONE":
+                        agent_response_done = True
+                        if not text_parts and isinstance(update.get("content"), str) and update["content"].strip():
+                            text_parts.append(update["content"])
             if on_line and line:
                 on_line(line)
             if kind == "step_update":
@@ -667,9 +960,18 @@ class AntigravityGoalSession:
                 continue
             result = event.get("result") if isinstance(event.get("result"), dict) else {}
             usage = result.get("usage") if isinstance(result.get("usage"), dict) else {}
-            if isinstance(usage, dict):
+            if last_step_input_tokens is not None or last_step_cache_read_tokens is not None:
+                self.input_tokens = int(last_step_input_tokens or 0)
+                self.cache_read_tokens = int(last_step_cache_read_tokens or 0)
+                if isinstance(usage, dict):
+                    try:
+                        self.output_tokens = max(0, int(usage.get("output_tokens") or self.output_tokens))
+                    except (TypeError, ValueError):
+                        pass
+            elif isinstance(usage, dict):
                 try:
-                    self.input_tokens = max(0, int(usage.get("input_tokens") or self.input_tokens))
+                    divisor = max(1, steps_in_turn)
+                    self.input_tokens = max(0, int(usage.get("input_tokens") or self.input_tokens) // divisor)
                     self.cache_read_tokens = max(0, int(usage.get("cache_read_tokens") or self.cache_read_tokens))
                     self.output_tokens = max(0, int(usage.get("output_tokens") or self.output_tokens))
                 except (TypeError, ValueError):
@@ -681,7 +983,7 @@ class AntigravityGoalSession:
             complete = GOAL_COMPLETE_MARKER in response
             clean = response.replace(GOAL_COMPLETE_MARKER, "").strip()
             self._save_session_state(last_response_excerpt=clean[-1200:] if clean else "")
-            if status == "SUCCESS" and not error:
+            if (status == "SUCCESS" and not error) or (clean and (complete or (agent_response_done and len(clean) >= 60))):
                 return GoalTurnResult("success", clean, conversation_id=self.conversation_id, goal_complete=complete, compacted=compacted)
             return GoalTurnResult("error", clean, error or status or "Lỗi không xác định", self.conversation_id, complete, compacted=compacted)
 
@@ -726,6 +1028,7 @@ class AntigravityGoalSession:
                     active_content = self._inject_handoff(content, existing_handoff)
 
             had_conversation = self.has_conversation
+            self._model_override = ""
             result = self._execute_single_turn(
                 active_content,
                 extra_dirs=dirs,
@@ -736,7 +1039,39 @@ class AntigravityGoalSession:
             if (
                 result.status in {"error", "exited"}
                 and not (cancel_event is not None and cancel_event.is_set())
-                and (result.context_overflow or (had_conversation and self.total_context_tokens >= 100_000))
+                and not (result.response or "").strip()
+                and result.transient
+                and not result.context_overflow
+            ):
+                failed_model = self._effective_model()
+                for fb_model in HEALTHY_FALLBACK_MODELS:
+                    if fb_model.lower() == failed_model.lower():
+                        continue
+                    self._model_override = fb_model
+                    self.stop()
+                    if on_line:
+                        on_line(json.dumps({
+                            "event": "step_update",
+                            "step_update": {
+                                "step_type": "context_compaction",
+                                "summary": f"⚡ Máy chủ model `{failed_model or 'cũ'}` đang quá tải/treo luồng — tự động chuyển sang `{fb_model}` để mở phiên ngay!",
+                            },
+                        }, ensure_ascii=False))
+                    result = self._execute_single_turn(
+                        active_content,
+                        extra_dirs=dirs,
+                        on_line=on_line,
+                        cancel_event=cancel_event,
+                        compacted=compacted,
+                    )
+                    if result.status == "success" or (cancel_event is not None and cancel_event.is_set()):
+                        setattr(self.gateway, "default_model", fb_model)
+                        break
+                    failed_model = fb_model
+            if (
+                result.status in {"error", "exited"}
+                and not (cancel_event is not None and cancel_event.is_set())
+                and (result.context_overflow or (had_conversation and self.total_context_tokens >= 180_000))
             ):
                 handoff = self.compact_and_rotate(
                     reason="reactive_context_overflow",

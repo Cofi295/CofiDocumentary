@@ -121,6 +121,8 @@ class FailoverGateway:
                     with self._lock:
                         self.active_provider = provider
                 return result
+            if result.returncode == 130:
+                return result
             previous_failure = result
 
         return previous_failure or self._unavailable_result(workspace_path, phase, first)
@@ -226,6 +228,8 @@ class FailoverGateway:
                     with self._lock:
                         self.active_provider = provider
                 return result
+            if result.returncode == 130:
+                return result
             previous_failure = result
 
         return previous_failure or self._unavailable_result(workspace_path, label, first)
@@ -242,6 +246,12 @@ class FailoverGateway:
         use_remotion_root: bool,
         image_paths: list[str | Path] | None,
     ) -> StageResult:
+        if (workspace / ".producer" / "stop_phase.json").is_file():
+            return StageResult(
+                returncode=130,
+                last_message="Đã dừng bước sản xuất theo yêu cầu (stop_phase).",
+                log_path=workspace / ".producer" / label,
+            )
         gateway = self._gateway(provider)
         try:
             if provider == "codex":

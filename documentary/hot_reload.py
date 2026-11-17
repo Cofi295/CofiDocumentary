@@ -20,6 +20,7 @@ _RELOAD_ORDER: tuple[str, ...] = (
     "COFI_BRAIN.chat_run_manager",
     "documentary.models",
     "documentary.store",
+    "documentary.workspace_ledger",
     "documentary.srt",
     "documentary.cache_manager",
     "documentary.render_cache",
@@ -277,16 +278,81 @@ def _rebind_live_instances(reloaded_modules: dict[str, Any]) -> int:
                 cls = getattr(obj, "__class__", None)
                 if cls is None:
                     continue
-                # Hot-register /api/agent-departments, /api/agency/departments, /api/state on live FastAPI app instances
+                # Hot-register /api/agent-departments, /api/agency/departments, /api/state, /beats on live FastAPI app instances
                 if getattr(cls, "__name__", "") == "FastAPI" and hasattr(obj, "routes") and hasattr(obj, "state"):
                     doc_svc = getattr(obj.state, "service", None)
                     if doc_svc is not None:
-                        target_paths = {"/api/agent-departments", "/api/agency/departments", "/api/state"}
+                        target_paths = {
+                            "/api/agent-departments",
+                            "/api/agency/departments",
+                            "/api/state",
+                            "/api/jobs/{job_id}/stop",
+                            "/api/jobs/{job_id}/beats",
+                            "/api/jobs/{job_id}/beats/{beat_id}",
+                        }
                         if hasattr(obj, "router") and hasattr(obj.router, "routes"):
                             obj.router.routes = [
                                 r for r in obj.router.routes
                                 if getattr(r, "path", "") not in target_paths
                             ]
+
+                        def _make_stop_job_handler(svc_ref: Any):
+                            def _live_stop_job(job_id: str):
+                                return svc_ref.stop_job(job_id)
+                            return _live_stop_job
+
+                        def _make_list_beats_handler(svc_ref: Any):
+                            from fastapi import HTTPException
+
+                            def _live_list_beats(
+                                job_id: str,
+                                q: str | None = None,
+                                timestamp: float | None = None,
+                                dirty_only: bool = False,
+                                limit: int = 250,
+                            ):
+                                try:
+                                    return svc_ref.list_job_beats(
+                                        job_id,
+                                        query=q,
+                                        timestamp_sec=timestamp,
+                                        dirty_only=dirty_only,
+                                        limit=max(1, min(int(limit), 1000)),
+                                    )
+                                except KeyError as exc:
+                                    raise HTTPException(status_code=404, detail="Không tìm thấy job") from exc
+
+                            return _live_list_beats
+
+                        def _make_get_beat_handler(svc_ref: Any):
+                            from fastapi import HTTPException
+
+                            def _live_get_beat(job_id: str, beat_id: str):
+                                try:
+                                    return svc_ref.get_job_beat(job_id, beat_id)
+                                except KeyError as exc:
+                                    raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+                            return _live_get_beat
+
+                        def _make_patch_beat_handler(svc_ref: Any):
+                            from fastapi import Body, HTTPException
+
+                            def _live_patch_beat(job_id: str, beat_id: str, body: dict[str, Any] = Body(...)):
+                                try:
+                                    if isinstance(body.get("updates"), dict):
+                                        updates = dict(body["updates"])
+                                        reason = str(body.get("reason") or "").strip()
+                                    else:
+                                        updates = {k: v for k, v in body.items() if k != "_reason"}
+                                        reason = str(body.get("_reason") or "").strip()
+                                    return svc_ref.patch_job_beat(job_id, beat_id, updates, reason=reason)
+                                except KeyError as exc:
+                                    raise HTTPException(status_code=404, detail=str(exc)) from exc
+                                except ValueError as exc:
+                                    raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+                            return _live_patch_beat
 
                         def _make_agent_depts_handler(svc_ref: Any):
                             def _live_agent_depts(job_id: str | None = None):
@@ -317,10 +383,35 @@ def _rebind_live_instances(reloaded_modules: dict[str, Any]) -> int:
 
                         depts_fn = _make_agent_depts_handler(doc_svc)
                         state_fn = _make_studio_state_handler(doc_svc)
+                        stop_fn = _make_stop_job_handler(doc_svc)
+                        list_beats_fn = _make_list_beats_handler(doc_svc)
+                        get_beat_fn = _make_get_beat_handler(doc_svc)
+                        patch_beat_fn = _make_patch_beat_handler(doc_svc)
                         obj.add_api_route("/api/agent-departments", depts_fn, methods=["GET"])
                         obj.add_api_route("/api/agency/departments", depts_fn, methods=["GET"])
                         obj.add_api_route("/api/state", state_fn, methods=["GET"])
+                        obj.add_api_route("/api/jobs/{job_id}/stop", stop_fn, methods=["POST"])
+                        obj.add_api_route("/api/jobs/{job_id}/beats", list_beats_fn, methods=["GET"])
+                        obj.add_api_route("/api/jobs/{job_id}/beats/{beat_id}", get_beat_fn, methods=["GET"])
+                        obj.add_api_route("/api/jobs/{job_id}/beats/{beat_id}", patch_beat_fn, methods=["PATCH"])
                         obj.openapi_schema = None
+                if getattr(cls, "__name__", "") == "AntigravityGoalSession":
+                    try:
+                        obj.max_context_tokens = 115_000
+                        obj.max_steps = 600
+                        ws_root = getattr(obj, "workspace", None)
+                        if isinstance(ws_root, Path):
+                            extra = list(getattr(obj, "_extra_dirs", []) or [])
+                            uploads_p = ws_root / "data" / "chat_uploads"
+                            uploads_p.mkdir(parents=True, exist_ok=True)
+                            for cand_p in (uploads_p, ws_root.parent / "CofiRemotion"):
+                                if cand_p.is_dir():
+                                    s_cand = str(cand_p.resolve())
+                                    if s_cand not in extra:
+                                        extra.append(s_cand)
+                            obj._extra_dirs = extra
+                    except Exception:
+                        pass
                 mod_name = getattr(cls, "__module__", None)
                 if mod_name not in reloaded_modules:
                     continue
@@ -338,6 +429,12 @@ def _rebind_live_instances(reloaded_modules: dict[str, Any]) -> int:
                         try:
                             if hasattr(obj, "_load_channel_profiles"):
                                 obj._channel_profiles = obj._load_channel_profiles()
+                        except Exception:
+                            pass
+                    elif getattr(new_cls, "__name__", "") == "AntigravityGoalSession":
+                        try:
+                            obj.max_context_tokens = 115_000
+                            obj.max_steps = 600
                         except Exception:
                             pass
                     rebound += 1

@@ -22,9 +22,45 @@ SYNTHETIC_MEDIA_DISCLOSURE_FOOTERS: dict[str, str] = {
 }
 
 
-def get_synthetic_media_disclosure_footer(language: str = "ko") -> str:
+CREATIVE_DRAMA_DISCLOSURE_FOOTERS: dict[str, str] = {
+    "ko": "본 영상은 창작 오디오드라마이며, 이야기 몰입을 위해 일부 시각 연출 화면에 AI 생성 기법이 사용되었습니다.",
+    "en": "This video is an original creative audio drama; select visual scenes utilize AI-generated illustration to enhance storytelling immersion.",
+    "ja": "本映像は創作オーディオドラマであり、物語への没入感を高めるため一部の演出画面にAI生成技術を使用しています。",
+    "vi": "Video này là kịch truyền thanh sáng tác nguyên bản; một số khung hình minh họa sử dụng công nghệ tạo ảnh AI để tăng chiều sâu cảm xúc.",
+}
+
+
+def get_synthetic_media_disclosure_footer(
+    language: str = "ko",
+    *,
+    job: dict[str, Any] | None = None,
+) -> str:
     """Return the localized editorial source & synthetic media disclosure footer."""
     lang = (language or "en").strip().lower()
+    if isinstance(job, dict):
+        snap = job.get("channel_profile_snapshot") if isinstance(job.get("channel_profile_snapshot"), dict) else {}
+        prof = job.get("profile") if isinstance(job.get("profile"), dict) else {}
+        for guard_src in (
+            job.get("youtube_policy_guardrails"),
+            snap.get("youtube_policy_guardrails"),
+            prof.get("youtube_policy_guardrails"),
+        ):
+            if isinstance(guard_src, dict):
+                custom_disc = str(
+                    guard_src.get(f"synthetic_content_disclosure_{lang}")
+                    or guard_src.get("synthetic_content_disclosure")
+                    or ""
+                ).strip()
+                if custom_disc:
+                    return custom_disc
+        cm = str(
+            job.get("content_mode")
+            or snap.get("content_mode")
+            or prof.get("content_mode")
+            or ""
+        ).strip().lower()
+        if cm == "creative_audio_drama":
+            return CREATIVE_DRAMA_DISCLOSURE_FOOTERS.get(lang, CREATIVE_DRAMA_DISCLOSURE_FOOTERS["en"])
     return SYNTHETIC_MEDIA_DISCLOSURE_FOOTERS.get(lang, SYNTHETIC_MEDIA_DISCLOSURE_FOOTERS["en"])
 
 
@@ -32,6 +68,8 @@ def evaluate_seo_synthetic_disclosure(
     package: dict[str, Any],
     uses_ai_visuals: bool = True,
     language: str = "ko",
+    *,
+    job: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Validate SEO synthetic content disclosure metadata and description footer."""
     if not isinstance(package, dict):
@@ -39,7 +77,7 @@ def evaluate_seo_synthetic_disclosure(
 
     desc = str(package.get("description") or "")
     altered_flag = package.get("altered_or_synthetic_content_disclosure_required")
-    expected_footer = get_synthetic_media_disclosure_footer(language)
+    expected_footer = get_synthetic_media_disclosure_footer(language, job=job)
 
     if uses_ai_visuals:
         if altered_flag is not True:
@@ -60,13 +98,15 @@ def apply_synthetic_media_disclosure(
     uses_ai_visuals: bool = True,
     uses_ai_tts: bool = False,
     language: str = "ko",
+    *,
+    job: dict[str, Any] | None = None,
 ) -> tuple[dict[str, Any], bool]:
     """Ensure altered_or_synthetic_content_disclosure_required and localized disclosure footer are present in SEO package."""
     if not isinstance(package, dict):
         return package, False
 
     changed = False
-    expected_footer = get_synthetic_media_disclosure_footer(language)
+    expected_footer = get_synthetic_media_disclosure_footer(language, job=job)
 
     if uses_ai_visuals or uses_ai_tts:
         if package.get("altered_or_synthetic_content_disclosure_required") is not True:
@@ -74,12 +114,19 @@ def apply_synthetic_media_disclosure(
             changed = True
 
         desc = str(package.get("description") or "")
+        # Strip legacy documentary footer if accidentally present on a creative_audio_drama job
+        doc_footer = SYNTHETIC_MEDIA_DISCLOSURE_FOOTERS.get((language or "en").strip().lower(), "")
+        if doc_footer and doc_footer != expected_footer and doc_footer in desc:
+            desc = desc.replace(f"\n\n---\n{doc_footer}", "").replace(doc_footer, "").rstrip()
+            changed = True
         if expected_footer not in desc:
             if desc.strip():
                 package["description"] = f"{desc.rstrip()}\n\n---\n{expected_footer}"
             else:
                 package["description"] = expected_footer
             changed = True
+        elif changed:
+            package["description"] = desc
 
     return package, changed
 
@@ -141,6 +188,7 @@ def ensure_seo_package_synthetic_disclosure(
         uses_ai_visuals=uses_ai_visuals,
         uses_ai_tts=uses_ai_tts,
         language=lang,
+        job=job,
     )
 
     if changed:

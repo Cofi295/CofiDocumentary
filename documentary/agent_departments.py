@@ -373,15 +373,15 @@ AGENT_DEPARTMENTS: dict[str, dict[str, Any]] = {
             "title_vi": "Tổ phó Biên Tập Nhịp Điệu, Xanh Tiền & Kiểm Soát Độ Dài",
             "role_vi": "Kiểm soát độ dài từng câu thoại vừa nhịp thở TTS, kiểm duyệt khúc xạ pháp y Xanh tiền 100%, xóa sổ 100% đuôi danh từ cụt lặp ý cuối đoạn (`che-eon jong-gyeol`) & câu dẫn MC, và đối chiếu dữ kiện với Phòng 02 (@research).",
             "responsibilities_vi": [
-                "Kiểm tra tổng thời lượng (24–30 phút / 9.500–11.500 ký tự) và cân đối độ dài 5 Hồi",
-                "Đảm bảo 0% từ tử vong/máu/thi thể/vũ khí ở 60s đầu, 0% miêu tả cơ chế bạo lực trực diện toàn tập, 0% cụm danh từ cụt (`che-eon jong-gyeol`) nhại lại câu trước ở cuối đoạn và 0% lỗi số đếm TTS (`chil-cheon-yuk-baek-il-heun nal` X -> `7,670-il` O; `i se-dae` X -> `2-sedae` O; `il-cheon-ibaek` X -> `cheon-ibaek` O)",
+                "Kiểm tra tổng thời lượng (theo `default_duration_minutes` của hồ sơ kênh: 24–30 phút điều tra hoặc 60–82 phút Audio Drama) và cân đối độ dài các Hồi/Chương",
+                "Đảm bảo Câu 1 của Hook mở đầu đúng chuẩn DNA kênh (Mốc thời gian cụ thể `YYYY-MM-DD [time], [place]...` + Nghịch lý trên kênh điều tra, hoặc Xung đột phẩm giá In-Media-Res + Lời thoại dẫn người nói trước `hwaja_seonhaeng` trên kênh Audio Drama); đối chiếu kỹ với các video gần đây để 0% lặp lại chi tiết mở màn, 0% lặp ý trong bài, 0% từ tử vong/máu/thi thể/vũ khí ở 60s đầu, 0% cụm danh từ cụt (`che-eon jong-gyeol`) nhại lại câu trước ở cuối đoạn và 0% lỗi phát âm TTS (cấm đọc mã bản án Hán-Hàn kiểu đọc từng chữ số `i-gong-il-chil un-gong-sam hyeong-cho sa-sip-sa ho`, cấm lặp từ đồng âm `baek-gu kil-lo-mi-teo` quá 2 lần, `7,670-il` O, `2-sedae` O, `cheon-ibaek` O)",
             ],
             "checklist_vi": [
                 "Đã đọc và kiểm định 100% Chính sách YouTube YPP (15/07/2025 – nay: chống Inauthentic/Templated Content) & Chống Vàng Tiền trước khi lên tiêu đề và viết kịch bản",
-                "Cấu trúc 5 Hồi rõ ràng, mở màn linh hoạt theo giải phẫu chủ đề (0% rập khuôn, 0% lộ kết cục bắt giữ/ngày bắt ở 2 phút đầu, 0% lộ tên thật sớm khi mở màn ẩn danh)",
-                "100% số liệu, mốc năm khớp research.md và đạt chuẩn Xanh tiền Đài truyền hình (0% cụm đoạt mạng/tử vong/máu me trên Tiêu đề & 60s đầu)",
-                "0% cụm danh từ cụt (`che-eon jong-gyeol`) lặp ý câu trước ở cuối đoạn văn, 0% câu dẫn MC (`siseon-eul omgyeo bogessseumnida`), kết bài đối chiếu trực diện với hồ sơ anh em cụ thể trên kênh và kết bằng câu hỏi mở (`?`)",
-                "Nhịp câu 4 tầng độ dài gãy gọn, chuẩn chính tả phát âm TTS (`7,670-il`, `2-sedae`, `cheon-ibaek`)",
+                "Hook mở màn Câu 1 bám sát đúng công thức DNA kênh (Timestamp `YYYY-MM-DD` + Paradox cho hồ sơ điều tra, hoặc In-Media-Res Dignity Bet cho Audio Drama); đã đối chiếu với các video gần đây và video Win để 0% lặp lại chi tiết mở màn, 0% lặp mốc ngày/cảnh trong bài, 0% lộ kết cục sớm ở 2 phút đầu",
+                "100% số liệu, mốc năm và đạo cụ Chekhov's Gun khớp research.md và đạt chuẩn Xanh tiền Đài truyền hình (0% cụm đoạt mạng/tử vong/máu me trên Tiêu đề & 60s đầu)",
+                "0% cụm danh từ cụt (`che-eon jong-gyeol`) lặp ý câu trước ở cuối đoạn văn, 0% câu dẫn MC (`siseon-eul omgyeo bogessseumnida`), tuân thủ `cta_policy` của hồ sơ kênh (`0%` spoken CTA cho Audio Drama đêm khuya; tối đa 1 CTA cho kênh điều tra)",
+                "Nhịp câu 4 tầng độ dài gãy gọn, chuẩn chính tả phát âm TTS (`0%` mã bản án Hán-Hàn `i-gong-il-chil... hyeong-cho... ho`, `0%` lặp từ đồng âm `baek-gu kil-lo-mi-teo`, `7,670-il`, `2-sedae`, `cheon-ibaek`, xưng hô chuẩn tuổi 50–65)",
             ],
         },
         "specialists": [
@@ -391,9 +391,9 @@ AGENT_DEPARTMENTS: dict[str, dict[str, Any]] = {
                 "rank": "specialist",
                 "rank_label_vi": "Chuyên viên 1",
                 "step_order": 1,
-                "title_vi": "Chuyên viên Thiết Kế Khung 5 Hồi & Lăng Kính Tự Sự (5-Act & Lens Architect)",
-                "role_vi": "Chia hồ sơ vụ án thành 5 Hồi (ACT01..ACT05) gắn với 1 trong 5 Lăng kính tự sự phù hợp nhất.",
-                "task_detail_vi": "Lập sơ đồ xương sống outline.json và phân bổ ngân sách ký tự cho từng Hồi.",
+                "title_vi": "Chuyên viên Thiết Kế Khung Hồi/Chương & Lăng Kính Tự Sự (5-Act Investigative / 6-Chapter Dual-Reversal Architect)",
+                "role_vi": "Chia kịch bản theo đúng khung cấu trúc của hồ sơ kênh: 5 Hồi điều tra (`ACT01..ACT05`) gắn Lăng kính bằng chứng, hoặc 6 Chương Audio Drama Đảo Ngược Kép (`ACT01..ACT06`, Twist 1 ở 55% + Twist 2 ở 82%).",
+                "task_detail_vi": "Lập sơ đồ xương sống outline.json và phân bổ ngân sách ký tự cho từng Hồi/Chương.",
                 "input_from": "@script_lead",
                 "output_to": "@script_cold_open_writer",
                 "artifact_key": "outline.json",
@@ -405,9 +405,9 @@ AGENT_DEPARTMENTS: dict[str, dict[str, Any]] = {
                 "rank_label_vi": "Chuyên viên 2",
                 "step_order": 2,
                 "mandatory_skill": "cofi-youtube-policy-monetization-guard",
-                "title_vi": "Chuyên viên Kiểm Định Chính Sách YouTube (15/07/2025–Nay) & Viết Mở Màn 8 Archetypes (YouTube Policy Guard & Adaptive Cold-Open Writer)",
-                "role_vi": "Đọc và áp dụng toàn bộ chính sách YouTube chống tắt kiếm tiền (15/07/2025 – nay) và chống vàng tiền trước khi viết câu mở màn: chế tác phần mở đầu linh hoạt theo 8 Cold-Open Hook Archetypes (0% rập khuôn `[Năm/Thành phố]...`), 0% lộ kết cục bắt giữ/ngày bắt hoặc lộ tên thật sớm khi mở màn bằng bí ẩn ẩn danh, 0% câu dẫn MC chuyển cảnh, và giữ 100% sạch Xanh tiền trong 60 giây đầu (0% cụm đoạt mạng `saengmyeong-eul as-agada` / tử vong / thi thể / máu me / vũ khí).",
-                "task_detail_vi": "Kiểm duyệt chính sách YouTube trước khi viết đoạn dẫn nhập 60s đầu sắc bén gây tò mò cực đại mà 0% dùng từ nhạy cảm, 0% lộ kết cục bắt giữ sớm, cùng cầu nối kết bài đối chiếu trực diện với vụ án anh em trên kênh.",
+                "title_vi": "Chuyên viên Kiểm Định Chính Sách YouTube (15/07/2025–Nay) & Viết Hook Mở Màn Chuẩn DNA Kênh (Channel-DNA Cold-Open & Dignity-Hook Writer)",
+                "role_vi": "Đọc và áp dụng toàn bộ chính sách YouTube chống tắt kiếm tiền (15/07/2025 – nay) và chống vàng tiền trước khi viết câu mở màn: áp dụng Hook Mốc thời gian cụ thể + Nghịch lý trên kênh điều tra hoặc Hook Cược Phẩm Giá In-Media-Res (`hwaja_seonhaeng`) trên kênh Audio Drama; đối chiếu kỹ với các video gần đây và video Win để 0% lặp lại chi tiết/mô-típ mở màn (`hyeonsanggeum... subaeryeong`, `heomjunhan sangil polliseu rain`, `charyang teureongkeu`), 0% lộ kết cục sớm, 0% câu dẫn MC chuyển cảnh, và giữ 100% sạch Xanh tiền trong 60 giây đầu.",
+                "task_detail_vi": "Đối chiếu các video gần đây & video Win trước khi viết đoạn Hook 60s đầu gây tò mò cực đại mà 0% lặp chi tiết cũ, 0% dùng từ nhạy cảm, cùng đoạn hạ màn đúng chính sách `outro_mode` / `cta_policy` của hồ sơ kênh.",
                 "input_from": "@script_arc_architect",
                 "output_to": "@script_investigative_drafter",
                 "artifact_key": "script_hooks_and_bridges.md",
@@ -748,17 +748,17 @@ AGENT_DEPARTMENTS: dict[str, dict[str, Any]] = {
         "phase_keys": ["ai_visual"],
         "color": "#c084fc",
         "emoji": "🎨",
-        "mission_vi": "Thiết kế và sinh bộ ảnh tái dựng góc kín (Closed-Room Psychological / Noir Keyframes) đồng nhất phong cách mỹ thuật của kênh cho các khoảnh khắc không có camera thật.",
+        "mission_vi": "Thiết kế Bảng Tham Chiếu Nhân Vật đầu tập (`media/character_sheet/` bằng Google Flow khi hồ sơ bật `character_reference_mode`) và sinh bộ ảnh điện ảnh 35mm / tái dựng góc kín khớp 1-to-1 câu thoại, đồng nhất khuôn mặt, trang phục và phong cách mỹ thuật của kênh.",
         "lead": {
             "id": "ai_visual_lead",
             "handle": "@ai_visual_lead",
             "rank": "lead",
             "rank_label_vi": "Tổ trưởng",
-            "title_vi": "Tổ trưởng Đạo Diễn Mỹ Thuật Tái Dựng AI (Head AI Art Director)",
-            "role_vi": "Định hướng ánh sáng, góc máy điện ảnh và phê duyệt toàn bộ ảnh keyframe AI trước khi chuyển sang Phòng Dựng (@edit).",
+            "title_vi": "Tổ trưởng Đạo Diễn Mỹ Thuật Điện Ảnh AI & Khóa Nhân Vật (Head AI Art & Character Continuity Director)",
+            "role_vi": "Định hướng ánh sáng điện ảnh, duyệt Bảng Tham Chiếu Nhân Vật (`Character Reference Sheet`) cho các hồ sơ kể chuyện nhân vật (`80%` AI Cinema) hoặc ảnh tái dựng góc kín cho hồ sơ điều tra, trước khi bàn giao sang Phòng Dựng (@edit).",
             "responsibilities_vi": [
-                "Giữ vững phong cách mỹ thuật đặc trưng của kênh (Style Lock & Character Consistency)",
-                "Ký duyệt chất lượng từng bức ảnh tái dựng không bị lỗi giải phẫu hay sai lệch bối cảnh thời đại",
+                "Giữ vững phong cách mỹ thuật đặc trưng của kênh và khóa đồng nhất khuôn mặt/độ tuổi/trang phục nhân vật xuyên suốt tập phim (Style Lock & Flow Character Sheet Continuity)",
+                "Ký duyệt chất lượng từng bức ảnh điện ảnh không bị lỗi giải phẫu, không chói gắt ban đêm (`highlight luma <= 215` khi bật bedtime mode) và không sai bối cảnh",
             ],
             "approval_output_vi": "Bộ Ảnh Minh Họa Tái Dựng Đạt Chuẩn (`images/<beat_id>_ai_keyframe.jpg`)",
         },
@@ -2506,6 +2506,36 @@ def _derive_member_live_states(
     }
 
 
+def _extract_profile_department_roles(profile_or_job: dict[str, Any] | None) -> dict[str, Any]:
+    if not isinstance(profile_or_job, dict):
+        return {}
+    snap = profile_or_job.get("channel_profile_snapshot") if isinstance(profile_or_job.get("channel_profile_snapshot"), dict) else {}
+    for container in (profile_or_job, snap):
+        ed = container.get("editorial_dna") if isinstance(container.get("editorial_dna"), dict) else {}
+        roles = ed.get("profile_department_roles") or container.get("profile_department_roles")
+        if isinstance(roles, dict) and roles:
+            return roles
+    return {}
+
+
+def _adapt_department_for_job_mode(dept: dict[str, Any], job_snapshot: dict[str, Any] | None) -> dict[str, Any]:
+    prof_roles = _extract_profile_department_roles(job_snapshot)
+    aid = str(dept.get("agent_id") or "")
+    ov = prof_roles.get(aid) if isinstance(prof_roles, dict) else None
+    if not isinstance(ov, dict) or not ov:
+        return dept
+    adapted = copy.deepcopy(dept)
+    if ov.get("name_vi"):
+        adapted["name_vi"] = ov["name_vi"]
+    if ov.get("mission_vi"):
+        adapted["mission_vi"] = ov["mission_vi"]
+    sp_ovs = ov.get("specialists") or []
+    for idx_s, sp_patch in enumerate(sp_ovs):
+        if isinstance(sp_patch, dict) and idx_s < len(adapted.get("specialists") or []):
+            adapted["specialists"][idx_s].update(sp_patch)
+    return adapted
+
+
 def build_live_departments_projection(
     enriched_agents: list[dict[str, Any]] | None = None,
     workspace_dir: str | Path | None = None,
@@ -2550,9 +2580,10 @@ def build_live_departments_projection(
     active_parallel_batches = 0
 
     for agent_id in DEPARTMENT_ORDER:
-        dept = AGENT_DEPARTMENTS.get(agent_id)
-        if not dept:
+        raw_dept = AGENT_DEPARTMENTS.get(agent_id)
+        if not raw_dept:
             continue
+        dept = _adapt_department_for_job_mode(raw_dept, job_snapshot)
         ag_info = agent_map.get(agent_id, {})
         parent_state = str(ag_info.get("live_state") or "standby")
         progress_pct = int(ag_info.get("progress_pct") or 0)
@@ -2627,4 +2658,104 @@ def build_live_departments_projection(
             "active_parallel_workers": active_parallel_workers,
             "parallel_state_updated_at": saved_parallel_state.get("updated_at"),
         },
+    }
+
+
+def resolve_profile_department_plan(profile_or_job: dict[str, Any] | None = None) -> dict[str, Any]:
+    """Return the explicit 15-department activation, adaptation & bypass plan for a Channel Profile or Job."""
+    src = profile_or_job if isinstance(profile_or_job, dict) else {}
+    snap = src.get("channel_profile_snapshot") if isinstance(src.get("channel_profile_snapshot"), dict) else {}
+    ed_dna = (
+        src.get("editing_dna")
+        if isinstance(src.get("editing_dna"), dict) and src.get("editing_dna")
+        else (snap.get("editing_dna") if isinstance(snap.get("editing_dna"), dict) else {})
+    )
+    editorial_dna = (
+        src.get("editorial_dna")
+        if isinstance(src.get("editorial_dna"), dict) and src.get("editorial_dna")
+        else (snap.get("editorial_dna") if isinstance(snap.get("editorial_dna"), dict) else {})
+    )
+    content_mode = str(
+        src.get("content_mode")
+        or snap.get("content_mode")
+        or editorial_dna.get("content_mode")
+        or ed_dna.get("content_mode")
+        or "archival_documentary"
+    ).strip().lower()
+    preset_id = str(ed_dna.get("preset_id") or "").strip()
+    is_audio_drama = content_mode == "creative_audio_drama" or preset_id in {"kr_goodnight_cinema_drama", "cinema_character_drama"}
+    vox_enabled = not (
+        is_audio_drama
+        or content_mode == "devotional_essay"
+        or preset_id in {"sacred_devotional", "grace_letter"}
+        or ed_dna.get("vox_enabled") is False
+        or (ed_dna.get("vox_desk_enabled") is False and ed_dna.get("vox_satellite_enabled") is False)
+    )
+
+    matrix: dict[str, dict[str, Any]] = {}
+    for agent_id in DEPARTMENT_ORDER:
+        if is_audio_drama:
+            if agent_id == "vox":
+                matrix[agent_id] = {
+                    "disposition": "bypassed",
+                    "active": False,
+                    "mode": "bypassed_non_vox_audio_drama",
+                    "role_summary_vi": "Bỏ qua hoàn toàn (0% bàn hồ sơ điều tra, 0% bản đồ vệ tinh truy bắt).",
+                }
+            elif agent_id == "footage":
+                matrix[agent_id] = {
+                    "disposition": "lightweight_mode",
+                    "active": True,
+                    "mode": "atmospheric_broll_15pct",
+                    "role_summary_vi": "Chế độ nhẹ 15% B-Roll không gian/thời tiết/nghề thủ công 4K sạch (0% tin tức vụ án, 0% cận mặt người).",
+                }
+            elif agent_id == "ai_visual":
+                matrix[agent_id] = {
+                    "disposition": "elevated_lead_with_new_role",
+                    "active": True,
+                    "mode": "priority_1_character_sheet_and_35mm_cinema_80pct",
+                    "role_summary_vi": "Thăng cấp Chủ công Ưu tiên #1 (80% 35mm Cinema) + Role mới: Thiết kế Bảng Tham Chiếu Nhân Vật đầu tập bằng Google Flow.",
+                }
+            elif agent_id in {"research", "script", "visuals", "edit", "seo", "evidence_qa", "qc"}:
+                prof_dept_roles = _extract_profile_department_roles(src)
+                custom_summary = str(((prof_dept_roles.get(agent_id) or {}) if isinstance(prof_dept_roles.get(agent_id), dict) else {}).get("role_summary_vi") or "").strip()
+                role_map = {
+                    "research": "Tách khỏi điều tra vụ án -> Role mới: Xây dựng Character Bible, Kiến thức Nghề Nghệ Nhân & Sổ cái Chekhov's Gun.",
+                    "script": "Kế thừa 100% Role Ngôn ngữ & Chính tả TTS Hàn từ hồ sơ True Crime + Role mới: Biên kịch 6 Chương Đảo Ngược Kép, dẫn người nói trước thoại hwaja_seonhaeng & 0% CTA đọc.",
+                    "visuals": "Định tuyến 80% AI Cinema + 15% Atmospheric B-Roll + 5% Rèm chương hồi / Đạo cụ (tắt hoàn toàn VOX).",
+                    "edit": "Dựng điện ảnh đêm khuya ấm dịu (Highlight Luma <= 215, Cross-Dissolve êm, BGM Piano/Cello 18–26 đoạn, 0% SFX giật mình, đuôi lặng 4.0s).",
+                    "seo": "Kế thừa luật CTR & YPP + Role mới: 4 biểu cảm kịch tính K-Drama (Nhẫn nhịn, Ánh mắt bước ngoặt, Lật thế cờ phẩm giá, Thanh thản).",
+                    "evidence_qa": "Kiểm định chính tả/ngữ pháp TTS Hàn, đồng nhất Character Sheet, B-Roll sạch logo, Luma <= 215 & nhạc ấm (bỏ cổng VOX/GIS).",
+                    "qc": "Duyệt Master MP4 60–82 phút: chuẩn LUFS, không lặp dHash, không CTA đọc, nhạc Piano/Cello ấm và trọn vẹn câu kết + 4.0s fade-out.",
+                }
+                matrix[agent_id] = {
+                    "disposition": "adapted_with_new_role",
+                    "active": True,
+                    "mode": f"creative_audio_drama_{agent_id}",
+                    "role_summary_vi": custom_summary or role_map[agent_id],
+                }
+            else:
+                matrix[agent_id] = {
+                    "disposition": "kept_core",
+                    "active": True,
+                    "mode": "universal_core",
+                    "role_summary_vi": "Giữ nguyên cơ chế điều phối/giọng đọc/kỹ thuật nền tảng và chạy theo cấu hình hồ sơ kênh.",
+                }
+        else:
+            matrix[agent_id] = {
+                "disposition": "bypassed" if (agent_id == "vox" and not vox_enabled) else "kept_core",
+                "active": False if (agent_id == "vox" and not vox_enabled) else True,
+                "mode": "standard_profile_mode",
+                "role_summary_vi": "Hoạt động theo cấu hình chuẩn của hồ sơ kênh.",
+            }
+
+    active_ids = [aid for aid in DEPARTMENT_ORDER if matrix[aid]["active"]]
+    bypassed_ids = [aid for aid in DEPARTMENT_ORDER if not matrix[aid]["active"]]
+    return {
+        "content_mode": content_mode,
+        "preset_id": preset_id,
+        "vox_enabled": vox_enabled,
+        "active_department_ids": active_ids,
+        "bypassed_department_ids": bypassed_ids,
+        "departments": matrix,
     }

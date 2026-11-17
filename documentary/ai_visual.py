@@ -600,7 +600,15 @@ class AIVisualCoordinator:
         visual_strategy = str((job or {}).get("visual_strategy") or payload.get("visual_strategy") or "").strip().lower()
         editing_dna = (job or {}).get("editing_dna") if isinstance((job or {}).get("editing_dna"), dict) else {}
         preset_id = str((editing_dna or {}).get("preset_id") or "").strip()
+        vpm = str((editing_dna or {}).get("visual_priority_mode") or "").strip().lower()
+        vmix_ai = float((((editing_dna or {}).get("visual_mix") or {}).get("ai") or 0.0))
         snap = (job or {}).get("channel_profile_snapshot") if isinstance((job or {}).get("channel_profile_snapshot"), dict) else {}
+        content_mode = str(
+            (job or {}).get("content_mode")
+            or (snap or {}).get("content_mode")
+            or (editing_dna or {}).get("content_mode")
+            or ""
+        ).strip().lower()
         snap_ed_vs = str(((snap or {}).get("editorial_dna") or {}).get("visual_strategy") or "").strip().lower()
         if preset_id in {"forensic_noir_director_v2", "vox_china_crime_newsroom_v10"} and snap_ed_vs in {
             "edit_direct_footage",
@@ -611,7 +619,12 @@ class AIVisualCoordinator:
             visual_strategy = "edit_direct_footage"
         if visual_strategy == "full_ai":
             coverage_mode = "full_ai"
-        elif visual_strategy in {"edit_direct_footage", "semi_content", "ban_content", "edit_footage"}:
+        elif (
+            visual_strategy in {"edit_direct_footage", "semi_content", "ban_content", "edit_footage"}
+            or vpm == "ai_cinema_character_drama"
+            or content_mode == "creative_audio_drama"
+            or vmix_ai >= 0.40
+        ):
             coverage_mode = "selective_ai"
         else:
             coverage_mode = str(payload.get("coverage_mode") or "fallback_only").strip().lower()
@@ -719,8 +732,40 @@ class AIVisualCoordinator:
             return f"around {default_year}"
         return "the historical period described by the narration"
 
+    @staticmethod
+    def _is_chibi_mascot_style(style_preset: str = "", style_prompt: str = "") -> bool:
+        combined = f"{style_preset or ''} {style_prompt or ''}".lower()
+        if any(tok in combined for tok in ("0% cartoon", "0% stickman", "realistic human anatomy", "photorealistic", "35mm", "kodak vision3")):
+            return False
+        return any(tok in combined for tok in ("chibi", "mascot", "#ffd43b", "yellow spherical", "noir_chibi"))
+
     @classmethod
-    def _build_visual_style(cls, visual: dict[str, Any]) -> dict[str, Any]:
+    def _build_visual_style(cls, visual: dict[str, Any], job: dict[str, Any] | None = None) -> dict[str, Any]:
+        ed_dna = (job or {}).get("editing_dna") if isinstance((job or {}).get("editing_dna"), dict) else {}
+        snap = (job or {}).get("channel_profile_snapshot") if isinstance((job or {}).get("channel_profile_snapshot"), dict) else {}
+        content_mode = str(
+            (job or {}).get("content_mode")
+            or (snap or {}).get("content_mode")
+            or (ed_dna or {}).get("content_mode")
+            or ""
+        ).strip().lower()
+        vpm = str((ed_dna or {}).get("visual_priority_mode") or "").strip().lower()
+        if content_mode == "creative_audio_drama" or vpm == "ai_cinema_character_drama":
+            directive = (
+                "Korean Cinema Audio-Drama Visual Bible: Warm 35mm theatrical film look (Kodak Vision3 500T aesthetic, "
+                "3200K warm tungsten amber practical lamps balanced with soft twilight slate shadows, gentle highlight rolloff "
+                "capped at luminance <= 215/255 for dark-room bedtime viewing comfort). Render authentic contemporary or nostalgic "
+                "Korean residential architecture, artisan workshops, tea rooms, courtyards, and natural East Asian human skin textures, "
+                "silver-streaked hair, and dignified Korean wardrobe with strict character continuity across scenes. "
+                "Zero harsh white studio glare, zero neon clutter, zero text/subtitles/logos."
+            )
+            return {
+                "dominant_year": None,
+                "period_start": None,
+                "period_end": None,
+                "color_mode": "warm_35mm_cinema_color",
+                "directive": directive,
+            }
         beat_texts = []
         year_frequency: dict[int, int] = {}
         monochrome_mentions = 0
@@ -822,7 +867,267 @@ class AIVisualCoordinator:
         return ""
 
     @classmethod
-    def _character_reference_images(cls, beat: dict[str, Any], workspace: Path) -> list[str]:
+    def _load_episode_character_bible(
+        cls,
+        workspace: Path,
+        job: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        entries: list[dict[str, Any]] = []
+        bible_path = workspace / "character_bible.json"
+        if bible_path.is_file():
+            try:
+                raw = json.loads(bible_path.read_text(encoding="utf-8"))
+                if isinstance(raw, dict):
+                    raw_list = raw.get("characters") or raw.get("cast") or []
+                elif isinstance(raw, list):
+                    raw_list = raw
+                else:
+                    raw_list = []
+                for item in raw_list:
+                    if isinstance(item, dict):
+                        entries.append(dict(item))
+            except Exception:
+                pass
+        if not entries:
+            outline_path = workspace / "outline.json"
+            if outline_path.is_file():
+                try:
+                    out_raw = json.loads(outline_path.read_text(encoding="utf-8"))
+                    if isinstance(out_raw, dict):
+                        for item in (out_raw.get("character_bible") or out_raw.get("characters") or []):
+                            if isinstance(item, dict):
+                                entries.append(dict(item))
+                except Exception:
+                    pass
+        if not entries and isinstance(job, dict):
+            cb = job.get("creative_brief") if isinstance(job.get("creative_brief"), dict) else {}
+            protag = str((cb or {}).get("protagonist") or "").strip()
+            ed_dna = job.get("editing_dna") if isinstance(job.get("editing_dna"), dict) else {}
+            if protag and str((ed_dna or {}).get("character_reference_mode") or "").strip() == "self_generated_flow_master_sheet_per_episode":
+                entries.append({
+                    "id": "char_01_protagonist",
+                    "name": protag.split("(")[0].split("—")[0].strip()[:40] or "주인공",
+                    "role": "protagonist",
+                    "aliases": ["주인공", "어머니", "아버지", "장인", "사장님", "할머니"],
+                    "appearance": protag,
+                })
+        normalized: list[dict[str, Any]] = []
+        sheet_dir = workspace / "media" / "character_sheet"
+        for idx, item in enumerate(entries[:6], 1):
+            raw_id = re.sub(
+                r"[^a-zA-Z0-9_-]+",
+                "_",
+                str(item.get("id") or item.get("character_id") or item.get("role_id") or f"char_{idx:02d}"),
+            ).strip("_") or f"char_{idx:02d}"
+            name = str(
+                item.get("name")
+                or item.get("korean_name")
+                or item.get("name_ko")
+                or f"인물 {idx}"
+            ).strip()
+            raw_aliases: list[Any] = []
+            for alias_field in ("aliases", "role_keywords", "honorific_titles"):
+                val = item.get(alias_field)
+                if isinstance(val, list):
+                    raw_aliases.extend(val)
+            pen_name = str(item.get("pen_name_ko") or item.get("pen_name") or "").strip()
+            if pen_name:
+                raw_aliases.append(pen_name)
+                bare_pen = pen_name.split("(")[0].strip()
+                if bare_pen and bare_pen != pen_name:
+                    raw_aliases.append(bare_pen)
+            aliases: list[str] = []
+            for a in raw_aliases:
+                sa = str(a).strip()
+                if sa and sa not in aliases:
+                    aliases.append(sa)
+            role = str(
+                item.get("role")
+                or item.get("role_type")
+                or ("protagonist" if idx == 1 else "supporting")
+            ).strip()
+            appearance = str(
+                item.get("appearance")
+                or item.get("flow_reference_sheet_prompt")
+                or item.get("reference_sheet_prompt")
+                or item.get("appearance_prompt")
+                or item.get("visual_description")
+                or item.get("wardrobe")
+                or f"Dignified Korean {role} ({name}), realistic East Asian facial structure, natural skin texture, consistent signature wardrobe"
+            ).strip()
+            explicit_sheet = str(item.get("sheet_path") or item.get("reference_image") or "").strip()
+            resolved_sheet = ""
+            if explicit_sheet and Path(explicit_sheet).is_file():
+                resolved_sheet = str(Path(explicit_sheet))
+            elif sheet_dir.is_dir():
+                for ext in (".jpg", ".jpeg", ".png", ".webp"):
+                    cand = sheet_dir / f"{raw_id}{ext}"
+                    if cand.is_file() and cand.stat().st_size > 0:
+                        resolved_sheet = str(cand)
+                        break
+            normalized.append({
+                "id": raw_id,
+                "name": name,
+                "role": role,
+                "aliases": aliases,
+                "appearance": appearance,
+                "wardrobe_by_act": item.get("wardrobe_by_act") if isinstance(item.get("wardrobe_by_act"), dict) else {},
+                "sheet_path": resolved_sheet,
+            })
+        return normalized
+
+    def ensure_episode_character_reference_sheets(
+        self,
+        workspace: Path,
+        job: dict[str, Any] | None,
+        *,
+        image_model: str,
+        aspect_ratio: str = "16:9",
+        preset_prompt: str = "",
+        allow_live_generation: bool = False,
+    ) -> list[dict[str, Any]]:
+        ed_dna = (job or {}).get("editing_dna") if isinstance((job or {}).get("editing_dna"), dict) else {}
+        snap_ed_dna = (((job or {}).get("channel_profile_snapshot") or {}).get("editing_dna") or {}) if isinstance((job or {}).get("channel_profile_snapshot"), dict) else {}
+        char_ref_mode = str(
+            (ed_dna or {}).get("character_reference_mode")
+            or (snap_ed_dna or {}).get("character_reference_mode")
+            or ""
+        ).strip()
+        if char_ref_mode != "self_generated_flow_master_sheet_per_episode":
+            return []
+        cast = self._load_episode_character_bible(workspace, job)
+        if not cast:
+            return []
+        sheet_dir = workspace / "media" / "character_sheet"
+        req_dir = workspace / ".ai_visual" / "character_sheets"
+        bible_file = workspace / "character_bible.json"
+        has_explicit_bible_file = bible_file.is_file()
+        should_generate = allow_live_generation or has_explicit_bible_file or bool((job or {}).get("auto_generate_character_sheets"))
+        if should_generate and callable(self.tool_runner):
+            sheet_dir.mkdir(parents=True, exist_ok=True)
+            req_dir.mkdir(parents=True, exist_ok=True)
+            for entry in cast[:6]:
+                if entry.get("sheet_path") and Path(entry["sheet_path"]).is_file():
+                    continue
+                cid = entry["id"]
+                style_prefix = f"{preset_prompt}\n\n" if preset_prompt else (
+                    "35mm Korean theatrical film portrait (Kodak Vision3 500T, warm 3200K tungsten key light, highlight luminance <= 215, soft highlight rolloff, realistic East Asian skin texture, 0% cartoon, 0% text).\n\n"
+                )
+                sheet_prompt = (
+                    f"{style_prefix}"
+                    f"MASTER CHARACTER REFERENCE SHEET for recurring episode character '{entry['name']}' ({entry['role']}): "
+                    f"{entry['appearance']}. Clean waist-up cinematic character reference portrait against a warm neutral softly lit Korean interior background, "
+                    "clear facial bone structure, consistent hairstyle and signature wardrobe, natural dignified expression, 5 fingers per hand, "
+                    "ABSOLUTELY ZERO text, labels, names, captions, watermarks, or split boxes."
+                )
+                scene_payload = {
+                    "id": f"{cid}_master_sheet",
+                    "name": f"Character Sheet · {entry['name']}",
+                    "task_type": "image_generation",
+                    "prompt": sheet_prompt,
+                    "model": image_model,
+                    "aspect_ratio": aspect_ratio,
+                    "_output_directory": str(sheet_dir),
+                    "_output_stem": cid,
+                    "_remove_watermark": True,
+                }
+                for _attempt_sheet in range(2):
+                    try:
+                        generated_out = self.tool_runner(scene_payload, req_dir / f"{cid}_sheet.json")
+                        captured = self._capture_generated_media(generated_out, sheet_dir, cid, video=False)
+                        entry["sheet_path"] = captured
+                        break
+                    except Exception:
+                        if _attempt_sheet == 0:
+                            time.sleep(1.5)
+                        continue
+            try:
+                sheet_by_id = {e["id"]: e.get("sheet_path", "") for e in cast if e.get("sheet_path")}
+                if has_explicit_bible_file:
+                    raw_bible = json.loads(bible_file.read_text(encoding="utf-8"))
+                    if isinstance(raw_bible, dict) and isinstance(raw_bible.get("characters"), list):
+                        for idx_c, raw_c in enumerate(raw_bible["characters"], 1):
+                            if isinstance(raw_c, dict):
+                                cid_c = re.sub(
+                                    r"[^a-zA-Z0-9_-]+",
+                                    "_",
+                                    str(raw_c.get("id") or raw_c.get("character_id") or raw_c.get("role_id") or f"char_{idx_c:02d}"),
+                                ).strip("_") or f"char_{idx_c:02d}"
+                                if cid_c in sheet_by_id:
+                                    raw_c["sheet_path"] = sheet_by_id[cid_c]
+                        _write_json(bible_file, raw_bible)
+                    else:
+                        _write_json(bible_file, {"characters": cast})
+                else:
+                    _write_json(bible_file, {"characters": cast})
+            except Exception:
+                pass
+        return cast
+
+    @classmethod
+    def _matched_character_profiles(
+        cls,
+        beat: dict[str, Any],
+        workspace: Path,
+        job: dict[str, Any] | None = None,
+    ) -> list[dict[str, Any]]:
+        cast = cls._load_episode_character_bible(workspace, job)
+        if not cast:
+            return []
+        haystack = " ".join([
+            str(beat.get("narration_text") or ""),
+            str(beat.get("visual_description") or ""),
+            str(beat.get("purpose") or ""),
+            " ".join(str(c) for c in (beat.get("character_ids") or [])),
+        ]).lower()
+        matched: list[dict[str, Any]] = []
+        for entry in cast:
+            tokens = [entry.get("id", ""), entry.get("name", ""), *(entry.get("aliases") or [])]
+            if any(str(tok).strip() and str(tok).strip().lower() in haystack for tok in tokens):
+                matched.append(entry)
+        if not matched and cast:
+            # Default to protagonist continuity when the beat depicts a person/dialogue scene and a protagonist sheet exists
+            protag = cast[0]
+            if protag.get("sheet_path") and (
+                beat.get("is_verbatim_quote")
+                or any(tok in haystack for tok in ("인물", "표정", "손", "눈빛", "마주", "앉", "서 있", "바라보", "character", "portrait", "woman", "man"))
+            ):
+                matched.append(protag)
+        return matched[:2]
+
+    @classmethod
+    def _character_reference_images(
+        cls,
+        beat: dict[str, Any],
+        workspace: Path,
+        job: dict[str, Any] | None = None,
+    ) -> list[str]:
+        matched_cast = cls._matched_character_profiles(beat, workspace, job)
+        sheet_refs = [
+            str(entry["sheet_path"])
+            for entry in matched_cast
+            if entry.get("sheet_path") and Path(str(entry["sheet_path"])).is_file()
+        ]
+        if sheet_refs:
+            return sheet_refs
+        cast_all = cls._load_episode_character_bible(workspace, job)
+        has_bible_sheets = any(
+            entry.get("sheet_path") and Path(str(entry["sheet_path"])).is_file()
+            for entry in cast_all
+        )
+        if has_bible_sheets:
+            # Pure prop / environment / still-life beat with zero matched characters -> do not force a face reference
+            return []
+        sheet_dir = workspace / "media" / "character_sheet"
+        if sheet_dir.is_dir():
+            generic_sheets = sorted(
+                str(p)
+                for p in sheet_dir.iterdir()
+                if p.is_file() and p.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"} and p.stat().st_size > 0
+            )
+            if generic_sheets:
+                return generic_sheets[:1]
+
         ref_dir = workspace / "media" / "character_references"
         if not ref_dir.is_dir():
             return []
@@ -952,6 +1257,9 @@ class AIVisualCoordinator:
         ai_note: dict[str, Any] | None = None,
         preset_prompt: str = "",
         has_style_reference: bool = False,
+        style_preset: str = "",
+        character_profiles: list[dict[str, Any]] | None = None,
+        has_character_reference: bool = False,
     ) -> str:
         narration = str(beat.get("narration_text") or "").strip()
         visual = str(beat.get("visual_description") or "").strip()
@@ -960,10 +1268,12 @@ class AIVisualCoordinator:
         visual_language = note.get("visual_language") if isinstance(note.get("visual_language"), dict) else {}
         period = str(visual_language.get("period") or "").strip() or cls._beat_period(beat, style.get("dominant_year"))
         style_directive = str(style.get("directive") or "").strip()
-        color_mode = str(visual_language.get("color_mode") or "").strip().lower()
+        color_mode = str(visual_language.get("color_mode") or style.get("color_mode") or "").strip().lower()
         style_notes = str(visual_language.get("style_notes") or "").strip()
         if color_mode == "monochrome":
             beat_style = "Beat-specific source match: render in authentic black-and-white/monochrome; match nearby archive grain, contrast, exposure and lighting."
+        elif color_mode == "warm_35mm_cinema_color":
+            beat_style = "Beat-specific cinema match: render in warm 35mm Kodak Vision3 500T color with 3200K tungsten amber practicals, soft twilight slate shadows, gentle highlight rolloff (<= 215/255 luminance), and fine theatrical grain."
         elif color_mode in {"muted_historical_color", "natural_color"}:
             beat_style = "Beat-specific source match: render in period-appropriate color; match nearby verified footage palette, grain, contrast, exposure and lighting."
         else:
@@ -974,33 +1284,55 @@ class AIVisualCoordinator:
         fallback_clause = f"Real-media fallback reason: {fallback_reason}. " if fallback_reason else ""
         period_qualifier = f"{period} " if period else ""
         subject_clause = cls._detect_historical_figure_clause(beat, period)
-        forbids_cartoon_mascot = any(
-            tok in preset_prompt.lower()
-            for tok in ("0% cartoon", "0% stickman", "realistic human anatomy")
-        )
-        effective_mascot_ref = has_style_reference and not forbids_cartoon_mascot
+        is_chibi_ref = cls._is_chibi_mascot_style(style_preset, preset_prompt)
+        effective_mascot_ref = has_style_reference and is_chibi_ref
         style_reference_clause = (
             "A visual style reference image is attached. MANDATORY CHARACTER & COLOR LOCK: Draw ALL human characters in the scene as 2D rounded chibi mascot figures strictly copying the exact character design, BRIGHT GOLDEN-YELLOW head and body skin color tone (#FFD43B warm yellow spherical head, yellow hands, and yellow feet — NEVER white skin, NEVER pale/gray skin, and NEVER realistic human faces), proportions, bold clean black linework, simple black oval eyes with white specular highlights, thin curved eyebrows, minimal line mouth, and outfit style shown in the attached reference image. "
-            if effective_mascot_ref else ""
+            if effective_mascot_ref
+            else (
+                "A cinematic style reference image is attached; preserve its warm lighting, film grain, and tonal mood with realistic human anatomy. "
+                if has_style_reference
+                else ""
+            )
         )
+        char_clause = ""
+        if character_profiles:
+            cast_desc = "; ".join(
+                f"{c.get('name', 'Character')} ({c.get('role', 'cast')}): {c.get('appearance', '')}"
+                for c in character_profiles
+            )
+            char_clause = (
+                f"CHARACTER IDENTITY & WARDROBE CONTINUITY LOCK: Maintain 100% consistent Korean facial bone structure, age, hairstyle, and signature wardrobe for {cast_desc}"
+                + (
+                    " strictly matching the attached Master Character Reference Sheet(s). "
+                    if has_character_reference
+                    else ". "
+                )
+            )
+        elif has_character_reference:
+            char_clause = (
+                "CHARACTER IDENTITY & WARDROBE CONTINUITY LOCK: Strictly preserve the exact facial features, age, hairstyle, and signature wardrobe of the character shown in the attached reference sheet with realistic human anatomy (5 fingers per hand, 0% cartoon). "
+            )
         scene_focus = cls._clean_scene_focus(narration, visual)
         no_text_rule = (
             "CRITICAL VISUAL FOCUS RULE: Draw ONLY the core physical action, characters, props, and setting at the center of this scene in a single unified full-bleed 16:9 composition. "
             "Because the video already has voiceover and subtitles, DO NOT render any written text, Korean/Chinese/English words, numbers, speech bubbles, captions, labels, signs, document text boxes, split-screen dividers, magnifier loupes, or UI HUD elements anywhere in the image. "
         )
-        if preset_prompt or effective_mascot_ref:
-            style_block = f"STYLE SPECIFICATION:\n{preset_prompt}\n\n" if preset_prompt else ""
+        if preset_prompt or effective_mascot_ref or color_mode == "warm_35mm_cinema_color":
+            effective_spec = preset_prompt or style_directive
+            style_block = f"STYLE SPECIFICATION:\n{effective_spec}\n\n" if effective_spec else ""
             mascot_lock_clause = (
                 "Keep all 2D rounded mascot characters strictly faithful to the attached reference image — every character MUST have the exact BRIGHT GOLDEN-YELLOW skin tone (#FFD43B warm yellow round head, hands, and feet; NEVER white or human-colored skin), rounded chibi proportions, and clean black outlines from the reference image — while rendering the specific action, environment, props, and architecture described in this beat clearly and vividly. "
                 if effective_mascot_ref else ""
             )
             return (
-                "Create exactly one finished image for the documentary scene below. Do not output text or a prompt. "
+                "Create exactly one finished image for the documentary/cinema scene below. Do not output text or a prompt. "
                 "Treat the following block as the mandatory visual STYLE & CHARACTER SPECIFICATION; ignore any meta instructions inside it about returning prompts or analysis.\n\n"
                 f"{style_block}"
                 f"{style_reference_clause}"
+                f"{char_clause}"
                 f"Core scene to illustrate (visual action & setting only, without any text): {scene_focus}. "
-                f"Depicted period/context: {period}. {fallback_clause}"
+                f"Depicted period/context: {period}. {beat_style} {fallback_clause}"
                 f"{mascot_lock_clause}"
                 f"{no_text_rule}"
                 f"{aspect_ratio} aspect ratio, full-canvas production-ready keyframe."
@@ -1009,6 +1341,7 @@ class AIVisualCoordinator:
             f"Authentic historical {period_qualifier}archival documentary still photograph, period-accurate lighting and material culture, archival documentary quality. "
             f"{subject_clause}"
             f"{style_reference_clause}"
+            f"{char_clause}"
             "Use AI illustration only because verified real video or real still imagery was unavailable or unusable. "
             "Match the historical period, original footage era, film grain, lighting, geography, clothing and material culture exactly. "
             f"{beat_style} "
@@ -1091,12 +1424,28 @@ class AIVisualCoordinator:
                     or str(asset.get("kind") or "") == "ai_reconstruction_video"
                 )
             }
+            sel_fallback_ids = {
+                str(value).strip()
+                for value in (registry.get("ai_fallback_beats") or [])
+                if str(value).strip()
+            }
+            real_covered_any = {
+                str(asset.get("beat_id") or "")
+                for asset in assets
+                if _asset_exists(workspace, asset)
+            }
             return [
                 beat
                 for beat in (visual.get("beats") or [])
                 if isinstance(beat, dict)
                 and str(beat.get("beat_id") or "").strip()
-                and str(beat.get("visual_route") or "").strip().lower() == "ai_visual"
+                and (
+                    str(beat.get("visual_route") or "").strip().lower() == "ai_visual"
+                    or (
+                        str(beat.get("beat_id") or "").strip() in sel_fallback_ids
+                        and str(beat.get("beat_id") or "").strip() not in real_covered_any
+                    )
+                )
                 and str(beat.get("beat_id") or "").strip() not in ai_covered
             ]
         if coverage_mode == "full_ai":
@@ -1263,6 +1612,95 @@ class AIVisualCoordinator:
         return str(candidates[0]) if candidates else None
 
     @staticmethod
+    def _polish_generated_still_image(path: Path) -> None:
+        """Strip Gemini corner mark (if present), auto-trim cinema letterbox black bars,
+        softly clamp harsh highlights (`<= 215`), and normalize 16:9 keyframes to 1920x1080."""
+        try:
+            from PIL import Image
+            import numpy as np
+        except Exception:
+            return
+        try:
+            with Image.open(path) as src_im:
+                src_im.load()
+                w0, h0 = src_im.size
+                if w0 < 640 or h0 < 360:
+                    return
+                rgb = src_im.convert("RGB")
+        except Exception:
+            return
+
+        changed = False
+        try:
+            from vendor.media_factory.backend.app.watermark_remover import purify
+
+            cleaned_im, removed = purify(rgb)
+            if removed:
+                rgb = cleaned_im
+                changed = True
+        except Exception:
+            pass
+
+        try:
+            arr = np.asarray(rgb, dtype=np.float32)
+            h, w, _ = arr.shape
+            is_landscape_16_9 = abs((w / max(1, h)) - (16.0 / 9.0)) <= 0.22
+            if is_landscape_16_9:
+                luma = 0.2126 * arr[:, :, 0] + 0.7152 * arr[:, :, 1] + 0.0722 * arr[:, :, 2]
+                max_bar = int(h * 0.14)
+                top_bar = 0
+                while top_bar < max_bar and float(luma[top_bar].mean()) < 11.5 and float(np.percentile(luma[top_bar], 97)) < 26.0:
+                    top_bar += 1
+                bot_bar = 0
+                while bot_bar < max_bar and float(luma[h - 1 - bot_bar].mean()) < 11.5 and float(np.percentile(luma[h - 1 - bot_bar], 97)) < 26.0:
+                    bot_bar += 1
+                if top_bar >= 4 or bot_bar >= 4:
+                    y0 = top_bar
+                    y1 = h - bot_bar
+                    crop_h = max(1, y1 - y0)
+                    target_w = min(w, int(round(crop_h * 16.0 / 9.0)))
+                    if target_w < w:
+                        x0 = (w - target_w) // 2
+                        arr = arr[y0:y1, x0 : x0 + target_w, :]
+                    else:
+                        target_h = max(1, int(round(w * 9.0 / 16.0)))
+                        if target_h < crop_h:
+                            yc = y0 + (crop_h - target_h) // 2
+                            arr = arr[yc : yc + target_h, :, :]
+                        else:
+                            arr = arr[y0:y1, :, :]
+                    changed = True
+
+                # Soft highlight shoulder roll-off so night-viewing Highlight Luma stays <= 215
+                luma2 = 0.2126 * arr[:, :, 0] + 0.7152 * arr[:, :, 1] + 0.0722 * arr[:, :, 2]
+                if float(np.percentile(luma2, 99.5)) > 213.0 or float(luma2.max()) > 224.0:
+                    knee = 182.0
+                    mask = luma2 > knee
+                    if np.any(mask):
+                        over = luma2[mask] - knee
+                        compressed = knee + 31.0 * np.tanh(over / 42.0)
+                        scale = compressed / np.maximum(luma2[mask], 1.0)
+                        arr[mask] = np.clip(arr[mask] * scale[:, None], 0.0, 255.0)
+                        changed = True
+
+                out_im = Image.fromarray(np.clip(np.round(arr), 0, 255).astype(np.uint8), mode="RGB")
+                if out_im.size != (1920, 1080):
+                    out_im = out_im.resize((1920, 1080), Image.Resampling.LANCZOS)
+                    changed = True
+                if changed:
+                    suf = path.suffix.lower()
+                    tmp = path.with_name(f".{path.name}.polish.tmp")
+                    if suf in {".jpg", ".jpeg"}:
+                        out_im.save(tmp, format="JPEG", quality=94, subsampling=0)
+                    elif suf == ".webp":
+                        out_im.save(tmp, format="WEBP", quality=94)
+                    else:
+                        out_im.save(tmp, format="PNG")
+                    tmp.replace(path)
+        except Exception:
+            return
+
+    @staticmethod
     def _capture_generated_media(source: str, media_dir: Path, stem: str, *, video: bool = False) -> str:
         source_path = Path(source)
         suffixes = {".mp4", ".mov", ".webm"} if video else {".jpg", ".jpeg", ".png", ".webp"}
@@ -1276,6 +1714,8 @@ class AIVisualCoordinator:
         destination = media_dir / f"{stem}{suffix}"
         if source_path.resolve() != destination.resolve():
             shutil.copy2(source_path, destination)
+        if not video:
+            AIVisualCoordinator._polish_generated_still_image(destination)
         return str(destination)
 
     def run(self, job: dict[str, Any], workspace: str | Path) -> StageResult:
@@ -1305,9 +1745,18 @@ class AIVisualCoordinator:
         )
         visual = _read_json(workspace / "visual_manifest.json")
         effective_vs = str(job.get("visual_strategy") or visual.get("visual_strategy") or "").strip().lower()
+        run_ed_dna = job.get("editing_dna") if isinstance(job.get("editing_dna"), dict) else {}
+        run_vpm = str((run_ed_dna or {}).get("visual_priority_mode") or "").strip().lower()
+        run_cm = str(job.get("content_mode") or ((job.get("channel_profile_snapshot") or {}).get("content_mode") if isinstance(job.get("channel_profile_snapshot"), dict) else "") or "").strip().lower()
+        run_vmix_ai = float((((run_ed_dna or {}).get("visual_mix") or {}).get("ai") or 0.0))
         if effective_vs == "full_ai":
             coverage_mode = "full_ai"
-        elif effective_vs in {"edit_direct_footage", "semi_content", "ban_content", "edit_footage"}:
+        elif (
+            effective_vs in {"edit_direct_footage", "semi_content", "ban_content", "edit_footage"}
+            or run_vpm == "ai_cinema_character_drama"
+            or run_cm == "creative_audio_drama"
+            or run_vmix_ai >= 0.40
+        ):
             coverage_mode = "selective_ai"
         style_signature = json.dumps({
             "style_mode": style_mode,
@@ -1436,7 +1885,15 @@ class AIVisualCoordinator:
         )
         resume_current_profile = bool(compatible_local_profile and not scenes_cleared_in_factory)
         use_existing_local_cache = not previous_manifest or compatible_local_profile
-        visual_style = dict(previous_style) if (resume_current_profile or (isinstance(previous_style, dict) and compatible_style_signature)) else self._build_visual_style(visual)
+        visual_style = dict(previous_style) if (resume_current_profile or (isinstance(previous_style, dict) and compatible_style_signature)) else self._build_visual_style(visual, job=job)
+        self.ensure_episode_character_reference_sheets(
+            workspace,
+            job,
+            image_model=image_model,
+            aspect_ratio=aspect_ratio,
+            preset_prompt=preset_prompt,
+            allow_live_generation=is_live_factory_runner,
+        )
         if previous_manifest and not compatible_local_profile:
             registry["assets"] = [
                 item
@@ -1772,41 +2229,37 @@ class AIVisualCoordinator:
 
         for beat in targets:
             beat_id = str(beat.get("beat_id") or "")
-            character_ref_imgs = self._character_reference_images(beat, workspace)
+            matched_chars = self._matched_character_profiles(beat, workspace, job)
+            character_ref_imgs = self._character_reference_images(beat, workspace, job)
             ref_imgs: list[str] = []
             if has_style_reference and style_reference_path is not None:
                 ref_imgs.append(str(style_reference_path))
             for reference in character_ref_imgs:
                 if reference not in ref_imgs:
                     ref_imgs.append(reference)
+            raw_beat_prompt = self._prompt(
+                beat,
+                aspect_ratio,
+                visual_style,
+                ai_notes_by_beat.get(beat_id),
+                preset_prompt=preset_prompt,
+                has_style_reference=has_style_reference,
+                style_preset=style_preset,
+                character_profiles=matched_chars,
+                has_character_reference=bool(character_ref_imgs),
+            )
             image_scene = {
                 "id": f"{beat_id}_ai_image",
                 "name": f"AI bổ sung · {beat_id}",
                 "task_type": "image_generation",
                 "prompt": (
-                    self._sanitize_unsafe_prompt(
-                        self._prompt(
-                            beat,
-                            aspect_ratio,
-                            visual_style,
-                            ai_notes_by_beat.get(beat_id),
-                            preset_prompt=preset_prompt,
-                            has_style_reference=has_style_reference,
-                        )
-                    )
+                    self._sanitize_unsafe_prompt(raw_beat_prompt)
                     if any(
                         str(e.get("beat_id") or "") == beat_id and "UNSAFE" in str(e.get("error") or "").upper()
                         for e in (previous_manifest.get("errors") or [])
                         if isinstance(e, dict)
                     )
-                    else self._prompt(
-                        beat,
-                        aspect_ratio,
-                        visual_style,
-                        ai_notes_by_beat.get(beat_id),
-                        preset_prompt=preset_prompt,
-                        has_style_reference=has_style_reference,
-                    )
+                    else raw_beat_prompt
                 ),
                 "model": image_model,
                 "aspect_ratio": aspect_ratio,
@@ -1814,7 +2267,7 @@ class AIVisualCoordinator:
                 "reference_images": ref_imgs,
                 "_output_directory": str(media_dir),
                 "_output_stem": f"{beat_id}_ai_keyframe",
-                "_remove_watermark": False,
+                "_remove_watermark": True,
             }
             image_path = (
                 self._existing_generated_media(media_dir, f"{beat_id}_ai_keyframe")

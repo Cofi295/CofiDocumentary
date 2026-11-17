@@ -1,3 +1,20 @@
 {
-  "mcpServers": {}
+  "mcpServers": {
+    "trail": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\koing\\AppData\\Roaming\\npm\\node_modules\\@trailhq\\trail-code\\dist\\bin\\trail.js",
+        "mcp",
+        "B:\\ALL_TOOLS\\CofiDocumentary"
+      ]
+    },
+    "trail_remotion": {
+      "command": "C:\\Program Files\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\koing\\AppData\\Roaming\\npm\\node_modules\\@trailhq\\trail-code\\dist\\bin\\trail.js",
+        "mcp",
+        "B:\\ALL_TOOLS\\CofiRemotion"
+      ]
+    }
+  }
 }

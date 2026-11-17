@@ -106,7 +106,7 @@ FFMPEG_EXE = _resolve_ffmpeg_exe()
 
 GENRE_RHYTHM_ARCHETYPES: dict[str, dict[str, Any]] = {
     "kr_truecrime_noir_director": {
-        "archetype_label_vi": "True Crime Điện Ảnh Đêm Khuya · Nhịp Căng & Khoảng Lặng Sắc Lạnh (SBS/그알 Noir)",
+        "archetype_label_vi": "True Crime Điện Ảnh Đêm Khuya · Nhịp Căng & Khoảng Lặng Sắc Lạnh (Investigative Forensic Noir)",
         "specialist_summary_vi": (
             "Giọng nam trầm sâu giàu độ nén nội tâm thiết kế từ K1 sạch (-0.35 semitone, ấm ngực +1.6dB). "
             "Nhịp kể có độ tương phản cao: dồn dập ở cảnh hiện trường/truy bắt, phanh gấp trước cú lật, "
@@ -1107,6 +1107,93 @@ GENRE_RHYTHM_ARCHETYPES: dict[str, dict[str, Any]] = {
             ),
         },
     },
+    "kr_goodnight_bedtime_drama_5070": {
+        "archetype_label_vi": "K-Audio Drama Đêm Khuya & Phẩm Giá Gia Đình 5070 (Nữ Trầm Ấm Velvet · 6 Chương Đảo Ngược Kép)",
+        "specialist_summary_vi": (
+            "Giọng kể radio đêm khuya trầm ấm, điềm tĩnh và sang trọng (tốc độ tự nhiên 0.94x, ấm ngực +1.95dB, "
+            "giảm chói sibilance -1.65dB). Dẫn dắt câu chuyện gia đình và nghề nghệ nhân qua 6 chương với nhịp thở êm "
+            "(0.64s–2.65s), dẫn người nói trước câu thoại và không bao giờ gây giật mình cho khán giả 50–75 tuổi."
+        ),
+        "voice_color_spec": {
+            "color_label_vi": "Seoyeon Velvet Alto · Nữ Phát Thanh Đêm Khuya Ấm Dịu & Giàu Chiều Sâu Nội Tâm",
+            "pitch_semitones": -0.22,
+            "presence_db": 0.20,
+            "prosody_profile": {
+                "style": "B",
+                "tts_speed": 0.94,
+                "atempo": 0.985,
+                "guidance_scale": 2.12,
+                "warm_db": 1.95,
+                "deharsh_db": -1.65,
+                "highshelf_db": -0.75,
+                "pause_map": {
+                    "comma": 0.34,
+                    "clause": 0.28,
+                    "suspense": 0.52,
+                    "ellipsis": 0.58,
+                    "question": 0.50,
+                    "beat_end": 0.56,
+                },
+            },
+            "sample_showcase_ko": (
+                "수십 년을 묵묵히 견뎌 온 장인의 손끝에는, 아무도 함부로 흉내 낼 수 없는 세월의 품격이 깃들어 있었습니다."
+            ),
+        },
+        "writing_cadence": {
+            "target_avg_sentence_chars": [24, 44],
+            "short_punch_ratio_target": [0.10, 0.18],
+            "paragraph_sentence_span": [2, 4],
+            "rhetorical_question_per_act": [1, 2],
+            "register_mode": "warm_literary_broadcast_drama_5070",
+            "writer_rhythm_directive_vi": (
+                "Nhịp viết K-Audio Drama đêm khuya: đan xen lời dẫn truyền cảm chuẩn phát thanh Hàn Quốc (~습니다, ~었죠, ~거든요) "
+                "với lời thoại nhân vật có dẫn người nói trước (화자 선행), giữ khoảng thở lắng đọng tại hai cú đảo ngược phẩm giá."
+            ),
+        },
+        "vocal_cadence": {
+            "target_sps_range": [3.80, 4.45, 5.05],
+            "allow_urgent_fast_chain": False,
+            "max_fast_gap_streak": 2,
+            "emotion_speed_multipliers": {
+                "stark_punch": 0.90,
+                "somber_tragedy": 0.92,
+                "suspense_question": 0.93,
+                "twist_reveal": 0.94,
+                "urgent_action": 0.99,
+                "forensic_anchor": 0.97,
+                "narrative_flow": 1.00,
+            },
+            "pause_tiers_sec": {
+                "urgent_action": 0.44,
+                "tight_continuation": 0.52,
+                "standard_narrative": 0.68,
+                "pre_punch_anticipation": 0.98,
+                "paragraph_breath": 1.25,
+                "dramatic_landing": 1.72,
+                "act_curtain": 2.65,
+            },
+        },
+        "editing_cadence": {
+            "editor_feel_title_vi": "Cảm Nhịp Điện Ảnh K-Drama Đêm Khuya: Chuyển Cảnh Dissolve Êm · Ánh Sáng Ấm Dịu Mắt Luma <= 215",
+            "shot_pacing_sec": {
+                "urgent_max_sec": 4.6,
+                "standard_avg_sec": 6.0,
+                "contemplative_min_sec": 6.2,
+                "max_static_hold_sec": 6.5,
+            },
+            "cut_style": "warm_dissolve_bedtime_cinema",
+            "hold_visual_across_dramatic_pause": True,
+            "dramatic_pause_hold_threshold_sec": 1.25,
+            "pre_punch_camera_motion": "gentle_35mm_dignity_push",
+            "post_punch_silence_camera_motion": "warm_window_rain_linger",
+            "bgm_silence_swell_db": 1.4,
+            "sfx_density_policy": "zero_startle_soft_room_ambience_only",
+            "editor_rhythm_directive_vi": (
+                "Dựng điện ảnh K-Drama 35mm êm dịu cho khán giả 50–75 tuổi nghe đêm khuya: nhịp cắt 4.8s–6.5s bằng cross-dissolve mượt, "
+                "khóa ánh sáng ấm highlight luma <= 215, tắt hoàn toàn tiếng động giật mình và nâng cảm xúc bằng Felt Piano & Cello."
+            ),
+        },
+    },
 }
 
 
@@ -1323,6 +1410,26 @@ class VoiceRhythmSpecialistService:
                 custom_direction,
             )
         ).lower()
+
+        content_mode = str(
+            profile_data.get("content_mode")
+            or (profile_data.get("editorial_dna") or {}).get("content_mode")
+            or ed_dna.get("content_mode")
+            or ""
+        ).strip().lower()
+        explicit_arch = str(
+            ed_dna.get("rhythm_archetype_id")
+            or (profile_data.get("rhythm_dna") or {}).get("archetype_id")
+            or ""
+        ).strip()
+        if explicit_arch in GENRE_RHYTHM_ARCHETYPES:
+            return explicit_arch
+        if (
+            content_mode == "creative_audio_drama"
+            or edit_preset in {"kr_goodnight_cinema_drama", "cinema_character_drama"}
+            or any(kw in haystack for kw in ("오디오드라마", "굿밤", "goodnight", "audio drama", "k-audio drama"))
+        ):
+            return "kr_goodnight_bedtime_drama_5070"
 
         # Exact known production profile shortcuts first (100% deterministic preservation)
         if pid == "channel-kr-grace-letter-60m":
@@ -1602,7 +1709,7 @@ class VoiceRhythmSpecialistService:
             prosody["tts_speed"] = 1.0
 
         # Long-form endurance adjustment (>= 50 min): slightly calmer pause breathing without artificial tts_speed slowdown
-        if duration >= 50 and archetype_id != "kr_grace_pastoral_letter":
+        if duration >= 50 and archetype_id not in {"kr_grace_pastoral_letter", "kr_goodnight_bedtime_drama_5070"}:
             prosody["tts_speed"] = round(max(1.0, float(prosody.get("tts_speed", 1.0))), 3)
             vocal_cad["pause_tiers_sec"]["paragraph_breath"] = round(
                 max(1.02, float(vocal_cad["pause_tiers_sec"]["paragraph_breath"]) + 0.08), 3
@@ -2310,6 +2417,35 @@ _ARCHETYPE_CRAFT_PRESETS: dict[str, dict[str, Any]] = {
             "act_5": {"mood": "empty_throne_reflection", "temp_shift": -1, "sat_pct": 86, "contrast_pct": 104, "vignette": 0.28},
         },
         "pre_twist_bgm_drop_enabled": True,
+    },
+    "kr_goodnight_bedtime_drama_5070": {
+        "cold_open_pre_voice_sec": 1.35,
+        "chapter_curtain_breath_sec": 2.65,
+        "twist_reveal_breath_sec": 1.78,
+        "somber_aftermath_breath_sec": 1.92,
+        "urgent_shave_gap_sec": 0.44,
+        "mid_beat_caesura_policy": {
+            "enabled": False,
+            "max_per_10min": 0,
+            "hold_sec": 0.0,
+            "min_beat_dur_sec": 6.0,
+            "min_beat_spacing": 24,
+        },
+        "jl_cut_policy": {
+            "hard_cut_ratio_target": 0.25,
+            "j_cut_prelap_frames": 14,
+            "l_cut_linger_frames": 22,
+            "dissolve_frames": 26,
+        },
+        "color_emotion_arc": {
+            "act_1": {"mood": "warm_tungsten_rainy_evening_conflict", "temp_shift": +4, "sat_pct": 92, "contrast_pct": 98, "vignette": 0.32},
+            "act_2": {"mood": "muted_amber_quiet_endurance", "temp_shift": +3, "sat_pct": 88, "contrast_pct": 96, "vignette": 0.34},
+            "act_3": {"mood": "sepia_hanok_memory_and_craft", "temp_shift": +6, "sat_pct": 90, "contrast_pct": 98, "vignette": 0.30},
+            "act_4": {"mood": "golden_workshop_masterpiece_reveal", "temp_shift": +7, "sat_pct": 95, "contrast_pct": 102, "vignette": 0.28},
+            "act_5": {"mood": "composed_dignity_reversal_glow", "temp_shift": +5, "sat_pct": 94, "contrast_pct": 102, "vignette": 0.28},
+            "act_6": {"mood": "soft_moonlight_tea_catharsis", "temp_shift": +6, "sat_pct": 90, "contrast_pct": 95, "vignette": 0.36},
+        },
+        "pre_twist_bgm_drop_enabled": False,
     },
 }
 

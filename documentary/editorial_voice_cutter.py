@@ -809,11 +809,27 @@ def sculpt_editorial_voice_timeline(
 
     # 3. Intentional Inter-Beat Breathing Room & Kinetic Action Shaving (3-Tier Breathing Architecture)
     pause_overrides: dict[str, Any] = overrides.get("pauses") if isinstance(overrides.get("pauses"), dict) else {}
-    chapter_breath = max(1.60, min(2.20, float(craft.get("chapter_curtain_breath_sec") or 1.85)))
-    twist_breath = max(1.18, min(1.60, float(craft.get("twist_reveal_breath_sec") or 1.38)))
-    somber_breath = max(1.22, min(1.60, float(craft.get("somber_aftermath_breath_sec") or 1.44)))
-    urgent_shave_gap = min(0.32, max(0.24, float(craft.get("urgent_shave_gap_sec") or 0.28)))
-    para_breath = min(0.48, max(0.36, float((vocal_cad.get("pause_tiers_sec") or {}).get("paragraph_breath") or 0.44)))
+    ed_dna_vc = (job or {}).get("editing_dna") if isinstance((job or {}).get("editing_dna"), dict) else {}
+    snap_vc = (job or {}).get("channel_profile_snapshot") if isinstance((job or {}).get("channel_profile_snapshot"), dict) else {}
+    is_bedtime_drama = (
+        str(rhythm_dna.get("archetype") or "").strip() == "kr_goodnight_bedtime_drama_5070"
+        or str((job or {}).get("content_mode") or snap_vc.get("content_mode") or ed_dna_vc.get("content_mode") or "").strip().lower() == "creative_audio_drama"
+    )
+    zero_startle_sfx = bool(ed_dna_vc.get("zero_startle_sfx")) or (craft.get("sound_design_soul") or {}).get("sfx_hit_on_chapter") is False
+    if is_bedtime_drama:
+        chapter_breath = max(2.10, min(2.85, float(craft.get("chapter_curtain_breath_sec") or 2.55)))
+        twist_breath = max(1.35, min(1.90, float(craft.get("twist_reveal_breath_sec") or 1.65)))
+        somber_breath = max(1.40, min(1.95, float(craft.get("somber_aftermath_breath_sec") or 1.72)))
+        urgent_shave_gap = min(0.55, max(0.42, float(craft.get("urgent_shave_gap_sec") or 0.48)))
+        para_breath = min(1.45, max(0.85, float((vocal_cad.get("pause_tiers_sec") or {}).get("paragraph_breath") or 1.25)))
+        std_pause_min, std_pause_max = 0.50, 0.78
+    else:
+        chapter_breath = max(1.60, min(2.20, float(craft.get("chapter_curtain_breath_sec") or 1.85)))
+        twist_breath = max(1.18, min(1.60, float(craft.get("twist_reveal_breath_sec") or 1.38)))
+        somber_breath = max(1.22, min(1.60, float(craft.get("somber_aftermath_breath_sec") or 1.44)))
+        urgent_shave_gap = min(0.32, max(0.24, float(craft.get("urgent_shave_gap_sec") or 0.28)))
+        para_breath = min(0.48, max(0.36, float((vocal_cad.get("pause_tiers_sec") or {}).get("paragraph_breath") or 0.44)))
+        std_pause_min, std_pause_max = 0.28, 0.48
 
     sculpted_pauses: list[float] = []
     sculpted_reasons: list[str] = []
@@ -831,8 +847,8 @@ def sculpt_editorial_voice_timeline(
         t_cur = tl_by_id.get(bid, {})
         t_nxt = tl_by_id.get(nxt_id, {})
 
-        raw_base_pause = float(cur_b.get("pause_after_sec") or 0.38)
-        base_pause = min(0.48, max(0.28, raw_base_pause))
+        raw_base_pause = float(cur_b.get("pause_after_sec") or (0.62 if is_bedtime_drama else 0.38))
+        base_pause = min(std_pause_max, max(std_pause_min, raw_base_pause))
         base_reason = str(cur_b.get("pause_reason") or "standard_narrative")
         emo = str(cur_b.get("emotion_register") or "narrative_flow")
         text_cur = str(cur_b.get("text") or "").strip()
@@ -973,8 +989,8 @@ def sculpt_editorial_voice_timeline(
         if target_perceived is not None:
             char_weight = min(0.08, max(-0.06, (len(text_cur) - 32) * 0.002))
             organic_jitter = _pause_jitter_for(f"{bid}:{idx}:{text_cur[:16]}", spread=0.14 if not is_act_curtain else 0.12)
-            eff_max_ceil = max(max_hold_ceil, 1.68 if not is_act_curtain else 2.15)
-            eff_min_floor = min(min_hold_floor, 1.12 if not is_act_curtain else 1.48)
+            eff_max_ceil = max(max_hold_ceil, (1.95 if is_bedtime_drama else 1.68) if not is_act_curtain else (2.85 if is_bedtime_drama else 2.15))
+            eff_min_floor = min(min_hold_floor, (1.20 if is_bedtime_drama else 1.12) if not is_act_curtain else (2.05 if is_bedtime_drama else 1.48))
             computed_gap = round(
                 max(eff_min_floor, min(eff_max_ceil, target_perceived + organic_jitter + char_weight - natural_edge * 0.35)),
                 3,
@@ -990,10 +1006,10 @@ def sculpt_editorial_voice_timeline(
                     {"beat_id": bid, "from_act": act_cur, "to_act": act_nxt, "pause_after_sec": computed_gap, "reason": new_reason}
                 )
         else:
-            # Standard continuous narrative sentences in the same paragraph: keep crisp [0.28s .. 0.48s] with subtle jitter
-            std_jitter = _pause_jitter_for(f"std:{bid}:{idx}", spread=0.03)
-            eff_std_gap = round(max(0.28, min(0.48, base_pause + std_jitter - max(0.0, natural_edge - 0.18) * 0.45)), 3)
-            if eff_std_gap <= 0.31:
+            # Standard continuous narrative sentences in the same paragraph
+            std_jitter = _pause_jitter_for(f"std:{bid}:{idx}", spread=0.04 if is_bedtime_drama else 0.03)
+            eff_std_gap = round(max(std_pause_min, min(std_pause_max, base_pause + std_jitter - max(0.0, natural_edge - 0.18) * 0.45)), 3)
+            if eff_std_gap <= 0.31 and not is_bedtime_drama:
                 fast_streak += 1
                 if fast_streak > max_fast_streak:
                     rec_gap = round(max(0.38, min(0.48, para_breath - natural_edge * 0.25)), 3)
@@ -1294,6 +1310,8 @@ def sculpt_editorial_voice_timeline(
                     or not isinstance(c_wins, list)
                     or len(c_wins) != len(existing_clauses)
                 ):
+                    from .srt import split_multilang_narration_into_clauses
+
                     cw_tuples = split_multilang_narration_into_clauses(
                         narr_str,
                         max_chars=21,
@@ -1330,16 +1348,23 @@ def sculpt_editorial_voice_timeline(
                     if new_sub_segs:
                         tb["subSegments"] = new_sub_segs
 
-                # Normalize any invalid SFX filenames
+                # Normalize any invalid SFX filenames (and strip startle hits in bedtime drama mode)
                 sfx_f = str(tb.get("sfxFile") or "").strip()
-                if sfx_f in sfx_alias_map:
+                if zero_startle_sfx and any(tok in sfx_f.lower() for tok in ("chapter_hit", "sub_bass", "boom", "gavel", "seal_thud", "alarm", "siren")):
+                    tb.pop("sfxFile", None)
+                elif sfx_f in sfx_alias_map:
                     tb["sfxFile"] = sfx_alias_map[sfx_f]
                 if isinstance(tb.get("sfxEvents"), list):
+                    kept_evs: list[dict[str, Any]] = []
                     for ev in tb["sfxEvents"]:
                         if isinstance(ev, dict):
                             ev_f = str(ev.get("file") or "").strip()
+                            if zero_startle_sfx and any(tok in ev_f.lower() for tok in ("chapter_hit", "sub_bass", "boom", "gavel", "seal_thud", "alarm", "siren")):
+                                continue
                             if ev_f in sfx_alias_map:
                                 ev["file"] = sfx_alias_map[ev_f]
+                            kept_evs.append(ev)
+                    tb["sfxEvents"] = kept_evs
 
                 if pause_sec >= 1.0 and (end_frame - (start_frame + sp_offset_frames + sp_frames)) >= 24:
                     hold_start = start_frame + sp_offset_frames + sp_frames
